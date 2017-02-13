@@ -50,11 +50,11 @@ The font expects both variable widths and fixed width to be supported. Any image
 
 ### Parsing glyph widths for variable font sheets
 
-Width is encoded in binary number, on pixels. If you open the image, every glyph has vertical dots on their right side (to be exact, every (16k - 1)th pixel on x axis). Topmost dot represents 1. For example, ASCII glyph 'C' has width of 9, 'W' has width of 11, " (double quote) has width of 6.
+Width is encoded in binary number, on pixels. On the font image, every glyph has vertical dots on their right side (to be exact, every (16k - 1)th pixel on x axis). From top to bottom, each dot represents 1, 2, 4 and 8. For example, ASCII glyph 'C' has width of 9, 'W' has width of 11, " (double quote) has width of 6.
 
-### Implementing Korean writing system
+### Implementing the Korean writing system
 
-There are 10 sets of Hangul glyph pieces on the font. Top 6 are initials, middle 2 are medials, and bottom 2 are finals. On the rightmost side, there's eight assembled glyphs to help you with (assuming you have basic knowledge on the writing system). Top 6 tells you how to use 6 initials, and bottom 2 tells you how to use 2 finals.
+On this font, Hangul letters are printed by assemblying two or three letter pieces. There are 10 sets of Hangul letter pieces on the font. Top 6 are initials, middle 2 are medials, and bottom 2 are finals. On the rightmost side, there's eight assembled glyphs to help you with (assuming you have basic knowledge on the writing system). Top 6 tells you how to use 6 initials, and bottom 2 tells you how to use 2 finals.
 
 This is a Kotlin-like pseudocode for assembling the glyph:
 
