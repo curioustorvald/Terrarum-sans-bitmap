@@ -4,9 +4,45 @@
 
 This font is a bitmap font used in my game project, Terrarum (hence the name). It Supports ExtA, Romanian (subset of ExtB), Cyrillic, Greek, Chinese, Japanese and Korean.
 
-The code for the fonts are meant to be used with Slick2d (extends ```Font``` class). If you are not using the framework, please refer to next section to implement the font metrics correctly on your system.
+The code for the fonts are meant to be used with Slick2d (extends ```Font``` class). If you are not using the framework, please refer to the __Font metrics__ section to implement the font metrics correctly on your system.
 
 The issue page is open. If you have some issues to submit, or have a question, please leave it on the page.
+
+## Using on Slick2d
+
+On your code (Kotlin):
+
+    class YourGame {
+
+        lateinit var fontGame: Font
+    
+        override fun initStatesList(gc: GameContainer) {
+            fontGame = GameFontImpl()
+            ...
+        }
+        
+        override fun render(gc: GameContainer, g: Graphics) {
+            g.font = fontGame
+            g.drawString(...)
+        }
+    }
+    
+On your code (Java):
+
+    class YourGame {
+
+        Font fontGame;
+    
+        void initStatesList(GameContainer gc) {
+            fontGame = new GameFontImpl();
+            ...
+        }
+        
+        void render(GameContainer gc, Graphics g) {
+            g.setFont(fontGame);
+            g.drawString(...);
+        }
+    }
 
 ## Font metrics
 
@@ -18,7 +54,7 @@ Width is encoded in binary number, on pixels. If you open the image, every glyph
 
 ### Implementing Korean writing system
 
-There are 10 sets of Hangul glyph pieces. Top 6 concerns initials, middle 2 concerns medials, and bottom 2 concerns finals. On the rightmost side, there's eight assembled glyphs to help you with (assuming you have basic knowledge on the writing system). Top 6 tells you how to use 6 initials, and bottom 2 tells you how to use 2 finals.
+There are 10 sets of Hangul glyph pieces on the font. Top 6 are initials, middle 2 are medials, and bottom 2 are finals. On the rightmost side, there's eight assembled glyphs to help you with (assuming you have basic knowledge on the writing system). Top 6 tells you how to use 6 initials, and bottom 2 tells you how to use 2 finals.
 
 This is a Kotlin-like pseudocode for assembling the glyph:
 
