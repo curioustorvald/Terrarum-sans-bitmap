@@ -1,8 +1,10 @@
 # Terrarum Sans Bitmap
 
+<< insert sample image here, when it's done >>
+
 This font is a bitmap font used in my game project, Terrarum (hence the name). It Supports ExtA, Romanian (subset of ExtB), Cyrillic, Greek, Chinese, Japanese and Korean.
 
-The font code is meant to be used with Slick2d. If you are not using the framework, please refer to next section to implement the font metrics correctly on your system.
+The code for the fonts are meant to be used with Slick2d (extends ```Font``` class). If you are not using the framework, please refer to next section to implement the font metrics correctly on your system.
 
 ## Font metrics
 
