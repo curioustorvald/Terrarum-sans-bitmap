@@ -1,6 +1,6 @@
 # Terrarum Sans Bitmap
 
-<< insert sample image here, when it's done >>
+![Font sample](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/font_test_3.PNG)
 
 This font is a bitmap font used in my game project, Terrarum (hence the name). It Supports ExtA, Romanian (subset of ExtB), Cyrillic, Greek, Chinese, Japanese and Korean.
 
