@@ -6,6 +6,8 @@ This font is a bitmap font used in my game project, Terrarum (hence the name). I
 
 The code for the fonts are meant to be used with Slick2d (extends ```Font``` class). If you are not using the framework, please refer to next section to implement the font metrics correctly on your system.
 
+The issue page is open. If you have some issues to submit, or have a question, please leave it on the page.
+
 ## Font metrics
 
 The font expects both variable widths and fixed width to be supported. Any images with ```_variable``` means it expects variable widths. Anything else expects fixed width. ```romana_narrow``` has width of 6 (no, not 5), ```romana_wide``` has width of 9, ```cjkpunct``` has width of 10, ```kana``` has width of 12, ```hangul_johab``` has width of 11, ```wenquanyi``` has width of 16.
