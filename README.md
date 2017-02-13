@@ -89,3 +89,7 @@ This is a Kotlin-like pseudocode for assembling the glyph:
         }
         ...
     }
+
+## Acknowledgement
+
+Thanks to kind people of [/r/Typography](https://www.reddit.com/r/typography/) for amazing feedbacks.
