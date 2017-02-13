@@ -1,2 +1,91 @@
-# Terrarum-sans-bitmap
-A bitmap font used in my game project, Terrarum. Supports ExtA, Romanian, Cyrillic, Greek, Chinese, Japanese and Korean
+# Terrarum Sans Bitmap
+
+This font is a bitmap font used in my game project, Terrarum (hence the name). It Supports ExtA, Romanian (subset of ExtB), Cyrillic, Greek, Chinese, Japanese and Korean.
+
+The font code is meant to be used with Slick2d. If you are not using the framework, please refer to next section to implement the font metrics correctly on your system.
+
+## Font metrics
+
+The font expects both variable widths and fixed width to be supported. Any images with ```_variable``` means it expects variable widths. Anything else expects fixed width. ```romana_narrow``` has width of 6 (no, not 5), ```romana_wide``` has width of 9, ```cjkpunct``` has width of 10, ```kana``` has width of 12, ```hangul_johab``` has width of 11, ```wenquanyi``` has width of 16.
+
+### Parsing glyph widths for variable font sheets
+
+Width is encoded in binary number, on pixels. If you open the image, every glyph has vertical dots on their right side (to be exact, every (16k - 1)th pixel on x axis). Topmost dot represents 1. For example, ASCII glyph 'C' has width of 9, 'W' has width of 11, " (double quote) has width of 6.
+
+### Implementing Korean writing system
+
+There are 10 sets of Hangul glyph pieces. Top 6 concerns initials, middle 2 concerns medials, and bottom 2 concerns finals. On the rightmost side, there's eight assembled glyphs to help you with (assuming you have basic knowledge on the writing system). Top 6 tells you how to use 6 initials, and bottom 2 tells you how to use 2 finals.
+
+This is a Kotlin-like pseudocode for assembling the glyph:
+
+    jungseongWide = arrayOf(8, 12, 13, 17, 18, 21)
+    jungseongComplex = arrayOf(9, 10, 11, 14, 15, 16, 22)
+    
+    function getHanInitialRow(hanIndex: Int): Int {
+        val ret: Int
+
+        if (isJungseongWide(hanIndex))
+            ret = 2
+        else if (isJungseongComplex(hanIndex))
+            ret = 4
+        else
+            ret = 0
+
+        return if (getHanJongseong(hanIndex) == 0) ret else ret + 1
+    }
+    
+    function isJungseongWide(hanIndex: Int) = jungseongWide.contains(getHanJungseong(hanIndex))
+    function isJungseongComplex(hanIndex: Int) = jungseongComplex.contains(getHanJungseong(hanIndex))
+
+    function getHanInitialRow(hanIndex: Int): Int {
+        val ret: Int
+
+        if (isJungseongWide(hanIndex))
+            ret = 2
+        else if (isJungseongComplex(hanIndex))
+            ret = 4
+        else
+            ret = 0
+
+        return if (getHanJongseong(hanIndex) == 0) ret else ret + 1
+    }
+
+    function getHanMedialRow(hanIndex: Int) = if (getHanJongseong(hanIndex) == 0) 6 else 7
+
+    function getHanFinalRow(hanIndex: Int): Int {
+        val jungseongIndex = getHanJungseong(hanIndex)
+
+        return if (jungseongWide.contains(jungseongIndex))
+            8
+        else
+            9
+    }
+    
+    function isHangul(c: Char) = c.toInt() >= 0xAC00 && c.toInt() < 0xD7A4
+    
+    ...
+    
+    for (each Char on the string) {
+        if (isHangul(Char)) {
+            val hIndex = Char.toInt() - 0xAC00
+
+            val indexCho = getHanChosung(hIndex)
+            val indexJung = getHanJungseong(hIndex)
+            val indexJong = getHanJongseong(hIndex)
+
+            val choRow = getHanInitialRow(hIndex)
+            val jungRow = getHanMedialRow(hIndex)
+            val jongRow = getHanFinalRow(hIndex)
+
+            // get sub image from sprite sheet
+            val choseongImage =  hangulSheet.getSubImage(indexCho, choRow)
+            val jungseongImage = hangulSheet.getSubImage(indexJung, jungRow)
+            val jongseongImage = hangulSheet.getSubImage(indexJong, jongRow)
+            
+            // actual drawing part
+            draw choseongImage to somewhere you want
+            draw jungseongImage on top of choseongImage
+            draw jongseongImage on top of choseongImage
+        }
+        ...
+    }
