@@ -13,7 +13,7 @@ The issue page is open. If you have some issues to submit, or have a question, p
 
 You can contribute to the font by fixing wrong glyphs, suggesting better ones, extending character set (like Latin Extended B), or code for other game frameworks such as LibGDX. Please leave pull request for that.
 
-Font images are stored in ```assets/graphics/fonts``` directory. Image format must be TGA with Alpha, no PNG.
+Font images are stored in ```assets/graphics/fonts``` directory. Image format must be TGA with Alpha — no PNG. If someone needs PNG, they can batch-convert the font using utils like ImageMagick.
 
 
 ## Using on Slick2d
