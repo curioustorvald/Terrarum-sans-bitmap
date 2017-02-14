@@ -8,6 +8,14 @@ The code for the fonts are meant to be used with Slick2d (extends ```Font``` cla
 
 The issue page is open. If you have some issues to submit, or have a question, please leave it on the page.
 
+
+## Contribution guidelines
+
+You can contribute to the font by fixing wrong glyphs, suggesting better ones, extending character set (like Latin Extended B), or code for other game frameworks such as LibGDX. Please leave pull request for that.
+
+Font images are stored in ```assets/graphics/fonts``` directory. Image format must be TGA with Alpha, no PNG.
+
+
 ## Using on Slick2d
 
 On your code (Kotlin):
