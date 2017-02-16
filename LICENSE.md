@@ -20,5 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+====
 
 WenQuanYi font is distributed under GNU GPL Version 2. See their [license document here](http://wenq.org/wqy2/index.cgi?GPL)
