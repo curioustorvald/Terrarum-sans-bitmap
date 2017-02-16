@@ -2,7 +2,7 @@
 
 ![Font sample](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/font_test_3.PNG)
 
-![Cyrillic sample – Russian, Bulgarian, Serbian](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/terrarum_sans_cyrillic_2.PNG)
+![Cyrillic sample – Russian, Bulgarian, Serbian](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/terrarum_sans_cyrillic_2.png)
 
 This font is a bitmap font used in my game project, Terrarum (hence the name). It Supports ExtA, Romanian (subset of ExtB), Cyrillic (Russian, Bulgarian, Serbian), Greek, Chinese, Japanese and Korean.
 
