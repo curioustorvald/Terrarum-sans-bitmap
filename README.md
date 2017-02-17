@@ -22,11 +22,11 @@ Font images are stored in ```assets/graphics/fonts``` directory. Image format mu
 
 On your code (Kotlin):
 
-    class YourGame {
+    class YourGame : BasicGame("YourGameName") {
 
         lateinit var fontGame: Font
     
-        override fun initStatesList(gc: GameContainer) {
+        override fun init(gc: GameContainer) {
             fontGame = GameFontImpl()
             ...
         }
@@ -39,16 +39,16 @@ On your code (Kotlin):
     
 On your code (Java):
 
-    class YourGame {
+    class YourGame extends BasicGame {
 
         Font fontGame;
     
-        void initStatesList(GameContainer gc) {
+        @Override void init(GameContainer gc) {
             fontGame = new GameFontImpl();
             ...
         }
         
-        void render(GameContainer gc, Graphics g) {
+        @Override void render(GameContainer gc, Graphics g) {
             g.setFont(fontGame);
             g.drawString(...);
         }
