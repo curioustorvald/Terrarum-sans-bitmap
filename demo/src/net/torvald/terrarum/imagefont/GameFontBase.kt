@@ -56,7 +56,9 @@ open class GameFontBase : Font {
 
     private fun isHangul(c: Char) = c.toInt() >= 0xAC00 && c.toInt() < 0xD7A4
     private fun isAscii(c: Char) = c.toInt() >= 0x20 && c.toInt() <= 0xFF
+    private fun isRunic(c: Char) = runicList.contains(c)
     private fun isExtA(c: Char) = c.toInt() >= 0x100 && c.toInt() < 0x180
+    private fun isExtB(c: Char) = c.toInt() >= 0x180 && c.toInt() < 0x250
     private fun isKana(c: Char) = c.toInt() >= 0x3040 && c.toInt() < 0x3100
     private fun isCJKPunct(c: Char) = c.toInt() >= 0x3000 && c.toInt() < 0x3040
     private fun isUniHan(c: Char) = c.toInt() >= 0x3400 && c.toInt() < 0xA000
@@ -66,13 +68,17 @@ open class GameFontBase : Font {
     private fun isWenQuanYi1(c: Char) = c.toInt() >= 0x33F3 && c.toInt() <= 0x69FC
     private fun isWenQuanYi2(c: Char) = c.toInt() >= 0x69FD && c.toInt() <= 0x9FDC
     private fun isGreek(c: Char) = c.toInt() >= 0x370 && c.toInt() <= 0x3CE
-    private fun isRomanian(c: Char) = c.toInt() >= 0x218 && c.toInt() <= 0x21A
-    private fun isRomanianNarrow(c: Char) = c.toInt() == 0x21B
 
 
 
     private fun extAindexX(c: Char) = (c.toInt() - 0x100) % 16
     private fun extAindexY(c: Char) = (c.toInt() - 0x100) / 16
+
+    private fun extBindexX(c: Char) = (c.toInt() - 0x180) % 16
+    private fun extBindexY(c: Char) = (c.toInt() - 0x180) / 16
+
+    private fun runicIndexX(c: Char) = runicList.indexOf(c) % 16
+    private fun runicIndexY(c: Char) = runicList.indexOf(c) / 16
 
     private fun kanaIndexX(c: Char) = (c.toInt() - 0x3040) % 16
     private fun kanaIndexY(c: Char) = (c.toInt() - 0x3040) / 16
@@ -100,19 +106,6 @@ open class GameFontBase : Font {
     private fun greekIndexX(c: Char) = (c.toInt() - 0x370) % 16
     private fun greekIndexY(c: Char) = (c.toInt() - 0x370) / 16
 
-    private fun romanianIndexX(c: Char) = c.toInt() - 0x218
-    private fun romanianIndexY(c: Char) = 0
-
-    private fun thaiIndexX(c: Char) = (c.toInt() - 0xE00) % 16
-    private fun thaiIndexY(c: Char) = (c.toInt() - 0xE00) / 16
-
-    private fun thaiNarrowIndexX(c: Char) = 3
-    private fun thaiNarrowIndexY(c: Char) = 0
-
-
-    private val narrowWidthSheets = arrayOf(
-            SHEET_EXTB_ROMANIAN_NARROW
-    )
     private val unihanWidthSheets = arrayOf(
             SHEET_UNIHAN,
             SHEET_FW_UNI,
@@ -126,7 +119,8 @@ open class GameFontBase : Font {
             SHEET_ASCII_VARW,
             SHEET_CYRILIC_VARW,
             SHEET_EXTA_VARW,
-            SHEET_GREEK_VARW
+            SHEET_GREEK_VARW,
+            SHEET_EXTB_VARW
     )
 
 
@@ -151,8 +145,6 @@ open class GameFontBase : Font {
             }
             else if (zeroWidthSheets.contains(ctype))
                 len += 0
-            else if (narrowWidthSheets.contains(ctype))
-                len += W_LATIN_NARROW
             else if (ctype == SHEET_CJK_PUNCT)
                 len += W_ASIAN_PUNCT
             else if (ctype == SHEET_HANGUL)
@@ -187,6 +179,11 @@ open class GameFontBase : Font {
         // JOHAB
         for (i in 0..s.length - 1) {
             val ch = s[i]
+
+            if (ch.isColourCode()) {
+                thisCol = colourKey[ch]!!
+                continue
+            }
 
             if (isHangul(ch)) {
                 val hIndex = ch.toInt() - 0xAC00
@@ -246,6 +243,11 @@ open class GameFontBase : Font {
         for (i in 0..s.length - 1) {
             val ch = s[i]
 
+            if (ch.isColourCode()) {
+                thisCol = colourKey[ch]!!
+                continue
+            }
+
             if (isWenQuanYi1(ch)) {
                 val glyphW = getWidth("" + ch)
                 wenQuanYi_1.getSubImage(wenQuanYiIndexX(ch), wenQuanYi1IndexY(ch)).drawWithShadow(
@@ -262,6 +264,11 @@ open class GameFontBase : Font {
 
         for (i in 0..s.length - 1) {
             val ch = s[i]
+
+            if (ch.isColourCode()) {
+                thisCol = colourKey[ch]!!
+                continue
+            }
 
             if (isWenQuanYi2(ch)) {
                 val glyphW = getWidth("" + ch)
@@ -280,6 +287,11 @@ open class GameFontBase : Font {
         for (i in 0..s.length - 1) {
             val ch = s[i]
 
+            if (ch.isColourCode()) {
+                thisCol = colourKey[ch]!!
+                continue
+            }
+
             if (!isHangul(ch) && !isUniHan(ch)) {
 
                 // if not init, endUse first
@@ -295,6 +307,10 @@ open class GameFontBase : Font {
                     SHEET_EXTA_VARW    -> {
                         sheetX = extAindexX(ch)
                         sheetY = extAindexY(ch)
+                    }
+                    SHEET_EXTB_VARW    -> {
+                        sheetX = extBindexX(ch)
+                        sheetY = extBindexY(ch)
                     }
                     SHEET_KANA       -> {
                         sheetX = kanaIndexX(ch)
@@ -319,14 +335,6 @@ open class GameFontBase : Font {
                     SHEET_GREEK_VARW           -> {
                         sheetX = greekIndexX(ch)
                         sheetY = greekIndexY(ch)
-                    }
-                    SHEET_EXTB_ROMANIAN_WIDE   -> {
-                        sheetX = romanianIndexX(ch)
-                        sheetY = romanianIndexY(ch)
-                    }
-                    SHEET_EXTB_ROMANIAN_NARROW -> {
-                        sheetX = 0
-                        sheetY = 0
                     }
                     else                       -> {
                         sheetX = ch.toInt() % 16
@@ -365,10 +373,7 @@ open class GameFontBase : Font {
     }
 
     private fun getSheetType(c: Char): Int {
-        // EFs
-        if (isRomanianNarrow(c))
-            return SHEET_EXTB_ROMANIAN_NARROW
-        else if (isHangul(c))
+        if (isHangul(c))
             return SHEET_HANGUL
         else if (isKana(c))
             return SHEET_KANA
@@ -378,6 +383,8 @@ open class GameFontBase : Font {
             return SHEET_ASCII_VARW
         else if (isExtA(c))
             return SHEET_EXTA_VARW
+        else if (isExtB(c))
+            return SHEET_EXTB_VARW
         else if (isCyrilic(c))
             return SHEET_CYRILIC_VARW
         else if (isUniPunct(c))
@@ -388,8 +395,8 @@ open class GameFontBase : Font {
             return SHEET_FW_UNI
         else if (isGreek(c))
             return SHEET_GREEK_VARW
-        else if (isRomanian(c))
-            return SHEET_EXTB_ROMANIAN_WIDE
+        else if (c.isColourCode())
+            return SHEET_COLOURCODE
         else
             return SHEET_UNKNOWN// fixed width punctuations
         // fixed width
@@ -417,6 +424,8 @@ open class GameFontBase : Font {
         val xoff = getWidth(unprintedHead)
         drawString(x + xoff, y, printedBody, color)
     }
+
+    fun Char.isColourCode() = colourKey.containsKey(this)
 
     fun buildWidthTable(sheet: SpriteSheet, codeOffset: Int, codeRange: IntRange, rows: Int = 16) {
         fun Byte.toUint() = java.lang.Byte.toUnsignedInt(this)
@@ -483,6 +492,7 @@ open class GameFontBase : Font {
         internal val asciiWidths: HashMap<Int, Int> = HashMap()
 
         lateinit internal var extASheet: SpriteSheet
+        lateinit internal var extBSheet: SpriteSheet
         lateinit internal var kanaSheet: SpriteSheet
         lateinit internal var cjkPunct: SpriteSheet
         // static SpriteSheet uniHan;
@@ -492,8 +502,6 @@ open class GameFontBase : Font {
         lateinit internal var wenQuanYi_1: SpriteSheet
         lateinit internal var wenQuanYi_2: SpriteSheet
         lateinit internal var greekSheet: SpriteSheet
-        lateinit internal var romanianSheet: SpriteSheet
-        lateinit internal var romanianSheetNarrow: SpriteSheet
 
         internal val JUNG_COUNT = 21
         internal val JONG_COUNT = 28
@@ -502,8 +510,7 @@ open class GameFontBase : Font {
         internal val W_HANGUL = 11
         internal val W_KANA = 12
         internal val W_UNIHAN = 16
-        internal val W_LATIN_WIDE = 9 // width of regular letters, including m
-        internal val W_LATIN_NARROW = 5 // width of letter f, t, i, l
+        internal val W_LATIN_WIDE = 9 // width of regular letters
 
         internal val H = 20
         internal val H_HANGUL = 16
@@ -512,23 +519,41 @@ open class GameFontBase : Font {
 
         internal val SHEET_ASCII_VARW = 0
         internal val SHEET_HANGUL = 1
-        internal val SHEET_EXTA_VARW = 2
-        internal val SHEET_KANA = 3
-        internal val SHEET_CJK_PUNCT = 4
-        internal val SHEET_UNIHAN = 5
-        internal val SHEET_CYRILIC_VARW = 6
-        internal val SHEET_FW_UNI = 7
-        internal val SHEET_UNI_PUNCT = 8
-        internal val SHEET_WENQUANYI_1 = 9
-        internal val SHEET_WENQUANYI_2 = 10
-        internal val SHEET_GREEK_VARW = 11
-        internal val SHEET_EXTB_ROMANIAN_WIDE = 12
-        internal val SHEET_EXTB_ROMANIAN_NARROW = 13
+        internal val SHEET_EXTA_VARW = 3
+        internal val SHEET_EXTB_VARW = 4
+        internal val SHEET_KANA = 5
+        internal val SHEET_CJK_PUNCT = 6
+        internal val SHEET_UNIHAN = 7
+        internal val SHEET_CYRILIC_VARW = 8
+        internal val SHEET_FW_UNI = 9
+        internal val SHEET_UNI_PUNCT = 10
+        internal val SHEET_WENQUANYI_1 = 11
+        internal val SHEET_WENQUANYI_2 = 12
+        internal val SHEET_GREEK_VARW = 13
+
 
         internal val SHEET_UNKNOWN = 254
         internal val SHEET_COLOURCODE = 255
 
         lateinit internal var sheetKey: Array<SpriteSheet?>
+
+        /**
+         * Runic letters list used for game. The set is
+         * Younger Futhark + Medieval rune 'e' + Punct + Runic Almanac
+
+         * BEWARE OF SIMILAR-LOOKING RUNES, especially:
+
+         * * Algiz ᛉ instead of Maðr ᛘ
+
+         * * Short-Twig Hagall ᚽ instead of Runic Letter E ᛂ
+
+         * * Runic Letter OE ᚯ instead of Óss ᚬ
+
+         * Examples:
+         * ᛭ᛋᛁᚴᚱᛁᚦᛦ᛭
+         * ᛭ᛂᛚᛋᛅ᛭ᛏᚱᚢᛏᚾᛁᚾᚴᚢᚾᛅ᛬ᛅᚱᚾᛅᛏᛅᛚᛋ
+         */
+        internal val runicList = arrayOf('ᚠ', 'ᚢ', 'ᚦ', 'ᚬ', 'ᚱ', 'ᚴ', 'ᚼ', 'ᚾ', 'ᛁ', 'ᛅ', 'ᛋ', 'ᛏ', 'ᛒ', 'ᛘ', 'ᛚ', 'ᛦ', 'ᛂ', '᛬', '᛫', '᛭', 'ᛮ', 'ᛯ', 'ᛰ')
 
         internal var interchar = 0
         internal var scale = 1
@@ -537,6 +562,49 @@ open class GameFontBase : Font {
                 else throw IllegalArgumentException("Font scale cannot be zero or negative (input: $value)")
             }
 
+        val colourKey = hashMapOf(
+                Pair(0x10.toChar(), Color(0xFFFFFF)), //*w hite
+                Pair(0x11.toChar(), Color(0xFFE080)), //*y ellow
+                Pair(0x12.toChar(), Color(0xFFB020)), //o range
+                Pair(0x13.toChar(), Color(0xFF8080)), //*r ed
+                Pair(0x14.toChar(), Color(0xFFA0E0)), //f uchsia
+                Pair(0x15.toChar(), Color(0xE0A0FF)), //*m agenta (purple)
+                Pair(0x16.toChar(), Color(0x8080FF)), //*b lue
+                Pair(0x17.toChar(), Color(0x80FFFF)), //c yan
+                Pair(0x18.toChar(), Color(0x80FF80)), //*g reen
+                Pair(0x19.toChar(), Color(0x008000)), //v iridian
+                Pair(0x1A.toChar(), Color(0x805030)), //x (khaki)
+                Pair(0x1B.toChar(), Color(0x808080))  //*k
+                //* marked: commonly used
+        )
+        val colToCode = hashMapOf(
+                Pair("w", 0x10.toChar()),
+                Pair("y", 0x11.toChar()),
+                Pair("o", 0x12.toChar()),
+                Pair("r", 0x13.toChar()),
+                Pair("f", 0x14.toChar()),
+                Pair("m", 0x15.toChar()),
+                Pair("b", 0x16.toChar()),
+                Pair("c", 0x17.toChar()),
+                Pair("g", 0x18.toChar()),
+                Pair("v", 0x19.toChar()),
+                Pair("x", 0x1A.toChar()),
+                Pair("k", 0x1B.toChar())
+        )
+        val codeToCol = hashMapOf(
+                Pair("w", colourKey[0x10.toChar()]),
+                Pair("y", colourKey[0x11.toChar()]),
+                Pair("o", colourKey[0x12.toChar()]),
+                Pair("r", colourKey[0x13.toChar()]),
+                Pair("f", colourKey[0x14.toChar()]),
+                Pair("m", colourKey[0x15.toChar()]),
+                Pair("b", colourKey[0x16.toChar()]),
+                Pair("c", colourKey[0x17.toChar()]),
+                Pair("g", colourKey[0x18.toChar()]),
+                Pair("v", colourKey[0x19.toChar()]),
+                Pair("x", colourKey[0x1A.toChar()]),
+                Pair("k", colourKey[0x1B.toChar()])
+        )
     }// end of companion object
 }
 
