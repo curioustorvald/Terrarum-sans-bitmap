@@ -6,7 +6,7 @@
 
 **Font demo** — head to the **Release** tab
 
-This font is a bitmap font used in my game project, Terrarum (hence the name). It Supports Latin-1 Supplement, Latin Ext-A, Latin Ext-B (already covers more than 90% of european languages), Cyrillic (Russian, Bulgarian, Serbian), Greek, Chinese, Japanese and Korean.
+This font is a bitmap font used in my game project, Terrarum (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese and Korean. More technical side, it supports Latin-1 Supplement, Latin Ext-A, Latin Ext-B, Cyrillic (Russian, Bulgarian, Serbian), Greek, Chinese (limited to Unicode BMP), Japanese, Korean (all 11 172 possible syllables).
 
 The code for the fonts are meant to be used with Slick2d (extends ```Font``` class). If you are not using the framework, please refer to the __Font metrics__ section to implement the font metrics correctly on your system.
 
