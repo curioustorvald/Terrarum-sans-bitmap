@@ -70,6 +70,10 @@ On this font, Hangul letters are printed by assemblying two or three letter piec
 
 This is a Kotlin-like pseudocode for assembling the glyph:
 
+    function getHanChosung(hanIndex: Int) = hanIndex / (21 * 28)
+    function getHanJungseong(hanIndex: Int) = hanIndex / 28 % 21
+    function getHanJongseong(hanIndex: Int) = hanIndex % 28
+
     jungseongWide = arrayOf(8, 12, 13, 17, 18, 21)
     jungseongComplex = arrayOf(9, 10, 11, 14, 15, 16, 22)
     
