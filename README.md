@@ -6,7 +6,7 @@
 
 **Font demo** — head to the **Release** tab
 
-This font is a bitmap font used in my game project, Terrarum (hence the name). It Supports ExtA, Romanian (subset of ExtB), Cyrillic (Russian, Bulgarian, Serbian), Greek, Chinese, Japanese and Korean.
+This font is a bitmap font used in my game project, Terrarum (hence the name). It Supports Latin-1 Supplement, Latin Ext-A, Latin Ext-B (already covers more than 90% of european languages), Cyrillic (Russian, Bulgarian, Serbian), Greek, Chinese, Japanese and Korean.
 
 The code for the fonts are meant to be used with Slick2d (extends ```Font``` class). If you are not using the framework, please refer to the __Font metrics__ section to implement the font metrics correctly on your system.
 
@@ -15,9 +15,9 @@ The issue page is open. If you have some issues to submit, or have a question, p
 
 ## Contribution guidelines
 
-You can contribute to the font by fixing wrong glyphs, suggesting better ones, extending character set (like Latin Extended B), or code for other game frameworks such as LibGDX. Please leave pull request for that.
+You can contribute to the font by fixing wrong glyphs, suggesting better ones, extending character set (like Georgian and Thai), or code for other game frameworks such as LibGDX. Please leave pull request for that.
 
-Font images are stored in ```assets/graphics/fonts``` directory. Image format must be TGA with Alpha — no PNG. If someone needs PNG, they can batch-convert the font using utils like ImageMagick.
+Font Spritesheets are stored in ```assets/graphics/fonts``` directory. Image format must be TGA with Alpha — no PNG. If someone needs PNG, they can batch-convert the font using utils like ImageMagick.
 
 
 ## Using on Slick2d
@@ -58,11 +58,11 @@ On your code (Java):
 
 ## Font metrics
 
-The font expects both variable widths and fixed width to be supported. Any images with ```_variable``` means it expects variable widths. Anything else expects fixed width. ```romana_narrow``` has width of 6 (no, not 5), ```romana_wide``` has width of 9, ```cjkpunct``` has width of 10, ```kana``` has width of 12, ```hangul_johab``` has width of 11, ```wenquanyi``` has width of 16.
+Although the font is basically a Spritesheet, some of the sheet expects variable widths to be supported. Any sheets with ```_variable``` means it expects variable widths. Anything else expects fixed width (regular Spritesheet behaviour). ```cjkpunct``` has width of 10, ```kana``` has width of 12, ```hangul_johab``` has width of 11, ```wenquanyi``` has width of 16.
 
 ### Parsing glyph widths for variable font sheets
 
-Width is encoded in binary number, on pixels. On the font image, every glyph has vertical dots on their right side (to be exact, every (16k - 1)th pixel on x axis). From top to bottom, each dot represents 1, 2, 4 and 8. For example, ASCII glyph 'C' has width of 9, 'W' has width of 11, " (double quote) has width of 6.
+Width is encoded in binary number, on pixels. On the font spritesheet, every glyph has vertical dots on their right side (to be exact, every (16k - 1)th pixel on x axis). From top to bottom, each dot represents 1, 2, 4 and 8. For example, ASCII glyph 'C' has width of 9, 'W' has width of 11, " (double quote) has width of 6.
 
 ### Implementing the Korean writing system
 
