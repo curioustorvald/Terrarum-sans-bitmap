@@ -149,3 +149,5 @@ This is a Kotlin-like pseudocode for assembling the glyph:
 ## Acknowledgement
 
 Thanks to kind people of [/r/Typography](https://www.reddit.com/r/typography/) for amazing feedbacks.
+
+CJK Ideographs are powered by [WenQuanYi Font](http://wenq.org/wqy2/index.cgi?BitmapSong). The font is distributed under the GNU GPL version 2. Although the glyphs themselves are not copyrightable (the program codes—e.g. TTF—do), we would like to give a credit for the font and the people behind it.
