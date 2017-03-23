@@ -4,7 +4,9 @@
 
 ![Cyrillic sample – Russian, Bulgarian, Serbian](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/terrarum_sans_cyrillic_2.png)
 
-**Font demo** — head to the **Release** tab
+(note—you can't display Bulgarian and Russian glyphs at the same time, you must ```reload()``` them upon the change of locale of your game)
+
+**Font demo** — head to the **[Release](https://github.com/minjaesong/Terrarum-sans-bitmap/releases)** tab
 
 This font is a bitmap font used in [my game project called Terrarum](https://gitlab.com/minjaesong/terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese and Korean. More technical side, it supports Latin-1 Supplement, Latin Ext-A, Latin Ext-B, Cyrillic (Russian, Bulgarian, Serbian), Greek, Chinese (limited to Unicode BMP), Japanese, Korean (all 11 172 possible syllables).
 
