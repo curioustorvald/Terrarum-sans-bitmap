@@ -132,15 +132,14 @@ open class GameFontBase : Font {
             val chr = s[i]
             val ctype = getSheetType(s[i])
 
-            if (chr.toInt() == 0x21B) // Romanian t; HAX!
-                len += 6
-            else if (variableWidthSheets.contains(ctype)) {
-                try {
-                    len += asciiWidths[chr.toInt()]!!
+            if (variableWidthSheets.contains(ctype)) {
+                len += try {
+                    asciiWidths[chr.toInt()]!!
                 }
                 catch (e: kotlin.KotlinNullPointerException) {
                     println("KotlinNullPointerException on glyph number ${Integer.toHexString(chr.toInt()).toUpperCase()}")
-                    System.exit(1)
+                    //System.exit(1)
+                    W_LATIN_WIDE // failsafe
                 }
             }
             else if (zeroWidthSheets.contains(ctype))
