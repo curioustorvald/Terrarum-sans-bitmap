@@ -73,6 +73,7 @@ class GameFontImpl : GameFontBase() {
     }
 
     fun reload() {
+        GameFontBase.cyrilic.destroy()
         GameFontBase.cyrilic = SpriteSheet(
                 when (GameFontDemo.gameLocale.substring(0..1)) {
                     "bg" -> "./assets/graphics/fonts/cyrilic_bulgarian_variable.tga"
