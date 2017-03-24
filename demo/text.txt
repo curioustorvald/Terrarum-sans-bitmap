@@ -1,37 +1,38 @@
 Set locale in config.properties to “bgBG” for alternative Bulgarian letters, “srSR” for Serbian.
 
-ABCDEFGHIJKLM NOPQRSTUVWXYZ
-abcdefghijklm nopqrstuvwxyz
+ABCDEFGHIJKLM NOPQRSTUVWXYZ 12345?
+abcdefghijklm nopqrstuvwxyz 67890!
 
-Syö salmiakkia, koska se on hyvää sinulle
+The bitmap font for game developers who seek good font that has real multilingual support,
+for free (as in freedom AND without cost).
 
-The Olympic marmot (Marmota olympus) is a rodent in the squirrel family, Sciuridae.
-It lives only in the U.S. state of Washington, at middle elevations on the Olympic Peninsula.
-About the size of a domestic cat, an adult weighs around 8 kg (18 lb) in summer.
+There are many bitmap fonts on the internet. You care for the multilingual support, but alas!
+most of them does not support your language, vector fonts takes too much time to be loaded,
+even then their legibility suffers because fuck built-in antialias.
+You somehow found a good font, and it makes your game look like a linux terminal, and you say:
+“what the fuck? Is this a game or should I rm -rf this shit‽”
+You speak Japanese, and you wish to support it, but then このクソなfontは only good for Japanese,
+and it is not multilingual, and you don't have a time for this shenanigan.
+Eventually you give up, saying “fuck it!” and just use the fonts that do not match well.
 
-Brná je část statutárního a krajského města Ústí nad Labem v České republice, spadající
-pod městský obvod Ústí nad Labem-Střekov. Nachází se asi pět kilometrů jižně od centra
-města v Českém středohoří na pravém břehu řeky Labe.
+No more suffering. This font has everything you need.
 
-Malaysia er en forholdsvis ung stat. Sin endelige udstrækning fik den først i 1965 efter
-at Singapore trak sig ud. Staten blev grundlagt ved en sammenslutning af flere tidligere
-britiske besiddelser, foreløbigt i 1957 og endeligt i 1963.
+while (isVisible(BadFonts)) { ripAndTear(BadFonts).scope(Guts); }
+How multilingual? Real multilingual!
 
-Το θάλλιο συνοδεύει κυρίως θειούχα ορυκτά βασικών μετάλλων, όπως ο σφαλερίτης, ο σιδηροπυρίτης
-και ο γαληνίτης ενώ αναφέρονται και εμφανίσεις του σε κονδύλους μαγγανίου στους βυθούς των ωκεανών.
+Příliš žluťoučký kůň úpěl ďábelské ódy
+Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich
 διαφυλάξτε γενικά τη ζωή σας από βαθειά ψυχικά τραύματα
 ΔΙΑΦΥΛΆΞΤΕ ΓΕΝΙΚΆ ΤΗ ΖΩΉ ΣΑΣ ΑΠΌ ΒΑΘΕΙΆ ΨΥΧΙΚΆ ΤΡΑΎΜΑΤΑ
-Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства.
-Příliš žluťoučký kůň úpěl ďábelské ódy.    Árvíztűrő tükörfúrógép.
-Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich.
-Pijamalı hasta yağız şoföre çabucak güvendi.    Kŕdeľ ďatľov učí koňa žrať kôru.
-Voix ambiguë d'un cœur qui au zéphyr préfère les jattes de kiwi.
-Înjurând pițigăiat, zoofobul comandă vexat whisky și tequila.
-
-sjaldgæft    ekki stjórnarskrárvarin
-
-Also supports:
-‛Unicode’ „quotation marks“—dashes…‼
-으웽~. 얘! 위에 이 애 우유의 양 외워와! 아오~ 왜요? 어여! 예...  웬 초콜릿? 제가 원했던 건 뻥튀기 쬐끔과 의류예요. 얘야, 왜 또 불평?  퀡퇣풿횂
+Pack my box with five dozen liquor jugs
+Voix ambiguë d'un cœur qui au zéphyr préfère les jattes de kiwi
+정 참판 양반댁 규수 큰 교자 타고 혼례 치른 날    뚫훍뚫훍뚫(읗) 뚫훍뚫훍뚫(읗) 뚫훍뚫훍뚫 따다다
+Kæmi ný öxi hér, ykist þjófum nú bæði víl og ádrepa
+Árvíztűrő tükörfúrógép    Kŕdeľ ďatľov učí koňa žrať kôru
 とりなくこゑす ゆめさませ みよあけわたる ひんかしを そらいろはえて おきつへに ほふねむれゐぬ もやのうち
-鳥啼く声す 夢覚ませ 見よ明け渡る 東を 空色栄えて 沖つ辺に 帆船群れゐぬ 靄の中,
+鳥啼く声す 夢覚ませ 見よ明け渡る 東を 空色栄えて 沖つ辺に 帆船群れゐぬ 靄の中
+Înjurând pițigăiat, zoofobul comandă vexat whisky și tequila
+Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства
+Pijamalı hasta yağız şoföre çabucak güvendi
+Also supports: ‛Unicode’ „quotation marks“—dashes…「括弧」‼
+ASCII  Latin-1  Latin_Ext-A  Latin_Ext-B  Greek  Cyrillic  CJK-Ideo  Kana  Hangul_Syllables

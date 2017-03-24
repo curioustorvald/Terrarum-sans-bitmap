@@ -54,20 +54,20 @@ open class GameFontBase : Font {
             9
     }
 
-    private fun isHangul(c: Char) = c.toInt() >= 0xAC00 && c.toInt() < 0xD7A4
-    private fun isAscii(c: Char) = c.toInt() >= 0x20 && c.toInt() <= 0xFF
+    private fun isHangul(c: Char) = c.toInt() in 0xAC00..0xD7A3
+    private fun isAscii(c: Char) = c.toInt() in 0x20..0xFF
     private fun isRunic(c: Char) = runicList.contains(c)
-    private fun isExtA(c: Char) = c.toInt() >= 0x100 && c.toInt() < 0x180
-    private fun isExtB(c: Char) = c.toInt() >= 0x180 && c.toInt() < 0x250
-    private fun isKana(c: Char) = c.toInt() >= 0x3040 && c.toInt() < 0x3100
-    private fun isCJKPunct(c: Char) = c.toInt() >= 0x3000 && c.toInt() < 0x3040
-    private fun isUniHan(c: Char) = c.toInt() >= 0x3400 && c.toInt() < 0xA000
-    private fun isCyrilic(c: Char) = c.toInt() >= 0x400 && c.toInt() < 0x460
-    private fun isFullwidthUni(c: Char) = c.toInt() >= 0xFF00 && c.toInt() < 0xFF20
-    private fun isUniPunct(c: Char) = c.toInt() >= 0x2000 && c.toInt() < 0x2070
-    private fun isWenQuanYi1(c: Char) = c.toInt() >= 0x33F3 && c.toInt() <= 0x69FC
-    private fun isWenQuanYi2(c: Char) = c.toInt() >= 0x69FD && c.toInt() <= 0x9FDC
-    private fun isGreek(c: Char) = c.toInt() >= 0x370 && c.toInt() <= 0x3CE
+    private fun isExtA(c: Char) = c.toInt() in 0x100..0x17F
+    private fun isExtB(c: Char) = c.toInt() in 0x180..0x24F
+    private fun isKana(c: Char) = c.toInt() in 0x3040..0x30FF
+    private fun isCJKPunct(c: Char) = c.toInt() in 0x3000..0x303F
+    private fun isUniHan(c: Char) = c.toInt() in 0x3400..0x9FFF
+    private fun isCyrilic(c: Char) = c.toInt() in 0x400..0x45F
+    private fun isFullwidthUni(c: Char) = c.toInt() in 0xFF00..0xFF1F
+    private fun isUniPunct(c: Char) = c.toInt() in 0x2000..0x206F
+    private fun isWenQuanYi1(c: Char) = c.toInt() in 0x33F3..0x69FC
+    private fun isWenQuanYi2(c: Char) = c.toInt() in 0x69FD..0x9FDC
+    private fun isGreek(c: Char) = c.toInt() in 0x370..0x3CE
 
 
 
@@ -199,17 +199,17 @@ open class GameFontBase : Font {
 
                 hangulSheet.getSubImage(indexCho, choRow).drawWithShadow(
                         Math.round(x + getWidthSubstr(s, i + 1) - glyphW).toFloat(),
-                        Math.round(((H - H_HANGUL) / 2).toFloat() + y + 1f).toFloat(),
+                        Math.round(y).toFloat(),
                         scale.toFloat(), thisCol
                 )
                 hangulSheet.getSubImage(indexJung, jungRow).drawWithShadow(
                         Math.round(x + getWidthSubstr(s, i + 1) - glyphW).toFloat(),
-                        Math.round(((H - H_HANGUL) / 2).toFloat() + y + 1f).toFloat(),
+                        Math.round(y).toFloat(),
                         scale.toFloat(), thisCol
                 )
                 hangulSheet.getSubImage(indexJong, jongRow).drawWithShadow(
                         Math.round(x + getWidthSubstr(s, i + 1) - glyphW).toFloat(),
-                        Math.round(((H - H_HANGUL) / 2).toFloat() + y + 1f).toFloat(),
+                        Math.round(y).toFloat(),
                         scale.toFloat(), thisCol
                 )
             }
@@ -345,12 +345,7 @@ open class GameFontBase : Font {
                 try {
                     sheetKey[prevInstance]!!.getSubImage(sheetX, sheetY).drawWithShadow(
                             Math.round(x + getWidthSubstr(s, i + 1) - glyphW).toFloat(),
-
-                            // to deal with the height difference of the sheets
-                            Math.round(y).toFloat() + (if (prevInstance == SHEET_CJK_PUNCT) -1 // height hack
-                            else if (prevInstance == SHEET_FW_UNI) (H - H_HANGUL) / 2    // completely legit height adjustment
-                            else 0).toFloat(),
-
+                            Math.round(y).toFloat(),
                             scale.toFloat(), thisCol
                     )
                 }
@@ -512,9 +507,7 @@ open class GameFontBase : Font {
         internal val W_LATIN_WIDE = 9 // width of regular letters
 
         internal val H = 20
-        internal val H_HANGUL = 16
         internal val H_UNIHAN = 16
-        internal val H_KANA = 20
 
         internal val SHEET_ASCII_VARW = 0
         internal val SHEET_HANGUL = 1
