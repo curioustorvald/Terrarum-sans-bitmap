@@ -65,8 +65,6 @@ open class GameFontBase : Font {
     private fun isCyrilic(c: Char) = c.toInt() in 0x400..0x45F
     private fun isFullwidthUni(c: Char) = c.toInt() in 0xFF00..0xFF1F
     private fun isUniPunct(c: Char) = c.toInt() in 0x2000..0x206F
-    private fun isWenQuanYi1(c: Char) = c.toInt() in 0x33F3..0x69FC
-    private fun isWenQuanYi2(c: Char) = c.toInt() in 0x69FD..0x9FDC
     private fun isGreek(c: Char) = c.toInt() in 0x370..0x3CE
 
 
@@ -86,8 +84,8 @@ open class GameFontBase : Font {
     private fun cjkPunctIndexX(c: Char) = (c.toInt() - 0x3000) % 16
     private fun cjkPunctIndexY(c: Char) = (c.toInt() - 0x3000) / 16
 
-    private fun uniHanIndexX(c: Char) = (c.toInt() - 0x3400) % 256
-    private fun uniHanIndexY(c: Char) = (c.toInt() - 0x3400) / 256
+    private fun unihanIndexX(c: Char) = (c.toInt() - 0x3400) % 256
+    private fun unihanIndexY(c: Char) = (c.toInt() - 0x3400) / 256
 
     private fun cyrilicIndexX(c: Char) = (c.toInt() - 0x400) % 16
     private fun cyrilicIndexY(c: Char) = (c.toInt() - 0x400) / 16
@@ -98,19 +96,13 @@ open class GameFontBase : Font {
     private fun uniPunctIndexX(c: Char) = (c.toInt() - 0x2000) % 16
     private fun uniPunctIndexY(c: Char) = (c.toInt() - 0x2000) / 16
 
-    private fun wenQuanYiIndexX(c: Char) =
-            (c.toInt() - if (c.toInt() <= 0x4DB5) 0x33F3 else 0x33F3 + 0x4A) % 32
-    private fun wenQuanYi1IndexY(c: Char) = (c.toInt() - (0x33F3 + 0x4A)) / 32
-    private fun wenQuanYi2IndexY(c: Char) = (c.toInt() - 0x69FD) / 32
-
     private fun greekIndexX(c: Char) = (c.toInt() - 0x370) % 16
     private fun greekIndexY(c: Char) = (c.toInt() - 0x370) / 16
 
     private val unihanWidthSheets = arrayOf(
             SHEET_UNIHAN,
             SHEET_FW_UNI,
-            SHEET_WENQUANYI_1,
-            SHEET_WENQUANYI_2
+            SHEET_UNIHAN
     )
     private val zeroWidthSheets = arrayOf(
             SHEET_COLOURCODE
@@ -216,40 +208,20 @@ open class GameFontBase : Font {
         }
         //hangulSheet.endUse()
 
-        // unihan fonts
-        /*uniHan.startUse();
-        for (int i = 0; i < s.length(); i++) {
-            char ch = s.charAt(i);
+        // WenQuanYi
+        //uniHan.startUse()
+
+        for (i in 0..s.length - 1) {
+            val ch = s[i]
+
+            if (ch.isColourCode()) {
+                thisCol = colourKey[ch]!!
+                continue
+            }
 
             if (isUniHan(ch)) {
-                int glyphW = getWidth("" + ch);
-                uniHan.renderInUse(
-                        Math.round(x
-                                + getWidthSubstr(s, i + 1) - glyphW
-                        )
-                        , Math.round((H - H_UNIHAN) / 2 + y)
-                        , uniHanIndexX(ch)
-                        , uniHanIndexY(ch)
-                );
-            }
-        }
-
-        uniHan.endUse();*/
-
-        // WenQuanYi 1
-        //wenQuanYi_1.startUse()
-
-        for (i in 0..s.length - 1) {
-            val ch = s[i]
-
-            if (ch.isColourCode()) {
-                thisCol = colourKey[ch]!!
-                continue
-            }
-
-            if (isWenQuanYi1(ch)) {
                 val glyphW = getWidth("" + ch)
-                wenQuanYi_1.getSubImage(wenQuanYiIndexX(ch), wenQuanYi1IndexY(ch)).drawWithShadow(
+                uniHan.getSubImage(unihanIndexX(ch), unihanIndexY(ch)).drawWithShadow(
                         Math.round(x + getWidthSubstr(s, i + 1) - glyphW).toFloat(),
                         Math.round((H - H_UNIHAN) / 2 + y).toFloat(),
                         scale.toFloat(), thisCol
@@ -257,29 +229,7 @@ open class GameFontBase : Font {
             }
         }
 
-        //wenQuanYi_1.endUse()
-        // WenQuanYi 2
-        //wenQuanYi_2.startUse()
-
-        for (i in 0..s.length - 1) {
-            val ch = s[i]
-
-            if (ch.isColourCode()) {
-                thisCol = colourKey[ch]!!
-                continue
-            }
-
-            if (isWenQuanYi2(ch)) {
-                val glyphW = getWidth("" + ch)
-                wenQuanYi_2.getSubImage(wenQuanYiIndexX(ch), wenQuanYi2IndexY(ch)).drawWithShadow(
-                        Math.round(x + getWidthSubstr(s, i + 1) - glyphW).toFloat(),
-                        Math.round((H - H_UNIHAN) / 2 + y).toFloat(),
-                        scale.toFloat(), thisCol
-                )
-            }
-        }
-
-        //wenQuanYi_2.endUse()
+        //uniHan.endUse()
 
         // regular fonts
         var prevInstance = -1
@@ -489,12 +439,10 @@ open class GameFontBase : Font {
         lateinit internal var extBSheet: SpriteSheet
         lateinit internal var kanaSheet: SpriteSheet
         lateinit internal var cjkPunct: SpriteSheet
-        // static SpriteSheet uniHan;
+        lateinit internal var uniHan: SpriteSheet
         lateinit internal var cyrilic: SpriteSheet
         lateinit internal var fullwidthForms: SpriteSheet
         lateinit internal var uniPunct: SpriteSheet
-        lateinit internal var wenQuanYi_1: SpriteSheet
-        lateinit internal var wenQuanYi_2: SpriteSheet
         lateinit internal var greekSheet: SpriteSheet
 
         internal val JUNG_COUNT = 21
@@ -519,9 +467,7 @@ open class GameFontBase : Font {
         internal val SHEET_CYRILIC_VARW = 8
         internal val SHEET_FW_UNI = 9
         internal val SHEET_UNI_PUNCT = 10
-        internal val SHEET_WENQUANYI_1 = 11
-        internal val SHEET_WENQUANYI_2 = 12
-        internal val SHEET_GREEK_VARW = 13
+        internal val SHEET_GREEK_VARW = 11
 
 
         internal val SHEET_UNKNOWN = 254

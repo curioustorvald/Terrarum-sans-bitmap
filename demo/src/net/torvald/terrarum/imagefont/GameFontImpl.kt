@@ -22,13 +22,6 @@ class GameFontImpl : GameFontBase() {
                 "./assets/graphics/fonts/kana.tga", GameFontBase.W_KANA, GameFontBase.H)
         GameFontBase.cjkPunct = SpriteSheet(
                 "./assets/graphics/fonts/cjkpunct.tga", GameFontBase.W_ASIAN_PUNCT, GameFontBase.H)
-        /*uniHan = new SpriteSheet(
-                "./assets/graphics/fonts/unifont_unihan"
-                        + ((!terrarum.gameLocale.contains("zh"))
-                        ? "_ja" : "")
-                        +".tga"
-                , W_UNIHAN, H_UNIHAN
-        );*/
         GameFontBase.cyrilic = SpriteSheet(
                 when (GameFontDemo.gameLocale.substring(0..1)) {
                     "bg" -> "./assets/graphics/fonts/cyrilic_bulgarian_variable.tga"
@@ -39,10 +32,8 @@ class GameFontImpl : GameFontBase() {
                 "./assets/graphics/fonts/fullwidth_forms.tga", GameFontBase.W_UNIHAN, GameFontBase.H_UNIHAN)
         GameFontBase.uniPunct = SpriteSheet(
                 "./assets/graphics/fonts/unipunct.tga", GameFontBase.W_LATIN_WIDE, GameFontBase.H)
-        GameFontBase.wenQuanYi_1 = SpriteSheet(
-                "./assets/graphics/fonts/wenquanyi_11pt_part1.tga", 16, 18, 2)
-        GameFontBase.wenQuanYi_2 = SpriteSheet(
-                "./assets/graphics/fonts/wenquanyi_11pt_part2.tga", 16, 18, 2)
+        GameFontBase.uniHan = SpriteSheet(
+                "./assets/graphics/fonts/wenquanyi.tga", 16, 16)
         GameFontBase.greekSheet = SpriteSheet(
                 "./assets/graphics/fonts/greek_variable.tga", 15, 19, 1)
 
@@ -54,12 +45,10 @@ class GameFontImpl : GameFontBase() {
                 GameFontBase.extBSheet,
                 GameFontBase.kanaSheet,
                 GameFontBase.cjkPunct,
-                null, // Full unihan, filler because we're using WenQuanYi
+                GameFontBase.uniHan,
                 GameFontBase.cyrilic,
                 GameFontBase.fullwidthForms,
                 GameFontBase.uniPunct,
-                GameFontBase.wenQuanYi_1,
-                GameFontBase.wenQuanYi_2,
                 GameFontBase.greekSheet
         )
         GameFontBase.sheetKey = shk
