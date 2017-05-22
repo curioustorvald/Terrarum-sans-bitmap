@@ -449,7 +449,7 @@ open class GameFontBase : Font {
         internal val JONG_COUNT = 28
 
         internal val W_ASIAN_PUNCT = 10
-        internal val W_HANGUL = 11
+        internal val W_HANGUL = 12
         internal val W_KANA = 12
         internal val W_UNIHAN = 16
         internal val W_LATIN_WIDE = 9 // width of regular letters
