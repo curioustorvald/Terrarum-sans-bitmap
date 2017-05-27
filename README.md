@@ -60,11 +60,13 @@ On your code (Java):
 
 ## Font metrics
 
-Although the font is basically a Spritesheet, some of the sheet expects variable widths to be supported. Any sheets with ```_variable``` means it expects variable widths. Anything else expects fixed width (regular Spritesheet behaviour). ```cjkpunct``` has width of 10, ```kana``` has width of 12, ```hangul_johab``` has width of 11, ```wenquanyi``` has width of 16.
+Although the font is basically a Spritesheet, some of the sheet expects variable widths to be supported. Any sheets with ```_variable``` means it expects variable widths. Anything else expects fixed width (regular Spritesheet behaviour). ```cjkpunct``` has width of 10, ```kana``` and ```hangul_johab``` has width of 12, ```wenquanyi``` has width of 16.
 
 ### Parsing glyph widths for variable font sheets
 
-Width is encoded in binary number, on pixels. On the font spritesheet, every glyph has vertical dots on their right side (to be exact, every (16k - 1)th pixel on x axis). From top to bottom, each dot represents 1, 2, 4 and 8. For example, ASCII glyph 'C' has width of 9, 'W' has width of 11, " (double quote) has width of 6.
+![Sample of Font Spritesheet with annotation](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/width_bit_encoding_annotated.png)
+
+Width is encoded in binary bits, on pixels. On the font spritesheet, every glyph has vertical dots on their top-right side (to be exact, every (16k - 1)th pixel on x axis). Above image is a sample of the font, with width information coloured in magenta. From top to bottom, each dot represents 1, 2, 4 and 8. For example, in the above image, ! (exclamation mark) has width of 5, " (double quote) has width of 6, # (octothorp) has width of 8, $ (dollar sign) has width of 9.
 
 ### Implementing the Korean writing system
 
