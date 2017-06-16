@@ -83,7 +83,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
     private fun isUniPunct(c: Char) = c.toInt() in 0x2000..0x206F
     private fun isGreek(c: Char) = c.toInt() in 0x370..0x3CE
     private fun isThai(c: Char) = c.toInt() in 0xE00..0xE7F
-    private fun isThaiDiacritics(c: Char) = c.toInt() in 0xE34..0xE3A
+    private fun isDiacritics(c: Char) = c.toInt() in 0xE34..0xE3A
                                             || c.toInt() in 0xE47..0xE4E
                                             || c.toInt() == 0xE31
     private fun isCustomSym(c: Char) = c.toInt() in 0xE000..0xE0FF
@@ -173,7 +173,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
             0xE00..0xE7F,
             0xE000..0xE0FF
     )
-    private val glyphWidths: HashMap<Int, Int> = HashMap()
+    private val glyphWidths: HashMap<Int, Int> = HashMap() // if the value is negative, it's diacritics
     private val sheets: Array<TextureRegionPack>
 
 
@@ -307,18 +307,21 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
 
     private var textBuffer: CharSequence = ""
     private var textBWidth = intArrayOf() // absolute posX of glyphs from print-origin
+    private var textBGSize = intArrayOf() // width of each glyph
 
     override fun draw(batch: Batch, str: CharSequence, x: Float, y: Float): GlyphLayout? {
         if (textBuffer != str) {
             textBuffer = str
             val widths = getWidthOfCharSeq(str)
 
+            textBGSize = widths
+
             textBWidth = Array(str.length, { charIndex ->
                 if (charIndex == 0)
                     0
                 else {
                     var acc = 0
-                    (0..charIndex - 1).forEach { acc += widths[it] }
+                    (0..charIndex - 1).forEach { acc += maxOf(0, widths[it]) } // don't accumulate diacrtics (which has negative value)
                     /*return*/acc
                 }
             }).toIntArray()
@@ -339,56 +342,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
 
             //println("[TerrarumSansBitmap] sprite:  $sheetID:${sheetXY[0]}x${sheetXY[1]}")
 
-            if (sheetID != SHEET_HANGUL) {
-
-                if (!noShadow) {
-                    batch.color = shadowCol
-                    batch.draw(
-                            sheets[sheetID].get(sheetXY[0], sheetXY[1]),
-                            x + textBWidth[index] + 1,
-                            y +
-                            if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                offsetUnihan
-                            else if (sheetID == SHEET_CUSTOM_SYM)
-                                offsetCustomSym
-                            else 0
-                    )
-                    batch.draw(
-                            sheets[sheetID].get(sheetXY[0], sheetXY[1]),
-                            x + textBWidth[index],
-                            y - 1 +
-                            if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                offsetUnihan
-                            else if (sheetID == SHEET_CUSTOM_SYM)
-                                offsetCustomSym
-                            else 0
-                    )
-                    batch.draw(
-                            sheets[sheetID].get(sheetXY[0], sheetXY[1]),
-                            x + textBWidth[index] + 1,
-                            y - 1 +
-                            if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                offsetUnihan
-                            else if (sheetID == SHEET_CUSTOM_SYM)
-                                offsetCustomSym
-                            else 0
-                    )
-                }
-
-
-                batch.color = mainCol
-                batch.draw(
-                        sheets[sheetID].get(sheetXY[0], sheetXY[1]),
-                        x + textBWidth[index],
-                        y +
-                        if (sheetID == SHEET_UNIHAN) // evil exceptions
-                            offsetUnihan
-                        else if (sheetID == SHEET_CUSTOM_SYM)
-                            offsetCustomSym
-                        else 0
-                )
-            }
-            else { // JOHAB (assemble) HANGUL
+            if (sheetID == SHEET_HANGUL) {
                 val hangulSheet = sheets[SHEET_HANGUL]
                 val hIndex = c.toInt() - 0xAC00
 
@@ -404,16 +358,79 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
                 if (!noShadow) {
                     batch.color = shadowCol
 
-                    batch.draw(hangulSheet.get(indexCho, choRow), x + textBWidth[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index], y - 1)
+                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + textBWidth[index] + 1, y)
+                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + textBWidth[index]    , y - 1)
+                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + textBWidth[index] + 1, y - 1)
+
+                    batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index] + 1, y)
+                    batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index]    , y - 1)
+                    batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index] + 1, y - 1)
+
+                    batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index] + 1, y)
+                    batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index]    , y - 1)
                     batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index] + 1, y - 1)
                 }
 
 
                 batch.color = mainCol
-                batch.draw(hangulSheet.get(indexCho, choRow), x + textBWidth[index], y)
+                batch.draw(hangulSheet.get(indexCho, choRow)  , x + textBWidth[index], y)
                 batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index], y)
                 batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index], y)
+            }
+            else {
+                val offset = if (!isDiacritics(c)) 0 else {
+                    if (index > 0) // LIMITATION: does not support double (or more) diacritics properly
+                        (textBGSize[index] - textBGSize[index - 1]) / 2
+                    else
+                        textBGSize[index]
+                }
+
+                if (!noShadow) {
+                    batch.color = shadowCol
+                    batch.draw(
+                            sheets[sheetID].get(sheetXY[0], sheetXY[1]),
+                            x + textBWidth[index] + 1 + offset,
+                            y +
+                            if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                offsetUnihan
+                            else if (sheetID == SHEET_CUSTOM_SYM)
+                                offsetCustomSym
+                            else 0
+                    )
+                    batch.draw(
+                            sheets[sheetID].get(sheetXY[0], sheetXY[1]),
+                            x + textBWidth[index] + offset,
+                            y - 1 +
+                            if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                offsetUnihan
+                            else if (sheetID == SHEET_CUSTOM_SYM)
+                                offsetCustomSym
+                            else 0
+                    )
+                    batch.draw(
+                            sheets[sheetID].get(sheetXY[0], sheetXY[1]),
+                            x + textBWidth[index] + 1 + offset,
+                            y - 1 +
+                            if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                offsetUnihan
+                            else if (sheetID == SHEET_CUSTOM_SYM)
+                                offsetCustomSym
+                            else 0
+                    )
+                }
+
+
+                batch.color = mainCol
+                batch.draw(
+                        sheets[sheetID].get(sheetXY[0], sheetXY[1]),
+                        x + textBWidth[index] + offset,
+                        y +
+                        if (sheetID == SHEET_UNIHAN) // evil exceptions
+                            offsetUnihan
+                        else if (sheetID == SHEET_CUSTOM_SYM)
+                            offsetCustomSym
+                        else 0
+                )
             }
         }
 
@@ -436,14 +453,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
             val ctype = getSheetType(s[i])
 
             if (variableWidthSheets.contains(ctype)) {
-                len[i] = try {
-                    glyphWidths[chr.toInt()]!!
-                }
-                catch (e: kotlin.KotlinNullPointerException) {
+                if (!glyphWidths.containsKey(chr.toInt())) {
                     println("[TerrarumSansBitmap] no width data for glyph number ${Integer.toHexString(chr.toInt()).toUpperCase()}")
-                    //System.exit(1)
-                    W_LATIN_WIDE // failsafe
+                    len[i] = W_LATIN_WIDE
                 }
+
+                len[i] = glyphWidths[chr.toInt()]!!
             }
             else if (ctype == SHEET_CJK_PUNCT)
                 len[i] = W_ASIAN_PUNCT
@@ -453,8 +468,6 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
                 len[i] = W_KANA
             else if (unihanWidthSheets.contains(ctype))
                 len[i] = W_UNIHAN
-            else if (isThaiDiacritics(s[i]))
-                len[i] = 0 // set width of the glyph as -W_LATIN_WIDE
             else if (ctype == SHEET_CUSTOM_SYM)
                 len[i] = SIZE_CUSTOM_SYM
             else
@@ -577,6 +590,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
                     glyphWidth = glyphWidth or (1 shl downCtr)
                 }
             }
+
+            val isDiacritics = pixmap.getPixel(codeStartX, codeStartY + H - 1).and(0xFF) != 0
+            if (isDiacritics)
+                glyphWidth = -glyphWidth
 
             glyphWidths[code] = glyphWidth
         }
