@@ -16,6 +16,11 @@ class TextureRegionPack(
         val vFrame: Int = 0
 ) {
 
+    companion object {
+        /** Intented for Y-down coord system, typically fon Non-GDX codebase */
+        var globalFlipY = false
+    }
+
     val regions: Array<TextureRegion>
 
     private val horizontalCount = (texture.width - 2 * hFrame + hGap) / (tileW + hGap)
@@ -31,6 +36,8 @@ class TextureRegionPack(
 
             region.setRegion(texture)
             region.setRegion(rx, ry, tileW, tileH)
+
+            region.flip(false, globalFlipY)
 
             /*return*/region
         })

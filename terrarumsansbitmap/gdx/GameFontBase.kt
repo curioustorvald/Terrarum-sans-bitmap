@@ -32,9 +32,12 @@ import java.util.zip.GZIPInputStream
  * Glyphs are drawn lazily (calculated on-the-fly, rather than load up all), which is inevitable as we just can't load
  * up 40k+ characters on the machine, which will certainly make loading time painfully long.
  *
+ * @param noShadow Self-explanatory
+ * @param flipY If you have Y-down coord system implemented on your GDX (e.g. legacy codebase), set this to ```true``` so that the shadow won't be upside-down. For glyph getting upside-down, set ```TextureRegionPack.globalFlipY = true```.
+ *
  * Created by minjaesong on 2017-06-15.
  */
-class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont() {
+class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false) : BitmapFont() {
 
     private fun getHanChosung(hanIndex: Int) = hanIndex / (JUNG_COUNT * JONG_COUNT)
     private fun getHanJungseong(hanIndex: Int) = hanIndex / JONG_COUNT % JUNG_COUNT
@@ -332,8 +335,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
         //textBWidth.forEach { print("$it ") }; println()
 
 
-        val mainCol = this.color.cpy()
-        val shadowCol = this.color.cpy().mul(0.5f)
+        val mainCol = batch.color.cpy()
+        val shadowCol = batch.color.cpy().mul(0.5f,0.5f,0.5f,1f)
 
 
         textBuffer.forEachIndexed { index, c ->
@@ -359,16 +362,16 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
                     batch.color = shadowCol
 
                     batch.draw(hangulSheet.get(indexCho, choRow  ), x + textBWidth[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + textBWidth[index]    , y - 1)
-                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + textBWidth[index] + 1, y - 1)
+                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + textBWidth[index]    , y + if (flipY) 1 else -1)
+                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + textBWidth[index] + 1, y + if (flipY) 1 else -1)
 
                     batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index]    , y - 1)
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index] + 1, y - 1)
+                    batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index]    , y + if (flipY) 1 else -1)
+                    batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index] + 1, y + if (flipY) 1 else -1)
 
                     batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index]    , y - 1)
-                    batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index] + 1, y - 1)
+                    batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index]    , y + if (flipY) 1 else -1)
+                    batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index] + 1, y + if (flipY) 1 else -1)
                 }
 
 
@@ -400,7 +403,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
                     batch.draw(
                             sheets[sheetID].get(sheetXY[0], sheetXY[1]),
                             x + textBWidth[index] + offset,
-                            y - 1 +
+                            y  + if (flipY) 1 else -1 +
                             if (sheetID == SHEET_UNIHAN) // evil exceptions
                                 offsetUnihan
                             else if (sheetID == SHEET_CUSTOM_SYM)
@@ -410,7 +413,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
                     batch.draw(
                             sheets[sheetID].get(sheetXY[0], sheetXY[1]),
                             x + textBWidth[index] + 1 + offset,
-                            y - 1 +
+                            y  + if (flipY) 1 else -1 +
                             if (sheetID == SHEET_UNIHAN) // evil exceptions
                                 offsetUnihan
                             else if (sheetID == SHEET_CUSTOM_SYM)
@@ -433,8 +436,6 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : BitmapFont(
                 )
             }
         }
-
-        this.color = mainCol
 
         return null
     }
