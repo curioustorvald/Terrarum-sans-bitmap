@@ -260,31 +260,33 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         sheets = sheetsPack.toTypedArray()
     }
 
+    private var localeBuffer = ""
 
     fun reload(locale: String) {
-        if (locale.startsWith("ru")) {
+        if (!localeBuffer.startsWith("ru") && locale.startsWith("ru")) {
             val pixmap = Pixmap(Gdx.files.internal(fontParentDir + fileList[SHEET_CYRILIC_VARW]))
             val texture = Texture(pixmap)
             sheets[SHEET_CYRILIC_VARW].dispose()
             sheets[SHEET_CYRILIC_VARW] = TextureRegionPack(texture, W_VAR_INIT, H, HGAP_VAR, 0)
             pixmap.dispose()
         }
-        else if (locale.startsWith("bg")) {
+        else if (!localeBuffer.startsWith("bg") && locale.startsWith("bg")) {
             val pixmap = Pixmap(Gdx.files.internal(fontParentDir + cyrilic_bg))
             val texture = Texture(pixmap)
             sheets[SHEET_CYRILIC_VARW].dispose()
             sheets[SHEET_CYRILIC_VARW] = TextureRegionPack(texture, W_VAR_INIT, H, HGAP_VAR, 0)
             pixmap.dispose()
         }
-        else if (locale.startsWith("sr")) {
+        else if (!localeBuffer.startsWith("sr") && locale.startsWith("sr")) {
             val pixmap = Pixmap(Gdx.files.internal(fontParentDir + cyrilic_sr))
             val texture = Texture(pixmap)
             sheets[SHEET_CYRILIC_VARW].dispose()
             sheets[SHEET_CYRILIC_VARW] = TextureRegionPack(texture, W_VAR_INIT, H, HGAP_VAR, 0)
             pixmap.dispose()
         }
-    }
 
+        localeBuffer = locale
+    }
 
     override fun getLineHeight(): Float = H.toFloat()
 
