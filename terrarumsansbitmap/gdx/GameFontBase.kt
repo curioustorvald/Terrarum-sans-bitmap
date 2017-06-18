@@ -73,23 +73,23 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             9
     }
 
-    private fun isHangul(c: Char) = c.toInt() in 0xAC00..0xD7A3
-    private fun isAscii(c: Char) = c.toInt() in 0..0xFF
+    private fun isHangul(c: Char) = c.toInt() in codeRange[SHEET_HANGUL]
+    private fun isAscii(c: Char) = c.toInt() in codeRange[SHEET_ASCII_VARW]
     //private fun isRunic(c: Char) = runicList.contains(c)
-    private fun isExtA(c: Char) = c.toInt() in 0x100..0x17F
-    private fun isExtB(c: Char) = c.toInt() in 0x180..0x24F
-    private fun isKana(c: Char) = c.toInt() in 0x3040..0x30FF
-    private fun isCJKPunct(c: Char) = c.toInt() in 0x3000..0x303F
-    private fun isUniHan(c: Char) = c.toInt() in 0x3400..0x9FFF
-    private fun isCyrilic(c: Char) = c.toInt() in 0x400..0x4FF // 4FF: futureproof; currently only up to 45F is supported
-    private fun isFullwidthUni(c: Char) = c.toInt() in 0xFF00..0xFF1F
-    private fun isUniPunct(c: Char) = c.toInt() in 0x2000..0x206F
-    private fun isGreek(c: Char) = c.toInt() in 0x370..0x3CE
-    private fun isThai(c: Char) = c.toInt() in 0xE00..0xE7F
+    private fun isExtA(c: Char) = c.toInt() in codeRange[SHEET_EXTA_VARW]
+    private fun isExtB(c: Char) = c.toInt() in codeRange[SHEET_EXTB_VARW]
+    private fun isKana(c: Char) = c.toInt() in codeRange[SHEET_KANA]
+    private fun isCJKPunct(c: Char) = c.toInt() in codeRange[SHEET_CJK_PUNCT]
+    private fun isUniHan(c: Char) = c.toInt() in codeRange[SHEET_UNIHAN]
+    private fun isCyrilic(c: Char) = c.toInt() in codeRange[SHEET_CYRILIC_VARW]
+    private fun isFullwidthUni(c: Char) = c.toInt() in codeRange[SHEET_FW_UNI]
+    private fun isUniPunct(c: Char) = c.toInt() in codeRange[SHEET_UNI_PUNCT]
+    private fun isGreek(c: Char) = c.toInt() in codeRange[SHEET_GREEK_VARW]
+    private fun isThai(c: Char) = c.toInt() in codeRange[SHEET_THAI_VARW]
     private fun isDiacritics(c: Char) = c.toInt() in 0xE34..0xE3A
                                             || c.toInt() in 0xE47..0xE4E
                                             || c.toInt() == 0xE31
-    private fun isCustomSym(c: Char) = c.toInt() in 0xE000..0xE0FF
+    private fun isCustomSym(c: Char) = c.toInt() in codeRange[SHEET_CUSTOM_SYM]
 
 
 
@@ -169,7 +169,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0x3040..0x30FF,
             0x3000..0x303F,
             0x3400..0x9FFF,
-            0x400..0x4FF,
+            0x400..0x52F,
             0xFF00..0xFF1F,
             0x2000..0x206F,
             0x370..0x3CE,
