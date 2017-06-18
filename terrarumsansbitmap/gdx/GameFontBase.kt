@@ -393,32 +393,32 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     batch.draw(
                             sheets[sheetID].get(sheetXY[0], sheetXY[1]),
                             x + textBWidth[index] + 1 + offset,
-                            y +
-                            if (sheetID == SHEET_UNIHAN) // evil exceptions
+                            y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
                                 offsetUnihan
                             else if (sheetID == SHEET_CUSTOM_SYM)
                                 offsetCustomSym
-                            else 0
+                            else
+                                0) * if (flipY) 1 else -1
                     )
                     batch.draw(
                             sheets[sheetID].get(sheetXY[0], sheetXY[1]),
                             x + textBWidth[index] + offset,
-                            y  + if (flipY) 1 else -1 +
-                            if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                offsetUnihan
+                            y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                offsetUnihan + 1
                             else if (sheetID == SHEET_CUSTOM_SYM)
-                                offsetCustomSym
-                            else 0
+                                offsetCustomSym + 1
+                            else
+                                1) * if (flipY) 1 else -1
                     )
                     batch.draw(
                             sheets[sheetID].get(sheetXY[0], sheetXY[1]),
                             x + textBWidth[index] + 1 + offset,
-                            y  + if (flipY) 1 else -1 +
-                            if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                offsetUnihan
+                            y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                offsetUnihan + 1
                             else if (sheetID == SHEET_CUSTOM_SYM)
-                                offsetCustomSym
-                            else 0
+                                offsetCustomSym + 1
+                            else
+                                1) * if (flipY) 1 else -1
                     )
                 }
 
