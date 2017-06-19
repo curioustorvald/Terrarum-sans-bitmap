@@ -1,3 +1,3 @@
-Following is a rendering of various versions of Wikipedia article "AMD64". The particular article was chosen because it contains good mixture of English and numbers.
+Following is a rendering of various versions of Wikipedia article "x86". The particular article was chosen because it contains good mixture of English and numbers.
 
-![Sample AMD64](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/samples/wikipedia_amd64.png) 
+![Sample Article Wikipedia x86](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/samples/wikipedia_x86.png) 
