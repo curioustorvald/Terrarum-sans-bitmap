@@ -1,5 +1,6 @@
 package net.torvald.terrarumsansbitmap.gdx
 
+import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 
@@ -16,6 +17,11 @@ class TextureRegionPack(
         val vFrame: Int = 0
 ) {
 
+    constructor(ref: String, tileW: Int, tileH: Int, hGap: Int = 0, vGap: Int = 0, hFrame: Int = 0, vFrame: Int = 0) :
+            this(Texture(ref), tileW, tileH, hGap, vGap, hFrame, vFrame)
+    constructor(fileHandle: FileHandle, tileW: Int, tileH: Int, hGap: Int = 0, vGap: Int = 0, hFrame: Int = 0, vFrame: Int = 0) :
+            this(Texture(fileHandle), tileW, tileH, hGap, vGap, hFrame, vFrame)
+
     companion object {
         /** Intented for Y-down coord system, typically fon Non-GDX codebase */
         var globalFlipY = false
@@ -23,8 +29,8 @@ class TextureRegionPack(
 
     val regions: Array<TextureRegion>
 
-    private val horizontalCount = (texture.width - 2 * hFrame + hGap) / (tileW + hGap)
-    private val verticalCount = (texture.height - 2 * vFrame + vGap) / (tileH + vGap)
+    val horizontalCount = (texture.width - 2 * hFrame + hGap) / (tileW + hGap)
+    val verticalCount = (texture.height - 2 * vFrame + vGap) / (tileH + vGap)
 
     init {
         //println("texture: $texture, dim: ${texture.width} x ${texture.height}, grid: $horizontalCount x $verticalCount, cellDim: $tileW x $tileH")

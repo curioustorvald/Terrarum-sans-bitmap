@@ -87,9 +87,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isGreek(c: Char) = c.toInt() in codeRange[SHEET_GREEK_VARW]
     private fun isThai(c: Char) = c.toInt() in codeRange[SHEET_THAI_VARW]
     private fun isDiacritics(c: Char) = c.toInt() in 0xE34..0xE3A
-                                            || c.toInt() in 0xE47..0xE4E
-                                            || c.toInt() == 0xE31
+            || c.toInt() in 0xE47..0xE4E
+            || c.toInt() == 0xE31
     private fun isCustomSym(c: Char) = c.toInt() in codeRange[SHEET_CUSTOM_SYM]
+    private fun isArmenian(c: Char) = c.toInt() in codeRange[SHEET_HAYEREN_VARW]
+    private fun isKartvelian(c: Char) = c.toInt() in codeRange[SHEET_KARTULI_VARW]
 
 
 
@@ -129,6 +131,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun symbolIndexX(c: Char) = (c.toInt() - 0xE000) % 16
     private fun symbolIndexY(c: Char) = (c.toInt() - 0xE000) / 16
 
+    private fun armenianIndexX(c: Char) = (c.toInt() - 0x530) % 16
+    private fun armenianIndexY(c: Char) = (c.toInt() - 0x530) / 16
+
+    private fun kartvelianIndexX(c: Char) = (c.toInt() - 0x10D0) % 16
+    private fun kartvelianIndexY(c: Char) = (c.toInt() - 0x10D0) / 16
+
     private val unihanWidthSheets = arrayOf(
             SHEET_UNIHAN,
             SHEET_FW_UNI
@@ -140,7 +148,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_CYRILIC_VARW,
             SHEET_UNI_PUNCT,
             SHEET_GREEK_VARW,
-            SHEET_THAI_VARW
+            SHEET_THAI_VARW,
+            SHEET_HAYEREN_VARW,
+            SHEET_KARTULI_VARW
     )
 
     private val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
@@ -157,6 +167,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             "unipunct_variable.tga",
             "greek_variable.tga",
             "thai_variable.tga",
+            "hayeren_variable.tga",
+            "kartuli_variable.tga",
             "puae000-e0ff.tga"
     )
     private val cyrilic_bg = "cyrilic_bulgarian_variable.tga"
@@ -174,6 +186,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0x2000..0x206F,
             0x370..0x3CE,
             0xE00..0xE7F,
+            0x530..0x58F,
+            0x10D0..0x10FF,
             0xE000..0xE0FF
     )
     private val glyphWidths: HashMap<Int, Int> = HashMap() // if the value is negative, it's diacritics
@@ -383,59 +397,64 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index], y)
             }
             else {
-                val offset = if (!isDiacritics(c)) 0 else {
-                    if (index > 0) // LIMITATION: does not support double (or more) diacritics properly
-                        (textBGSize[index] - textBGSize[index - 1]) / 2
-                    else
-                        textBGSize[index]
-                }
+                try {
+                    val offset = if (!isDiacritics(c)) 0 else {
+                        if (index > 0) // LIMITATION: does not support double (or more) diacritics properly
+                            (textBGSize[index] - textBGSize[index - 1]) / 2
+                        else
+                            textBGSize[index]
+                    }
 
-                if (!noShadow) {
-                    batch.color = shadowCol
-                    batch.draw(
-                            sheets[sheetID].get(sheetXY[0], sheetXY[1]),
-                            x + textBWidth[index] + 1 + offset,
-                            y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                offsetUnihan
-                            else if (sheetID == SHEET_CUSTOM_SYM)
-                                offsetCustomSym
-                            else
-                                0) * if (flipY) 1 else -1
-                    )
+                    if (!noShadow) {
+                        batch.color = shadowCol
+                        batch.draw(
+                                sheets[sheetID].get(sheetXY[0], sheetXY[1]),
+                                x + textBWidth[index] + 1 + offset,
+                                y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                    offsetUnihan
+                                else if (sheetID == SHEET_CUSTOM_SYM)
+                                    offsetCustomSym
+                                else
+                                    0) * if (flipY) 1 else -1
+                        )
+                        batch.draw(
+                                sheets[sheetID].get(sheetXY[0], sheetXY[1]),
+                                x + textBWidth[index] + offset,
+                                y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                    offsetUnihan + 1
+                                else if (sheetID == SHEET_CUSTOM_SYM)
+                                    offsetCustomSym + 1
+                                else
+                                    1) * if (flipY) 1 else -1
+                        )
+                        batch.draw(
+                                sheets[sheetID].get(sheetXY[0], sheetXY[1]),
+                                x + textBWidth[index] + 1 + offset,
+                                y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                    offsetUnihan + 1
+                                else if (sheetID == SHEET_CUSTOM_SYM)
+                                    offsetCustomSym + 1
+                                else
+                                    1) * if (flipY) 1 else -1
+                        )
+                    }
+
+
+                    batch.color = mainCol
                     batch.draw(
                             sheets[sheetID].get(sheetXY[0], sheetXY[1]),
                             x + textBWidth[index] + offset,
-                            y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                offsetUnihan + 1
-                            else if (sheetID == SHEET_CUSTOM_SYM)
-                                offsetCustomSym + 1
-                            else
-                                1) * if (flipY) 1 else -1
-                    )
-                    batch.draw(
-                            sheets[sheetID].get(sheetXY[0], sheetXY[1]),
-                            x + textBWidth[index] + 1 + offset,
-                            y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                offsetUnihan + 1
-                            else if (sheetID == SHEET_CUSTOM_SYM)
-                                offsetCustomSym + 1
-                            else
-                                1) * if (flipY) 1 else -1
+                            y +
+                                    if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                        offsetUnihan
+                                    else if (sheetID == SHEET_CUSTOM_SYM)
+                                        offsetCustomSym
+                                    else 0
                     )
                 }
-
-
-                batch.color = mainCol
-                batch.draw(
-                        sheets[sheetID].get(sheetXY[0], sheetXY[1]),
-                        x + textBWidth[index] + offset,
-                        y +
-                        if (sheetID == SHEET_UNIHAN) // evil exceptions
-                            offsetUnihan
-                        else if (sheetID == SHEET_CUSTOM_SYM)
-                            offsetCustomSym
-                        else 0
-                )
+                catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
+                    batch.color = mainCol
+                }
             }
         }
 
@@ -510,6 +529,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             return SHEET_THAI_VARW
         else if (isCustomSym(c))
             return SHEET_CUSTOM_SYM
+        else if (isArmenian(c))
+            return SHEET_HAYEREN_VARW
+        else if (isKartvelian(c))
+            return SHEET_KARTULI_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -563,6 +586,14 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 sheetX = symbolIndexX(ch)
                 sheetY = symbolIndexY(ch)
             }
+            SHEET_HAYEREN_VARW -> {
+                sheetX = armenianIndexX(ch)
+                sheetY = armenianIndexY(ch)
+            }
+            SHEET_KARTULI_VARW -> {
+                sheetX = kartvelianIndexX(ch)
+                sheetY = kartvelianIndexY(ch)
+            }
             else -> {
                 sheetX = ch.toInt() % 16
                 sheetY = ch.toInt() / 16
@@ -602,6 +633,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         }
     }
 
+    private val glyphLayout = GlyphLayout()
+
+    fun getWidth(text: String): Int {
+        glyphLayout.setText(this, text)
+        return glyphLayout.width.toInt()
+    }
 
     companion object {
 
@@ -634,7 +671,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val SHEET_UNI_PUNCT =      9
         internal val SHEET_GREEK_VARW =     10
         internal val SHEET_THAI_VARW =      11
-        internal val SHEET_CUSTOM_SYM =     12
+        internal val SHEET_HAYEREN_VARW =   12
+        internal val SHEET_KARTULI_VARW =   13
+        internal val SHEET_CUSTOM_SYM =     14
 
         internal val SHEET_UNKNOWN = 254
 
