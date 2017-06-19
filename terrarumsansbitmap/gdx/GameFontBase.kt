@@ -92,6 +92,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isCustomSym(c: Char) = c.toInt() in codeRange[SHEET_CUSTOM_SYM]
     private fun isArmenian(c: Char) = c.toInt() in codeRange[SHEET_HAYEREN_VARW]
     private fun isKartvelian(c: Char) = c.toInt() in codeRange[SHEET_KARTULI_VARW]
+    private fun isIPA(c: Char) = c.toInt() in codeRange[SHEET_IPA_VARW]
 
 
 
@@ -137,6 +138,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun kartvelianIndexX(c: Char) = (c.toInt() - 0x10D0) % 16
     private fun kartvelianIndexY(c: Char) = (c.toInt() - 0x10D0) / 16
 
+    private fun ipaIndexX(c: Char) = (c.toInt() - 0x250) % 16
+    private fun ipaIndexY(c: Char) = (c.toInt() - 0x250) / 16
+
     private val unihanWidthSheets = arrayOf(
             SHEET_UNIHAN,
             SHEET_FW_UNI
@@ -150,7 +154,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_GREEK_VARW,
             SHEET_THAI_VARW,
             SHEET_HAYEREN_VARW,
-            SHEET_KARTULI_VARW
+            SHEET_KARTULI_VARW,
+            SHEET_IPA_VARW
     )
 
     private val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
@@ -169,6 +174,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             "thai_variable.tga",
             "hayeren_variable.tga",
             "kartuli_variable.tga",
+            "ipa_ext_variable.tga",
             "puae000-e0ff.tga"
     )
     private val cyrilic_bg = "cyrilic_bulgarian_variable.tga"
@@ -188,6 +194,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0xE00..0xE7F,
             0x530..0x58F,
             0x10D0..0x10FF,
+            0x250..0x2AF,
             0xE000..0xE0FF
     )
     private val glyphWidths: HashMap<Int, Int> = HashMap() // if the value is negative, it's diacritics
@@ -533,6 +540,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             return SHEET_HAYEREN_VARW
         else if (isKartvelian(c))
             return SHEET_KARTULI_VARW
+        else if (isIPA(c))
+            return SHEET_IPA_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -593,6 +602,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_KARTULI_VARW -> {
                 sheetX = kartvelianIndexX(ch)
                 sheetY = kartvelianIndexY(ch)
+            }
+            SHEET_IPA_VARW -> {
+                sheetX = ipaIndexX(ch)
+                sheetY = ipaIndexY(ch)
             }
             else -> {
                 sheetX = ch.toInt() % 16
@@ -673,7 +686,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val SHEET_THAI_VARW =      11
         internal val SHEET_HAYEREN_VARW =   12
         internal val SHEET_KARTULI_VARW =   13
-        internal val SHEET_CUSTOM_SYM =     14
+        internal val SHEET_IPA_VARW =       14
+        internal val SHEET_CUSTOM_SYM =     15
 
         internal val SHEET_UNKNOWN = 254
 
