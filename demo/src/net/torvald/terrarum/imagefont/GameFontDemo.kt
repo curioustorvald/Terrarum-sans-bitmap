@@ -1,6 +1,6 @@
 package net.torvald.terrarum.imagefont
 
-import net.torvald.imagefont.GameFontImpl
+import net.torvald.terrarumsansbitmap.slick2d.GameFontBase
 import org.newdawn.slick.*
 import java.io.File
 import java.io.FileInputStream
@@ -17,10 +17,11 @@ class GameFontDemo : BasicGame("Terrarum Sans Bitmap Demo") {
     lateinit var gameFont: Font
 
     override fun init(p0: GameContainer?) {
-        gameFont = GameFontImpl()
+        gameFont = GameFontBase("assets/")
     }
 
     override fun update(gc: GameContainer, delta: Int) {
+        appgc!!.setTitle("Terrarum Sans Bitmap — F: ${gc.fps}")
     }
 
     override fun render(gc: GameContainer, g: Graphics) {
@@ -67,6 +68,8 @@ class GameFontDemo : BasicGame("Terrarum Sans Bitmap Demo") {
     }
 }
 
+var appgc: AppGameContainer? = null
+
 fun main(args: Array<String>) {
 
     System.setProperty("java.library.path", "lib")
@@ -76,17 +79,17 @@ fun main(args: Array<String>) {
     val HEIGHT = 800
 
     try {
-        val appgc = AppGameContainer(GameFontDemo())
-        appgc.setDisplayMode(WIDTH, HEIGHT, false)
+        appgc = AppGameContainer(GameFontDemo())
+        appgc!!.setDisplayMode(WIDTH, HEIGHT, false)
 
-        appgc.setMultiSample(0)
-        appgc.setShowFPS(false)
+        appgc!!.setMultiSample(0)
+        appgc!!.setShowFPS(false)
 
         // game will run normally even if it is not focused
-        appgc.setUpdateOnlyWhenVisible(false)
-        appgc.alwaysRender = true
+        appgc!!.setUpdateOnlyWhenVisible(false)
+        appgc!!.alwaysRender = true
 
-        appgc.start()
+        appgc!!.start()
     }
     catch (ex: Exception) {
         ex.printStackTrace()

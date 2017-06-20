@@ -189,9 +189,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0x3400..0x9FFF,
             0x400..0x52F,
             0xFF00..0xFF1F,
-            0x2000..0x206F,
+            0x2000..0x205F,
             0x370..0x3CE,
-            0xE00..0xE7F,
+            0xE00..0xE5F,
             0x530..0x58F,
             0x10D0..0x10FF,
             0x250..0x2AF,
@@ -342,7 +342,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             textBGSize = widths
 
-            textBWidth = Array(str.length, { charIndex ->
+            textBWidth = IntArray(str.length, { charIndex ->
                 if (charIndex == 0)
                     0
                 else {
@@ -350,7 +350,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     (0..charIndex - 1).forEach { acc += maxOf(0, widths[it]) } // don't accumulate diacrtics (which has negative value)
                     /*return*/acc
                 }
-            }).toIntArray()
+            })
         }
 
 
