@@ -6,8 +6,6 @@
 
 (note—you can't display Bulgarian and Russian glyphs at the same time, you must ```reload()``` them upon the change of locale of your game)
 
-**Font demo** — head to the **[Release](https://github.com/minjaesong/Terrarum-sans-bitmap/releases)** tab
-
 This font is a bitmap font used in [my game project called Terrarum](https://gitlab.com/minjaesong/terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese and Korean. More technical side, it supports Latin-1 Supplement, Latin Ext-A, Latin Ext-B, Cyrillic (Russian, Bulgarian, Serbian), Greek, Chinese (limited to Unicode BMP), Japanese, Korean (all 11 172 possible syllables).
 
 The code for the fonts are meant to be used with Slick2d (extends ```Font``` class). If you are not using the framework, please refer to the __Font metrics__ section to implement the font metrics correctly on your system.
@@ -22,7 +20,11 @@ You can contribute to the font by fixing wrong glyphs, suggesting better ones, e
 Font Spritesheets are stored in ```assets/graphics/fonts``` directory. Image format must be TGA with Alpha — no PNG. If someone needs PNG, they can batch-convert the font using utils like ImageMagick.
 
 
-## Using on LibGDX
+## Using on your game
+
+- Firstly, place the .jar to your library path and unzip spritesheets, then:
+
+### Using on LibGDX
 
 On your code (Kotlin):
 
@@ -65,7 +67,7 @@ On your code (Java):
     }
 
 
-## Using on Slick2d
+### Using on Slick2d
 
 On your code (Kotlin):
 
