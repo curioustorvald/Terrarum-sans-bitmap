@@ -22,6 +22,49 @@ You can contribute to the font by fixing wrong glyphs, suggesting better ones, e
 Font Spritesheets are stored in ```assets/graphics/fonts``` directory. Image format must be TGA with Alpha — no PNG. If someone needs PNG, they can batch-convert the font using utils like ImageMagick.
 
 
+## Using on LibGDX
+
+On your code (Kotlin):
+
+    class YourGame : Game() {
+
+        lateinit var fontGame: Font
+    
+        override fun create() {
+            fontGame = GameFontBase(path_to_assets)
+            ...
+        }
+        
+        override fun render() {
+            batch.begin()
+            ...
+            fontGame.draw(batch, text, ...)
+            ...
+            batch.end()
+        }
+    }
+    
+On your code (Java):
+
+    class YourGame extends BasicGame {
+
+        Font fontGame;
+    
+        @Override void create() {
+            fontGame = new GameFontBase(path_to_assets);
+            ...
+        }
+        
+        @Override void render() {
+            batch.begin();
+            ...
+            fontGame.draw(batch, text, ...);
+            ...
+            batch.end();
+        }
+    }
+
+
 ## Using on Slick2d
 
 On your code (Kotlin):
@@ -31,7 +74,7 @@ On your code (Kotlin):
         lateinit var fontGame: Font
     
         override fun init(gc: GameContainer) {
-            fontGame = GameFontImpl()
+            fontGame = GameFontBase(path_to_assets)
             ...
         }
         
@@ -48,7 +91,7 @@ On your code (Java):
         Font fontGame;
     
         @Override void init(GameContainer gc) {
-            fontGame = new GameFontImpl();
+            fontGame = new GameFontBase(path_to_assets);
             ...
         }
         

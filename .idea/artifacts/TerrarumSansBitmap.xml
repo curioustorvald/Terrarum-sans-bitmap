@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="TerrarumSansBitmap">
+    <output-path>$PROJECT_DIR$/out/artifacts/TerrarumSansBitmap</output-path>
+    <root id="archive" name="TerrarumSansBitmap.jar">
+      <element id="module-output" name="BuildJAR_TerrarumSansBitmap" />
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+      </element>
+    </root>
+  </artifact>
+</component>

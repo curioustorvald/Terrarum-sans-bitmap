@@ -1,2 +1,5 @@
 demo/out/*
 demo/lib/*
+demo/assets/*
+out/*
+lib/*
