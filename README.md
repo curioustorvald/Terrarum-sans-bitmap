@@ -14,7 +14,7 @@ The issue page is open. If you have some issues to submit, or have a question, p
 
 ## Contribution guidelines
 
-You can contribute to the font by fixing wrong glyphs, suggesting better ones, extending character set (like Georgian and Thai), or code for other game frameworks such as LibGDX. Please leave pull request for that.
+You can contribute to the font by fixing wrong glyphs, suggesting better ones, extending character set (letters for other writing systems or filling in the blanks on the existing ones), or code for other game frameworks (not limited to Java). Please leave pull request for that.
 
 Font Spritesheets are stored in ```assets/graphics/fonts``` directory. Image format must be TGA with Alpha — no PNG. If someone needs PNG, they can batch-convert the font using utils like ImageMagick.
 
