@@ -2,16 +2,15 @@
 
 ![Font sample](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/font_test_3.PNG)
 
-![Cyrillic sample – Russian, Bulgarian, Serbian](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/terrarum_sans_cyrillic_2.png)
-
-(note—you can't display Bulgarian and Russian glyphs at the same time, you must ```reload()``` them upon the change of locale of your game)
-
 This font is a bitmap font used in [my game project called Terrarum](https://gitlab.com/minjaesong/terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese and Korean. More technical side, it supports Latin-1 Supplement, Latin Ext-A, Latin Ext-B, Cyrillic (Russian, Bulgarian, Serbian), Greek, Chinese (limited to Unicode BMP), Japanese, Korean (all 11 172 possible syllables).
 
 The code for the fonts are meant to be used with Slick2d (extends ```Font``` class). If you are not using the framework, please refer to the __Font metrics__ section to implement the font metrics correctly on your system.
 
 The issue page is open. If you have some issues to submit, or have a question, please leave it on the page.
 
+#### Little notes
+- You can't display Bulgarian, Russian and Serbian variants at the same time without some more codes; ```reload()```ing them or creating multiple instances of the font would be the easiest solutions.
+- All Han characters are in Chinese variant, no other variants are to be supported as most Chinese, Japanese and Korean can understand other's variant and to be honest, we don't bother anyway.
 
 ## Contribution guidelines
 
