@@ -388,9 +388,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
         textBuffer.forEachIndexed { index, c ->
             val sheetID = getSheetType(c)
-            val sheetXY = getSheetwisePosition(c)
+            val (sheetX, sheetY) = getSheetwisePosition(c)
 
-            //println("[TerrarumSansBitmap] sprite:  $sheetID:${sheetXY[0]}x${sheetXY[1]}")
+            //println("[TerrarumSansBitmap] sprite:  $sheetID:${sheetX}x${sheetY}")
 
             if (sheetID == SHEET_HANGUL) {
                 val hangulSheet = sheets[SHEET_HANGUL]
@@ -439,7 +439,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     if (!noShadow) {
                         batch.color = shadowCol
                         batch.draw(
-                                sheets[sheetID].get(sheetXY[0], sheetXY[1]),
+                                sheets[sheetID].get(sheetX, sheetY),
                                 x + textBWidth[index] + 1 + offset,
                                 y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
                                     offsetUnihan
@@ -449,7 +449,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                                     0) * if (flipY) 1 else -1
                         )
                         batch.draw(
-                                sheets[sheetID].get(sheetXY[0], sheetXY[1]),
+                                sheets[sheetID].get(sheetX, sheetY),
                                 x + textBWidth[index] + offset,
                                 y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
                                     offsetUnihan + 1
@@ -459,7 +459,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                                     1) * if (flipY) 1 else -1
                         )
                         batch.draw(
-                                sheets[sheetID].get(sheetXY[0], sheetXY[1]),
+                                sheets[sheetID].get(sheetX, sheetY),
                                 x + textBWidth[index] + 1 + offset,
                                 y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
                                     offsetUnihan + 1
@@ -473,7 +473,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                     batch.color = mainCol
                     batch.draw(
-                            sheets[sheetID].get(sheetXY[0], sheetXY[1]),
+                            sheets[sheetID].get(sheetX, sheetY),
                             x + textBWidth[index] + offset,
                             y +
                                     if (sheetID == SHEET_UNIHAN) // evil exceptions
