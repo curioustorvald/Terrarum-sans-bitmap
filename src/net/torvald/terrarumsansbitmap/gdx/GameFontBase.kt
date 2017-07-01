@@ -25,6 +25,7 @@
 package net.torvald.terrarumsansbitmap.gdx
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.*
@@ -55,6 +56,8 @@ import java.util.zip.GZIPInputStream
  *
  * Glyphs are drawn lazily (calculated on-the-fly, rather than load up all), which is inevitable as we just can't load
  * up 40k+ characters on the machine, which will certainly make loading time painfully long.
+ *
+ * Color Codes have following Unicode mapping: U+10RGBA, A must be non-zero to be visible. U+100000 reverts any colour code effects.
  *
  * @param noShadow Self-explanatory
  * @param flipY If you have Y-down coord system implemented on your GDX (e.g. legacy codebase), set this to ```true``` so that the shadow won't be upside-down. For glyph getting upside-down, set ```TextureRegionPack.globalFlipY = true```.
@@ -99,7 +102,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
     private fun isHangul(c: Char) = c.toInt() in codeRange[SHEET_HANGUL]
     private fun isAscii(c: Char) = c.toInt() in codeRange[SHEET_ASCII_VARW]
-    //private fun isRunic(c: Char) = runicList.contains(c)
+    private fun isRunic(c: Char) = c.toInt() in codeRange[SHEET_RUNIC]
     private fun isExtA(c: Char) = c.toInt() in codeRange[SHEET_EXTA_VARW]
     private fun isExtB(c: Char) = c.toInt() in codeRange[SHEET_EXTB_VARW]
     private fun isKana(c: Char) = c.toInt() in codeRange[SHEET_KANA]
@@ -117,6 +120,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isArmenian(c: Char) = c.toInt() in codeRange[SHEET_HAYEREN_VARW]
     private fun isKartvelian(c: Char) = c.toInt() in codeRange[SHEET_KARTULI_VARW]
     private fun isIPA(c: Char) = c.toInt() in codeRange[SHEET_IPA_VARW]
+    private fun isColourCodeHigh(c: Char) = c.toInt() in 0b110110_1111000000..0b110110_1111111111
+    private fun isColourCodeLow(c: Char) = c.toInt() in 0b110111_0000000000..0b110111_1111111111
 
 
 
@@ -126,8 +131,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun extBindexX(c: Char) = (c.toInt() - 0x180) % 16
     private fun extBindexY(c: Char) = (c.toInt() - 0x180) / 16
 
-    //private fun runicIndexX(c: Char) = runicList.indexOf(c) % 16
-    //private fun runicIndexY(c: Char) = runicList.indexOf(c) / 16
+    private fun runicIndexX(c: Char) = (c.toInt() - 0x16A0) % 16
+    private fun runicIndexY(c: Char) = (c.toInt() - 0x16A0) / 16
 
     private fun kanaIndexX(c: Char) = (c.toInt() - 0x3040) % 16
     private fun kanaIndexY(c: Char) = (c.toInt() - 0x3040) / 16
@@ -165,6 +170,26 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun ipaIndexX(c: Char) = (c.toInt() - 0x250) % 16
     private fun ipaIndexY(c: Char) = (c.toInt() - 0x250) / 16
 
+    private fun getColour(charHigh: Char, charLow: Char): Color { // input: 0x10ARGB, out: RGBA8888
+        val codePoint = Character.toCodePoint(charHigh, charLow)
+
+        if (colourBuffer.containsKey(codePoint))
+            return colourBuffer[codePoint]!!
+
+        val r = codePoint.and(0xF000).ushr(12)
+        val g = codePoint.and(0x0F00).ushr(8)
+        val b = codePoint.and(0x00F0).ushr(4)
+        val a = codePoint.and(0x000F)
+
+        val col = Color(r.shl(28) or r.shl(24) or g.shl(20) or g.shl(16) or b.shl(12) or b.shl(8) or a.shl(4) or a)
+
+
+        colourBuffer[codePoint] = col
+        return col
+    }
+
+    private val colourBuffer = HashMap<Int, Color>()
+
     private val unihanWidthSheets = arrayOf(
             SHEET_UNIHAN,
             SHEET_FW_UNI
@@ -199,6 +224,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             "hayeren_variable.tga",
             "kartuli_variable.tga",
             "ipa_ext_variable.tga",
+            "futhark.tga",
             "puae000-e0ff.tga"
     )
     private val cyrilic_bg = "cyrilic_bulgarian_variable.tga"
@@ -219,6 +245,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0x530..0x58F,
             0x10D0..0x10FF,
             0x250..0x2AF,
+            0x16A0..0x16FF,
             0xE000..0xE0FF
     )
     private val glyphWidths: HashMap<Int, Int> = HashMap() // if the value is negative, it's diacritics
@@ -294,6 +321,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             else if (index == SHEET_CUSTOM_SYM) {
                 TextureRegionPack(texture, SIZE_CUSTOM_SYM, SIZE_CUSTOM_SYM) // TODO variable
             }
+            else if (index == SHEET_RUNIC) {
+                TextureRegionPack(texture, W_LATIN_WIDE, H)
+            }
             else throw IllegalArgumentException("[TerrarumSansBitmap] Unknown sheet index: $index")
 
 
@@ -359,6 +389,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private var textBWidth = intArrayOf() // absolute posX of glyphs from print-origin
     private var textBGSize = intArrayOf() // width of each glyph
 
+    private lateinit var originalColour: Color
+
     override fun draw(batch: Batch, str: CharSequence, x: Float, y: Float): GlyphLayout? {
         if (textBuffer != str) {
             textBuffer = str
@@ -382,17 +414,38 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         //textBWidth.forEach { print("$it ") }; println()
 
 
-        val mainCol = batch.color.cpy()
-        val shadowCol = batch.color.cpy().mul(0.5f,0.5f,0.5f,1f)
+        originalColour = batch.color.cpy()
+        var mainCol = originalColour
+        var shadowCol = mainCol.cpy().mul(0.5f,0.5f,0.5f,1f)
 
 
-        textBuffer.forEachIndexed { index, c ->
+        var index = 0
+        while (index <= textBuffer.lastIndex) {
+            val c = textBuffer[index]
             val sheetID = getSheetType(c)
             val (sheetX, sheetY) = getSheetwisePosition(c)
 
             //println("[TerrarumSansBitmap] sprite:  $sheetID:${sheetX}x${sheetY}")
 
-            if (sheetID == SHEET_HANGUL) {
+            if (isColourCodeHigh(c)) {
+                val cchigh = c
+                val cclow = textBuffer[index + 1]
+
+                if (Character.toCodePoint(cchigh, cclow) == 0x100000) {
+                    mainCol = originalColour
+                    shadowCol = mainCol.cpy().mul(0.5f,0.5f,0.5f,1f)
+                }
+                else {
+                    mainCol = getColour(cchigh, cclow)
+                    shadowCol = mainCol.cpy().mul(0.5f, 0.5f, 0.5f, 1f)
+                }
+
+                index += 1
+            }
+            else if (isColourCodeLow(c)) {
+                throw Error("Unexpected encounter of ColourCodeLow at index $index of String '$textBuffer'")
+            }
+            else if (sheetID == SHEET_HANGUL) {
                 val hangulSheet = sheets[SHEET_HANGUL]
                 val hIndex = c.toInt() - 0xAC00
 
@@ -487,7 +540,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     batch.color = mainCol
                 }
             }
+
+
+            index += 1
         }
+
+        batch.color = originalColour
 
         return null
     }
@@ -513,6 +571,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                 len[i] = glyphWidths[chr.toInt()]!!
             }
+            else if (isColourCodeHigh(chr) || isColourCodeLow(chr))
+                len[i] = 0
             else if (ctype == SHEET_CJK_PUNCT)
                 len[i] = W_ASIAN_PUNCT
             else if (ctype == SHEET_HANGUL)
@@ -566,6 +626,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             return SHEET_KARTULI_VARW
         else if (isIPA(c))
             return SHEET_IPA_VARW
+        else if (isRunic(c))
+            return SHEET_RUNIC
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -677,8 +739,16 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         return glyphLayout.width.toInt()
     }
 
-    companion object {
 
+
+    var interchar = 0
+    var scale = 1
+        set(value) {
+            if (value > 0) field = value
+            else throw IllegalArgumentException("Font scale cannot be zero or negative (input: $value)")
+        }
+
+    companion object {
         internal val JUNG_COUNT = 21
         internal val JONG_COUNT = 28
 
@@ -711,35 +781,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val SHEET_HAYEREN_VARW =   12
         internal val SHEET_KARTULI_VARW =   13
         internal val SHEET_IPA_VARW =       14
-        internal val SHEET_CUSTOM_SYM =     15
+        internal val SHEET_RUNIC =          15
+        internal val SHEET_CUSTOM_SYM =     16
 
         internal val SHEET_UNKNOWN = 254
-
-        /**
-         * Runic letters list used for game. The set is
-         * Younger Futhark + Medieval rune 'e' + Punct + Runic Almanac
-
-         * BEWARE OF SIMILAR-LOOKING RUNES, especially:
-
-         * * Algiz ᛉ instead of Maðr ᛘ
-
-         * * Short-Twig Hagall ᚽ instead of Runic Letter E ᛂ
-
-         * * Runic Letter OE ᚯ instead of Óss ᚬ
-
-         * Examples:
-         * ᛭ᛋᛁᚴᚱᛁᚦᛦ᛭
-         * ᛭ᛂᛚᛋᛅ᛭ᛏᚱᚢᛏᚾᛁᚾᚴᚢᚾᛅ᛬ᛅᚱᚾᛅᛏᛅᛚᛋ
-         */
-        //internal val runicList = arrayOf('ᚠ', 'ᚢ', 'ᚦ', 'ᚬ', 'ᚱ', 'ᚴ', 'ᚼ', 'ᚾ', 'ᛁ', 'ᛅ', 'ᛋ', 'ᛏ', 'ᛒ', 'ᛘ', 'ᛚ', 'ᛦ', 'ᛂ', '᛬', '᛫', '᛭', 'ᛮ', 'ᛯ', 'ᛰ')
-        // TODO expand to full Unicode runes
-
-        var interchar = 0
-        var scale = 1
-            set(value) {
-                if (value > 0) field = value
-                else throw IllegalArgumentException("Font scale cannot be zero or negative (input: $value)")
-            }
     }
 
 }
