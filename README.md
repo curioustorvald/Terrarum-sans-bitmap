@@ -106,12 +106,12 @@ On your code (Java):
 
 Color codes are individual unicode characters. While you can somehow make a raw character and paste in on your code, it's certainly not desirable. Fortunately, we're also providing utility functions for the color codes.
 
-    GameFontBase.toColorCode(rgba4444: Int)
-    GameFontBase.toColorCode(r: Int, g: Int, b: Int)
-    GameFontBase.toColorCode(r: Int, g: Int, b: Int, a: Int)
+    GameFontBase.toColorCode(rgba4444: Int) returns String
+    GameFontBase.toColorCode(r: Int, g: Int, b: Int) returns String
+    GameFontBase.toColorCode(r: Int, g: Int, b: Int, a: Int) returns String
 
 ```rgba4444``` takes whole RGBA as input, that is, from 0x0000 to 0xFFFF. Most significant bits represents Red, and least significant bits represents Alpha (which should be fixed as F for the most time)
-``r, g, b(, a)``` takes RGB and A separately, in the range of 0..F. Any value exceeds the range **are unchecked and may wreak havoc**, so be careful.
+``r, g, b(, a)``` takes RGB and A separately, in the range of 0..F. Any value exceeding the range **are unchecked and may wreak havoc**, so be careful.
 
 
 ## Font metrics
