@@ -753,5 +753,15 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : Font {
             else throw IllegalArgumentException("Font scale cannot be zero or negative (input: $value)")
         }
 
+    fun toColorCode(rgba4444: Int): String = GameFontBase.toColorCode(rgba4444)
+    fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = toColorCode(r.shl(12) or g.shl(8) or b.shl(4) or a)
+    val noColorCode = toColorCode(0x0000)
 
+    companion object {
+        fun toColorCode(rgba4444: Int): String = Character.toChars(0x100000 + rgba4444).toColCode()
+        fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = toColorCode(r.shl(12) or g.shl(8) or b.shl(4) or a)
+        private fun CharArray.toColCode(): String = "${this[0]}${this[1]}"
+
+        val noColorCode = toColorCode(0x0000)
+    }
 }
