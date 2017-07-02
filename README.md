@@ -102,6 +102,18 @@ On your code (Java):
         }
     }
 
+### How to Use Color Code
+
+Color codes are individual unicode characters. While you can somehow make a raw character and paste in on your code, it's certainly not desirable. Fortunately, we're also providing utility functions for the color codes.
+
+    GameFontBase.toColorCode(rgba4444: Int)
+    GameFontBase.toColorCode(r: Int, g: Int, b: Int)
+    GameFontBase.toColorCode(r: Int, g: Int, b: Int, a: Int)
+
+```rgba4444``` takes whole RGBA as input, that is, from 0x0000 to 0xFFFF. Most significant bits represents Red, and least significant bits represents Alpha (which should be fixed as F for the most time)
+``r, g, b(, a)``` takes RGB and A separately, in the range of 0..F. Any value exceeds the range **are unchecked and may wreak havoc**, so be careful.
+
+
 ## Font metrics
 
 Although the font is basically a Spritesheet, some of the sheet expects variable widths to be supported. Any sheets with ```_variable``` means it expects variable widths. Anything else expects fixed width (regular Spritesheet behaviour). ```cjkpunct``` has width of 10, ```kana``` and ```hangul_johab``` has width of 12, ```wenquanyi``` has width of 16.
