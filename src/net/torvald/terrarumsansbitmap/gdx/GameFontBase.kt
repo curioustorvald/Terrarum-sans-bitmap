@@ -735,8 +735,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private val glyphLayout = GlyphLayout()
 
     fun getWidth(text: String): Int {
-        glyphLayout.setText(this, text)
-        return glyphLayout.width.toInt()
+        return getWidthOfCharSeq(text).sum()
     }
 
 
