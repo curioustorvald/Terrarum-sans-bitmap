@@ -111,8 +111,9 @@ Color codes are individual unicode characters. While you can somehow make a raw 
     GameFontBase.toColorCode(r: Int, g: Int, b: Int, a: Int) -- returns String
 
 ```rgba4444``` takes whole RGBA as input, that is, from 0x0000 to 0xFFFF. Most significant bits represents Red, and least significant bits represents Alpha (which should be fixed as F for the most time)
-```r, g, b(, a)``` takes RGB and A separately, in the range of 0..F. Any value exceeding the range **are unchecked and may wreak havoc**, so be careful.
+```r, g, b(, a)``` takes RGB and A separately, in the range of 0x0..0xF. Any value exceeding the range **are unchecked and may wreak havoc**, so be careful.
 
+U+100000 is used to disable previously-applied color codes (going back to original colour), although it may seem like RGBA of all zero.
 
 ## Font metrics
 
