@@ -699,6 +699,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : Font {
                 sheetX = ipaIndexX(ch)
                 sheetY = ipaIndexY(ch)
             }
+            SHEET_RUNIC -> {
+                sheetX = runicIndexX(ch)
+                sheetY = runicIndexY(ch)
+            }
             else -> {
                 sheetX = ch.toInt() % 16
                 sheetY = ch.toInt() / 16
