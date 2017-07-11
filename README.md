@@ -12,12 +12,6 @@ The issue page is open. If you have some issues to submit, or have a question, p
 - You can't display Bulgarian, Russian and Serbian variants at the same time without some more codes; ```reload()```ing them or creating multiple instances of the font would be the easiest solutions.
 - All Han characters are in Chinese variant, no other variants are to be supported as most Chinese, Japanese and Korean can understand other's variant and to be honest, we don't bother anyway.
 
-## Contribution guidelines
-
-You can contribute to the font by fixing wrong glyphs, suggesting better ones, extending character set (letters for other writing systems or filling in the blanks on the existing ones), or code for other game frameworks (not limited to Java). Please leave pull request for that.
-
-Font Spritesheets are stored in ```assets/graphics/fonts``` directory. Image format must be TGA with Alpha — no PNG. If someone needs PNG, they can batch-convert the font using utils like ImageMagick.
-
 
 ## Using on your game
 
@@ -115,7 +109,34 @@ Color codes are individual unicode characters. While you can somehow make a raw 
 
 U+100000 is used to disable previously-applied color codes (going back to original colour), although it may seem like RGBA of all zero.
 
-## Font metrics
+
+## Contribution guidelines
+
+You can contribute to the font by fixing wrong glyphs, suggesting better ones, extending character set (letters for other writing systems or filling in the blanks on the existing ones), or code for other game frameworks (not limited to Java). Please leave pull request for that.
+
+Font Spritesheets are stored in ```assets/graphics/fonts``` directory. Image format must be TGA with Alpha — no PNG. If someone needs PNG, they can batch-convert the font using utils like ImageMagick.
+
+
+### Ascenders, descenders, width informations
+
+![Alas, use more modern browser or get better internet connexion!](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/glyph_height_pos_annotation.png)
+
+Above image is a reference you can use while you draw some letters. Capital B is drawn as a reference. Orange-tinted area is for lowercase, x-height must be the same as that of said tinted area (lowercase Alpha is also drawn for the reference). NOTE THAT x-height is taller than centre bar (capital A is an exception). Height of the ascender of the lowercase letters must be the same as height of capital letters.
+
+Red-tinted area SHOULD NOT CONTAIN any dots, it's emptied for compatibility. (Slick2d—you can define size of "gaps" of the spritesheet, but you can't define horizontal and vertical gap separately)
+
+Blue-tinted area cotains width of the glyph in binary, uppermost dot is the Least Significant Bit.
+
+Green-tinted area contains extra informations, left blank for most cases. (will be expanded later; no standard has been issued yet)
+
+Tinted-in-magenta shows the height where diacritics should be placed, for both uppercase and lowercase.
+
+Each cell is 16 px wide, and any glyph you draw **must be contained within leftside FIFTEEN pixels**.
+
+
+
+
+### Font metrics
 
 Although the font is basically a Spritesheet, some of the sheet expects variable widths to be supported. Any sheets with ```_variable``` means it expects variable widths. Anything else expects fixed width (regular Spritesheet behaviour). ```cjkpunct``` has width of 10, ```kana``` and ```hangul_johab``` has width of 12, ```wenquanyi``` has width of 16.
 
