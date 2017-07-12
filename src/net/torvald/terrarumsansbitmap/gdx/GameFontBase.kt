@@ -122,6 +122,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isIPA(c: Char) = c.toInt() in codeRange[SHEET_IPA_VARW]
     private fun isColourCodeHigh(c: Char) = c.toInt() in 0b110110_1111000000..0b110110_1111111111
     private fun isColourCodeLow(c: Char) = c.toInt() in 0b110111_0000000000..0b110111_1111111111
+    private fun isLatinExtAdd(c: Char) = c.toInt() in 0x1E00..0x1EFF
 
 
 
@@ -170,6 +171,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun ipaIndexX(c: Char) = (c.toInt() - 0x250) % 16
     private fun ipaIndexY(c: Char) = (c.toInt() - 0x250) / 16
 
+    private fun latinExtAddX(c: Char) = (c.toInt() - 0x1E00) % 16
+    private fun latinExtAddY(c: Char) = (c.toInt() - 0x1E00) / 16
+
     private fun getColour(charHigh: Char, charLow: Char): Color { // input: 0x10ARGB, out: RGBA8888
         val codePoint = Character.toCodePoint(charHigh, charLow)
 
@@ -204,15 +208,16 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_THAI_VARW,
             SHEET_HAYEREN_VARW,
             SHEET_KARTULI_VARW,
-            SHEET_IPA_VARW
+            SHEET_IPA_VARW,
+            SHEET_LATIN_EXT_ADD
     )
 
     private val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
     private val fileList = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             "ascii_variable.tga",
             "hangul_johab.tga",
-            "LatinExtA_variable.tga",
-            "LatinExtB_variable.tga",
+            "latinExtA_variable.tga",
+            "latinExtB_variable.tga",
             "kana.tga",
             "cjkpunct.tga",
             "wenquanyi.tga.gz",
@@ -225,6 +230,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             "kartuli_variable.tga",
             "ipa_ext_variable.tga",
             "futhark.tga",
+            "latinExt_additional_variable.tga",
             "puae000-e0ff.tga"
     )
     private val cyrilic_bg = "cyrilic_bulgarian_variable.tga"
@@ -246,6 +252,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0x10D0..0x10FF,
             0x250..0x2AF,
             0x16A0..0x16FF,
+            0x1E00..0x1EFF,
             0xE000..0xE0FF
     )
     private val glyphWidths: HashMap<Int, Int> = HashMap() // if the value is negative, it's diacritics
@@ -628,6 +635,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             return SHEET_IPA_VARW
         else if (isRunic(c))
             return SHEET_RUNIC
+        else if (isLatinExtAdd(c))
+            return SHEET_LATIN_EXT_ADD
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -696,6 +705,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_RUNIC -> {
                 sheetX = runicIndexX(ch)
                 sheetY = runicIndexY(ch)
+            }
+            SHEET_LATIN_EXT_ADD -> {
+                sheetX = latinExtAddX(ch)
+                sheetY = latinExtAddY(ch)
             }
             else -> {
                 sheetX = ch.toInt() % 16
@@ -789,7 +802,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val SHEET_KARTULI_VARW =   13
         internal val SHEET_IPA_VARW =       14
         internal val SHEET_RUNIC =          15
-        internal val SHEET_CUSTOM_SYM =     16
+        internal val SHEET_LATIN_EXT_ADD =  16
+        internal val SHEET_CUSTOM_SYM =     17
 
         internal val SHEET_UNKNOWN = 254
 
