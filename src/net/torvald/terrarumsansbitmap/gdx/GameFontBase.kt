@@ -64,7 +64,7 @@ import java.util.zip.GZIPInputStream
  *
  * Created by minjaesong on 2017-06-15.
  */
-class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false) : BitmapFont() {
+class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false, val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest) : BitmapFont() {
 
     private fun getHanChosung(hanIndex: Int) = hanIndex / (JUNG_COUNT * JONG_COUNT)
     private fun getHanJungseong(hanIndex: Int) = hanIndex / JONG_COUNT % JUNG_COUNT
@@ -120,8 +120,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isArmenian(c: Char) = c.toInt() in codeRange[SHEET_HAYEREN_VARW]
     private fun isKartvelian(c: Char) = c.toInt() in codeRange[SHEET_KARTULI_VARW]
     private fun isIPA(c: Char) = c.toInt() in codeRange[SHEET_IPA_VARW]
-    private fun isColourCodeHigh(c: Char) = c.toInt() in 0b110110_1111000000..0b110110_1111111111
-    private fun isColourCodeLow(c: Char) = c.toInt() in 0b110111_0000000000..0b110111_1111111111
+    private fun isColourCodeHigh(c: Char) = c.toInt() in 0b110110_1111000000..0b110110_1111111111 // only works with JVM (which uses UTF-16 internally)
+    private fun isColourCodeLow(c: Char) = c.toInt() in 0b110111_0000000000..0b110111_1111111111 // only works with JVM (which uses UTF-16 internally)
     private fun isLatinExtAdd(c: Char) = c.toInt() in 0x1E00..0x1EFF
 
 
@@ -333,6 +333,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             }
             else throw IllegalArgumentException("[TerrarumSansBitmap] Unknown sheet index: $index")
 
+            texRegPack.texture.setFilter(minFilter, magFilter)
 
             sheetsPack.add(texRegPack)
 

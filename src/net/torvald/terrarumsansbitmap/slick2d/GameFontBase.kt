@@ -154,8 +154,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : Font {
     private fun isArmenian(c: Char) = c.toInt() in codeRange[SHEET_HAYEREN_VARW]
     private fun isKartvelian(c: Char) = c.toInt() in codeRange[SHEET_KARTULI_VARW]
     private fun isIPA(c: Char) = c.toInt() in codeRange[SHEET_IPA_VARW]
-    private fun isColourCodeHigh(c: Char) = c.toInt() in 0b110110_1111000000..0b110110_1111111111
-    private fun isColourCodeLow(c: Char) = c.toInt() in 0b110111_0000000000..0b110111_1111111111
+    private fun isColourCodeHigh(c: Char) = c.toInt() in 0b110110_1111000000..0b110110_1111111111 // only works with JVM (which uses UTF-16 internally)
+    private fun isColourCodeLow(c: Char) = c.toInt() in 0b110111_0000000000..0b110111_1111111111 // only works with JVM (which uses UTF-16 internally)
     private fun isLatinExtAdd(c: Char) = c.toInt() in 0x1E00..0x1EFF
 
 
