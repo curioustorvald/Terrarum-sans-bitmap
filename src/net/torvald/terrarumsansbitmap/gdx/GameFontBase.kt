@@ -400,6 +400,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private lateinit var originalColour: Color
 
     override fun draw(batch: Batch, str: CharSequence, x: Float, y: Float): GlyphLayout? {
+        // always draw at integer position; this is bitmap font after all
+        val x = Math.round(x).toFloat()
+        val y = Math.round(y).toFloat()
+
+
         if (textBuffer != str) {
             textBuffer = str
             val widths = getWidthOfCharSeq(str)

@@ -419,6 +419,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : Font {
     }
 
     override fun drawString(x: Float, y: Float, str: String, color: Color) {
+        // always draw at integer position; this is bitmap font after all
+        val x = Math.round(x).toFloat()
+        val y = Math.round(y).toFloat()
+
+
         if (textBuffer != str) {
             textBuffer = str
             val widths = getWidthOfCharSeq(str)
