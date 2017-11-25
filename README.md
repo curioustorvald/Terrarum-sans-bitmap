@@ -1,6 +1,6 @@
 # Terrarum Sans Bitmap
 
-![Font sample](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/font_test_3.PNG)
+![Font sample](demo.PNG)
 
 This font is a bitmap font used in [my game project called Terrarum](https://gitlab.com/minjaesong/terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese and Korean. More technical side, it supports Latin-1 Supplement, Latin Ext-A, Latin Ext-B, IPA Extension (required by some languages), Greek, Cyrillic (+ Bulgarian, Serbian variants) and the supplement, Armenian, Thai (beta version), Georgian, Unicode Punctuations, CJK Punctuations, Kana, Chinese (limited to Unihan and Ext-A), Hangul (all 11 172 possible syllables) and Fullwidth forms.
 
@@ -119,7 +119,7 @@ Font Spritesheets are stored in ```assets/graphics/fonts``` directory. Image for
 
 ### Ascenders, descenders, width informations
 
-![Alas, use more modern browser or get better internet connexion!](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/glyph_height_pos_annotation.png)
+![Alas, use more modern browser or get better internet connexion!](glyph_height_pos_annotation.png)
 
 Above image is a reference you can use while you draw some letters. Capital B is drawn as a reference. Orange-tinted area is for lowercase, x-height must be the same as that of said tinted area (lowercase Alpha is also drawn for the reference). NOTE THAT x-height is taller than centre bar (capital A is an exception). Height of the ascender of the lowercase letters must be the same as height of capital letters.
 
@@ -142,7 +142,7 @@ Although the font is basically a Spritesheet, some of the sheet expects variable
 
 ### Parsing glyph widths for variable font sheets
 
-![Sample of Font Spritesheet with annotation](https://github.com/minjaesong/Terrarum-sans-bitmap/blob/master/width_bit_encoding_annotated.png)
+![Sample of Font Spritesheet with annotation](width_bit_encoding_annotated.png)
 
 Width is encoded in binary bits, on pixels. On the font spritesheet, every glyph has vertical dots on their top-right side (to be exact, every (16k - 1)th pixel on x axis). Above image is a sample of the font, with width information coloured in magenta. From top to bottom, each dot represents 1, 2, 4 and 8. For example, in the above image, ! (exclamation mark) has width of 5, " (double quote) has width of 6, # (octothorp) has width of 8, $ (dollar sign) has width of 9.
 
