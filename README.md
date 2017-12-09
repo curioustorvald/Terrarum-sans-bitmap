@@ -12,6 +12,13 @@ The issue page is open. If you have some issues to submit, or have a question, p
 - You can't display Bulgarian, Russian and Serbian variants at the same time without some more codes; ```reload()```ing them or creating multiple instances of the font would be the easiest solutions.
 - All Han characters are in Chinese variant, no other variants are to be supported as most Chinese, Japanese and Korean can understand other's variant and to be honest, we don't bother anyway.
 
+### Design Goals
+
+- Sans-serif
+- Realise (some of) handwritten forms
+    - Combininig with the sans-serif, this stands for **no over-simplification**
+- Condensed capitals for efficient space usage
+
 
 ## Using on your game
 
