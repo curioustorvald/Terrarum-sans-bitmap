@@ -400,6 +400,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private lateinit var originalColour: Color
 
     override fun draw(batch: Batch, str: CharSequence, x: Float, y: Float): GlyphLayout? {
+
+        fun Int.flipY() = this * if (flipY) 1 else -1
+
+
         // always draw at integer position; this is bitmap font after all
         val x = Math.round(x).toFloat()
         val y = Math.round(y).toFloat()
@@ -508,7 +512,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                                 sheets[sheetID].get(sheetX, sheetY),
                                 x + textBWidth[index] + 1 + offset,
                                 y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                    offsetUnihan
+                                    offsetUnihan.flipY()
                                 else if (sheetID == SHEET_CUSTOM_SYM)
                                     offsetCustomSym
                                 else
@@ -518,7 +522,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                                 sheets[sheetID].get(sheetX, sheetY),
                                 x + textBWidth[index] + offset,
                                 y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                    offsetUnihan + 1
+                                    offsetUnihan.flipY() + 1
                                 else if (sheetID == SHEET_CUSTOM_SYM)
                                     offsetCustomSym + 1
                                 else
@@ -528,11 +532,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                                 sheets[sheetID].get(sheetX, sheetY),
                                 x + textBWidth[index] + 1 + offset,
                                 y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                    offsetUnihan + 1
+                                    offsetUnihan.flipY() + 1
                                 else if (sheetID == SHEET_CUSTOM_SYM)
                                     offsetCustomSym + 1
                                 else
-                                    1) * if (flipY) 1 else -1
+                                    1).flipY()
                         )
                     }
 

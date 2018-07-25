@@ -7,34 +7,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/artifacts/FontDemoGDX.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/GdxLib.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/TesterLib.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/markdown-navigator.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/markdown-navigator/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/TerrarumSansBitmap.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/TerrarumSansBitmap.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/lib.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" beforeDir="false" afterPath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TerrarumSansBitmap.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/.idea/.name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/.idea/artifacts/unnamed.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/.idea/kotlinc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/.idea/libraries/KotlinJavaRuntime.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/.idea/workspace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/META-INF/MANIFEST.MF" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/TerrarumSansDemo.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/config.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/src/net/torvald/terrarum/imagefont/GameFontBase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/src/net/torvald/terrarum/imagefont/GameFontDemo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo/text.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LICENSE.md" beforeDir="false" afterPath="$PROJECT_DIR$/LICENSE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -54,8 +31,8 @@
           <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="481">
-                  <caret line="768" column="40" selection-start-line="768" selection-start-column="40" selection-end-line="768" selection-end-column="40" />
+                <state relative-caret-position="286">
+                  <caret line="514" column="56" lean-forward="true" selection-start-line="514" selection-start-column="48" selection-end-line="514" selection-end-column="56" />
                 </state>
               </provider>
             </entry>
@@ -63,8 +40,8 @@
           <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/slick2d/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="221">
-                  <caret line="361" column="13" selection-start-line="361" selection-start-column="13" selection-end-line="361" selection-end-column="13" />
+                <state relative-caret-position="153">
+                  <caret line="523" column="48" lean-forward="true" selection-start-line="523" selection-start-column="48" selection-end-line="523" selection-end-column="48" />
                 </state>
               </provider>
             </entry>
@@ -76,11 +53,25 @@
           <file leaf-file-name="FontTestGDX.kt" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="468">
-                  <caret line="36" column="26" lean-forward="true" selection-start-line="36" selection-start-column="26" selection-end-line="36" selection-end-column="26" />
+                <state relative-caret-position="272">
+                  <caret line="21" column="81" selection-start-line="21" selection-start-column="81" selection-end-line="21" selection-end-column="81" />
                   <folding>
                     <element signature="e#48#162#0" expanded="true" />
                   </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="README.md" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/README.md">
+              <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+                <state split_layout="FIRST">
+                  <first_editor relative-caret-position="480">
+                    <caret line="241" column="171" selection-start-line="241" selection-start-column="171" selection-end-line="241" selection-end-column="171" />
+                  </first_editor>
+                  <second_editor>
+                    <js_state />
+                  </second_editor>
                 </state>
               </provider>
             </entry>
@@ -106,6 +97,7 @@
       <find>fun getWidth</find>
       <find>fun dispo</find>
       <find>xHei</find>
+      <find>not copy</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -116,11 +108,14 @@
       <list>
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/lib/slick.jar!/org/newdawn/slick/Color.class" />
-        <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/slick2d/GameFontBase.kt" />
-        <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" />
         <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/testbed/FontTest.kt" />
         <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/testbed/FontTestGDX.kt" />
+        <option value="$PROJECT_DIR$/FontTestGDX/demotext.txt" />
+        <option value="$PROJECT_DIR$/LICENSE.md" />
+        <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" />
         <option value="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" />
+        <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/slick2d/GameFontBase.kt" />
       </list>
     </option>
   </component>
@@ -143,11 +138,6 @@
             <path>
               <item name="BuildJAR_TerrarumSansBitmap" type="b2602c69:ProjectViewProjectNode" />
               <item name="Terrarum-sans-bitmap" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="BuildJAR_TerrarumSansBitmap" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Terrarum-sans-bitmap" type="462c0819:PsiDirectoryNode" />
-              <item name="assets" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="BuildJAR_TerrarumSansBitmap" type="b2602c69:ProjectViewProjectNode" />
@@ -178,6 +168,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
+    <property name="SearchEverywhereHistoryKey" value="soft wr&#9;ACTION&#9;EditorToggleUseSoftWraps" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/FontTestGDX/lib" />
     <property name="project.structure.last.edited" value="Artifacts" />
     <property name="project.structure.proportion" value="0.15" />
@@ -201,7 +192,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Kotlin.FontTestGDXKt (1)">
+  <component name="RunManager">
     <configuration default="true" type="Applet" factoryName="Applet">
       <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
     </configuration>
@@ -224,25 +215,21 @@
       </option>
       <patterns />
     </configuration>
-    <configuration name="FontTestGDXKt (1)" type="JetRunConfigurationType" factoryName="Kotlin" temporary="true" nameIsGenerated="true">
+    <configuration name="FontTestGDXKt" type="JetRunConfigurationType" factoryName="Kotlin" temporary="true">
       <module name="FontTestGDX" />
-      <option name="VM_PARAMETERS" />
-      <option name="PROGRAM_PARAMETERS" />
+      <option name="VM_PARAMETERS" value="" />
+      <option name="PROGRAM_PARAMETERS" value="" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" />
       <option name="PASS_PARENT_ENVS" value="true" />
       <option name="MAIN_CLASS_NAME" value="FontTestGDXKt" />
-      <option name="WORKING_DIRECTORY" />
-    </configuration>
-    <configuration name="FontTestGDXKt" type="JetRunConfigurationType" factoryName="Kotlin" temporary="true" nameIsGenerated="true">
-      <module name="BuildJAR_TerrarumSansBitmap" />
-      <option name="VM_PARAMETERS" />
-      <option name="PROGRAM_PARAMETERS" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
-      <option name="PASS_PARENT_ENVS" value="true" />
-      <option name="MAIN_CLASS_NAME" value="FontTestGDXKt" />
-      <option name="WORKING_DIRECTORY" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <method>
+        <option name="BuildArtifacts" enabled="true">
+          <artifact name="TerrarumSansBitmap" />
+        </option>
+        <option name="Make" enabled="true" />
+      </method>
     </configuration>
     <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType" factoryName="Kotlin script">
       <option name="filePath" />
@@ -373,14 +360,9 @@
       <setting name="rowsRange" value="" />
       <method />
     </configuration>
-    <list>
-      <item itemvalue="Kotlin.net.torvald.terrarumsansbitmap.testbed.FontTestGDXKt" />
-      <item itemvalue="Kotlin.FontTestGDXKt (1)" />
-    </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Kotlin.FontTestGDXKt (1)" />
-        <item itemvalue="Kotlin.net.torvald.terrarumsansbitmap.testbed.FontTestGDXKt" />
+        <item itemvalue="Kotlin.FontTestGDXKt" />
       </list>
     </recent_temporary>
   </component>
@@ -416,7 +398,7 @@
       <window_info anchor="right" id="Palette&#9;" order="3" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
       <window_info anchor="right" id="Maven Projects" order="3" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.32947975" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.2591522" />
       <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Terminal" order="7" />
       <window_info id="Designer" order="2" />
@@ -424,7 +406,7 @@
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info id="UI Designer" order="2" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.23025048" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -633,27 +615,58 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/slick2d/GameFontBase.kt">
+    <entry file="file://$PROJECT_DIR$/FontTestGDX/demotext.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="361" column="13" selection-start-line="361" selection-start-column="13" selection-end-line="361" selection-end-column="13" />
+        <state relative-caret-position="546">
+          <caret line="42" column="62" selection-start-line="42" selection-start-column="62" selection-end-line="42" selection-end-column="62" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="481">
-          <caret line="768" column="40" selection-start-line="768" selection-start-column="40" selection-end-line="768" selection-end-column="40" />
+    <entry file="file://$PROJECT_DIR$/LICENSE.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="26">
+            <caret line="2" column="23" selection-start-line="2" selection-start-column="23" selection-end-line="2" selection-end-column="23" />
+          </first_editor>
+          <second_editor>
+            <js_state />
+          </second_editor>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+        <state split_layout="FIRST">
+          <first_editor relative-caret-position="480">
+            <caret line="241" column="171" selection-start-line="241" selection-start-column="171" selection-end-line="241" selection-end-column="171" />
+          </first_editor>
+          <second_editor>
+            <js_state />
+          </second_editor>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="468">
-          <caret line="36" column="26" lean-forward="true" selection-start-line="36" selection-start-column="26" selection-end-line="36" selection-end-column="26" />
+        <state relative-caret-position="272">
+          <caret line="21" column="81" selection-start-line="21" selection-start-column="81" selection-end-line="21" selection-end-column="81" />
           <folding>
             <element signature="e#48#162#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/slick2d/GameFontBase.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="153">
+          <caret line="523" column="48" lean-forward="true" selection-start-line="523" selection-start-column="48" selection-end-line="523" selection-end-column="48" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="286">
+          <caret line="514" column="56" lean-forward="true" selection-start-line="514" selection-start-column="48" selection-end-line="514" selection-end-column="56" />
         </state>
       </provider>
     </entry>
