@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="TesterLib">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/FontTestGDX/lib" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+    <jarDirectory url="file://$PROJECT_DIR$/FontTestGDX/lib" recursive="false" />
+  </library>
+</component>

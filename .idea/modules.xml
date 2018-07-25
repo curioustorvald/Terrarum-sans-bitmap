@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" filepath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" />
+      <module fileurl="file://$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" filepath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" />
     </modules>
   </component>
 </project>

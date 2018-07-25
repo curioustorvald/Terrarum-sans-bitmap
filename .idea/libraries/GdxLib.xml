@@ -1,8 +1,6 @@
 <component name="libraryTable">
-  <library name="KotlinJavaRuntime">
+  <library name="GdxLib">
     <CLASSES>
-      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-runtime.jar!/" />
-      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-reflect.jar!/" />
       <root url="file://$PROJECT_DIR$/lib" />
     </CLASSES>
     <JAVADOC />
@@ -10,8 +8,9 @@
       <root url="file://$PROJECT_DIR$/lib" />
     </NATIVE>
     <SOURCES>
-      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-runtime-sources.jar!/" />
+      <root url="file://$PROJECT_DIR$/lib" />
     </SOURCES>
     <jarDirectory url="file://$PROJECT_DIR$/lib" recursive="false" />
+    <jarDirectory url="file://$PROJECT_DIR$/lib" recursive="false" type="SOURCES" />
   </library>
 </component>

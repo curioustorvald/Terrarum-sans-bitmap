@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Class-Path: lib/lwjgl.jar lib/lwjgl_util.jar lib/slick.jar lib/kotlin-reflect.jar lib/kotlin-runtime.jar
-Main-Class: net.torvald.terrarum.imagefont.GameFontDemoKt
-
