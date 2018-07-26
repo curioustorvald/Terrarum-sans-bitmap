@@ -25,10 +25,9 @@ How multilingual? Real multilingual!
     Ианҵоуп ақьаад, нусхур аҩырала, ҩ ҽшьаҟакла, иҧшӡоу анапҩырала
     Գրիչս վայր դրի, վեր կացա և պատրաստվում էի, որ քնեմ, երբ հանկարծ դռանս զանգակը հնչեց
     Zəfər, jaketini də papağını da götür, bu axşam hava çox soyuq olacaq
-    Под южно дърво, цъфтящо в синьо, бягаше малко пухкаво зайче (BG)
+    󿿹Под южно дърво, цъфтящо в синьо, бягаше малко пухкаво зайче󿿸
     Příliš žluťoučký kůň úpěl ďábelské ódy
     Quizdeltagerne spiste jordbær med fløde, mens cirkusklovnen Walther spillede på xylofon
-    Pack my box with five dozen liquor jugs
     Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich
     διαφυλάξτε γενικά τη ζωή σας από βαθειά ψυχικά τραύματα
     ΔΙΑΦΥΛΆΞΤΕ ΓΕΝΙΚΆ ΤΗ ΖΩΉ ΣΑΣ ΑΠΌ ΒΑΘΕΙΆ ΨΥΧΙΚΆ ΤΡΑΎΜΑΤΑ
@@ -45,7 +44,7 @@ How multilingual? Real multilingual!
     Pchnąć w tę łódź jeża lub ośm skrzyń fig
     Înjurând pițigăiat, zoofobul comandă vexat whisky și tequila
     Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства
-    Ајшо, лепото и чежњо, за љубав срца мога дођи у Хаџиће на кафу (SR)
+    󿿺Ајшо, лепото и чежњо, за љубав срца мога дођи у Хаџиће на кафу󿿸
     Jovencillo emponzoñado de whisky: ¡qué figurota exhibe!
     นายสังฆภัณฑ์ เฮงพิทักษ์ฝั่ง ผู้เฒ่าซึ่งมีอาชีพเป็นฅนขายฃวด ถูกตำรวจปฏิบัติการจับฟ้องศาล ฐานลักนาฬิกาคุณหญิงฉัตรชฎา ฌานสมาธิ
     Pijamalı hasta yağız şoföre çabucak güvendi
@@ -53,7 +52,7 @@ How multilingual? Real multilingual!
     Do bạch kim rất quý nên sẽ dùng để lắp vô xương
     日堀油告観観藤村抄海評業庁経賃室弁市。太撮収改売週法所何都慣次現。価紙一無三洋日話転手治稿載末替付致治。
 
-Featuring:
+Features:
 
     Ever heard of « Guillemets »? You speak „Nederlands” or „Deutsch“? ”suomi”? 「日本語」しゃべる？或《中文》？
 
@@ -66,10 +65,10 @@ Fixed-width numbers, because number-crunching matters
 
     􏀏ᚱ􏄏ᛂ􏈏ᚴ􏌏ᛋ􏐏ᛂ􏔏ᛋ􏘏ᛏ􏜏ᛋ􏠏ᚮ􏤏ᚾ􏨏ᛔ􏬏ᚢ􏰏ᛏ􏴏ᛚ􏸏ᚮ􏼏ᛋ􎼏᛬􍼏ᚱ􌼏ᛂ􋼏ᚴ􊼏ᛋ􉼏ᛋ􈼏ᚢ􇼏ᚼ􆼏ᚾ􅼏ᚢ􄼏ᛘ􃼏ᚢ􂼏ᛚ􁼏ᚾ􀼏ᛏ􀼟ᚮ􀼯᛬􀼿ᛏ􀽏ᚮ􀽟ᛋ􀽯ᛁ􀽿ᚮ􀾏ᚵ􀾟ᛂ􀾯ᚢ􀾿ᛏ􀿏ᚮ􀿟ᚱ􀿯ᛘ􀿿ᛔ􀻿ᚱ􀷿ᛂ􀳿ᚴ􀯿ᛋ􀫿ᛏ􀧿᛭􀣿ᛋ􀟿ᚢ􀛿ᚼ􀗿ᚾ􀓿ᚢ􀏿ᛋ􀋿ᛘ􀇿ᚮ􀃿ᛁ􁃿ᚵ􂃿ᚾ􃃿ᛁ􄃿ᛂ􅃿ᛏ􆃿ᚮ􇃿ᛑ􈃿᛭􉃿ᚵ􊃿ᛂ􋃿ᚢ􌃿ᛏ􍃿ᚮ􎃿ᚱ􀀀
 
-Colour-coding that supports 65535 (semi-transparent) colours via 4 bit RGBA
+Colour-code that supports 65535 opaque or semi-transparent colours via 4 bit RGBA
 
-    За миг бях в чужд плюшен скърцащ фотьойл (Bulgarian)
-    Љубазни фењерџија чађавог лица хоће да ми покаже штос (Serbian)
+    󿿹Гномът Доцьо приключи спящ в шейна за жаби󿿸 (Bulgarian)
+    󿿺Љубазни фењерџија чађавог лица хоће да ми покаже штос󿿸 (Serbian)
     Разъяренный чтец эгоистично бьёт пятью жердями шустрого фехтовальщика (Russian)
 
 Control characters to support Bulgarian and Serbian letter shapes on the fly

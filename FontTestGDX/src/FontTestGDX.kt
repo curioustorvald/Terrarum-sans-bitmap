@@ -129,6 +129,12 @@ class FontTestGDX : Game() {
         }
 
         println("${font.noColorCode}\nEND")
+
+        println(font.charsetOverrideNormal)
+        println(font.charsetOverrideBulgarian)
+        println(font.charsetOverrideSerbian)
+        println(font.noColorCode)
+        println(font.toColorCode(0xFFFF))
     }
 
     override fun getScreen(): Screen? {

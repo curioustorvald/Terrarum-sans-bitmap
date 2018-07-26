@@ -55,7 +55,7 @@ import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_IPA_VARW
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_CUSTOM_SYM
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_UNKNOWN
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_RUNIC
-import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_LATIN_EXT_ADD
+import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_LATIN_EXT_ADD_VARW
 import org.newdawn.slick.Color
 import org.newdawn.slick.Font
 import org.newdawn.slick.Image
@@ -244,7 +244,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : Font {
             SHEET_HAYEREN_VARW,
             SHEET_KARTULI_VARW,
             SHEET_IPA_VARW,
-            SHEET_LATIN_EXT_ADD
+            SHEET_LATIN_EXT_ADD_VARW
     )
 
     private val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
@@ -648,7 +648,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : Font {
         else if (isRunic(c))
             return SHEET_RUNIC
         else if (isLatinExtAdd(c))
-            return SHEET_LATIN_EXT_ADD
+            return SHEET_LATIN_EXT_ADD_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -718,7 +718,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : Font {
                 sheetX = runicIndexX(ch)
                 sheetY = runicIndexY(ch)
             }
-            SHEET_LATIN_EXT_ADD -> {
+            SHEET_LATIN_EXT_ADD_VARW -> {
                 sheetX = latinExtAddX(ch)
                 sheetY = latinExtAddY(ch)
             }

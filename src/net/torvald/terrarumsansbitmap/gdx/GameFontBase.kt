@@ -128,10 +128,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isArmenian(c: Char) = c.toInt() in codeRange[SHEET_HAYEREN_VARW]
     private fun isKartvelian(c: Char) = c.toInt() in codeRange[SHEET_KARTULI_VARW]
     private fun isIPA(c: Char) = c.toInt() in codeRange[SHEET_IPA_VARW]
-    private fun isColourCodeHigh(c: Char) = c.toInt() in 0b110110_1111000000..0b110110_1111111111 // only works with JVM (which uses UTF-16 internally)
-    private fun isColourCodeLow(c: Char) = c.toInt() in 0b110111_0000000000..0b110111_1111111111 // only works with JVM (which uses UTF-16 internally)
+    private fun isColourCodeHigh(c: Char) = c.toInt() in 0xDC00..0xDFFF // only works with JVM (which uses UTF-16 internally)
+    private fun isColourCodeLow(c: Char) = c.toInt() in 0xDBC0..0xDBFF // only works with JVM (which uses UTF-16 internally)
     private fun isLatinExtAdd(c: Char) = c.toInt() in 0x1E00..0x1EFF
-
+    private fun isCharsetOverrideHigh(c: Char) = c.toInt() in 0xDFF8..0xDFFF // only works with JVM (which uses UTF-16 internally)
+    private fun isCharsetOverrideLow(c: Char) = c.toInt() == 0xDBBF // only works with JVM (which uses UTF-16 internally)
+    private fun isBulgarian(c: Char) = c.toInt() in 0x400..0x45F
 
 
     private fun extAindexX(c: Char) = (c.toInt() - 0x100) % 16
@@ -217,7 +219,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_HAYEREN_VARW,
             SHEET_KARTULI_VARW,
             SHEET_IPA_VARW,
-            SHEET_LATIN_EXT_ADD
+            SHEET_LATIN_EXT_ADD_VARW,
+            SHEET_BULGARIAN_VARW,
+            SHEET_SERBIAN_VARW
     )
 
     private val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
@@ -239,10 +243,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             "ipa_ext_variable.tga",
             "futhark.tga",
             "latinExt_additional_variable.tga",
-            "puae000-e0ff.tga"
+            "puae000-e0ff.tga",
+            "cyrilic_bulgarian_variable.tga",
+            "cyrilic_serbian_variable.tga"
     )
-    private val cyrilic_bg = "cyrilic_bulgarian_variable.tga"
-    private val cyrilic_sr = "cyrilic_serbian_variable.tga"
     private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF,
             0xAC00..0xD7A3,
@@ -261,11 +265,14 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0x250..0x2AF,
             0x16A0..0x16FF,
             0x1E00..0x1EFF,
-            0xE000..0xE0FF
+            0xE000..0xE0FF,
+            0xF00000..0xF0005F, // assign them to PUA
+            0xF00060..0xF000BF  // assign them to PUA
     )
     private val glyphWidths: HashMap<Int, Int> = HashMap() // if the value is negative, it's diacritics
     private val sheets: Array<TextureRegionPack>
 
+    private var charsetOverride = 0
 
     init {
         val sheetsPack = ArrayList<TextureRegionPack>()
@@ -351,34 +358,6 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         sheets = sheetsPack.toTypedArray()
     }
 
-    private var localeBuffer = ""
-
-    fun reload(locale: String) {
-        if (!localeBuffer.startsWith("ru") && locale.startsWith("ru")) {
-            val pixmap = Pixmap(Gdx.files.internal(fontParentDir + fileList[SHEET_CYRILIC_VARW]))
-            val texture = Texture(pixmap)
-            sheets[SHEET_CYRILIC_VARW].dispose()
-            sheets[SHEET_CYRILIC_VARW] = TextureRegionPack(texture, W_VAR_INIT, H, HGAP_VAR, 0)
-            pixmap.dispose()
-        }
-        else if (!localeBuffer.startsWith("bg") && locale.startsWith("bg")) {
-            val pixmap = Pixmap(Gdx.files.internal(fontParentDir + cyrilic_bg))
-            val texture = Texture(pixmap)
-            sheets[SHEET_CYRILIC_VARW].dispose()
-            sheets[SHEET_CYRILIC_VARW] = TextureRegionPack(texture, W_VAR_INIT, H, HGAP_VAR, 0)
-            pixmap.dispose()
-        }
-        else if (!localeBuffer.startsWith("sr") && locale.startsWith("sr")) {
-            val pixmap = Pixmap(Gdx.files.internal(fontParentDir + cyrilic_sr))
-            val texture = Texture(pixmap)
-            sheets[SHEET_CYRILIC_VARW].dispose()
-            sheets[SHEET_CYRILIC_VARW] = TextureRegionPack(texture, W_VAR_INIT, H, HGAP_VAR, 0)
-            pixmap.dispose()
-        }
-
-        localeBuffer = locale
-    }
-
     override fun getLineHeight(): Float = H.toFloat()
 
     override fun getXHeight() = lineHeight
@@ -452,7 +431,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             //println("[TerrarumSansBitmap] sprite:  $sheetID:${sheetX}x${sheetY}")
 
-            if (isColourCodeHigh(c)) {
+            if (isColourCodeLow(c)) {
                 val cchigh = c
                 val cclow = textBuffer[index + 1]
 
@@ -467,8 +446,16 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                 index += 1
             }
-            else if (isColourCodeLow(c)) {
-                throw Error("Unexpected encounter of ColourCodeLow at index $index of String '$textBuffer'")
+            else if (isCharsetOverrideLow(c)) {
+                val cchigh = c
+                val cclow = textBuffer[index + 1]
+
+                charsetOverride = Character.toCodePoint(cchigh, cclow) - CHARSET_OVERRIDE_NULL
+
+                index += 1
+            }
+            else if (isCharsetOverrideHigh(c) || isColourCodeHigh(c)) {
+                /* do nothing and advance */
             }
             else if (sheetID == SHEET_HANGUL) {
                 val hangulSheet = sheets[SHEET_HANGUL]
@@ -596,7 +583,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                 len[i] = glyphWidths[chr.toInt()]!!
             }
-            else if (isColourCodeHigh(chr) || isColourCodeLow(chr))
+            else if (isColourCodeHigh(chr) || isColourCodeLow(chr) || isCharsetOverrideHigh(chr) || isCharsetOverrideLow(chr))
                 len[i] = 0
             else if (ctype == SHEET_CJK_PUNCT)
                 len[i] = W_ASIAN_PUNCT
@@ -619,7 +606,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     }
 
     private fun getSheetType(c: Char): Int {
-        if (isHangul(c))
+        if (charsetOverride == 1 && isBulgarian(c))
+            return SHEET_BULGARIAN_VARW
+        else if (charsetOverride == 2 && isBulgarian(c))
+            return SHEET_SERBIAN_VARW
+        else if (isHangul(c))
             return SHEET_HANGUL
         else if (isKana(c))
             return SHEET_KANA
@@ -654,7 +645,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         else if (isRunic(c))
             return SHEET_RUNIC
         else if (isLatinExtAdd(c))
-            return SHEET_LATIN_EXT_ADD
+            return SHEET_LATIN_EXT_ADD_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -724,9 +715,13 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 sheetX = runicIndexX(ch)
                 sheetY = runicIndexY(ch)
             }
-            SHEET_LATIN_EXT_ADD -> {
+            SHEET_LATIN_EXT_ADD_VARW -> {
                 sheetX = latinExtAddX(ch)
                 sheetY = latinExtAddY(ch)
+            }
+            SHEET_BULGARIAN_VARW, SHEET_SERBIAN_VARW -> { // expects Unicode charpoint, NOT an internal one
+                sheetX = cyrilicIndexX(ch)
+                sheetY = cyrilicIndexY(ch)
             }
             else -> {
                 sheetX = ch.toInt() % 16
@@ -786,6 +781,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = toColorCode(r.shl(12) or g.shl(8) or b.shl(4) or a)
     val noColorCode = toColorCode(0x0000)
 
+    val charsetOverrideNormal = Character.toChars(CHARSET_OVERRIDE_NULL)
+    val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG)
+    val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR)
+
     companion object {
         internal val JUNG_COUNT = 21
         internal val JONG_COUNT = 28
@@ -804,31 +803,37 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
         internal val SIZE_CUSTOM_SYM = 18
 
-        internal val SHEET_ASCII_VARW =     0
-        internal val SHEET_HANGUL =         1
-        internal val SHEET_EXTA_VARW =      2
-        internal val SHEET_EXTB_VARW =      3
-        internal val SHEET_KANA =           4
-        internal val SHEET_CJK_PUNCT =      5
-        internal val SHEET_UNIHAN =         6
-        internal val SHEET_CYRILIC_VARW =   7
-        internal val SHEET_FW_UNI =         8
-        internal val SHEET_UNI_PUNCT =      9
-        internal val SHEET_GREEK_VARW =     10
-        internal val SHEET_THAI_VARW =      11
-        internal val SHEET_HAYEREN_VARW =   12
-        internal val SHEET_KARTULI_VARW =   13
-        internal val SHEET_IPA_VARW =       14
-        internal val SHEET_RUNIC =          15
-        internal val SHEET_LATIN_EXT_ADD =  16
-        internal val SHEET_CUSTOM_SYM =     17
+        internal val SHEET_ASCII_VARW =        0
+        internal val SHEET_HANGUL =            1
+        internal val SHEET_EXTA_VARW =         2
+        internal val SHEET_EXTB_VARW =         3
+        internal val SHEET_KANA =              4
+        internal val SHEET_CJK_PUNCT =         5
+        internal val SHEET_UNIHAN =            6
+        internal val SHEET_CYRILIC_VARW =      7
+        internal val SHEET_FW_UNI =            8
+        internal val SHEET_UNI_PUNCT =         9
+        internal val SHEET_GREEK_VARW =        10
+        internal val SHEET_THAI_VARW =         11
+        internal val SHEET_HAYEREN_VARW =      12
+        internal val SHEET_KARTULI_VARW =      13
+        internal val SHEET_IPA_VARW =          14
+        internal val SHEET_RUNIC =             15
+        internal val SHEET_LATIN_EXT_ADD_VARW= 16
+        internal val SHEET_CUSTOM_SYM =        17
+        internal val SHEET_BULGARIAN_VARW =    18
+        internal val SHEET_SERBIAN_VARW =      19
 
         internal val SHEET_UNKNOWN = 254
 
+        internal val CHARSET_OVERRIDE_NULL = 0xFFFF8
+        internal val CHARSET_OVERRIDE_BG_BG = 0xFFFF9
+        internal val CHARSET_OVERRIDE_SR_SR = 0xFFFFA
 
-        fun charsetOverrideNormal() = Character.toChars( 0xFFFF8)
-        fun charsetOverrideBulgarian() = Character.toChars( 0xFFFF9)
-        fun charsetOverrideSerbian() = Character.toChars( 0xFFFFA)
+
+        val charsetOverrideNormal = Character.toChars(CHARSET_OVERRIDE_NULL)
+        val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG)
+        val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR)
         fun toColorCode(rgba4444: Int): String = Character.toChars(0x100000 + rgba4444).toColCode()
         fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = toColorCode(r.shl(12) or g.shl(8) or b.shl(4) or a)
         private fun CharArray.toColCode(): String = "${this[0]}${this[1]}"
