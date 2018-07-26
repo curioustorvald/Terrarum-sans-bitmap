@@ -59,6 +59,14 @@ import java.util.zip.GZIPInputStream
  *
  * Color Codes have following Unicode mapping: U+10RGBA, A must be non-zero to be visible. U+100000 reverts any colour code effects.
  *
+ * ## Control Characters
+ *
+ * - U+100000: Clear colour keys
+ * - U+100001..U+10FFFF: Colour key (in RGBA order)
+ * - U+FFFF8: Charset override -- normal (incl. Russian, Ukrainian, etc.)
+ * - U+FFFF9: Charset override -- Bulgarian
+ * - U+FFFFA: Charset override -- Serbian
+ *
  * @param noShadow Self-explanatory
  * @param flipY If you have Y-down coord system implemented on your GDX (e.g. legacy codebase), set this to ```true``` so that the shadow won't be upside-down. For glyph getting upside-down, set ```TextureRegionPack.globalFlipY = true```.
  *
@@ -818,6 +826,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val SHEET_UNKNOWN = 254
 
 
+        fun charsetOverrideNormal() = Character.toChars( 0xFFFF8)
+        fun charsetOverrideBulgarian() = Character.toChars( 0xFFFF9)
+        fun charsetOverrideSerbian() = Character.toChars( 0xFFFFA)
         fun toColorCode(rgba4444: Int): String = Character.toChars(0x100000 + rgba4444).toColCode()
         fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = toColorCode(r.shl(12) or g.shl(8) or b.shl(4) or a)
         private fun CharArray.toColCode(): String = "${this[0]}${this[1]}"
