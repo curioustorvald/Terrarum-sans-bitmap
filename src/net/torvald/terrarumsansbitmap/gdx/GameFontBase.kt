@@ -190,10 +190,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         if (colourBuffer.containsKey(codePoint))
             return colourBuffer[codePoint]!!
 
-        val r = codePoint.and(0xF000).ushr(12)
-        val g = codePoint.and(0x0F00).ushr(8)
-        val b = codePoint.and(0x00F0).ushr(4)
-        val a = codePoint.and(0x000F)
+        val a = codePoint.and(0xF000).ushr(12)
+        val r = codePoint.and(0x0F00).ushr(8)
+        val g = codePoint.and(0x00F0).ushr(4)
+        val b = codePoint.and(0x000F)
 
         val col = Color(r.shl(28) or r.shl(24) or g.shl(20) or g.shl(16) or b.shl(12) or b.shl(8) or a.shl(4) or a)
 
@@ -778,7 +778,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         }
 
     fun toColorCode(rgba4444: Int): String = GameFontBase.toColorCode(rgba4444)
-    fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = toColorCode(r.shl(12) or g.shl(8) or b.shl(4) or a)
+    fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = GameFontBase.toColorCode(r, g, b, a)
     val noColorCode = toColorCode(0x0000)
 
     val charsetOverrideNormal = Character.toChars(CHARSET_OVERRIDE_NULL)
@@ -834,8 +834,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         val charsetOverrideNormal = Character.toChars(CHARSET_OVERRIDE_NULL)
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG)
         val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR)
-        fun toColorCode(rgba4444: Int): String = Character.toChars(0x100000 + rgba4444).toColCode()
-        fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = toColorCode(r.shl(12) or g.shl(8) or b.shl(4) or a)
+        fun toColorCode(argb4444: Int): String = Character.toChars(0x100000 + argb4444).toColCode()
+        fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = toColorCode(a.shl(12) or r.shl(8) or g.shl(4) or b)
         private fun CharArray.toColCode(): String = "${this[0]}${this[1]}"
 
         val noColorCode = toColorCode(0x0000)
