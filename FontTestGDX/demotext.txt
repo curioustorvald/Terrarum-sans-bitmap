@@ -49,7 +49,7 @@ How multilingual? Real multilingual!
     􌿽Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства􀀀
     􌿽󿿺Ајшо, лепото и чежњо, за љубав срца мога дођи у Хаџиће на кафу󿿸􀀀
     􌿽Jovencillo emponzoñado de whisky: ¡qué figurota exhibe!􀀀
-    􌿽นายสังฆภัณฑ์ เฮงพิทักษ์ฝั่ง ผู้เฒ่าซึ่งมีอาชีพเป็นฅนขายฃวด ถูกตำรวจปฏิบัติการจับฟ้องศาล ฐานลักนาฬิกาคุณหญิงฉัตรชฎา 􀀀ฌานสมาธิ
+    􌿽นายสังฆภัณฑ์ เฮงพิทักษ์ฝั่ง ผู้เฒ่าซึ่งมีอาชีพเป็นฅนขายฃวด ถูกตำรวจปฏิบัติการจับฟ้องศาล ฐานลักนาฬิกาคุณหญิงฉัตรชฎา ฌานสมาธิ􀀀
     􌿽Pijamalı hasta yağız şoföre çabucak güvendi􀀀
     􌿽Жебракують філософи при ґанку церкви в Гадячі, ще й шатро їхнє п’яне знаємо􀀀
     􌿽Do bạch kim rất quý nên sẽ dùng để lắp vô xương􀀀
@@ -87,8 +87,8 @@ How multilingual? Real multilingual!
 􏃯Unicode References:􀀀
 
     Basic Latin   Latin-1   Latin Extension A   Latin Extionsion B   IPA Extension   Greek   Cyrillic   Cyrillic Supplement
-    Armenian   Thai   Georgian   Runic   Cherokee   General Punctuations   CJK Symbols   Kana   CJK Unihan Extension A
-    CJK Unihan   Hangul Syllables   Fullwidth Forms
+    Armenian   Thai   Georgian   Runic   Cherokee   General Punctuations   CJK Symbols   Kana
+    CJK Unihan Extension A   CJK Unihan   Hangul Syllables   Fullwidth Forms
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀.
 You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make changes,

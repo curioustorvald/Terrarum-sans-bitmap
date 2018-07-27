@@ -2,15 +2,17 @@
 <project version="4">
   <component name="ArtifactsWorkspaceSettings">
     <artifacts-to-build>
-      <artifact name="TerrarumSansBitmap" />
+      <artifact name="FontDemoGDX" />
     </artifacts-to-build>
   </component>
   <component name="ChangeListManager">
     <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="">
+      <change afterPath="$PROJECT_DIR$/FontTestGDX/META-INF/MANIFEST.MF" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/artifacts/FontDemoGDX.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/FontDemoGDX.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FontTestGDX/demotext.txt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/demotext.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/demo.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/demo.PNG" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -61,20 +63,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="false">
+          <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="-242">
-                  <caret line="277" column="5" lean-forward="true" selection-start-line="277" selection-start-column="5" selection-end-line="277" selection-end-column="5" />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="demotext.txt" pinned="false" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/FontTestGDX/demotext.txt">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="247">
-                  <caret line="19" column="44" selection-start-line="19" selection-start-column="44" selection-end-line="19" selection-end-column="44" />
+                  <caret line="277" column="5" selection-start-line="277" selection-start-column="5" selection-end-line="277" selection-end-column="5" />
                 </state>
               </provider>
             </entry>
@@ -203,7 +196,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="SearchEverywhereHistoryKey" value="soft wr&#9;ACTION&#9;EditorToggleUseSoftWraps" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/FontTestGDX/lib" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/FontTestGDX" />
     <property name="project.structure.last.edited" value="Artifacts" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.32068965" />
@@ -424,6 +417,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="1912" y="-521" width="1936" height="1176" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info anchor="right" id="Palette" order="3" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -699,17 +693,17 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
+    <entry file="file://$PROJECT_DIR$/FontTestGDX/demotext.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-242">
-          <caret line="277" column="5" lean-forward="true" selection-start-line="277" selection-start-column="5" selection-end-line="277" selection-end-column="5" />
+        <state relative-caret-position="299">
+          <caret line="23" lean-forward="true" selection-start-line="23" selection-end-line="23" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/FontTestGDX/demotext.txt">
+    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="247">
-          <caret line="19" column="44" selection-start-line="19" selection-start-column="44" selection-end-line="19" selection-end-column="44" />
+        <state relative-caret-position="-242">
+          <caret line="277" column="5" selection-start-line="277" selection-start-column="5" selection-end-line="277" selection-end-column="5" />
         </state>
       </provider>
     </entry>
@@ -719,7 +713,7 @@
       <state key="ArtifactsStructureConfigurable.UI">
         <settings>
           <artifact-editor />
-          <last-edited>TerrarumSansBitmap</last-edited>
+          <last-edited>FontDemoGDX</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
