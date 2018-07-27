@@ -26,6 +26,9 @@ How multilingual? Real multilingual!
     Գրիչս վայր դրի, վեր կացա և պատրաստվում էի, որ քնեմ, երբ հանկարծ դռանս զանգակը հնչեց
     Zəfər, jaketini də papağını da götür, bu axşam hava çox soyuq olacaq
     󿿹Под южно дърво, цъфтящо в синьо, бягаше малко пухкаво зайче󿿸
+    ᎠᏍᎦᏯᎡᎦᎢᎾᎨᎢᎣᏍᏓᎤᎩᏍᏗᎥᎴᏓᎯᎲᎢᏔᎵᏕᎦᏟᏗᏖᎸᎳᏗᏗᎧᎵᎢᏘᎴᎩ ᏙᏱᏗᏜᏫᏗᏣᏚᎦᏫᏛᏄᏓᎦᏝᏃᎠᎾᏗᎭᏞᎦᎯᎦᏘᏓᏠᎨᏏᏕᏡᎬᏢᏓᏥᏩᏝᎡᎢᎪᎢ
+    ᎠᎦᏂᏗᎮᎢᎫᎩᎬᏩᎴᎢᎠᏆᏅᏛᎫᏊᎾᎥᎠᏁᏙᎲᏐᏈᎵᎤᎩᎸᏓᏭᎷᏤᎢᏏᏉᏯᏌᏊ ᎤᏂᏋᎢᏡᎬᎢᎰᏩᎬᏤᎵᏍᏗᏱᎩᎱᎱᎤᎩᎴᎢᏦᎢᎠᏂᏧᏣᏨᎦᏥᎪᎥᏌᏊᎤᎶᏒᎢᎢᏡᎬᎢ
+    ᎹᎦᎺᎵᏥᎻᎼᏏᎽᏗᏩᏂᎦᏘᎾᎿᎠᏁᎬᎢᏅᎩᎾᏂᎡᎢᏌᎶᎵᏎᎷᎠᏑᏍᏗᏪᎩ ᎠᎴ ᏬᏗᏲᏭᎾᏓᏍᏓᏴᏁᎢᎤᎦᏅᏮᏰᎵᏳᏂᎨᎢ
     Příliš žluťoučký kůň úpěl ďábelské ódy
     Quizdeltagerne spiste jordbær med fløde, mens cirkusklovnen Walther spillede på xylofon
     Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich
@@ -73,9 +76,17 @@ Colour-code that supports 65535 opaque or semi-transparent colours via 4 bit ARG
 
 Control characters to support Bulgarian and Serbian letter shapes on the fly
 
+    Press  to pay respects—or is it , or …
+
+Custom symbols for video games
+
+    Can you distinguish following dashes: - – — - – — – - ――――――――――― 48–63 48-63
+
+For all those dash-pedants, we have en-dash, em-dash, and even horizontal bars!
+
 Unicode References:
 
     Basic Latin   Latin-1   Latin Extension A   Latin Extionsion B   IPA Extension   Greek   Cyrillic   Cyrillic Supplement
-    Armenian   Thai   Georgian   Runic   General Punctuations   CJK Symbols   Kana   CJK Unihan Extension A   CJK Unihan
-    Hangul Syllables   Fullwidth Forms
+    Armenian   Thai   Georgian   Runic   Cherokee   General Punctuations   CJK Symbols   Kana   CJK Unihan Extension A
+    CJK Unihan   Hangul Syllables   Fullwidth Forms
 

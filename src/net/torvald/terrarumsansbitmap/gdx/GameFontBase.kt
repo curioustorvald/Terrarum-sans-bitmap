@@ -134,6 +134,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isCharsetOverrideHigh(c: Char) = c.toInt() in 0xDFF8..0xDFFF // only works with JVM (which uses UTF-16 internally)
     private fun isCharsetOverrideLow(c: Char) = c.toInt() == 0xDBBF // only works with JVM (which uses UTF-16 internally)
     private fun isBulgarian(c: Char) = c.toInt() in 0x400..0x45F
+    private fun isCherokee(c: Char) = c.toInt() in codeRange[SHEET_TSALAGI_VARW]
 
 
     private fun extAindexX(c: Char) = (c.toInt() - 0x100) % 16
@@ -184,6 +185,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun latinExtAddX(c: Char) = (c.toInt() - 0x1E00) % 16
     private fun latinExtAddY(c: Char) = (c.toInt() - 0x1E00) / 16
 
+    private fun cherokeeIndexX(c: Char) = (c.toInt() - 0x13A0) % 16
+    private fun cherokeeIndexY(c: Char) = (c.toInt() - 0x13A0) / 16
+
     private fun getColour(charHigh: Char, charLow: Char): Color { // input: 0x10ARGB, out: RGBA8888
         val codePoint = Character.toCodePoint(charHigh, charLow)
 
@@ -221,7 +225,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_IPA_VARW,
             SHEET_LATIN_EXT_ADD_VARW,
             SHEET_BULGARIAN_VARW,
-            SHEET_SERBIAN_VARW
+            SHEET_SERBIAN_VARW,
+            SHEET_TSALAGI_VARW
     )
 
     private val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
@@ -245,7 +250,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             "latinExt_additional_variable.tga",
             "puae000-e0ff.tga",
             "cyrilic_bulgarian_variable.tga",
-            "cyrilic_serbian_variable.tga"
+            "cyrilic_serbian_variable.tga",
+            "tsalagi_variable.tga"
     )
     private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF,
@@ -267,7 +273,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0x1E00..0x1EFF,
             0xE000..0xE0FF,
             0xF00000..0xF0005F, // assign them to PUA
-            0xF00060..0xF000BF  // assign them to PUA
+            0xF00060..0xF000BF, // assign them to PUA
+            0x13A0..0x13F5
     )
     private val glyphWidths: HashMap<Int, Int> = HashMap() // if the value is negative, it's diacritics
     private val sheets: Array<TextureRegionPack>
@@ -646,6 +653,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             return SHEET_RUNIC
         else if (isLatinExtAdd(c))
             return SHEET_LATIN_EXT_ADD_VARW
+        else if (isCherokee(c))
+            return SHEET_TSALAGI_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -722,6 +731,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_BULGARIAN_VARW, SHEET_SERBIAN_VARW -> { // expects Unicode charpoint, NOT an internal one
                 sheetX = cyrilicIndexX(ch)
                 sheetY = cyrilicIndexY(ch)
+            }
+            SHEET_TSALAGI_VARW -> {
+                sheetX = cherokeeIndexX(ch)
+                sheetY = cherokeeIndexY(ch)
             }
             else -> {
                 sheetX = ch.toInt() % 16
@@ -823,6 +836,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val SHEET_CUSTOM_SYM =        17
         internal val SHEET_BULGARIAN_VARW =    18
         internal val SHEET_SERBIAN_VARW =      19
+        internal val SHEET_TSALAGI_VARW =      20
 
         internal val SHEET_UNKNOWN = 254
 

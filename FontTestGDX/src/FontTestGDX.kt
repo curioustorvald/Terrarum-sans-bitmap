@@ -135,6 +135,10 @@ class FontTestGDX : Game() {
         println(font.charsetOverrideSerbian)
         println(font.noColorCode)
         println(font.toColorCode(0xFFFF))
+
+        println(0xE026.toChar())
+        println(0xE078.toChar())
+        println(0xE073.toChar())
     }
 
     override fun getScreen(): Screen? {
