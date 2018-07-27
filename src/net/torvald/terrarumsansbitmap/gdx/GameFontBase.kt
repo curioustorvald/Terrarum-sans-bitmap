@@ -790,7 +790,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             else throw IllegalArgumentException("Font scale cannot be zero or negative (input: $value)")
         }
 
-    fun toColorCode(rgba4444: Int): String = GameFontBase.toColorCode(rgba4444)
+    fun toColorCode(argb4444: Int): String = GameFontBase.toColorCode(argb4444)
     fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = GameFontBase.toColorCode(r, g, b, a)
     val noColorCode = toColorCode(0x0000)
 

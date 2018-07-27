@@ -3,6 +3,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase
@@ -130,15 +131,10 @@ class FontTestGDX : Game() {
 
         println("${font.noColorCode}\nEND")
 
-        println(font.charsetOverrideNormal)
-        println(font.charsetOverrideBulgarian)
-        println(font.charsetOverrideSerbian)
-        println(font.noColorCode)
-        println(font.toColorCode(0xFFFF))
+        println(font.toColorCode(0xC_FFD))
+        println(font.toColorCode(0xF_F55))
+        println(font.toColorCode(0xE_CCC))
 
-        println(0xE026.toChar())
-        println(0xE078.toChar())
-        println(0xE073.toChar())
     }
 
     override fun getScreen(): Screen? {
@@ -159,6 +155,7 @@ class FontTestGDX : Game() {
 
         batch.begin()
 
+        batch.color = Color(0xeeeeeeff.toInt())
         inputText.forEachIndexed { index, s ->
             font.draw(batch, s, 10f, appConfig.height - 30f - index * font.lineHeight)
         }
