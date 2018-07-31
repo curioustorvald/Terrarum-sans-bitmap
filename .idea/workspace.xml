@@ -7,12 +7,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/FontTestGDX/META-INF/MANIFEST.MF" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/FontDemoGDX.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/FontDemoGDX.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/demotext.txt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/demotext.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/demo.PNG" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -32,8 +27,8 @@
           <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="568">
-                  <caret line="850" column="12" selection-start-line="850" selection-start-column="12" selection-end-line="850" selection-end-column="12" />
+                <state relative-caret-position="268">
+                  <caret line="145" column="17" selection-start-line="145" selection-start-column="17" selection-end-line="145" selection-end-column="17" />
                 </state>
               </provider>
             </entry>
@@ -41,8 +36,8 @@
           <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/slick2d/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="153">
-                  <caret line="523" column="48" selection-start-line="523" selection-start-column="48" selection-end-line="523" selection-end-column="48" />
+                <state relative-caret-position="3689">
+                  <caret line="531" column="21" selection-start-line="531" selection-start-column="21" selection-end-line="531" selection-end-column="21" />
                 </state>
               </provider>
             </entry>
@@ -63,21 +58,30 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="true">
+          <file leaf-file-name="demotext.txt" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/FontTestGDX/demotext.txt">
+              <provider selected="true" editor-type-id="text-editor">
+                <state>
+                  <caret selection-end-line="1" selection-end-column="43" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-242">
+                <state relative-caret-position="3211">
                   <caret line="277" column="5" selection-start-line="277" selection-start-column="5" selection-end-line="277" selection-end-column="5" />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="README.md" pinned="false" current-in-tab="false">
+          <file leaf-file-name="README.md" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/README.md">
               <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
-                <state split_layout="FIRST">
-                  <first_editor relative-caret-position="631">
-                    <caret line="241" column="171" selection-start-line="241" selection-start-column="171" selection-end-line="241" selection-end-column="171" />
+                <state split_layout="SECOND">
+                  <first_editor relative-caret-position="273">
+                    <caret line="11" column="153" selection-start-line="11" selection-start-column="153" selection-end-line="11" selection-end-column="153" />
                   </first_editor>
                   <second_editor>
                     <js_state />
@@ -113,7 +117,6 @@
       <find>ө</find>
       <find>ď</find>
       <find>ñ</find>
-      <find>fun relo</find>
       <find>getSheetT</find>
       <find>Unexpected</find>
       <find>Unexp</find>
@@ -122,6 +125,7 @@
       <find>isHangul</find>
       <find>Ᏽ</find>
       <find>toColo</find>
+      <find>fun relo</find>
     </findStrings>
     <replaceStrings>
       <replace>.141</replace>
@@ -138,15 +142,15 @@
         <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/testbed/FontTest.kt" />
         <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/testbed/FontTestGDX.kt" />
         <option value="$PROJECT_DIR$/LICENSE.md" />
-        <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/slick2d/GameFontBase.kt" />
         <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" />
         <option value="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" />
         <option value="$PROJECT_DIR$/FontTestGDX/demotext.txt" />
+        <option value="$PROJECT_DIR$/README.md" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
+  <component name="ProjectFrameBounds" extendedState="7">
     <option name="x" value="1912" />
     <option name="y" value="-521" />
     <option name="width" value="1936" />
@@ -416,7 +420,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="1912" y="-521" width="1936" height="1176" extended-state="6" />
+    <frame x="1912" y="-521" width="1936" height="1176" extended-state="7" />
     <editor active="true" />
     <layout>
       <window_info anchor="right" id="Palette" order="3" />
@@ -429,11 +433,11 @@
       <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Terminal" order="7" />
       <window_info id="Designer" order="2" />
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.12953092" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.12953092" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info id="UI Designer" order="2" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.23025048" />
+      <window_info anchor="bottom" id="Debug" order="3" visible="true" weight="0.23025048" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -654,27 +658,8 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/slick2d/GameFontBase.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="523" column="48" selection-start-line="523" selection-start-column="48" selection-end-line="523" selection-end-column="48" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/AppData/Local/Temp/Ихадоу адаҟьа.URL">
       <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
-        <state split_layout="FIRST">
-          <first_editor relative-caret-position="631">
-            <caret line="241" column="171" selection-start-line="241" selection-start-column="171" selection-end-line="241" selection-end-column="171" />
-          </first_editor>
-          <second_editor>
-            <js_state />
-          </second_editor>
-        </state>
-      </provider>
     </entry>
     <entry file="jar://$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar!/net/torvald/terrarumsansbitmap/gdx/GameFontBase.class">
       <provider selected="true" editor-type-id="text-editor">
@@ -695,15 +680,34 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/FontTestGDX/demotext.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="299">
-          <caret line="23" lean-forward="true" selection-start-line="23" selection-end-line="23" />
+        <state>
+          <caret selection-end-line="1" selection-end-column="43" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/slick2d/GameFontBase.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3689">
+          <caret line="531" column="21" selection-start-line="531" selection-start-column="21" selection-end-line="531" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+        <state split_layout="SECOND">
+          <first_editor relative-caret-position="273">
+            <caret line="11" column="153" selection-start-line="11" selection-start-column="153" selection-end-line="11" selection-end-column="153" />
+          </first_editor>
+          <second_editor>
+            <js_state />
+          </second_editor>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-242">
-          <caret line="277" column="5" selection-start-line="277" selection-start-column="5" selection-end-line="277" selection-end-column="5" />
+        <state relative-caret-position="268">
+          <caret line="145" column="17" selection-start-line="145" selection-start-column="17" selection-end-line="145" selection-end-column="17" />
         </state>
       </provider>
     </entry>
