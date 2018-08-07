@@ -1,7 +1,7 @@
 /*
  * Terrarum Sans Bitmap
  * 
- * Copyright (c) 2017 Minjae Song (Torvald)
+ * Copyright (c) 2017-2018 Minjae Song (Torvald)
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.*
+import net.torvald.terrarumsansbitmap.GlyphProps
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -118,12 +119,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isUniHan(c: Char) = c.toInt() in codeRange[SHEET_UNIHAN]
     private fun isCyrilic(c: Char) = c.toInt() in codeRange[SHEET_CYRILIC_VARW]
     private fun isFullwidthUni(c: Char) = c.toInt() in codeRange[SHEET_FW_UNI]
-    private fun isUniPunct(c: Char) = c.toInt() in codeRange[SHEET_UNI_PUNCT]
+    private fun isUniPunct(c: Char) = c.toInt() in codeRange[SHEET_UNI_PUNCT_VARW]
     private fun isGreek(c: Char) = c.toInt() in codeRange[SHEET_GREEK_VARW]
     private fun isThai(c: Char) = c.toInt() in codeRange[SHEET_THAI_VARW]
-    private fun isDiacritics(c: Char) = c.toInt() in 0xE34..0xE3A
+    /*private fun isDiacritics(c: Char) = c.toInt() in 0xE34..0xE3A
             || c.toInt() in 0xE47..0xE4E
-            || c.toInt() == 0xE31
+            || c.toInt() == 0xE31*/
     private fun isCustomSym(c: Char) = c.toInt() in codeRange[SHEET_CUSTOM_SYM]
     private fun isArmenian(c: Char) = c.toInt() in codeRange[SHEET_HAYEREN_VARW]
     private fun isKartvelian(c: Char) = c.toInt() in codeRange[SHEET_KARTULI_VARW]
@@ -217,7 +218,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_EXTA_VARW,
             SHEET_EXTB_VARW,
             SHEET_CYRILIC_VARW,
-            SHEET_UNI_PUNCT,
+            SHEET_UNI_PUNCT_VARW,
             SHEET_GREEK_VARW,
             SHEET_THAI_VARW,
             SHEET_HAYEREN_VARW,
@@ -276,7 +277,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0xF00060..0xF000BF, // assign them to PUA
             0x13A0..0x13F5
     )
-    private val glyphWidths: HashMap<Int, Int> = HashMap() // if the value is negative, it's diacritics
+    private val glyphProps: HashMap<Int, GlyphProps> = HashMap()
     private val sheets: Array<TextureRegionPack>
 
     private var charsetOverride = 0
@@ -318,6 +319,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 pixmap = Pixmap(Gdx.files.internal(fontParentDir + it))
             }
 
+
+            buildWidthTableFixed()
 
             if (isVariable) {
                 println("[TerrarumSansBitmap] loading texture $it [VARIABLE]")
@@ -388,8 +391,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private val offsetCustomSym = (H - SIZE_CUSTOM_SYM) / 2
 
     private var textBuffer: CharSequence = ""
-    private var textBWidth = intArrayOf() // absolute posX of glyphs from print-origin
-    private var textBGSize = intArrayOf() // width of each glyph
+    private var posXbuffer = intArrayOf() // absolute posX of glyphs from print-origin
+    private var posYbuffer = intArrayOf() // absolute posY of glyphs from print-origin
+    private var glyphWidthBuffer = intArrayOf() // width of each glyph
 
     private lateinit var originalColour: Color
 
@@ -407,22 +411,73 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             textBuffer = str
             val widths = getWidthOfCharSeq(str)
 
-            textBGSize = widths
+            glyphWidthBuffer = widths
 
-            textBWidth = IntArray(str.length, { charIndex ->
-                if (charIndex == 0)
-                    0
-                else {
-                    var acc = 0
-                    (0..charIndex - 1).forEach { acc += maxOf(0, widths[it]) } // don't accumulate diacrtics (which has negative value)
-                    /*return*/acc
+            posXbuffer = IntArray(str.length, { 0 })
+            posYbuffer = IntArray(str.length, { 0 })
+
+
+            var nonDiacriticCounter = 0 // index of last instance of non-diacritic char
+            var stackUpwardCounter = 0
+            var stackDownwardCounter = 0
+            for (charIndex in 0 until posXbuffer.size) {
+                if (charIndex > 0) {
+                    // nonDiacriticCounter allows multiple diacritics
+
+                    val thisChar = textBuffer[charIndex]
+                    if (glyphProps[thisChar.toInt()] == null) {
+                        throw InternalError("No props for char '$thisChar' (${thisChar.toInt().toString(16)})")
+                    }
+                    val thisProp = glyphProps[thisChar.toInt()]!!
+                    val lastNonDiacriticChar = textBuffer[nonDiacriticCounter]
+                    val itsProp = glyphProps[lastNonDiacriticChar.toInt()]!!
+
+                    val alignmentOffset = when (thisProp.alignWhere) {
+                        GlyphProps.LEFT -> 0
+                        GlyphProps.RIGHT -> thisProp.width - W_VAR_INIT
+                        GlyphProps.CENTRE -> Math.floor((thisProp.width - W_VAR_INIT) / 2.0).toInt()
+                        else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
+                    }
+
+                    if (!thisProp.writeOnTop) {
+                        posXbuffer[charIndex] = posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar
+                        nonDiacriticCounter = charIndex
+                        stackUpwardCounter = 0
+                        stackDownwardCounter = 0
+                    }
+                    else {
+                        // set X pos according to alignment information
+                        posXbuffer[charIndex] = when (thisProp.alignWhere) {
+                            GlyphProps.LEFT -> posXbuffer[nonDiacriticCounter]
+                            GlyphProps.RIGHT -> {
+                                posXbuffer[nonDiacriticCounter] - (W_VAR_INIT - itsProp.width)
+                            }
+                            GlyphProps.CENTRE -> {
+                                val alignXPos = if (itsProp.alignXPos == 0) itsProp.width.div(2) else itsProp.alignXPos
+
+                                posXbuffer[nonDiacriticCounter] + alignXPos - (W_VAR_INIT - 1).div(2)
+                            }
+                            else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
+                        }
+
+
+                        // set Y pos according to diacritics position
+                        if (thisProp.diacriticsStackDown) {
+                            posYbuffer[charIndex] = -H_DIACRITICS * stackDownwardCounter
+                            stackDownwardCounter++
+                        }
+                        else {
+                            posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
+                            stackUpwardCounter++
+                        }
+                    }
                 }
-            })
+            }
         }
 
 
         //print("[TerrarumSansBitmap] widthTable for $textBuffer: ")
-        //textBWidth.forEach { print("$it ") }; println()
+        //posXbuffer.forEach { print("$it ") }; println()
 
 
         originalColour = batch.color.cpy()
@@ -480,39 +535,39 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 if (!noShadow) {
                     batch.color = shadowCol
 
-                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + textBWidth[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + textBWidth[index]    , y + if (flipY) 1 else -1)
-                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + textBWidth[index] + 1, y + if (flipY) 1 else -1)
+                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + posXbuffer[index] + 1, y)
+                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + posXbuffer[index]    , y + if (flipY) 1 else -1)
+                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + posXbuffer[index] + 1, y + if (flipY) 1 else -1)
 
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index]    , y + if (flipY) 1 else -1)
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index] + 1, y + if (flipY) 1 else -1)
+                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index] + 1, y)
+                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index]    , y + if (flipY) 1 else -1)
+                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index] + 1, y + if (flipY) 1 else -1)
 
-                    batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index]    , y + if (flipY) 1 else -1)
-                    batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index] + 1, y + if (flipY) 1 else -1)
+                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index] + 1, y)
+                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index]    , y + if (flipY) 1 else -1)
+                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index] + 1, y + if (flipY) 1 else -1)
                 }
 
 
                 batch.color = mainCol
-                batch.draw(hangulSheet.get(indexCho, choRow)  , x + textBWidth[index], y)
-                batch.draw(hangulSheet.get(indexJung, jungRow), x + textBWidth[index], y)
-                batch.draw(hangulSheet.get(indexJong, jongRow), x + textBWidth[index], y)
+                batch.draw(hangulSheet.get(indexCho, choRow)  , x + posXbuffer[index], y)
+                batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index], y)
+                batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index], y)
             }
             else {
                 try {
-                    val offset = if (!isDiacritics(c)) 0 else {
+                    /*val offset = if (!isDiacritics(c)) 0 else {
                         if (index > 0) // LIMITATION: does not support double (or more) diacritics properly
-                            (textBGSize[index] - textBGSize[index - 1]) / 2
+                            (glyphWidthBuffer[index] - glyphWidthBuffer[index - 1]) / 2
                         else
-                            textBGSize[index]
+                            glyphWidthBuffer[index]
                     }
 
                     if (!noShadow) {
                         batch.color = shadowCol
                         batch.draw(
                                 sheets[sheetID].get(sheetX, sheetY),
-                                x + textBWidth[index] + 1 + offset,
+                                x + posXbuffer[index] + 1 + offset,
                                 y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
                                     offsetUnihan.flipY()
                                 else if (sheetID == SHEET_CUSTOM_SYM)
@@ -522,7 +577,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         )
                         batch.draw(
                                 sheets[sheetID].get(sheetX, sheetY),
-                                x + textBWidth[index] + offset,
+                                x + posXbuffer[index] + offset,
                                 y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
                                     offsetUnihan.flipY() + 1
                                 else if (sheetID == SHEET_CUSTOM_SYM)
@@ -532,7 +587,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         )
                         batch.draw(
                                 sheets[sheetID].get(sheetX, sheetY),
-                                x + textBWidth[index] + 1 + offset,
+                                x + posXbuffer[index] + 1 + offset,
                                 y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
                                     offsetUnihan.flipY() + 1
                                 else if (sheetID == SHEET_CUSTOM_SYM)
@@ -546,14 +601,27 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     batch.color = mainCol
                     batch.draw(
                             sheets[sheetID].get(sheetX, sheetY),
-                            x + textBWidth[index] + offset,
+                            x + posXbuffer[index] + offset,
                             y +
                                     if (sheetID == SHEET_UNIHAN) // evil exceptions
                                         offsetUnihan
                                     else if (sheetID == SHEET_CUSTOM_SYM)
                                         offsetCustomSym
                                     else 0
-                    )
+                    )*/
+
+                    batch.color = mainCol
+                    val posY = y + posYbuffer[index].flipY() +
+                            if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                offsetUnihan
+                            else if (sheetID == SHEET_CUSTOM_SYM)
+                                offsetCustomSym
+                            else 0
+
+                    val posX = x + posXbuffer[index]
+                    val texture = sheets[sheetID].get(sheetX, sheetY)
+
+                    batch.draw(texture, posX, posY)
                 }
                 catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
                     batch.color = mainCol
@@ -583,12 +651,14 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             val ctype = getSheetType(s[i])
 
             if (variableWidthSheets.contains(ctype)) {
-                if (!glyphWidths.containsKey(chr.toInt())) {
-                    println("[TerrarumSansBitmap] no width data for glyph number ${Integer.toHexString(chr.toInt()).toUpperCase()}")
+                if (!glyphProps.containsKey(chr.toInt())) {
+                    System.err.println("[TerrarumSansBitmap] no width data for glyph number ${Integer.toHexString(chr.toInt()).toUpperCase()}")
                     len[i] = W_LATIN_WIDE
                 }
 
-                len[i] = glyphWidths[chr.toInt()]!!
+                val prop = glyphProps[chr.toInt()]!!
+                //println("${chr.toInt()} -> $prop")
+                len[i] = prop.width * (if (prop.writeOnTop) -1 else 1)
             }
             else if (isColourCodeHigh(chr) || isColourCodeLow(chr) || isCharsetOverrideHigh(chr) || isCharsetOverrideLow(chr))
                 len[i] = 0
@@ -632,7 +702,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         else if (isCyrilic(c))
             return SHEET_CYRILIC_VARW
         else if (isUniPunct(c))
-            return SHEET_UNI_PUNCT
+            return SHEET_UNI_PUNCT_VARW
         else if (isCJKPunct(c))
             return SHEET_CJK_PUNCT
         else if (isFullwidthUni(c))
@@ -692,7 +762,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 sheetX = fullwidthUniIndexX(ch)
                 sheetY = fullwidthUniIndexY(ch)
             }
-            SHEET_UNI_PUNCT -> {
+            SHEET_UNI_PUNCT_VARW -> {
                 sheetX = uniPunctIndexX(ch)
                 sheetY = uniPunctIndexY(ch)
             }
@@ -758,21 +828,46 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             val codeStartX = cellX + binaryCodeOffset
             val codeStartY = cellY
+            val tagStartY = codeStartY + 11
 
-            var glyphWidth = 0
-            for (downCtr in 0..3) {
+
+            var width = 0
+            var tags = 0
+
+            for (y in 0 until 4) {
                 // if ALPHA is not zero, assume it's 1
-                if (pixmap.getPixel(codeStartX, codeStartY + downCtr).and(0xFF) != 0) {
-                    glyphWidth = glyphWidth or (1 shl downCtr)
+                if (pixmap.getPixel(codeStartX, codeStartY + y).and(0xFF) != 0) {
+                    width = width or (1 shl y)
                 }
             }
 
-            val isDiacritics = pixmap.getPixel(codeStartX, codeStartY + H - 1).and(0xFF) != 0
-            if (isDiacritics)
-                glyphWidth = -glyphWidth
+            for (y in 0 until 9) {
+                // if ALPHA is not zero, assume it's 1
+                if (pixmap.getPixel(codeStartX, tagStartY + y).and(0xFF) != 0) {
+                    tags = tags or (1 shl y)
+                }
+            }
 
-            glyphWidths[code] = glyphWidth
+            //println("Width table: $code, $tags")
+
+            /*val isDiacritics = pixmap.getPixel(codeStartX, codeStartY + H - 1).and(0xFF) != 0
+            if (isDiacritics)
+                glyphWidth = -glyphWidth*/
+
+            glyphProps[code] = GlyphProps(width, tags)
         }
+    }
+
+    fun buildWidthTableFixed() {
+        // fixed-width props
+        this.codeRange[SHEET_CJK_PUNCT].forEach { glyphProps[it] = GlyphProps(W_ASIAN_PUNCT, 0) }
+        this.codeRange[SHEET_CUSTOM_SYM].forEach { glyphProps[it] = GlyphProps(20, 0) }
+        this.codeRange[SHEET_FW_UNI].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
+        this.codeRange[SHEET_HANGUL].forEach { glyphProps[it] = GlyphProps(W_HANGUL, 0) }
+        this.codeRange[SHEET_KANA].forEach { glyphProps[it] = GlyphProps(W_KANA, 0) }
+        this.codeRange[SHEET_RUNIC].forEach { glyphProps[it] = GlyphProps(9, 0) }
+        this.codeRange[SHEET_UNIHAN].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
+        (0xD800..0xDFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
     }
 
     private val glyphLayout = GlyphLayout()
@@ -807,12 +902,14 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val W_KANA = 12
         internal val W_UNIHAN = 16
         internal val W_LATIN_WIDE = 9 // width of regular letters
-        internal val W_VAR_INIT = 15
+        internal val W_VAR_INIT = 15 // it assumes width of 15 regardless of the tagged width
 
         internal val HGAP_VAR = 1
 
         internal val H = 20
         internal val H_UNIHAN = 16
+
+        internal val H_DIACRITICS = 4
 
         internal val SIZE_CUSTOM_SYM = 18
 
@@ -825,7 +922,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val SHEET_UNIHAN =            6
         internal val SHEET_CYRILIC_VARW =      7
         internal val SHEET_FW_UNI =            8
-        internal val SHEET_UNI_PUNCT =         9
+        internal val SHEET_UNI_PUNCT_VARW =    9
         internal val SHEET_GREEK_VARW =        10
         internal val SHEET_THAI_VARW =         11
         internal val SHEET_HAYEREN_VARW =      12

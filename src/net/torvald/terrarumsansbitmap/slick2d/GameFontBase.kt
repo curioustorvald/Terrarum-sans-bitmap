@@ -24,7 +24,7 @@
 
 package net.torvald.terrarumsansbitmap.slick2d
 
-import net.torvald.terrarumsansbitmap.gdx.GameFontBase
+/*import net.torvald.terrarumsansbitmap.gdx.GameFontBase
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.JUNG_COUNT
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.JONG_COUNT
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.W_ASIAN_PUNCT
@@ -46,7 +46,7 @@ import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_CJK_PUNCT
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_UNIHAN
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_CYRILIC_VARW
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_FW_UNI
-import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_UNI_PUNCT
+import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_UNI_PUNCT_VARW
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_GREEK_VARW
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_THAI_VARW
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase.Companion.SHEET_HAYEREN_VARW
@@ -144,7 +144,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : Font {
     private fun isUniHan(c: Char) = c.toInt() in codeRange[SHEET_UNIHAN]
     private fun isCyrilic(c: Char) = c.toInt() in codeRange[SHEET_CYRILIC_VARW]
     private fun isFullwidthUni(c: Char) = c.toInt() in codeRange[SHEET_FW_UNI]
-    private fun isUniPunct(c: Char) = c.toInt() in codeRange[SHEET_UNI_PUNCT]
+    private fun isUniPunct(c: Char) = c.toInt() in codeRange[SHEET_UNI_PUNCT_VARW]
     private fun isGreek(c: Char) = c.toInt() in codeRange[SHEET_GREEK_VARW]
     private fun isThai(c: Char) = c.toInt() in codeRange[SHEET_THAI_VARW]
     private fun isDiacritics(c: Char) = c.toInt() in 0xE34..0xE3A
@@ -238,7 +238,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : Font {
             SHEET_EXTA_VARW,
             SHEET_EXTB_VARW,
             SHEET_CYRILIC_VARW,
-            SHEET_UNI_PUNCT,
+            SHEET_UNI_PUNCT_VARW,
             SHEET_GREEK_VARW,
             SHEET_THAI_VARW,
             SHEET_HAYEREN_VARW,
@@ -628,7 +628,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : Font {
         else if (isCyrilic(c))
             return SHEET_CYRILIC_VARW
         else if (isUniPunct(c))
-            return SHEET_UNI_PUNCT
+            return SHEET_UNI_PUNCT_VARW
         else if (isCJKPunct(c))
             return SHEET_CJK_PUNCT
         else if (isFullwidthUni(c))
@@ -686,7 +686,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : Font {
                 sheetX = fullwidthUniIndexX(ch)
                 sheetY = fullwidthUniIndexY(ch)
             }
-            SHEET_UNI_PUNCT -> {
+            SHEET_UNI_PUNCT_VARW -> {
                 sheetX = uniPunctIndexX(ch)
                 sheetY = uniPunctIndexY(ch)
             }
@@ -787,4 +787,4 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false) : Font {
 
         val noColorCode = toColorCode(0x0000)
     }
-}
+}*/
