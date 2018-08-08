@@ -432,6 +432,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     val lastNonDiacriticChar = textBuffer[nonDiacriticCounter]
                     val itsProp = glyphProps[lastNonDiacriticChar.toInt()]!!
 
+
+                    //println("char: $thisChar; properties: $thisProp")
+
+
                     val alignmentOffset = when (thisProp.alignWhere) {
                         GlyphProps.LEFT -> 0
                         GlyphProps.RIGHT -> thisProp.width - W_VAR_INIT
@@ -463,11 +467,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                         // set Y pos according to diacritics position
                         if (thisProp.diacriticsStackDown) {
-                            posYbuffer[charIndex] = -H_DIACRITICS * stackDownwardCounter
+                            posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
                             stackDownwardCounter++
                         }
                         else {
-                            posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
+                            posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
                             stackUpwardCounter++
                         }
                     }
@@ -830,25 +834,24 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             val codeStartY = cellY
             val tagStartY = codeStartY + 11
 
-
             var width = 0
             var tags = 0
 
-            for (y in 0 until 4) {
+            for (y in 0..3) {
                 // if ALPHA is not zero, assume it's 1
                 if (pixmap.getPixel(codeStartX, codeStartY + y).and(0xFF) != 0) {
                     width = width or (1 shl y)
                 }
             }
 
-            for (y in 0 until 9) {
+            for (y in 0..8) {
                 // if ALPHA is not zero, assume it's 1
                 if (pixmap.getPixel(codeStartX, tagStartY + y).and(0xFF) != 0) {
                     tags = tags or (1 shl y)
                 }
             }
 
-            //println("Width table: $code, $tags")
+            //println("$code: Width $width, tags $tags")
 
             /*val isDiacritics = pixmap.getPixel(codeStartX, codeStartY + H - 1).and(0xFF) != 0
             if (isDiacritics)
@@ -909,7 +912,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val H = 20
         internal val H_UNIHAN = 16
 
-        internal val H_DIACRITICS = 4
+        internal val H_DIACRITICS = 3
 
         internal val SIZE_CUSTOM_SYM = 18
 
