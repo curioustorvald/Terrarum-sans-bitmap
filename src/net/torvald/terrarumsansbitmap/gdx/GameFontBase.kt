@@ -35,6 +35,8 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.GZIPInputStream
 
+typealias CodepointSequence = ArrayList<Int>
+
 /**
  * LibGDX port of Terrarum Sans Bitmap implementation
  *
@@ -109,89 +111,88 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             9
     }
 
-    private fun isHangul(c: Char) = c.toInt() in codeRange[SHEET_HANGUL]
-    private fun isAscii(c: Char) = c.toInt() in codeRange[SHEET_ASCII_VARW]
-    private fun isRunic(c: Char) = c.toInt() in codeRange[SHEET_RUNIC]
-    private fun isExtA(c: Char) = c.toInt() in codeRange[SHEET_EXTA_VARW]
-    private fun isExtB(c: Char) = c.toInt() in codeRange[SHEET_EXTB_VARW]
-    private fun isKana(c: Char) = c.toInt() in codeRange[SHEET_KANA]
-    private fun isCJKPunct(c: Char) = c.toInt() in codeRange[SHEET_CJK_PUNCT]
-    private fun isUniHan(c: Char) = c.toInt() in codeRange[SHEET_UNIHAN]
-    private fun isCyrilic(c: Char) = c.toInt() in codeRange[SHEET_CYRILIC_VARW]
-    private fun isFullwidthUni(c: Char) = c.toInt() in codeRange[SHEET_FW_UNI]
-    private fun isUniPunct(c: Char) = c.toInt() in codeRange[SHEET_UNI_PUNCT_VARW]
-    private fun isGreek(c: Char) = c.toInt() in codeRange[SHEET_GREEK_VARW]
-    private fun isThai(c: Char) = c.toInt() in codeRange[SHEET_THAI_VARW]
-    /*private fun isDiacritics(c: Char) = c.toInt() in 0xE34..0xE3A
-            || c.toInt() in 0xE47..0xE4E
-            || c.toInt() == 0xE31*/
-    private fun isCustomSym(c: Char) = c.toInt() in codeRange[SHEET_CUSTOM_SYM]
-    private fun isArmenian(c: Char) = c.toInt() in codeRange[SHEET_HAYEREN_VARW]
-    private fun isKartvelian(c: Char) = c.toInt() in codeRange[SHEET_KARTULI_VARW]
-    private fun isIPA(c: Char) = c.toInt() in codeRange[SHEET_IPA_VARW]
-    private fun isColourCodeHigh(c: Char) = c.toInt() in 0xDC00..0xDFFF // only works with JVM (which uses UTF-16 internally)
-    private fun isColourCodeLow(c: Char) = c.toInt() in 0xDBC0..0xDBFF // only works with JVM (which uses UTF-16 internally)
-    private fun isLatinExtAdd(c: Char) = c.toInt() in 0x1E00..0x1EFF
-    private fun isCharsetOverrideHigh(c: Char) = c.toInt() in 0xDFF8..0xDFFF // only works with JVM (which uses UTF-16 internally)
-    private fun isCharsetOverrideLow(c: Char) = c.toInt() == 0xDBBF // only works with JVM (which uses UTF-16 internally)
-    private fun isBulgarian(c: Char) = c.toInt() in 0x400..0x45F
-    private fun isCherokee(c: Char) = c.toInt() in codeRange[SHEET_TSALAGI_VARW]
+    private fun isHangul(c: Int) = c in codeRange[SHEET_HANGUL]
+    private fun isAscii(c: Int) = c in codeRange[SHEET_ASCII_VARW]
+    private fun isRunic(c: Int) = c in codeRange[SHEET_RUNIC]
+    private fun isExtA(c: Int) = c in codeRange[SHEET_EXTA_VARW]
+    private fun isExtB(c: Int) = c in codeRange[SHEET_EXTB_VARW]
+    private fun isKana(c: Int) = c in codeRange[SHEET_KANA]
+    private fun isCJKPunct(c: Int) = c in codeRange[SHEET_CJK_PUNCT]
+    private fun isUniHan(c: Int) = c in codeRange[SHEET_UNIHAN]
+    private fun isCyrilic(c: Int) = c in codeRange[SHEET_CYRILIC_VARW]
+    private fun isFullwidthUni(c: Int) = c in codeRange[SHEET_FW_UNI]
+    private fun isUniPunct(c: Int) = c in codeRange[SHEET_UNI_PUNCT_VARW]
+    private fun isGreek(c: Int) = c in codeRange[SHEET_GREEK_VARW]
+    private fun isThai(c: Int) = c in codeRange[SHEET_THAI_VARW]
+    /*private fun isDiacritics(c: Int) = c in 0xE34..0xE3A
+            || c in 0xE47..0xE4E
+            || c == 0xE31*/
+    private fun isCustomSym(c: Int) = c in codeRange[SHEET_CUSTOM_SYM]
+    private fun isArmenian(c: Int) = c in codeRange[SHEET_HAYEREN_VARW]
+    private fun isKartvelian(c: Int) = c in codeRange[SHEET_KARTULI_VARW]
+    private fun isIPA(c: Int) = c in codeRange[SHEET_IPA_VARW]
+    private fun isLatinExtAdd(c: Int) = c in 0x1E00..0x1EFF
+    private fun isBulgarian(c: Int) = c in 0x400..0x45F
+    private fun isColourCode(c: Int) = c in 0x100000..0x10FFFF
+    private fun isCharsetOverride(c: Int) = c in 0xFFFF8..0xFFFFF
+    private fun isCherokee(c: Int) = c in codeRange[SHEET_TSALAGI_VARW]
 
 
-    private fun extAindexX(c: Char) = (c.toInt() - 0x100) % 16
-    private fun extAindexY(c: Char) = (c.toInt() - 0x100) / 16
+    private fun extAindexX(c: Int) = (c - 0x100) % 16
+    private fun extAindexY(c: Int) = (c - 0x100) / 16
 
-    private fun extBindexX(c: Char) = (c.toInt() - 0x180) % 16
-    private fun extBindexY(c: Char) = (c.toInt() - 0x180) / 16
+    private fun extBindexX(c: Int) = (c - 0x180) % 16
+    private fun extBindexY(c: Int) = (c - 0x180) / 16
 
-    private fun runicIndexX(c: Char) = (c.toInt() - 0x16A0) % 16
-    private fun runicIndexY(c: Char) = (c.toInt() - 0x16A0) / 16
+    private fun runicIndexX(c: Int) = (c - 0x16A0) % 16
+    private fun runicIndexY(c: Int) = (c - 0x16A0) / 16
 
-    private fun kanaIndexX(c: Char) = (c.toInt() - 0x3040) % 16
-    private fun kanaIndexY(c: Char) = (c.toInt() - 0x3040) / 16
+    private fun kanaIndexX(c: Int) = (c - 0x3040) % 16
+    private fun kanaIndexY(c: Int) =
+            if (c in 0x31F0..0x31FF) 12
+            else if (c in 0x31F0..0x31FF) 13
+            else (c - 0x3040) / 16
 
-    private fun cjkPunctIndexX(c: Char) = (c.toInt() - 0x3000) % 16
-    private fun cjkPunctIndexY(c: Char) = (c.toInt() - 0x3000) / 16
+    private fun cjkPunctIndexX(c: Int) = (c - 0x3000) % 16
+    private fun cjkPunctIndexY(c: Int) = (c - 0x3000) / 16
 
-    private fun cyrilicIndexX(c: Char) = (c.toInt() - 0x400) % 16
-    private fun cyrilicIndexY(c: Char) = (c.toInt() - 0x400) / 16
+    private fun cyrilicIndexX(c: Int) = (c - 0x400) % 16
+    private fun cyrilicIndexY(c: Int) = (c - 0x400) / 16
 
-    private fun fullwidthUniIndexX(c: Char) = (c.toInt() - 0xFF00) % 16
-    private fun fullwidthUniIndexY(c: Char) = (c.toInt() - 0xFF00) / 16
+    private fun fullwidthUniIndexX(c: Int) = (c - 0xFF00) % 16
+    private fun fullwidthUniIndexY(c: Int) = (c - 0xFF00) / 16
 
-    private fun uniPunctIndexX(c: Char) = (c.toInt() - 0x2000) % 16
-    private fun uniPunctIndexY(c: Char) = (c.toInt() - 0x2000) / 16
+    private fun uniPunctIndexX(c: Int) = (c - 0x2000) % 16
+    private fun uniPunctIndexY(c: Int) = (c - 0x2000) / 16
 
-    private fun unihanIndexX(c: Char) = (c.toInt() - 0x3400) % 256
-    private fun unihanIndexY(c: Char) = (c.toInt() - 0x3400) / 256
+    private fun unihanIndexX(c: Int) = (c - 0x3400) % 256
+    private fun unihanIndexY(c: Int) = (c - 0x3400) / 256
 
-    private fun greekIndexX(c: Char) = (c.toInt() - 0x370) % 16
-    private fun greekIndexY(c: Char) = (c.toInt() - 0x370) / 16
+    private fun greekIndexX(c: Int) = (c - 0x370) % 16
+    private fun greekIndexY(c: Int) = (c - 0x370) / 16
 
-    private fun thaiIndexX(c: Char) = (c.toInt() - 0xE00) % 16
-    private fun thaiIndexY(c: Char) = (c.toInt() - 0xE00) / 16
+    private fun thaiIndexX(c: Int) = (c - 0xE00) % 16
+    private fun thaiIndexY(c: Int) = (c - 0xE00) / 16
 
-    private fun symbolIndexX(c: Char) = (c.toInt() - 0xE000) % 16
-    private fun symbolIndexY(c: Char) = (c.toInt() - 0xE000) / 16
+    private fun symbolIndexX(c: Int) = (c - 0xE000) % 16
+    private fun symbolIndexY(c: Int) = (c - 0xE000) / 16
 
-    private fun armenianIndexX(c: Char) = (c.toInt() - 0x530) % 16
-    private fun armenianIndexY(c: Char) = (c.toInt() - 0x530) / 16
+    private fun armenianIndexX(c: Int) = (c - 0x530) % 16
+    private fun armenianIndexY(c: Int) = (c - 0x530) / 16
 
-    private fun kartvelianIndexX(c: Char) = (c.toInt() - 0x10D0) % 16
-    private fun kartvelianIndexY(c: Char) = (c.toInt() - 0x10D0) / 16
+    private fun kartvelianIndexX(c: Int) = (c - 0x10D0) % 16
+    private fun kartvelianIndexY(c: Int) = (c - 0x10D0) / 16
 
-    private fun ipaIndexX(c: Char) = (c.toInt() - 0x250) % 16
-    private fun ipaIndexY(c: Char) = (c.toInt() - 0x250) / 16
+    private fun ipaIndexX(c: Int) = (c - 0x250) % 16
+    private fun ipaIndexY(c: Int) = (c - 0x250) / 16
 
-    private fun latinExtAddX(c: Char) = (c.toInt() - 0x1E00) % 16
-    private fun latinExtAddY(c: Char) = (c.toInt() - 0x1E00) / 16
+    private fun latinExtAddX(c: Int) = (c - 0x1E00) % 16
+    private fun latinExtAddY(c: Int) = (c - 0x1E00) / 16
 
-    private fun cherokeeIndexX(c: Char) = (c.toInt() - 0x13A0) % 16
-    private fun cherokeeIndexY(c: Char) = (c.toInt() - 0x13A0) / 16
+    private fun cherokeeIndexX(c: Int) = (c - 0x13A0) % 16
+    private fun cherokeeIndexY(c: Int) = (c - 0x13A0) / 16
 
-    private fun getColour(charHigh: Char, charLow: Char): Color { // input: 0x10ARGB, out: RGBA8888
-        val codePoint = Character.toCodePoint(charHigh, charLow)
-
+    private fun getColour(codePoint: Int): Color { // input: 0x10ARGB, out: RGBA8888
         if (colourBuffer.containsKey(codePoint))
             return colourBuffer[codePoint]!!
 
@@ -390,7 +391,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private val offsetUnihan = (H - H_UNIHAN) / 2
     private val offsetCustomSym = (H - SIZE_CUSTOM_SYM) / 2
 
-    private var textBuffer: CharSequence = ""
+    private var textBuffer = CodepointSequence(256)
     private var posXbuffer = intArrayOf() // absolute posX of glyphs from print-origin
     private var posYbuffer = intArrayOf() // absolute posY of glyphs from print-origin
     private var glyphWidthBuffer = intArrayOf() // width of each glyph
@@ -398,6 +399,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private lateinit var originalColour: Color
 
     override fun draw(batch: Batch, str: CharSequence, x: Float, y: Float): GlyphLayout? {
+        val str = str.toCodePoints()
 
         fun Int.flipY() = this * if (flipY) 1 else -1
 
@@ -413,8 +415,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             glyphWidthBuffer = widths
 
-            posXbuffer = IntArray(str.length, { 0 })
-            posYbuffer = IntArray(str.length, { 0 })
+            posXbuffer = IntArray(str.size, { 0 })
+            posYbuffer = IntArray(str.size, { 0 })
 
 
             var nonDiacriticCounter = 0 // index of last instance of non-diacritic char
@@ -425,12 +427,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     // nonDiacriticCounter allows multiple diacritics
 
                     val thisChar = textBuffer[charIndex]
-                    if (glyphProps[thisChar.toInt()] == null) {
-                        throw InternalError("No props for char '$thisChar' (${thisChar.toInt().toString(16)})")
+                    if (glyphProps[thisChar] == null) {
+                        throw InternalError("No props for char '$thisChar' (${thisChar.toString(16)})")
                     }
-                    val thisProp = glyphProps[thisChar.toInt()]!!
+                    val thisProp = glyphProps[thisChar]!!
                     val lastNonDiacriticChar = textBuffer[nonDiacriticCounter]
-                    val itsProp = glyphProps[lastNonDiacriticChar.toInt()]!!
+                    val itsProp = glyphProps[lastNonDiacriticChar]!!
 
 
                     //println("char: $thisChar; properties: $thisProp")
@@ -497,35 +499,22 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             //println("[TerrarumSansBitmap] sprite:  $sheetID:${sheetX}x${sheetY}")
 
-            if (isColourCodeLow(c)) {
-                val cchigh = c
-                val cclow = textBuffer[index + 1]
-
-                if (Character.toCodePoint(cchigh, cclow) == 0x100000) {
+            if (isColourCode(c)) {
+                if (c == 0x100000) {
                     mainCol = originalColour
                     shadowCol = mainCol.cpy().mul(0.5f,0.5f,0.5f,1f)
                 }
                 else {
-                    mainCol = getColour(cchigh, cclow)
+                    mainCol = getColour(c)
                     shadowCol = mainCol.cpy().mul(0.5f, 0.5f, 0.5f, 1f)
                 }
-
-                index += 1
             }
-            else if (isCharsetOverrideLow(c)) {
-                val cchigh = c
-                val cclow = textBuffer[index + 1]
-
-                charsetOverride = Character.toCodePoint(cchigh, cclow) - CHARSET_OVERRIDE_NULL
-
-                index += 1
-            }
-            else if (isCharsetOverrideHigh(c) || isColourCodeHigh(c)) {
-                /* do nothing and advance */
+            else if (isCharsetOverride(c)) {
+                charsetOverride = c - CHARSET_OVERRIDE_NULL
             }
             else if (sheetID == SHEET_HANGUL) {
                 val hangulSheet = sheets[SHEET_HANGUL]
-                val hIndex = c.toInt() - 0xAC00
+                val hIndex = c - 0xAC00
 
                 val indexCho = getHanChosung(hIndex)
                 val indexJung = getHanJungseong(hIndex)
@@ -648,23 +637,23 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         sheets.forEach { it.dispose() }
     }
 
-    private fun getWidthOfCharSeq(s: CharSequence): IntArray {
-        val len = IntArray(s.length)
+    private fun getWidthOfCharSeq(s: CodepointSequence): IntArray {
+        val len = IntArray(s.size)
         for (i in 0..s.lastIndex) {
             val chr = s[i]
             val ctype = getSheetType(s[i])
 
             if (variableWidthSheets.contains(ctype)) {
-                if (!glyphProps.containsKey(chr.toInt())) {
+                if (!glyphProps.containsKey(chr)) {
                     System.err.println("[TerrarumSansBitmap] no width data for glyph number ${Integer.toHexString(chr.toInt()).toUpperCase()}")
                     len[i] = W_LATIN_WIDE
                 }
 
-                val prop = glyphProps[chr.toInt()]!!
+                val prop = glyphProps[chr]!!
                 //println("${chr.toInt()} -> $prop")
                 len[i] = prop.width * (if (prop.writeOnTop) -1 else 1)
             }
-            else if (isColourCodeHigh(chr) || isColourCodeLow(chr) || isCharsetOverrideHigh(chr) || isCharsetOverrideLow(chr))
+            else if (isColourCode(chr) || isCharsetOverride(chr))
                 len[i] = 0
             else if (ctype == SHEET_CJK_PUNCT)
                 len[i] = W_ASIAN_PUNCT
@@ -686,7 +675,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         return len
     }
 
-    private fun getSheetType(c: Char): Int {
+    private fun getSheetType(c: Int): Int {
         if (charsetOverride == 1 && isBulgarian(c))
             return SHEET_BULGARIAN_VARW
         else if (charsetOverride == 2 && isBulgarian(c))
@@ -735,7 +724,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         // fallback
     }
 
-    private fun getSheetwisePosition(ch: Char): IntArray {
+    private fun getSheetwisePosition(ch: Int): IntArray {
         val sheetX: Int; val sheetY: Int
         when (getSheetType(ch)) {
             SHEET_UNIHAN -> {
@@ -811,8 +800,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 sheetY = cherokeeIndexY(ch)
             }
             else -> {
-                sheetX = ch.toInt() % 16
-                sheetY = ch.toInt() / 16
+                sheetX = ch % 16
+                sheetY = ch / 16
             }
         }
 
@@ -871,14 +860,83 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         this.codeRange[SHEET_RUNIC].forEach { glyphProps[it] = GlyphProps(9, 0) }
         this.codeRange[SHEET_UNIHAN].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
         (0xD800..0xDFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
+        (0x100000..0x10FFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
+        (0xFFFF8..0xFFFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
     }
 
     private val glyphLayout = GlyphLayout()
 
     fun getWidth(text: String): Int {
-        return getWidthOfCharSeq(text).sum()
+        return getWidthOfCharSeq(text.toCodePoints()).sum()
     }
 
+
+    /** UTF-16 to ArrayList of Int. UTF-16 is because of Java */
+    private fun CharSequence.toCodePoints(): CodepointSequence {
+        val seq = ArrayList<Int>()
+
+        var i = 0
+        while (i < this.length) {
+            val c = this[i]
+
+            if (i < this.lastIndex && c.isHighSurrogate()) {
+                val cNext = this[i + 1]
+
+                if (!cNext.isLowSurrogate())
+                    throw IllegalArgumentException("Malformed UTF-16 String: High surrogate must be paired with low surrogate")
+
+                val H = c
+                val L = cNext
+
+                seq.add(Character.toCodePoint(H, L))
+
+                i++ // skip next char (guaranteed to be Low Surrogate)
+            }
+            else {
+                seq.add(c.toInt())
+            }
+
+            i++
+        }
+
+        return seq
+    }
+
+    /** As CharSequence is just an Interface, copy-pasting the code would be the fastest way */
+    private fun String.toCodePoints(): CodepointSequence {
+        val seq = ArrayList<Int>()
+
+        var i = 0
+        while (i < this.length) {
+            val c = this[i]
+
+            if (i < this.lastIndex) {
+                if (c.isHighSurrogate()) {
+                    val cNext = this[i + 1]
+
+                    if (!cNext.isLowSurrogate())
+                        throw IllegalArgumentException("Malformed UTF-16 String: High surrogate must be paired with low surrogate")
+
+                    val H = c
+                    val L = cNext
+
+                    seq.add(Character.toCodePoint(H, L))
+
+                    i++ // skip next char (guaranteed to be Low Surrogate)
+                }
+            }
+            else {
+                seq.add(c.toInt())
+            }
+        }
+
+        return seq
+    }
+
+    /** High surrogate comes before the low. */
+    private fun Char.isHighSurrogate() = (this.toInt() in 0xD800..0xDBFF)
+    /** CodePoint = 0x10000 + (H - 0xD800) * 0x400 + (L - 0xDC00) */
+    private fun Char.isLowSurrogate() = (this.toInt() in 0xDC00..0xDFFF)
 
 
     var interchar = 0
