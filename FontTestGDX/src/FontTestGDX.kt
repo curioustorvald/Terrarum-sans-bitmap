@@ -20,7 +20,7 @@ class FontTestGDX : Game() {
     lateinit var batch: SpriteBatch
 
     override fun create() {
-        font = GameFontBase("./assets", flipY = false) // must test for two cases
+        font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = true) // must test for two flipY cases
 
         val inTextFile = Gdx.files.internal("./FontTestGDX/demotext.txt")
         val reader = inTextFile.reader()

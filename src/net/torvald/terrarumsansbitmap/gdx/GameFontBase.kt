@@ -75,7 +75,7 @@ typealias CodepointSequence = ArrayList<Int>
  *
  * Created by minjaesong on 2017-06-15.
  */
-class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false, val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest) : BitmapFont() {
+class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false, val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, var errorOnUnknownChar: Boolean = false) : BitmapFont() {
 
     private fun getHanChosung(hanIndex: Int) = hanIndex / (JUNG_COUNT * JONG_COUNT)
     private fun getHanJungseong(hanIndex: Int) = hanIndex / JONG_COUNT % JUNG_COUNT
@@ -398,6 +398,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
     private lateinit var originalColour: Color
 
+    private var nullProp = GlyphProps(15, 0)
+
     override fun draw(batch: Batch, str: CharSequence, x: Float, y: Float): GlyphLayout? {
         val str = str.toCodePoints()
 
@@ -427,12 +429,16 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     // nonDiacriticCounter allows multiple diacritics
 
                     val thisChar = textBuffer[charIndex]
-                    if (glyphProps[thisChar] == null) {
-                        throw InternalError("No props for char '$thisChar' (${thisChar.toString(16)})")
+                    if (glyphProps[thisChar] == null && errorOnUnknownChar) {
+                        val errorGlyphSB = StringBuilder()
+                        Character.toChars(thisChar).forEach { errorGlyphSB.append(it) }
+
+                        throw InternalError("No GlyphProps for char '$errorGlyphSB' " +
+                                "(U+${thisChar.toString(16).toUpperCase()}: ${Character.getName(thisChar)})")
                     }
-                    val thisProp = glyphProps[thisChar]!!
+                    val thisProp = glyphProps[thisChar] ?: nullProp
                     val lastNonDiacriticChar = textBuffer[nonDiacriticCounter]
-                    val itsProp = glyphProps[lastNonDiacriticChar]!!
+                    val itsProp = glyphProps[lastNonDiacriticChar] ?: nullProp
 
 
                     //println("char: $thisChar; properties: $thisProp")
@@ -649,7 +655,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     len[i] = W_LATIN_WIDE
                 }
 
-                val prop = glyphProps[chr]!!
+                val prop = glyphProps[chr] ?: nullProp
                 //println("${chr.toInt()} -> $prop")
                 len[i] = prop.width * (if (prop.writeOnTop) -1 else 1)
             }
