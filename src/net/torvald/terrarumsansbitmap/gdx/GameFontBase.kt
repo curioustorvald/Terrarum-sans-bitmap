@@ -411,8 +411,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
     private var nullProp = GlyphProps(15, 0)
 
-    override fun draw(batch: Batch, str: CharSequence, x: Float, y: Float): GlyphLayout? {
-        val str = str.toCodePoints()
+
+    override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float): GlyphLayout? {
+        val str = charSeq.toCodePoints()
 
         fun Int.flipY() = this * if (flipY) 1 else -1
 
@@ -424,6 +425,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
         if (textBuffer != str) {
             textBuffer = str
+            //println(textBuffer)
             val widths = getWidthOfCharSeq(str)
 
             glyphWidthBuffer = widths

@@ -204,6 +204,9 @@ class FontTestGDX : Game() {
         batch.begin()
         batch.color = Color.WHITE
         batch.draw(tex, 0f, (TEXH.toFloat()/appConfig.height)*TEXH - scrollOffsetY, TEXW.toFloat(), -(TEXH.toFloat() / appConfig.height) * TEXH.toFloat())
+
+
+        font.draw(batch, "TESTTESTTEST", 0f, 0f)
         batch.end()
     }
 
