@@ -134,9 +134,7 @@ class FontTestGDX : Game() {
 
         println("${font.noColorCode}\nEND")
 
-        println(font.toColorCode(0xC_FFD))
-        println(font.toColorCode(0xF_F55))
-        println(font.toColorCode(0xE_CCC))
+        println(font.toColorCode(0xF_EEC))
 
         frameBuffer = FrameBuffer(Pixmap.Format.RGBA8888, TEXW, TEXH, true)
 

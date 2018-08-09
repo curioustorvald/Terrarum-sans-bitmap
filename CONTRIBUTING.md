@@ -15,7 +15,7 @@ Red-tinted area SHOULD NOT CONTAIN any dots, it's emptied for compatibility. (Sl
 
 Blue-tinted area cotains width of the glyph in binary, uppermost dot is the Least Significant Bit.
 
-Green-tinted area contains extra informations, left blank for most cases. (will be expanded later; no standard has been issued yet)
+Green-tinted area contains extra informations, left blank for most cases. We'll call it Glyph Tags.
 
 Tinted-in-magenta shows the height where diacritics should be placed, for both uppercase and lowercase.
 
@@ -24,7 +24,7 @@ Each cell is 16 px wide, and any glyph you draw **must be contained within lefts
 
 
 
-### Font metrics
+### Font Metrics
 
 Although the font is basically a Spritesheet, some of the sheet expects variable widths to be supported. Any sheets with ```_variable``` means it expects variable widths. Anything else expects fixed width (regular Spritesheet behaviour). ```cjkpunct``` has width of 10, ```kana``` and ```hangul_johab``` has width of 12, ```wenquanyi``` has width of 16.
 
@@ -33,6 +33,27 @@ Although the font is basically a Spritesheet, some of the sheet expects variable
 ![Sample of Font Spritesheet with annotation](width_bit_encoding_annotated.png)
 
 Width is encoded in binary bits, on pixels. On the font spritesheet, every glyph has vertical dots on their top-right side (to be exact, every (16k - 1)th pixel on x axis). Above image is a sample of the font, with width information coloured in magenta. From top to bottom, each dot represents 1, 2, 4 and 8. For example, in the above image, ! (exclamation mark) has width of 5, " (double quote) has width of 6, # (octothorp) has width of 8, $ (dollar sign) has width of 9.
+
+### Glyph Tagging System
+
+Green-tinted area (should be 10 px tall) contains the tags. Tags are defined as following:
+
+```
+(LSB) 0 == RTL
+      1 -+ 1 | Align to this X pos of prev char,
+      1  | 2 | only valid if write-on-top is 1
+      1  | 4 | and is centre-aligned and non-zero
+      1 -+ 8 | (if this is zero, floorOf(width/2) will be used instead)
+      0 -+ 0 Align  1 Align  0 Align
+      1 -+ 0 left   0 right  1 Centre
+      0 == Write on top of prev chars (e.g. diacritics)
+      1 == Diacritics stack 0:upward/1:downward
+(MSB) 0 == Diacritics comes befor the glyph
+
+NOTE: if glyphs are right or centre aligned, they must be aligned in the same way
+      inside of the bitmap; the program assumes every variable-width glyphs to have
+      a width of 15, regardless of the tagged width.
+```
 
 ### Implementing the Korean writing system
 

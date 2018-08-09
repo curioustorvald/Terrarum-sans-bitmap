@@ -9,8 +9,9 @@ The JAR package is meant to be used with Slick2d (extends ```Font``` class) and 
 The issue page is open. If you have some issues to submit, or have a question, please leave it on the page.
 
 #### Little notes
-- To display Bulgarian/Serbian variants, you need special Control Characters. (GameFontBase.charsetOverrideBulgarian; GameFontBase.charsetOverrideSerbian)
+- To display Bulgarian/Serbian variants, you need special Control Characters. (GameFontBase.charsetOverrideBulgarian -- U+FFFF9; GameFontBase.charsetOverrideSerbian -- U+FFFFA)
 - All Han characters are in Chinese variant, no other variants are to be supported as most Chinese, Japanese and Korean can understand other's variant and to be honest, we don't bother anyway.
+- Indian script in general is not perfect: this font will never do the proper ligatures (I can't draw all the 1 224 possible combinations). Hopefully it's still be able to understand without them.
 
 ### Design Goals
 
@@ -22,7 +23,7 @@ The issue page is open. If you have some issues to submit, or have a question, p
 
 ## Using on your game
 
-- Firstly, place the .jar to your library path and unzip spritesheets, then:
+- Firstly, place the .jar to your library path and assets folder to the main directory of the app, then:
 
 ### Using on LibGDX
 

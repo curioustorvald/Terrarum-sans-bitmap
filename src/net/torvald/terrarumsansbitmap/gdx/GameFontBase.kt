@@ -455,25 +455,29 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         Character.toChars(thisChar).forEach { errorGlyphSB.append(it) }
 
                         throw InternalError("No GlyphProps for char '$errorGlyphSB' " +
-                                "(U+${thisChar.toString(16).toUpperCase()}: ${Character.getName(thisChar)})")
+                                "(${thisChar.charInfo()})")
                     }
                     val thisProp = glyphProps[thisChar] ?: nullProp
                     val lastNonDiacriticChar = textBuffer[nonDiacriticCounter]
                     val itsProp = glyphProps[lastNonDiacriticChar] ?: nullProp
 
 
-                    //println("char: $thisChar; properties: $thisProp")
+                    //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
 
 
                     val alignmentOffset = when (thisProp.alignWhere) {
                         GlyphProps.LEFT -> 0
                         GlyphProps.RIGHT -> thisProp.width - W_VAR_INIT
                         GlyphProps.CENTRE -> Math.floor((thisProp.width - W_VAR_INIT) / 2.0).toInt()
-                        else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
+                        else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere} for '$thisChar' (${thisChar.charInfo()})")
                     }
 
                     if (!thisProp.writeOnTop) {
-                        posXbuffer[charIndex] = posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar
+                        posXbuffer[charIndex] =
+                                if (itsProp.alignWhere == GlyphProps.RIGHT)
+                                    posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar
+                                else
+                                    posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar
                         nonDiacriticCounter = charIndex
                         stackUpwardCounter = 0
                         stackDownwardCounter = 0
@@ -506,12 +510,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     }
                 }
             }
+
+
+            //print("[TerrarumSansBitmap] widthTable for $textBuffer: ")
+            //posXbuffer.forEach { print("$it ") }; println()
         }
-
-
-        //print("[TerrarumSansBitmap] widthTable for $textBuffer: ")
-        //posXbuffer.forEach { print("$it ") }; println()
-
 
         originalColour = batch.color.cpy()
         var mainCol = originalColour
@@ -611,6 +614,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
         return null
     }
+
+    private fun Int.charInfo() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}: ${Character.getName(this)}"
 
 
     override fun dispose() {
@@ -815,7 +820,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             val codeStartX = cellX + binaryCodeOffset
             val codeStartY = cellY
-            val tagStartY = codeStartY + 11
+            val tagStartY = codeStartY + 10
 
             var width = 0
             var tags = 0
@@ -827,7 +832,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 }
             }
 
-            for (y in 0..8) {
+            for (y in 0..9) {
                 // if ALPHA is not zero, assume it's 1
                 if (pixmap.getPixel(codeStartX, tagStartY + y).and(0xFF) != 0) {
                     tags = tags or (1 shl y)
@@ -874,7 +879,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     }
 
 
-    /** UTF-16 to ArrayList of Int. UTF-16 is because of Java */
+    /** UTF-16 to ArrayList of Int. UTF-16 is because of Java
+     * Note: CharSequence IS a String. java.lang.String implements CharSequence.
+     */
     private fun CharSequence.toCodePoints(): CodepointSequence {
         val seq = ArrayList<Int>()
 
@@ -902,39 +909,23 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             i++
         }
 
-        return seq
-    }
 
-    /** As CharSequence is just an Interface, copy-pasting the code would be the fastest way */
-    private fun String.toCodePoints(): CodepointSequence {
-        val seq = ArrayList<Int>()
-
-        var i = 0
-        while (i < this.length) {
-            val c = this[i]
-
-            if (i < this.lastIndex) {
-                if (c.isHighSurrogate()) {
-                    val cNext = this[i + 1]
-
-                    if (!cNext.isLowSurrogate())
-                        throw IllegalArgumentException("Malformed UTF-16 String: High surrogate must be paired with low surrogate")
-
-                    val H = c
-                    val L = cNext
-
-                    seq.add(Character.toCodePoint(H, L))
-
-                    i++ // skip next char (guaranteed to be Low Surrogate)
-                }
+        // swap position of {letter, diacritics that comes before the letter}
+        i = 1
+        while (i <= seq.lastIndex) {
+            if ((glyphProps[seq[i]] ?: nullProp).diacriticsBeforeGlyph) {
+                val t = seq[i - 1]
+                seq[i - 1] = seq[i]
+                seq[i] = t
             }
-            else {
-                seq.add(c.toInt())
-            }
+
+            i++
         }
 
+
         return seq
     }
+
 
     /** High surrogate comes before the low. */
     private fun Char.isHighSurrogate() = (this.toInt() in 0xD800..0xDBFF)
