@@ -313,17 +313,19 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             // unpack gz if applicable
             if (it.endsWith(".gz")) {
+                val tmpFileName = "tmp_${it.dropLast(7)}.tga"
+
                 val gzi = GZIPInputStream(Gdx.files.internal(fontParentDir + it).read(8192))
                 val wholeFile = gzi.readBytes()
                 gzi.close()
-                val fos = BufferedOutputStream(FileOutputStream("tmp_wenquanyi.tga"))
+                val fos = BufferedOutputStream(FileOutputStream(tmpFileName))
                 fos.write(wholeFile)
                 fos.flush()
                 fos.close()
 
-                pixmap = Pixmap(Gdx.files.internal("tmp_wenquanyi.tga"))
+                pixmap = Pixmap(Gdx.files.internal(tmpFileName))
 
-                File("tmp_wenquanyi.tga").delete()
+                File(tmpFileName).delete()
             }
             else {
                 pixmap = Pixmap(Gdx.files.internal(fontParentDir + it))

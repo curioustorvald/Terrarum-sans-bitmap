@@ -7,8 +7,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/FontTestGDX/demotext.txt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/demotext.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/demo.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/demo.PNG" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
@@ -29,8 +31,8 @@
           <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="287">
-                  <caret line="852" lean-forward="true" selection-start-line="852" selection-end-line="852" />
+                <state relative-caret-position="8256">
+                  <caret line="865" column="33" lean-forward="true" selection-start-line="865" selection-start-column="33" selection-end-line="865" selection-end-column="33" />
                 </state>
               </provider>
             </entry>
@@ -78,26 +80,25 @@
           <file leaf-file-name="FontTestGDX.kt" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="469">
-                  <caret line="173" column="26" lean-forward="true" selection-start-line="173" selection-start-column="26" selection-end-line="173" selection-end-column="26" />
+                <state relative-caret-position="507">
+                  <caret line="253" column="21" selection-start-line="253" selection-start-column="21" selection-end-line="253" selection-end-column="21" />
+                  <folding>
+                    <element signature="e#0#384#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="false">
-            <entry file="jar://$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar!/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="390">
-                  <caret line="446" column="21" lean-forward="true" selection-start-line="446" selection-start-column="21" selection-end-line="446" selection-end-column="21" />
-                </state>
-              </provider>
+          <file leaf-file-name="demo.PNG" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/demo.PNG">
+              <provider selected="true" editor-type-id="images" />
             </entry>
           </file>
           <file leaf-file-name="demotext.txt" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/FontTestGDX/demotext.txt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="494">
-                  <caret line="38" column="5" selection-start-line="38" selection-start-column="5" selection-end-line="38" selection-end-column="5" />
+                <state relative-caret-position="-1">
+                  <caret line="41" column="49" lean-forward="true" selection-start-line="41" selection-start-column="49" selection-end-line="41" selection-end-column="49" />
                 </state>
               </provider>
             </entry>
@@ -105,8 +106,8 @@
           <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="576">
-                  <caret line="583" column="21" lean-forward="true" selection-start-line="583" selection-start-column="21" selection-end-line="583" selection-end-column="21" />
+                <state relative-caret-position="468">
+                  <caret line="331" column="13" lean-forward="true" selection-start-line="331" selection-start-column="13" selection-end-line="331" selection-end-column="13" />
                 </state>
               </provider>
             </entry>
@@ -138,7 +139,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>fun dispo</find>
       <find>xHei</find>
       <find>not copy</find>
       <find>getColour</find>
@@ -164,15 +164,17 @@
       <find>buildWidthTable</find>
       <find>lastNonDiacriticChar</find>
       <find>c.toInt()</find>
-      <find>ArrayList&lt;Int&gt;</find>
       <find>har.toInt()</find>
       <find>println</find>
       <find>!!</find>
+      <find>ArrayList&lt;Int&gt;</find>
+      <find>appConfig.height</find>
     </findStrings>
     <replaceStrings>
       <replace>.141</replace>
       <replace>c</replace>
       <replace>har</replace>
+      <replace>TEXH</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -464,7 +466,6 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1216" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info anchor="right" id="Palette" order="3" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -476,7 +477,7 @@
       <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Terminal" order="7" />
       <window_info id="Designer" order="2" />
-      <window_info content_ui="combo" id="Project" order="0" weight="0.13859275" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.13859275" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32931355" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -527,27 +528,6 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1638">
-          <caret line="134" column="40" selection-start-line="134" selection-start-column="40" selection-end-line="134" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/FontTestGDX/demotext.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret selection-end-line="1" selection-end-column="43" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1625">
-          <caret line="155" column="48" selection-start-line="155" selection-start-column="48" selection-end-line="155" selection-end-column="48" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
         <state split_layout="SPLIT">
@@ -881,20 +861,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="jar://$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar!/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="390">
-          <caret line="446" column="21" lean-forward="true" selection-start-line="446" selection-start-column="21" selection-end-line="446" selection-end-column="21" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/FontTestGDX/demotext.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="494">
-          <caret line="38" column="5" selection-start-line="38" selection-start-column="5" selection-end-line="38" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/GlyphProps.kt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="260">
@@ -902,17 +868,55 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
+    <entry file="file://$PROJECT_DIR$/FontTestGDX/demotext.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="576">
-          <caret line="583" column="21" lean-forward="true" selection-start-line="583" selection-start-column="21" selection-end-line="583" selection-end-column="21" />
+        <state relative-caret-position="-1">
+          <caret line="41" column="49" lean-forward="true" selection-start-line="41" selection-start-column="49" selection-end-line="41" selection-end-column="49" />
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="468">
+          <caret line="331" column="13" lean-forward="true" selection-start-line="331" selection-start-column="13" selection-end-line="331" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/lib/gdx.jar!/com/badlogic/gdx/graphics/glutils/GLFrameBuffer.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2379">
+          <caret line="205" column="13" selection-start-line="205" selection-start-column="13" selection-end-line="205" selection-end-column="13" />
+          <folding>
+            <element signature="e#7962#7963#0" expanded="true" />
+            <element signature="e#8002#8003#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar!/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="390">
+          <caret line="448" column="21" lean-forward="true" selection-start-line="448" selection-start-column="21" selection-end-line="448" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/lib/gdx.jar!/com/badlogic/gdx/utils/ScreenUtils.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="272">
+          <caret line="38" column="25" selection-start-line="38" selection-start-column="25" selection-end-line="38" selection-end-column="25" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/demo.PNG">
+      <provider selected="true" editor-type-id="images" />
+    </entry>
     <entry file="file://$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="469">
-          <caret line="173" column="26" lean-forward="true" selection-start-line="173" selection-start-column="26" selection-end-line="173" selection-end-column="26" />
+        <state relative-caret-position="507">
+          <caret line="253" column="21" selection-start-line="253" selection-start-column="21" selection-end-line="253" selection-end-column="21" />
+          <folding>
+            <element signature="e#0#384#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

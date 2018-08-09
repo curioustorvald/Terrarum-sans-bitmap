@@ -88,10 +88,11 @@ How multilingual? Real multilingual!
 
 􏃯Unicode References:􀀀
 
-    Basic Latin   Latin-1   Latin Extension A   Latin Extionsion B   IPA Extension   Greek   Cyrillic   Cyrillic Supplement
-    Armenian   Thai   Georgian   Runic   Cherokee   General Punctuations   CJK Symbols   Kana
-    CJK Unihan Extension A   CJK Unihan   Hangul Syllables   Fullwidth Forms
+    Basic Latin   Latin-1   Latin Extension A   Latin Extionsion B   IPA Extension   Greek   Cyrillic
+    Cyrillic Supplement   Armenian   Thai   Georgian   Runic   Cherokee   General Punctuations   CJK Symbols
+    Kana   Kana Phonetic Extension   CJK Unihan Extension A   CJK Unihan   Hangul Syllables   Fullwidth Forms
+    Kana Supplement
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀.
-You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make changes,
-and make a 􏽕pull request􀀀! I appreciate any and all supports.
+You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make
+changes, and make a 􏽕pull request􀀀! I appreciate any and all supports.

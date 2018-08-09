@@ -1,14 +1,10 @@
-import com.badlogic.gdx.Game
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Screen
+import com.badlogic.gdx.*
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
-import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.GL20
-import com.badlogic.gdx.graphics.Pixmap
-import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.FrameBuffer
+import com.badlogic.gdx.utils.ScreenUtils
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase
 
 /**
@@ -23,6 +19,8 @@ class FontTestGDX : Game() {
     lateinit var batch: SpriteBatch
 
     lateinit var frameBuffer: FrameBuffer
+
+    lateinit var camera: OrthographicCamera
 
     override fun create() {
         font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = true) // must test for two flipY cases
@@ -140,17 +138,28 @@ class FontTestGDX : Game() {
         println(font.toColorCode(0xF_F55))
         println(font.toColorCode(0xE_CCC))
 
-        frameBuffer = FrameBuffer(Pixmap.Format.RGBA8888, appConfig.width, appConfig.height, true)
+        frameBuffer = FrameBuffer(Pixmap.Format.RGBA8888, TEXW, TEXH, true)
+
+        camera = OrthographicCamera(TEXW.toFloat(), TEXH.toFloat())
+        camera.translate(TEXW.div(2f), 0f)
+        camera.setToOrtho(true, TEXW.toFloat(), TEXH.toFloat())
+        camera.update()
+
+
+        Gdx.input.inputProcessor = Navigator(this)
     }
 
     override fun getScreen(): Screen? {
         return null
     }
 
+    var scrollOffsetY = 0f
+
     override fun setScreen(screen: Screen?) {
     }
 
     var tex: Texture? = null
+    var screenshotExported = false
 
     override fun render() {
 
@@ -163,14 +172,27 @@ class FontTestGDX : Game() {
             Gdx.gl.glEnable(GL20.GL_BLEND)
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
 
+            batch.projectionMatrix = camera.combined
             batch.begin()
 
             batch.color = Color(0xeeeeeeff.toInt())
             inputText.forEachIndexed { index, s ->
-                font.draw(batch, s, 10f, appConfig.height - 30f - index * font.lineHeight)
+                font.draw(batch, s, 10f, TEXH - 30f - index * font.lineHeight)
             }
 
             batch.end()
+
+
+            // dump to file
+            if (!screenshotExported) {
+                val pixmap = ScreenUtils.getFrameBufferPixmap(0, 0, frameBuffer.width, frameBuffer.height)
+
+                PixmapIO.writePNG(Gdx.files.local("demo.PNG"), pixmap)
+                pixmap.dispose()
+
+                screenshotExported = true
+            }
+
 
             frameBuffer.end()
 
@@ -179,10 +201,9 @@ class FontTestGDX : Game() {
             tex = frameBuffer.colorBufferTexture
         }
 
-
         batch.begin()
         batch.color = Color.WHITE
-        batch.draw(tex, 0f, appConfig.height.toFloat(), appConfig.width.toFloat(), -appConfig.height.toFloat())
+        batch.draw(tex, 0f, (TEXH.toFloat()/appConfig.height)*TEXH - scrollOffsetY, TEXW.toFloat(), -(TEXH.toFloat() / appConfig.height) * TEXH.toFloat())
         batch.end()
     }
 
@@ -198,16 +219,46 @@ class FontTestGDX : Game() {
     override fun dispose() {
         font.dispose()
     }
+
+    fun scrollAdd(x: Int = 1) {
+        scrollOffsetY -= (TEXH.toFloat() / appConfig.height) * 20f * x
+    }
+
+    fun scrollSub(x: Int = 1) {
+        scrollOffsetY += (TEXH.toFloat() / appConfig.height) * 20f * x
+    }
+
+    class Navigator(val main: FontTestGDX) : InputAdapter() {
+        override fun scrolled(amount: Int): Boolean {
+            if (amount >= 0)
+                main.scrollSub(amount)
+            else
+                main.scrollAdd(-amount)
+
+            return true
+        }
+
+        override fun keyDown(keycode: Int): Boolean {
+            if (keycode == Input.Keys.UP)
+                main.scrollAdd()
+            else if (keycode == Input.Keys.DOWN)
+                main.scrollSub()
+
+            return true
+        }
+    }
 }
 
 lateinit var appConfig: LwjglApplicationConfiguration
+const val TEXW = 874
+const val TEXH = 2048
 
 fun main(args: Array<String>) {
     appConfig = LwjglApplicationConfiguration()
     appConfig.vSyncEnabled = false
     appConfig.resizable = false//true;
-    appConfig.width = 874
-    appConfig.height = 2048
+    appConfig.width = TEXW
+    appConfig.height = 768
     appConfig.title = "Terrarum Sans Bitmap Test (GDX)"
 
     LwjglApplication(FontTestGDX(), appConfig)
