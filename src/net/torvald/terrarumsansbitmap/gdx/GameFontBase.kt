@@ -544,16 +544,16 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     batch.color = shadowCol
 
                     batch.draw(hangulSheet.get(indexCho, choRow  ), x + posXbuffer[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + posXbuffer[index]    , y + if (flipY) 1 else -1)
-                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + posXbuffer[index] + 1, y + if (flipY) 1 else -1)
+                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + posXbuffer[index]    , y + 1.flipY())
+                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + posXbuffer[index] + 1, y + 1.flipY())
 
                     batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index]    , y + if (flipY) 1 else -1)
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index] + 1, y + if (flipY) 1 else -1)
+                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index]    , y + 1.flipY())
+                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index] + 1, y + 1.flipY())
 
                     batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index]    , y + if (flipY) 1 else -1)
-                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index] + 1, y + if (flipY) 1 else -1)
+                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index]    , y + 1.flipY())
+                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index] + 1, y + 1.flipY())
                 }
 
 
@@ -564,61 +564,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             }
             else {
                 try {
-                    /*val offset = if (!isDiacritics(c)) 0 else {
-                        if (index > 0) // LIMITATION: does not support double (or more) diacritics properly
-                            (glyphWidthBuffer[index] - glyphWidthBuffer[index - 1]) / 2
-                        else
-                            glyphWidthBuffer[index]
-                    }
 
-                    if (!noShadow) {
-                        batch.color = shadowCol
-                        batch.draw(
-                                sheets[sheetID].get(sheetX, sheetY),
-                                x + posXbuffer[index] + 1 + offset,
-                                y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                    offsetUnihan.flipY()
-                                else if (sheetID == SHEET_CUSTOM_SYM)
-                                    offsetCustomSym
-                                else
-                                    0) * if (flipY) 1 else -1
-                        )
-                        batch.draw(
-                                sheets[sheetID].get(sheetX, sheetY),
-                                x + posXbuffer[index] + offset,
-                                y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                    offsetUnihan.flipY() + 1
-                                else if (sheetID == SHEET_CUSTOM_SYM)
-                                    offsetCustomSym + 1
-                                else
-                                    1) * if (flipY) 1 else -1
-                        )
-                        batch.draw(
-                                sheets[sheetID].get(sheetX, sheetY),
-                                x + posXbuffer[index] + 1 + offset,
-                                y + (if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                    offsetUnihan.flipY() + 1
-                                else if (sheetID == SHEET_CUSTOM_SYM)
-                                    offsetCustomSym + 1
-                                else
-                                    1).flipY()
-                        )
-                    }
-
-
-                    batch.color = mainCol
-                    batch.draw(
-                            sheets[sheetID].get(sheetX, sheetY),
-                            x + posXbuffer[index] + offset,
-                            y +
-                                    if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                        offsetUnihan
-                                    else if (sheetID == SHEET_CUSTOM_SYM)
-                                        offsetCustomSym
-                                    else 0
-                    )*/
-
-                    batch.color = mainCol
                     val posY = y + posYbuffer[index].flipY() +
                             if (sheetID == SHEET_UNIHAN) // evil exceptions
                                 offsetUnihan
@@ -629,6 +575,15 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     val posX = x + posXbuffer[index]
                     val texture = sheets[sheetID].get(sheetX, sheetY)
 
+
+                    if (!noShadow) {
+                        batch.color = shadowCol
+                        batch.draw(texture, posX + 1, posY + 1.flipY())
+                        batch.draw(texture, posX    , posY + 1.flipY())
+                        batch.draw(texture, posX + 1, posY)
+                    }
+
+                    batch.color = mainCol
                     batch.draw(texture, posX, posY)
                 }
                 catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {

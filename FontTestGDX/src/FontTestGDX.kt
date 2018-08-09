@@ -5,7 +5,10 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplication
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.Pixmap
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.glutils.FrameBuffer
 import net.torvald.terrarumsansbitmap.gdx.GameFontBase
 
 /**
@@ -18,6 +21,8 @@ class FontTestGDX : Game() {
     lateinit var inputText: List<String>
 
     lateinit var batch: SpriteBatch
+
+    lateinit var frameBuffer: FrameBuffer
 
     override fun create() {
         font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = true) // must test for two flipY cases
@@ -135,6 +140,7 @@ class FontTestGDX : Game() {
         println(font.toColorCode(0xF_F55))
         println(font.toColorCode(0xE_CCC))
 
+        frameBuffer = FrameBuffer(Pixmap.Format.RGBA8888, appConfig.width, appConfig.height, true)
     }
 
     override fun getScreen(): Screen? {
@@ -144,22 +150,39 @@ class FontTestGDX : Game() {
     override fun setScreen(screen: Screen?) {
     }
 
+    var tex: Texture? = null
+
     override fun render() {
 
-        Gdx.gl.glClearColor(.141f, .141f, .141f, 1f)
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
-        Gdx.gl.glEnable(GL20.GL_TEXTURE_2D)
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        if (tex == null) {
+            frameBuffer.begin()
+
+            Gdx.gl.glClearColor(.141f, .141f, .141f, 1f)
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+            Gdx.gl.glEnable(GL20.GL_TEXTURE_2D)
+            Gdx.gl.glEnable(GL20.GL_BLEND)
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+
+            batch.begin()
+
+            batch.color = Color(0xeeeeeeff.toInt())
+            inputText.forEachIndexed { index, s ->
+                font.draw(batch, s, 10f, appConfig.height - 30f - index * font.lineHeight)
+            }
+
+            batch.end()
+
+            frameBuffer.end()
+
+            ///////////////
+
+            tex = frameBuffer.colorBufferTexture
+        }
 
 
         batch.begin()
-
-        batch.color = Color(0xeeeeeeff.toInt())
-        inputText.forEachIndexed { index, s ->
-            font.draw(batch, s, 10f, appConfig.height - 30f - index * font.lineHeight)
-        }
-
+        batch.color = Color.WHITE
+        batch.draw(tex, 0f, appConfig.height.toFloat(), appConfig.width.toFloat(), -appConfig.height.toFloat())
         batch.end()
     }
 
@@ -183,7 +206,7 @@ fun main(args: Array<String>) {
     appConfig = LwjglApplicationConfiguration()
     appConfig.vSyncEnabled = false
     appConfig.resizable = false//true;
-    appConfig.width = 960
+    appConfig.width = 874
     appConfig.height = 2048
     appConfig.title = "Terrarum Sans Bitmap Test (GDX)"
 
