@@ -44,16 +44,23 @@ Green-tinted area (should be 10 px tall) contains the tags. Tags are defined as 
       1  | 2 | only valid if write-on-top is 1
       1  | 4 | and is centre-aligned and non-zero
       1 -+ 8 | (if this is zero, floorOf(width/2) will be used instead)
-      0 -+ 0 Align  1 Align  0 Align
-      1 -+ 0 left   0 right  1 Centre
+      0 -+ 0 Align  1 Align  0 Align   1 Align before
+      1 -+ 0 left   0 right  1 centre  1 the glyph
       0 == Write on top of prev chars (e.g. diacritics)
       1 == Diacritics stack 0:upward/1:downward
-(MSB) 0 == Diacritics comes befor the glyph
+(MSB) X == undefined, should be 0
 
-NOTE: if glyphs are right or centre aligned, they must be aligned in the same way
-      inside of the bitmap; the program assumes every variable-width glyphs to have
-      a width of 15, regardless of the tagged width.
+NOTE: If glyphs are right or centre aligned, they must be aligned in the
+      same way inside of the bitmap; the program assumes every variable-
+      width glyphs to have a width of 15, regardless of the tagged width.
+      If the diacritic is aligned before the glyph, the diacritic itself
+      is always assumed as left-aligned, as this font will swap position
+      of said diacritic and the glyph right before it.
 ```
+
+![Visual representation of left/right/centre align](alignment_illustration.jpg)
+
+(fun fact: it was drawn on Rhodia memopad with Lamy 2000, then photographed and edited on my iPhone. Letter used is a Cherokee WE Ꮺ)
 
 ### Implementing the Korean writing system
 

@@ -469,7 +469,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         GlyphProps.LEFT -> 0
                         GlyphProps.RIGHT -> thisProp.width - W_VAR_INIT
                         GlyphProps.CENTRE -> Math.floor((thisProp.width - W_VAR_INIT) / 2.0).toInt()
-                        else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere} for '$thisChar' (${thisChar.charInfo()})")
+                        else -> 0 // implies "diacriticsBeforeGlyph = true"
                     }
 
                     if (!thisProp.writeOnTop) {
@@ -521,11 +521,13 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         var shadowCol = mainCol.cpy().mul(0.5f,0.5f,0.5f,1f)
 
 
+        resetHash()
         var index = 0
         while (index <= textBuffer.lastIndex) {
             val c = textBuffer[index]
             val sheetID = getSheetType(c)
             val (sheetX, sheetY) = getSheetwisePosition(c)
+            val hash = getHash(c)
 
             //println("[TerrarumSansBitmap] sprite:  $sheetID:${sheetX}x${sheetY}")
 
@@ -947,6 +949,18 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     val charsetOverrideNormal = Character.toChars(CHARSET_OVERRIDE_NULL)
     val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG)
     val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR)
+
+    private val hashBasis = -3750763034362895579L
+    private val hashPrime = 1099511628211L
+    private var hashAccumulator = hashBasis
+    fun getHash(char: Int): Long {
+        hashAccumulator = hashAccumulator xor char.toLong()
+        hashAccumulator *= hashPrime
+        return hashAccumulator
+    }
+    fun resetHash() {
+        hashAccumulator = hashBasis
+    }
 
     companion object {
         internal val JUNG_COUNT = 21
