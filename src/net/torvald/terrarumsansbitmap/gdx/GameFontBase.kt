@@ -116,7 +116,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isRunic(c: Int) = c in codeRange[SHEET_RUNIC]
     private fun isExtA(c: Int) = c in codeRange[SHEET_EXTA_VARW]
     private fun isExtB(c: Int) = c in codeRange[SHEET_EXTB_VARW]
-    private fun isKana(c: Int) = c in codeRange[SHEET_KANA]
+    private fun isKana(c: Int) = c in codeRange[SHEET_KANA] || c in 0x31F0..0x31FF || c in 0x1B000..0x1B001
     private fun isCJKPunct(c: Int) = c in codeRange[SHEET_CJK_PUNCT]
     private fun isUniHan(c: Int) = c in codeRange[SHEET_UNIHAN]
     private fun isCyrilic(c: Int) = c in codeRange[SHEET_CYRILIC_VARW]
@@ -136,6 +136,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isColourCode(c: Int) = c in 0x100000..0x10FFFF
     private fun isCharsetOverride(c: Int) = c in 0xFFFF8..0xFFFFF
     private fun isCherokee(c: Int) = c in codeRange[SHEET_TSALAGI_VARW]
+    private fun isInsular(c: Int) = c == 0x1D79 || c in 0xA779..0xA787
 
 
     private fun extAindexX(c: Int) = (c - 0x100) % 16
@@ -150,7 +151,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun kanaIndexX(c: Int) = (c - 0x3040) % 16
     private fun kanaIndexY(c: Int) =
             if (c in 0x31F0..0x31FF) 12
-            else if (c in 0x31F0..0x31FF) 13
+            else if (c in 0x1B000..0x1B00F) 13
             else (c - 0x3040) / 16
 
     private fun cjkPunctIndexX(c: Int) = (c - 0x3000) % 16
@@ -192,6 +193,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun cherokeeIndexX(c: Int) = (c - 0x13A0) % 16
     private fun cherokeeIndexY(c: Int) = (c - 0x13A0) / 16
 
+    private fun insularIndexX(c: Int) =
+            if (c == 0x1D79) 0 else (c - 0xA770) % 16
+    private fun insularIndexY(c: Int) =
+            if (c == 0x1D79) 0 else (c - 0xA770) / 16
+
     private fun getColour(codePoint: Int): Color { // input: 0x10ARGB, out: RGBA8888
         if (colourBuffer.containsKey(codePoint))
             return colourBuffer[codePoint]!!
@@ -228,7 +234,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_LATIN_EXT_ADD_VARW,
             SHEET_BULGARIAN_VARW,
             SHEET_SERBIAN_VARW,
-            SHEET_TSALAGI_VARW
+            SHEET_TSALAGI_VARW,
+            SHEET_INSUAR_VARW
     )
 
     private val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
@@ -253,7 +260,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             "puae000-e0ff.tga",
             "cyrilic_bulgarian_variable.tga",
             "cyrilic_serbian_variable.tga",
-            "tsalagi_variable.tga"
+            "tsalagi_variable.tga",
+            "insular_variable.tga"
     )
     private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF,
@@ -276,7 +284,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0xE000..0xE0FF,
             0xF00000..0xF0005F, // assign them to PUA
             0xF00060..0xF000BF, // assign them to PUA
-            0x13A0..0x13F5
+            0x13A0..0x13F5,
+            0xA770..0xA787
     )
     private val glyphProps: HashMap<Int, GlyphProps> = HashMap()
     private val sheets: Array<TextureRegionPack>
@@ -724,6 +733,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             return SHEET_LATIN_EXT_ADD_VARW
         else if (isCherokee(c))
             return SHEET_TSALAGI_VARW
+        else if (isInsular(c))
+            return SHEET_INSUAR_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -805,6 +816,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 sheetX = cherokeeIndexX(ch)
                 sheetY = cherokeeIndexY(ch)
             }
+            SHEET_INSUAR_VARW -> {
+                sheetX = insularIndexX(ch)
+                sheetY = insularIndexY(ch)
+            }
             else -> {
                 sheetX = ch % 16
                 sheetY = ch / 16
@@ -868,6 +883,15 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         (0xD800..0xDFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
         (0x100000..0x10FFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
         (0xFFFF8..0xFFFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
+
+
+        // manually build width table of Kana Supplements
+        (0x31F0..0x31FF).forEach { glyphProps[it] = GlyphProps(W_KANA, 0) }
+        (0x1B000..0x1B001).forEach { glyphProps[it] = GlyphProps(W_KANA, 0) }
+
+        // manually add width of one orphan insular letter
+        // WARNING: glyphs in 0xA770..0xA778 has invalid data, further care is required
+        glyphProps[0x1D79] = GlyphProps(9, 0)
     }
 
     private val glyphLayout = GlyphLayout()
@@ -1001,6 +1025,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val SHEET_BULGARIAN_VARW =    18
         internal val SHEET_SERBIAN_VARW =      19
         internal val SHEET_TSALAGI_VARW =      20
+        internal val SHEET_INSUAR_VARW =       21
 
         internal val SHEET_UNKNOWN = 254
 
