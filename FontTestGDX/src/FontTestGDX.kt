@@ -251,7 +251,7 @@ class FontTestGDX : Game() {
 
 lateinit var appConfig: LwjglApplicationConfiguration
 const val TEXW = 874
-const val TEXH = 2048
+const val TEXH = 2060
 
 fun main(args: Array<String>) {
     appConfig = LwjglApplicationConfiguration()
