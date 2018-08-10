@@ -26,9 +26,11 @@ package net.torvald.terrarumsansbitmap.gdx
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.*
+import com.badlogic.gdx.graphics.glutils.FrameBuffer
 import net.torvald.terrarumsansbitmap.GlyphProps
 import java.io.BufferedOutputStream
 import java.io.File
@@ -417,7 +419,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private val offsetUnihan = (H - H_UNIHAN) / 2
     private val offsetCustomSym = (H - SIZE_CUSTOM_SYM) / 2
 
+    private var firstRun = true
     private var textBuffer = CodepointSequence(256)
+    private var oldCharSequence = ""
+    //private lateinit var textTexture: FrameBuffer
+    //private val textTexCamera = OrthographicCamera()
     private var posXbuffer = intArrayOf() // absolute posX of glyphs from print-origin
     private var posYbuffer = intArrayOf() // absolute posY of glyphs from print-origin
     private var glyphWidthBuffer = intArrayOf() // width of each glyph
@@ -428,7 +434,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
 
     override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float): GlyphLayout? {
-        val str = charSeq.toCodePoints()
+        val oldProjectionMatrix = batch.projectionMatrix
 
         fun Int.flipY() = this * if (flipY) 1 else -1
 
@@ -438,189 +444,237 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         val y = Math.round(y).toFloat()
 
 
-        if (textBuffer != str) {
-            textBuffer = str
-            //println(textBuffer)
-            val widths = getWidthOfCharSeq(str)
+        if (charSeq.isNotBlank()) {
+            if (oldCharSequence != charSeq || firstRun) {
+                textBuffer = charSeq.toCodePoints()
+                val str = textBuffer
+                val widths = getWidthOfCharSeq(str)
+                val texWidth = widths.sum()
 
-            glyphWidthBuffer = widths
-
-            posXbuffer = IntArray(str.size, { 0 })
-            posYbuffer = IntArray(str.size, { 0 })
-
-
-            var nonDiacriticCounter = 0 // index of last instance of non-diacritic char
-            var stackUpwardCounter = 0
-            var stackDownwardCounter = 0
-            for (charIndex in 0 until posXbuffer.size) {
-                if (charIndex > 0) {
-                    // nonDiacriticCounter allows multiple diacritics
-
-                    val thisChar = textBuffer[charIndex]
-                    if (glyphProps[thisChar] == null && errorOnUnknownChar) {
-                        val errorGlyphSB = StringBuilder()
-                        Character.toChars(thisChar).forEach { errorGlyphSB.append(it) }
-
-                        throw InternalError("No GlyphProps for char '$errorGlyphSB' " +
-                                "(${thisChar.charInfo()})")
-                    }
-                    val thisProp = glyphProps[thisChar] ?: nullProp
-                    val lastNonDiacriticChar = textBuffer[nonDiacriticCounter]
-                    val itsProp = glyphProps[lastNonDiacriticChar] ?: nullProp
+                //if (!firstRun) textTexture.dispose()
+                //textTexture = FrameBuffer(Pixmap.Format.RGBA8888, texWidth, H, true)
 
 
-                    //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
+                glyphWidthBuffer = widths
+
+                posXbuffer = IntArray(str.size, { 0 })
+                posYbuffer = IntArray(str.size, { 0 })
 
 
-                    val alignmentOffset = when (thisProp.alignWhere) {
-                        GlyphProps.LEFT -> 0
-                        GlyphProps.RIGHT -> thisProp.width - W_VAR_INIT
-                        GlyphProps.CENTRE -> Math.floor((thisProp.width - W_VAR_INIT) / 2.0).toInt()
-                        else -> 0 // implies "diacriticsBeforeGlyph = true"
-                    }
+                var nonDiacriticCounter = 0 // index of last instance of non-diacritic char
+                var stackUpwardCounter = 0
+                var stackDownwardCounter = 0
+                for (charIndex in 0 until posXbuffer.size) {
+                    if (charIndex > 0) {
+                        // nonDiacriticCounter allows multiple diacritics
 
-                    if (!thisProp.writeOnTop) {
-                        posXbuffer[charIndex] =
-                                if (itsProp.alignWhere == GlyphProps.RIGHT)
-                                    posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar
-                                else
-                                    posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar
-                        nonDiacriticCounter = charIndex
-                        stackUpwardCounter = 0
-                        stackDownwardCounter = 0
-                    }
-                    else {
-                        // set X pos according to alignment information
-                        posXbuffer[charIndex] = when (thisProp.alignWhere) {
-                            GlyphProps.LEFT -> posXbuffer[nonDiacriticCounter]
-                            GlyphProps.RIGHT -> {
-                                posXbuffer[nonDiacriticCounter] - (W_VAR_INIT - itsProp.width)
-                            }
-                            GlyphProps.CENTRE -> {
-                                val alignXPos = if (itsProp.alignXPos == 0) itsProp.width.div(2) else itsProp.alignXPos
+                        val thisChar = str[charIndex]
+                        if (glyphProps[thisChar] == null && errorOnUnknownChar) {
+                            val errorGlyphSB = StringBuilder()
+                            Character.toChars(thisChar).forEach { errorGlyphSB.append(it) }
 
-                                posXbuffer[nonDiacriticCounter] + alignXPos - (W_VAR_INIT - 1).div(2)
-                            }
-                            else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
+                            throw InternalError("No GlyphProps for char '$errorGlyphSB' " +
+                                    "(${thisChar.charInfo()})")
+                        }
+                        val thisProp = glyphProps[thisChar] ?: nullProp
+                        val lastNonDiacriticChar = str[nonDiacriticCounter]
+                        val itsProp = glyphProps[lastNonDiacriticChar] ?: nullProp
+
+
+                        //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
+
+
+                        val alignmentOffset = when (thisProp.alignWhere) {
+                            GlyphProps.LEFT -> 0
+                            GlyphProps.RIGHT -> thisProp.width - W_VAR_INIT
+                            GlyphProps.CENTRE -> Math.floor((thisProp.width - W_VAR_INIT) / 2.0).toInt()
+                            else -> 0 // implies "diacriticsBeforeGlyph = true"
                         }
 
-
-                        // set Y pos according to diacritics position
-                        if (thisProp.diacriticsStackDown) {
-                            posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
-                            stackDownwardCounter++
+                        if (!thisProp.writeOnTop) {
+                            posXbuffer[charIndex] =
+                                    if (itsProp.alignWhere == GlyphProps.RIGHT)
+                                        posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar
+                                    else
+                                        posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar
+                            nonDiacriticCounter = charIndex
+                            stackUpwardCounter = 0
+                            stackDownwardCounter = 0
                         }
                         else {
-                            posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
-                            stackUpwardCounter++
+                            // set X pos according to alignment information
+                            posXbuffer[charIndex] = when (thisProp.alignWhere) {
+                                GlyphProps.LEFT -> posXbuffer[nonDiacriticCounter]
+                                GlyphProps.RIGHT -> {
+                                    posXbuffer[nonDiacriticCounter] - (W_VAR_INIT - itsProp.width)
+                                }
+                                GlyphProps.CENTRE -> {
+                                    val alignXPos = if (itsProp.alignXPos == 0) itsProp.width.div(2) else itsProp.alignXPos
+
+                                    posXbuffer[nonDiacriticCounter] + alignXPos - (W_VAR_INIT - 1).div(2)
+                                }
+                                else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
+                            }
+
+
+                            // set Y pos according to diacritics position
+                            if (thisProp.diacriticsStackDown) {
+                                posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
+                                stackDownwardCounter++
+                            }
+                            else {
+                                posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
+                                stackUpwardCounter++
+                            }
                         }
                     }
                 }
+
+
+                //print("[TerrarumSansBitmap] widthTable for $textBuffer: ")
+                //posXbuffer.forEach { print("$it ") }; println()
+
+                firstRun = false
             }
 
 
-            //print("[TerrarumSansBitmap] widthTable for $textBuffer: ")
-            //posXbuffer.forEach { print("$it ") }; println()
-        }
-
-        originalColour = batch.color.cpy()
-        var mainCol = originalColour
-        var shadowCol = mainCol.cpy().mul(0.5f,0.5f,0.5f,1f)
+            //textTexCamera.setToOrtho(false, textTexture.width.toFloat(), textTexture.height.toFloat())
+            //textTexCamera.update()
+            //batch.projectionMatrix = textTexCamera.combined
 
 
-        resetHash()
-        var index = 0
-        while (index <= textBuffer.lastIndex) {
-            val c = textBuffer[index]
-            val sheetID = getSheetType(c)
-            val (sheetX, sheetY) = getSheetwisePosition(c)
-            val hash = getHash(c)
-
-            //println("[TerrarumSansBitmap] sprite:  $sheetID:${sheetX}x${sheetY}")
-
-            if (isColourCode(c)) {
-                if (c == 0x100000) {
-                    mainCol = originalColour
-                    shadowCol = mainCol.cpy().mul(0.5f,0.5f,0.5f,1f)
-                }
-                else {
-                    mainCol = getColour(c)
-                    shadowCol = mainCol.cpy().mul(0.5f, 0.5f, 0.5f, 1f)
-                }
-            }
-            else if (isCharsetOverride(c)) {
-                charsetOverride = c - CHARSET_OVERRIDE_NULL
-            }
-            else if (sheetID == SHEET_HANGUL) {
-                val hangulSheet = sheets[SHEET_HANGUL]
-                val hIndex = c - 0xAC00
-
-                val indexCho = getHanChosung(hIndex)
-                val indexJung = getHanJungseong(hIndex)
-                val indexJong = getHanJongseong(hIndex)
-
-                val choRow = getHanInitialRow(hIndex)
-                val jungRow = getHanMedialRow(hIndex)
-                val jongRow = getHanFinalRow(hIndex)
+            originalColour = batch.color.cpy()
+            var mainCol = originalColour
+            var shadowCol = mainCol.cpy().mul(0.5f, 0.5f, 0.5f, 1f)
 
 
-                if (!noShadow) {
-                    batch.color = shadowCol
+            //textTexture.begin()
 
-                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + posXbuffer[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + posXbuffer[index]    , y + 1.flipY())
-                    batch.draw(hangulSheet.get(indexCho, choRow  ), x + posXbuffer[index] + 1, y + 1.flipY())
+            val runs = if (noShadow) 0..0 else 3 downTo 0
+            for (run in runs) { // 0: Main, 1..3: Shadows
+                resetHash()
+                var index = 0
+                while (index <= textBuffer.lastIndex) {
+                    val c = textBuffer[index]
+                    val sheetID = getSheetType(c)
+                    val (sheetX, sheetY) = getSheetwisePosition(c)
+                    val hash = getHash(c)
 
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index]    , y + 1.flipY())
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index] + 1, y + 1.flipY())
-
-                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index] + 1, y)
-                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index]    , y + 1.flipY())
-                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index] + 1, y + 1.flipY())
-                }
-
-
-                batch.color = mainCol
-                batch.draw(hangulSheet.get(indexCho, choRow)  , x + posXbuffer[index], y)
-                batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index], y)
-                batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index], y)
-            }
-            else {
-                try {
-
-                    val posY = y + posYbuffer[index].flipY() +
-                            if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                offsetUnihan
-                            else if (sheetID == SHEET_CUSTOM_SYM)
-                                offsetCustomSym
-                            else 0
-
-                    val posX = x + posXbuffer[index]
-                    val texture = sheets[sheetID].get(sheetX, sheetY)
-
-
-                    if (!noShadow) {
-                        batch.color = shadowCol
-                        batch.draw(texture, posX + 1, posY + 1.flipY())
-                        batch.draw(texture, posX    , posY + 1.flipY())
-                        batch.draw(texture, posX + 1, posY)
+                    if (run == 0) {
+                        //println("[TerrarumSansBitmap] sprite:  $sheetID:${sheetX}x${sheetY}")
                     }
 
-                    batch.color = mainCol
-                    batch.draw(texture, posX, posY)
-                }
-                catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
-                    batch.color = mainCol
+
+                    if (isColourCode(c)) {
+                        if (c == 0x100000) {
+                            mainCol = originalColour
+                            shadowCol = mainCol.cpy().mul(0.5f, 0.5f, 0.5f, 1f)
+                        }
+                        else {
+                            mainCol = getColour(c)
+                            shadowCol = mainCol.cpy().mul(0.5f, 0.5f, 0.5f, 1f)
+                        }
+                    }
+                    else if (isCharsetOverride(c)) {
+                        charsetOverride = c - CHARSET_OVERRIDE_NULL
+                    }
+                    else if (sheetID == SHEET_HANGUL) {
+                        val hangulSheet = sheets[SHEET_HANGUL]
+                        val hIndex = c - 0xAC00
+
+                        val indexCho = getHanChosung(hIndex)
+                        val indexJung = getHanJungseong(hIndex)
+                        val indexJong = getHanJongseong(hIndex)
+
+                        val choRow = getHanInitialRow(hIndex)
+                        val jungRow = getHanMedialRow(hIndex)
+                        val jongRow = getHanFinalRow(hIndex)
+
+
+                        when (run) {
+                            0 -> {
+                                batch.color = mainCol
+                                batch.draw(hangulSheet.get(indexCho, choRow), x + posXbuffer[index].toFloat(), y)
+                                batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index].toFloat(), y)
+                                batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index].toFloat(), y)
+                            }
+                            1 -> {
+                                batch.color = shadowCol
+                                batch.draw(hangulSheet.get(indexCho, choRow), x + posXbuffer[index] + 1, y)
+                                batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index] + 1, y)
+                                batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index] + 1, y)
+                            }
+                            2 -> {
+                                batch.color = shadowCol
+                                batch.draw(hangulSheet.get(indexCho, choRow), x + posXbuffer[index], y + 1.flipY())
+                                batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index], y + 1.flipY())
+                                batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index], y + 1.flipY())
+                            }
+                            3 -> {
+                                batch.color = shadowCol
+                                batch.draw(hangulSheet.get(indexCho, choRow), x + posXbuffer[index] + 1, y + 1.flipY())
+                                batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index] + 1, y + 1.flipY())
+                                batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index] + 1, y + 1.flipY())
+
+                            }
+                        }
+
+                    }
+                    else {
+                        try {
+
+                            val posY = y + posYbuffer[index].flipY() +
+                                    if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                        offsetUnihan
+                                    else if (sheetID == SHEET_CUSTOM_SYM)
+                                        offsetCustomSym
+                                    else 0
+
+                            val posX = x + posXbuffer[index]
+                            val texture = sheets[sheetID].get(sheetX, sheetY)
+
+                            when (run) {
+                                0 -> {
+                                    batch.color = mainCol
+                                    batch.draw(texture, posX, posY)
+                                }
+                                1 -> {
+                                    batch.color = shadowCol
+                                    batch.draw(texture, posX + 1, posY)
+                                }
+                                2 -> {
+                                    batch.color = shadowCol
+                                    batch.draw(texture, posX, posY + 1.flipY())
+                                }
+                                3 -> {
+                                    batch.color = shadowCol
+                                    batch.draw(texture, posX + 1, posY + 1.flipY())
+                                }
+                            }
+                        }
+                        catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
+                            batch.color = mainCol
+                        }
+                    }
+
+
+                    index++
                 }
             }
 
+            /*textTexture.end()
 
-            index += 1
+
+        batch.color = originalColour
+        batch.projectionMatrix = oldProjectionMatrix
+        val textTex = textTexture.colorBufferTexture
+
+        batch.draw(textTex, x, y, textTex.width.toFloat(), textTex.height.toFloat())
+        */
+
         }
 
         batch.color = originalColour
-
         return null
     }
 
