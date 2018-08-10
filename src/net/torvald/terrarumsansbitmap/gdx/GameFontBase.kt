@@ -26,11 +26,9 @@ package net.torvald.terrarumsansbitmap.gdx
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.*
-import com.badlogic.gdx.graphics.glutils.FrameBuffer
 import net.torvald.terrarumsansbitmap.GlyphProps
 import java.io.BufferedOutputStream
 import java.io.File
@@ -485,15 +483,15 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
 
                         val alignmentOffset = when (thisProp.alignWhere) {
-                            GlyphProps.LEFT -> 0
-                            GlyphProps.RIGHT -> thisProp.width - W_VAR_INIT
-                            GlyphProps.CENTRE -> Math.floor((thisProp.width - W_VAR_INIT) / 2.0).toInt()
+                            GlyphProps.ALIGN_LEFT -> 0
+                            GlyphProps.ALIGN_RIGHT -> thisProp.width - W_VAR_INIT
+                            GlyphProps.ALIGN_CENTRE -> Math.floor((thisProp.width - W_VAR_INIT) / 2.0).toInt()
                             else -> 0 // implies "diacriticsBeforeGlyph = true"
                         }
 
                         if (!thisProp.writeOnTop) {
                             posXbuffer[charIndex] =
-                                    if (itsProp.alignWhere == GlyphProps.RIGHT)
+                                    if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT)
                                         posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar
                                     else
                                         posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar
@@ -504,11 +502,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         else {
                             // set X pos according to alignment information
                             posXbuffer[charIndex] = when (thisProp.alignWhere) {
-                                GlyphProps.LEFT -> posXbuffer[nonDiacriticCounter]
-                                GlyphProps.RIGHT -> {
+                                GlyphProps.ALIGN_LEFT -> posXbuffer[nonDiacriticCounter]
+                                GlyphProps.ALIGN_RIGHT -> {
                                     posXbuffer[nonDiacriticCounter] - (W_VAR_INIT - itsProp.width)
                                 }
-                                GlyphProps.CENTRE -> {
+                                GlyphProps.ALIGN_CENTRE -> {
                                     val alignXPos = if (itsProp.alignXPos == 0) itsProp.width.div(2) else itsProp.alignXPos
 
                                     posXbuffer[nonDiacriticCounter] + alignXPos - (W_VAR_INIT - 1).div(2)
@@ -518,13 +516,22 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
 
                             // set Y pos according to diacritics position
-                            if (thisProp.diacriticsStackDown) {
-                                posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
-                                stackDownwardCounter++
-                            }
-                            else {
-                                posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
-                                stackUpwardCounter++
+                            when (thisProp.stackWhere) {
+                                GlyphProps.STACK_DOWN -> {
+                                    posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
+                                    stackDownwardCounter++
+                                }
+                                GlyphProps.STACK_UP -> {
+                                    posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
+                                    stackUpwardCounter++
+                                }
+                                GlyphProps.STACK_UP_N_DOWN -> {
+                                    posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
+                                    stackDownwardCounter++
+                                    posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
+                                    stackUpwardCounter++
+                                }
+                                // for BEFORE_N_AFTER, do nothing in here
                             }
                         }
                     }
@@ -985,7 +992,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         // swap position of {letter, diacritics that comes before the letter}
         i = 1
         while (i <= seq.lastIndex) {
-            if ((glyphProps[seq[i]] ?: nullProp).diacriticsBeforeGlyph) {
+            if ((glyphProps[seq[i]] ?: nullProp).alignWhere == GlyphProps.ALIGN_BEFORE) {
                 val t = seq[i - 1]
                 seq[i - 1] = seq[i]
                 seq[i] = t

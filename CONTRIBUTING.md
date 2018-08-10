@@ -47,15 +47,18 @@ Green-tinted area (should be 10 px tall) contains the tags. Tags are defined as 
       0 -+ 0 Align  1 Align  0 Align   1 Align before
       1 -+ 0 left   0 right  1 centre  1 the glyph
       0 == Write on top of prev chars (e.g. diacritics)
-      1 == Diacritics stack 0:upward/1:downward
-(MSB) X == undefined, should be 0
+      1 == 0 Stack  1 Stack  0 Before  1 Up &
+(MSB) 0 == 0 up     0 down   1 &After  1 Down (e.g. U+0C48)
 
-NOTE: If glyphs are right or centre aligned, they must be aligned in the
-      same way inside of the bitmap; the program assumes every variable-
-      width glyphs to have a width of 15, regardless of the tagged width.
-      If the diacritic is aligned before the glyph, the diacritic itself
-      is always assumed as left-aligned, as this font will swap position
-      of said diacritic and the glyph right before it.
+NOTE: If the diacritics comes before AND after the glyph (e.g. U+103C),
+      "Align before the glyph" must be set too.
+         If glyphs are right or centre aligned, they must be aligned in
+      the same way inside of the bitmap; the program assumes every vari-
+      able-width glyphs to have a width of 15, regardless of the tagged
+      width.
+         If the diacritic is aligned before the glyph, the diacritic it-
+      self is always assumed as left-aligned, as this font will exchange
+      position of said diacritic and the glyph right before it.
 ```
 
 ![Visual representation of left/right/centre align](alignment_illustration.jpg)

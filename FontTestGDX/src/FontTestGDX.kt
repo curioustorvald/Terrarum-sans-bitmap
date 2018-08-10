@@ -23,7 +23,7 @@ class FontTestGDX : Game() {
     lateinit var camera: OrthographicCamera
 
     override fun create() {
-        font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = false) // must test for two flipY cases
+        font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = true) // must test for two flipY cases
 
         val inTextFile = Gdx.files.internal("./demotext.txt")
         val reader = inTextFile.reader("UTF-8")
