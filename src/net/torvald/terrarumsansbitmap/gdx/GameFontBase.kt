@@ -939,6 +939,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         // manually add width of one orphan insular letter
         // WARNING: glyphs in 0xA770..0xA778 has invalid data, further care is required
         glyphProps[0x1D79] = GlyphProps(9, 0)
+
+
+        glyphProps[0xFFFD] = nullProp
     }
 
     private val glyphLayout = GlyphLayout()
