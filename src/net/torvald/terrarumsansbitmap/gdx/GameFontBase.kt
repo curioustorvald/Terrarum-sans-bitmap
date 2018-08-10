@@ -138,6 +138,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isCherokee(c: Int) = c in codeRange[SHEET_TSALAGI_VARW]
     private fun isInsular(c: Int) = c == 0x1D79 || c in 0xA779..0xA787
     private fun isNagariBengali(c: Int) = c in codeRange[SHEET_NAGARI_BENGALI_VARW]
+    private fun isKartvelianCaps(c: Int) = c in codeRange[SHEET_KARTULI_CAPS_VARW]
 
 
     private fun extAindexX(c: Int) = (c - 0x100) % 16
@@ -202,6 +203,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun nagariIndexX(c: Int) = (c - 0x900) % 16
     private fun nagariIndexY(c: Int) = (c - 0x900) / 16
 
+    private fun kartvelianCapsIndexX(c: Int) = (c - 0x1C90) % 16
+    private fun kartvelianCapsIndexY(c: Int) = (c - 0x1C90) / 16
+
 
     private fun getColour(codePoint: Int): Color { // input: 0x10ARGB, out: RGBA8888
         if (colourBuffer.containsKey(codePoint))
@@ -241,7 +245,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_SERBIAN_VARW,
             SHEET_TSALAGI_VARW,
             SHEET_INSUAR_VARW,
-            SHEET_NAGARI_BENGALI_VARW
+            SHEET_NAGARI_BENGALI_VARW,
+            SHEET_KARTULI_CAPS_VARW
     )
 
     private val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
@@ -268,7 +273,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             "cyrilic_serbian_variable.tga",
             "tsalagi_variable.tga",
             "insular_variable.tga",
-            "devanagari_bengali_variable.tga"
+            "devanagari_bengali_variable.tga",
+            "kartuli_allcaps_variable.tga"
     )
     private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF,
@@ -293,7 +299,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0xF00060..0xF000BF, // assign them to PUA
             0x13A0..0x13F5,
             0xA770..0xA787,
-            0x900..0x9FF
+            0x900..0x9FF,
+            0x1C90..0x1CBF
     )
     private val glyphProps: HashMap<Int, GlyphProps> = HashMap()
     private val sheets: Array<TextureRegionPack>
@@ -711,6 +718,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             return SHEET_INSUAR_VARW
         else if (isNagariBengali(c))
             return SHEET_NAGARI_BENGALI_VARW
+        else if (isKartvelianCaps(c))
+            return SHEET_KARTULI_CAPS_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -799,6 +808,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_NAGARI_BENGALI_VARW -> {
                 sheetX = nagariIndexX(ch)
                 sheetY = nagariIndexY(ch)
+            }
+            SHEET_KARTULI_CAPS_VARW -> {
+                sheetX = kartvelianCapsIndexX(ch)
+                sheetY = kartvelianCapsIndexY(ch)
             }
             else -> {
                 sheetX = ch % 16
@@ -1005,6 +1018,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val SHEET_TSALAGI_VARW =      20
         internal val SHEET_INSUAR_VARW =       21
         internal val SHEET_NAGARI_BENGALI_VARW=22
+        internal val SHEET_KARTULI_CAPS_VARW = 23
 
         internal val SHEET_UNKNOWN = 254
 
