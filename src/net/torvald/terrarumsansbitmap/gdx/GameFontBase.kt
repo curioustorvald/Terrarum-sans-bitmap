@@ -219,7 +219,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun diacriticalMarksIndexY(c: Int) = (c - 0x300) / 16
 
 
-    private fun Int.isLowercase() = Character.isLowerCase(this) && !isKartvelianCaps(this)
+    private val lowHeightLetters = "acegijmnopqrsuvwxyzɱɳʙɾɽʒʂʐʋɹɻɥɟɡɢʛȵɲŋɴʀɕʑçʝxɣχʁʜʍɰʟɨʉɯuʊøɘɵɤəɛœɜɞʌɔæɐɶɑɒɚɝɩɪʅʈʏʞ".toSortedSet()
+    /**
+     * lowercase AND the height is equal to x-height (e.g. lowercase B, D, F, H, K, L, ... does not count
+     */
+    private fun Int.isLowHeight() = this.and(0xFFFF).toChar() in lowHeightLetters
 
 
     private fun getColour(codePoint: Int): Color { // input: 0x10ARGB, out: RGBA8888
@@ -347,6 +351,14 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             val pixmap: Pixmap
 
 
+            if (isVariable) {
+                println("[TerrarumSansBitmap] loading texture $it [VARIABLE]")
+            }
+            else {
+                println("[TerrarumSansBitmap] loading texture $it")
+            }
+
+
             // unpack gz if applicable
             if (it.endsWith(".gz")) {
                 val tmpFileName = "tmp_${it.dropLast(7)}.tga"
@@ -361,22 +373,16 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                 pixmap = Pixmap(Gdx.files.internal(tmpFileName))
 
-                File(tmpFileName).delete()
+                //File(tmpFileName).delete()
             }
             else {
                 pixmap = Pixmap(Gdx.files.internal(fontParentDir + it))
             }
 
 
+            if (isVariable) buildWidthTable(pixmap, codeRange[index], 16)
             buildWidthTableFixed()
 
-            if (isVariable) {
-                println("[TerrarumSansBitmap] loading texture $it [VARIABLE]")
-                buildWidthTable(pixmap, codeRange[index], 16)
-            }
-            else {
-                println("[TerrarumSansBitmap] loading texture $it")
-            }
 
             val texture = Texture(pixmap)
             val texRegPack = if (isVariable) {
@@ -506,7 +512,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         val alignmentOffset = when (thisProp.alignWhere) {
                             GlyphProps.ALIGN_LEFT -> 0
                             GlyphProps.ALIGN_RIGHT -> thisProp.width - W_VAR_INIT
-                            GlyphProps.ALIGN_CENTRE -> Math.floor((thisProp.width - W_VAR_INIT) / 2.0).toInt()
+                            GlyphProps.ALIGN_CENTRE -> Math.ceil((thisProp.width - W_VAR_INIT) / 2.0).toInt()
                             else -> 0 // implies "diacriticsBeforeGlyph = true"
                         }
 
@@ -519,6 +525,13 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                             nonDiacriticCounter = charIndex
                             stackUpwardCounter = 0
                             stackDownwardCounter = 0
+                        }
+                        else if (thisProp.writeOnTop && thisProp.alignXPos == GlyphProps.DIA_JOINER) {
+                            posXbuffer[charIndex] =
+                                    if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT)
+                                        posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset
+                                    else
+                                        posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset
                         }
                         else {
                             // set X pos according to alignment information
@@ -547,8 +560,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                                     // shift down on lowercase if applicable
                                     if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
-                                            lastNonDiacriticChar.isLowercase()) {
-                                        posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN
+                                            lastNonDiacriticChar.isLowHeight()) {
+                                        if (thisProp.alignXPos == GlyphProps.DIA_OVERLAY)
+                                            posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN
+                                        else
+                                            posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN
                                     }
 
                                     stackUpwardCounter++

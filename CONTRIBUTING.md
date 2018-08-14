@@ -62,10 +62,11 @@ character is lowercase.
 Since this tag does not make sense for diacritics, they will use the va-
 lue for compeletely different perporse:
 
-   0 : nothing special
-   1 : covers previous character; it's neither stack-up nor down.
+   0 : Nothing special
+   1 : Covers previous character; it's neither stack-up nor down.
        Will be drawn 2 px lower if the underlying character is lowercase
-   2..15: undefined
+   2 : Joiner.
+   3..15: undefined
 
 
 NOTE: If the diacritics comes before AND after the glyph (e.g. U+103C),

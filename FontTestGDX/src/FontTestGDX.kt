@@ -186,7 +186,7 @@ class FontTestGDX : Game() {
             if (!screenshotExported) {
                 val pixmap = ScreenUtils.getFrameBufferPixmap(0, 0, frameBuffer.width, frameBuffer.height)
 
-                PixmapIO.writePNG(Gdx.files.local("demo.PNG"), pixmap)
+                PixmapIO.writePNG(Gdx.files.local("testing.PNG"), pixmap)
                 pixmap.dispose()
 
                 screenshotExported = true
