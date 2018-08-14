@@ -31,4 +31,6 @@ data class GlyphProps(
             tags.and(1) == 1,
             tags.ushr(8).and(3)
     )
+
+    fun isOverlay() = writeOnTop && alignXPos == 1
 }

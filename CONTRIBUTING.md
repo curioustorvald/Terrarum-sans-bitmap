@@ -50,6 +50,24 @@ Green-tinted area (should be 10 px tall) contains the tags. Tags are defined as 
       1 == 0 Stack  1 Stack  0 Before  1 Up &
 (MSB) 0 == 0 up     0 down   1 &After  1 Down (e.g. U+0C48)
 
+Extra informations
+
+== Stack Up/Down ==
+
+When the tag is stack-up, it'll be drawn 4 px lower if the underlying
+character is lowercase.
+
+== Align-To-This-X-Pos ==
+
+Since this tag does not make sense for diacritics, they will use the va-
+lue for compeletely different perporse:
+
+   0 : nothing special
+   1 : covers previous character; it's neither stack-up nor down.
+       Will be drawn 2 px lower if the underlying character is lowercase
+   2..15: undefined
+
+
 NOTE: If the diacritics comes before AND after the glyph (e.g. U+103C),
       "Align before the glyph" must be set too.
          If glyphs are right or centre aligned, they must be aligned in

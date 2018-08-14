@@ -70,6 +70,12 @@ typealias CodepointSequence = ArrayList<Int>
  * - U+FFFF9: Charset override -- Bulgarian
  * - U+FFFFA: Charset override -- Serbian
  *
+ * ## Auto Shift Down
+ *
+ * Certain characters (e.g. Combining Diacritical Marks) will automatically shift down to accomodate lowercase letters. Shiftdown only occurs when non-diacritic character before the mark is lowercase, and the mark itself would stack up. Stack-up or down is defined using Tag system.
+ *
+ *
+ *
  * @param noShadow Self-explanatory
  * @param flipY If you have Y-down coord system implemented on your GDX (e.g. legacy codebase), set this to ```true``` so that the shadow won't be upside-down. For glyph getting upside-down, set ```TextureRegionPack.globalFlipY = true```.
  *
@@ -139,6 +145,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isInsular(c: Int) = c == 0x1D79 || c in 0xA779..0xA787
     private fun isNagariBengali(c: Int) = c in codeRange[SHEET_NAGARI_BENGALI_VARW]
     private fun isKartvelianCaps(c: Int) = c in codeRange[SHEET_KARTULI_CAPS_VARW]
+    private fun isDiacriticalMarks(c: Int) = c in codeRange[SHEET_DIACRITICAL_MARKS_VARW]
+
+    private fun isCaps(c: Int) = Character.isUpperCase(c) || isKartvelianCaps(c)
 
 
     private fun extAindexX(c: Int) = (c - 0x100) % 16
@@ -206,6 +215,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun kartvelianCapsIndexX(c: Int) = (c - 0x1C90) % 16
     private fun kartvelianCapsIndexY(c: Int) = (c - 0x1C90) / 16
 
+    private fun diacriticalMarksIndexX(c: Int) = (c - 0x300) % 16
+    private fun diacriticalMarksIndexY(c: Int) = (c - 0x300) / 16
+
+
+    private fun Int.isLowercase() = Character.isLowerCase(this) && !isKartvelianCaps(this)
+
 
     private fun getColour(codePoint: Int): Color { // input: 0x10ARGB, out: RGBA8888
         if (colourBuffer.containsKey(codePoint))
@@ -246,7 +261,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_TSALAGI_VARW,
             SHEET_INSUAR_VARW,
             SHEET_NAGARI_BENGALI_VARW,
-            SHEET_KARTULI_CAPS_VARW
+            SHEET_KARTULI_CAPS_VARW,
+            SHEET_DIACRITICAL_MARKS_VARW
+    )
+    private val autoShiftDownOnLowercase = arrayOf(
+            SHEET_DIACRITICAL_MARKS_VARW
     )
 
     private val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
@@ -274,7 +293,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             "tsalagi_variable.tga",
             "insular_variable.tga",
             "devanagari_bengali_variable.tga",
-            "kartuli_allcaps_variable.tga"
+            "kartuli_allcaps_variable.tga",
+            "diacritical_marks_variable.tga"
     )
     private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF,
@@ -291,7 +311,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0xE00..0xE5F,
             0x530..0x58F,
             0x10D0..0x10FF,
-            0x250..0x2AF,
+            0x250..0x2FF,
             0x16A0..0x16FF,
             0x1E00..0x1EFF,
             0xE000..0xE0FF,
@@ -300,7 +320,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0x13A0..0x13F5,
             0xA770..0xA787,
             0x900..0x9FF,
-            0x1C90..0x1CBF
+            0x1C90..0x1CBF,
+            0x300..0x36F
     )
     private val glyphProps: HashMap<Int, GlyphProps> = HashMap()
     private val sheets: Array<TextureRegionPack>
@@ -523,6 +544,13 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                                 }
                                 GlyphProps.STACK_UP -> {
                                     posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
+
+                                    // shift down on lowercase if applicable
+                                    if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
+                                            lastNonDiacriticChar.isLowercase()) {
+                                        posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN
+                                    }
+
                                     stackUpwardCounter++
                                 }
                                 GlyphProps.STACK_UP_N_DOWN -> {
@@ -781,6 +809,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             return SHEET_NAGARI_BENGALI_VARW
         else if (isKartvelianCaps(c))
             return SHEET_KARTULI_CAPS_VARW
+        else if (isDiacriticalMarks(c))
+            return SHEET_DIACRITICAL_MARKS_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -873,6 +903,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_KARTULI_CAPS_VARW -> {
                 sheetX = kartvelianCapsIndexX(ch)
                 sheetY = kartvelianCapsIndexY(ch)
+            }
+            SHEET_DIACRITICAL_MARKS_VARW -> {
+                sheetX = diacriticalMarksIndexX(ch)
+                sheetY = diacriticalMarksIndexY(ch)
             }
             else -> {
                 sheetX = ch % 16
@@ -1057,6 +1091,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
         internal val H_DIACRITICS = 3
 
+        internal val H_STACKUP_LOWERCASE_SHIFTDOWN = 4
+        internal val H_OVERLAY_LOWERCASE_SHIFTDOWN = 2
+
         internal val SIZE_CUSTOM_SYM = 18
 
         internal val SHEET_ASCII_VARW =        0
@@ -1083,6 +1120,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val SHEET_INSUAR_VARW =       21
         internal val SHEET_NAGARI_BENGALI_VARW=22
         internal val SHEET_KARTULI_CAPS_VARW = 23
+        internal val SHEET_DIACRITICAL_MARKS_VARW = 24
 
         internal val SHEET_UNKNOWN = 254
 

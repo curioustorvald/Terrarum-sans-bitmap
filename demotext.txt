@@ -1,102 +1,19 @@
-􏿆The bitmap font for games developers who seek good font that has real multilingual support,􀀀
-􏿆for free (as in freedom and without cost)􀀀
+41°C
 
-There are many bitmap fonts on the internet. You care for the multilingual support, but alas!
-most of them do not support your language, vector fonts take too much time to load, and even
-then their legibility suffers because fuck built-in antialias.
+E=mc²
 
-You somehow found a multilingual one, and it makes your game look like an old computer, and you say:
+1º  2ª
 
-“Well, better than nothing… no, it’s ugly.”
+ÇC¸ued
 
-You speak japanese and you wish to support it, but then このクソなfont only goot for displaying
-Japanese, it's not even multilingual, and their English look uncanny and inconsistent as hell.
+Received Pronunciation IPA: /ˌɪntəˈnæʃənəl/, [ˌɪntəˈnæʃənəɫ]
+General American IPA: /ˌɪntɚˈnæʃənəl/, [ˌɪntɚˈnæʃənəɫ], [ˌɪɾ̃ɚˈnæʃənəɫ]
+Rhymes: -ɛntəl (wtf wiktionary ??)
 
-Eventually you just mix different fonts together, and the results were always infuriating.
 
-No more suffering. This font has everything you need.
-
-􏾐while􀀀 (isVisible(􏺟BAD_FONTS􀀀)) {
-    ripAndTear(􏺟BAD_FONTS􀀀).where { 􏺟GUTS􀀀 };
-}
-
-How multilingual? Real multilingual!
-
-    􏻬Ианҵоуп ақьаад, нусхур аҩырала, ҩ ҽшьаҟакла, иҧшӡоу анапҩырала􀀀
-    􏻬գրիչս վայր դրի, վեր կացա և պատրաստվում էի, որ քնեմ, երբ հանկարծ դռանս զանգակը հնչեց􀀀
-    􏻬ՄՇԱԿԻՉ ԿԱՄ ԿԵՆՏՐՈՆԱԿԱՆ ՄՇԱԿԻՉ ՀԱՆԳՈՒՅՑԸ ՀԱՆԴԻՍԱՆՈՒՄ Է ՀԱՄԱԿԱՐԳՉԻ ՍԱՐՔԱՎՈՐՈՒՄՆԵՐԻՑ􀀀
-    􏻬Zəfər, jaketini də papağını da götür, bu axşam hava çox soyuq olacaq􀀀
-    􏻬󿿹Под южно дърво, цъфтящо в синьо, бягаше малко пухкаво зайче󿿸􀀀
-    􏻬ᎠᏍᎦᏯᎡᎦᎢᎾᎨᎢᎣᏍᏓᎤᎩᏍᏗᎥᎴᏓᎯᎲᎢᏔᎵᏕᎦᏟᏗᏖᎸᎳᏗᏗᎧᎵᎢᏘᎴᎩ ᏙᏱᏗᏜᏫᏗᏣᏚᎦᏫᏛᏄᏓᎦᏝᏃᎠᎾᏗᎭᏞᎦᎯᎦᏘᏓᏠᎨᏏᏕᏡᎬᏢᏓᏥᏩᏝᎡᎢᎪᎢ􀀀
-    􏻬ᎠᎦᏂᏗᎮᎢᎫᎩᎬᏩᎴᎢᎠᏆᏅᏛᎫᏊᎾᎥᎠᏁᏙᎲᏐᏈᎵᎤᎩᎸᏓᏭᎷᏤᎢᏏᏉᏯᏌᏊ ᎤᏂᏋᎢᏡᎬᎢᎰᏩᎬᏤᎵᏍᏗᏱᎩᎱᎱᎤᎩᎴᎢᏦᎢᎠᏂᏧᏣᏨᎦᏥᎪᎥᏌᏊᎤᎶᏒᎢᎢᏡᎬᎢ􀀀
-    􏻬ᎹᎦᎺᎵᏥᎻᎼᏏᎽᏗᏩᏂᎦᏘᎾᎿᎠᏁᎬᎢᏅᎩᎾᏂᎡᎢᏌᎶᎵᏎᎷᎠᏑᏍᏗᏪᎩ ᎠᎴ ᏬᏗᏲᏭᎾᏓᏍᏓᏴᏁᎢᎤᎦᏅᏮᏰᎵᏳᏂᎨᎢ􀀀
-    􏻬Příliš žluťoučký kůň úpěl ďábelské ódy􀀀
-    􏻬Quizdeltagerne spiste jordbær med fløde, mens cirkusklovnen Walther spillede på xylofon􀀀
-    􏻬PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS􀀀
-    􏻬hƿæt ƿe ᵹardena inᵹear ꝺaᵹum þeoꝺ cynninᵹa þꞃym ᵹeꝼꞃumon􀀀
-    􏻬Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich    GROẞEN GROẞE􀀀
-    􏻬ζαφείρι δέξου πάγκαλο, βαθων ψυχης το σημα􀀀
-    􏻬ΔΙΑΦΥΛΆΞΤΕ ΓΕΝΙΚΆ ΤΗ ΖΩΉ ΣΑΣ ΑΠΌ ΒΑΘΕΙΆ ΨΥΧΙΚΆ ΤΡΑΎΜΑΤΑ􀀀
-    􏻬სწრაფი ყავისფერი მელა გადაახტა ზარმაც ძაღლს    ᲘᲜᲢᲔᲚ ᲞᲔᲜᲢᲘᲣᲛᲘ ᲛᲘᲙᲠᲝᲞᲠᲝᲪᲔᲡᲝᲠᲘ􀀀
-    􏻬ऋषियों को सताने वाले दुष्ट राक्षसों के राजा रावण का सर्वनाश करने वाले विष्णुवतार भगवान श्रीराम अयोध्या के महाराज दशरथ के􀀀
-    􏻬Kæmi ný öxi hér, ykist þjófum nú bæði víl og ádrepa􀀀
-    􏻬Ċuaiġ bé ṁórṡáċ le dlúṫspád fíorḟinn trí hata mo ḋea-ṗorcáin ḃig􀀀
-    􏻬あめつちほしそら やまかはみねたに くもきりむろこけ ひといぬうへすゑ ゆわさるおふせよ えの𛀁をなれゐて􀀀
-    􏻬トリナクコヱス ユメサマセ ミヨアケワタル ヒンカシヲ ソライロハエテ オキツヘニ ホフネムレヰヌ モヤノウチ􀀀
-    􏻬田居に出で 菜摘むわれをぞ 君召すと 求食り追ひゆく 山城の 打酔へる子ら 藻葉干せよ え舟繋けぬ􀀀
-    􏻬정 참판 양반댁 규수 큰 교자 타고 혼례 치른 날    하얬다 도럄직한 퀡봹퉪헰􀀀
-    􏻬Četri psihi faķīri vēlu vakarā zāģēja guļbūvei durvis, fonā šņācot mežam􀀀
-    􏻬Įlinkdama fechtuotojo špaga sublykčiojusi pragręžė apvalų arbūzą􀀀
-    􏻬Ѕидарски пејзаж: шугав билмез со чудење џвака ќофте и кељ на туѓ цех􀀀
-    􏻬Щётканы фермд пийшин цувъя. Бөгж зогсч хэльюү􀀀
-    􏻬Pchnąć w tę łódź jeża lub ośm skrzyń fig􀀀
-    􏻬कः खगौघाङचिच्छौजा झाञ्ज्ञोऽटौठीडडण्ढणः। तथोदधीन् पफर्बाभीर्मयोऽरिल्वाशिषां सहः॥􀀀
-    􏻬Înjurând pițigăiat, zoofobul comandă vexat whisky și tequila􀀀
-    􏻬Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства􀀀
-    􏻬󿿺Ајшо, лепото и чежњо, за љубав срца мога дођи у Хаџиће на кафу󿿸􀀀
-    􏻬Jovencillo emponzoñado de whisky: ¡qué figurota exhibe!􀀀
-    􏻬นายสังฆภัณฑ์ เฮงพิทักษ์ฝั่ง ผู้เฒ่าซึ่งมีอาชีพเป็นฅนขายฃวด ถูกตำรวจปฏิบัติการจับฟ้องศาล ฐานลักนาฬิกาคุณหญิงฉัตรชฎา ฌานสมาธิ􀀀
-    􏻬Pijamalı hasta yağız şoföre çabucak güvendi􀀀
-    􏻬Жебракують філософи при ґанку церкви в Гадячі, ще й шатро їхнє п’яне знаємо􀀀
-    􏻬Do bạch kim rất quý nên sẽ dùng để lắp vô xương􀀀
-    􏻬日堀油告観観藤村抄海評業庁経賃室弁市。太撮収改売週法所何都慣次現。価紙一無三洋日話転手治稿載末替付致治。􀀀
-
-􏃯Features:􀀀
-
-    􏿿Ever heard of « Guillemets »? You speak „Nederlands” or „Deutsch“? ”suomi”? 「日本語」しゃべる？或《中文》？􀀀
-
-􎳌Multilingual brackets; these are the most basic things, right?􀀀
-
-    􏋶99406 91902 59186 29182 45814 57862 34368 08240􀀀
-    􏋶31485 65379 04348 28952 42927 26157 42615 39526􀀀
-
-􎳌Fixed-width numbers, because number-crunching matters􀀀
-
-    􏼀ᚱ􏼐ᛂ􏼠ᚴ􏼰ᛋ􏽀ᛂ􏽐ᛋ􏽠ᛏ􏽰ᛋ􏾀ᚮ􏾐ᚾ􏾠ᛔ􏾰ᚢ􏿀ᛏ􏿐ᛚ􏿠ᚮ􏿰ᛋ􏻰᛬􏷰ᚱ􏳰ᛂ􏯰ᚴ􏫰ᛋ􏧰ᛋ􏣰ᚢ􏟰ᚼ􏛰ᚾ􏗰ᚢ􏓰ᛘ􏏰ᚢ􏋰ᛚ􏇰ᚾ􏃰ᛏ􏃱ᚮ􏃲᛬􏃳ᛏ􏃴ᚮ􏃵ᛋ􏃶ᛁ􏃷ᚮ􏃸ᚵ􏃹ᛂ􏃺ᚢ􏃻ᛏ􏃼ᚮ􏃽ᚱ􏃾ᛘ􏃿ᛔ􏃯ᚱ􏃟ᛂ􏃏ᚴ􏂿ᛋ􏂯ᛏ􏂟᛭􏂏ᛋ􏁿ᚢ􏁯ᚼ􏁟ᚾ􏁏ᚢ􏀿ᛋ􏀯ᛘ􏀟ᚮ􏀏ᛁ􏄏ᚵ􏈏ᚾ􏌏ᛁ􏐏ᛂ􏔏ᛏ􏘏ᚮ􏜏ᛑ􏠏᛭􏤏ᚵ􏨏ᛂ􏬏ᚢ􏰏ᛏ􏴏ᚮ􏸏ᚱ􀀀
-
-􎳌Colour-code that supports 65535 opaque or semi-transparent colours via 4 bit ARGB􀀀
-
-    􏿿󿿹Гномът Доцьо приключи спящ в шейна за жаби󿿸 (Bulgarian)􀀀
-    􏿿󿿺Љубазни фењерџија чађавог лица хоће да ми покаже штос󿿸 (Serbian)􀀀
-    􏿿Разъяренный чтец эгоистично бьёт пятью жердями шустрого фехтовальщика (Russian)􀀀
-
-􎳌Control characters to support Bulgarian and Serbian letter shapes on the fly􀀀
-
-    􏿿Press  to pay respects—or is it , or …􀀀
-
-􎳌Custom symbols for video games􀀀
-
-    􏿿Can you distinguish following dashes: - – — - – — – - ――――――――――― 48–63 48-63􀀀
-
-􎳌For all those dash-pedants, we have en-dash, em-dash, and even horizontal bars!􀀀
-
-􏃯Unicode References:􀀀
-
-    Basic Latin   Latin-1   Latin Extension A   Latin Extionsion B   IPA Extension   Greek   Cyrillic
-    Cyrillic Supplement   Armenian   Devanagari   Thai   Georgian   Runic   Cherokee   Georgian Extended
-    General Punctuations   CJK Symbols   Kana   Kana Phonetic Extension   CJK Unihan Extension A   CJK Unihan
-    Hangul Syllables   Fullwidth Forms   Kana Supplement
-
-GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀.
-You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make
-changes, and make a 􏽕pull request􀀀! I appreciate any and all supports.
+ˈkʰomɐ gɛts ɐ ˈkʰjuɚ wɛl çiəz ə ˈstʌɹi fɔ ˈju ˈsɐɾə ˈpɛɾi wɔz ə bɛtʰəˈna˞li ˈnʌɚs hu hæd bin ˈwʌ˞kɪŋ deɪli æt æn
+ˈɔʊl̴də d͡zʉ in ə dɪˈzʌɚtɪdə dɪsˈtɹʷɪkt ɔv zə tʰ ˈtʰɛɹɪtəɹi soʊ ʃi wʌz ˈvɛɹi ˈhæpi s tʉ stat ə njʉ d͡ʒɔb æt ə
+ˈsʌbʌb˺ ˈpɹaɪbɛt pɹaktis in noʊsə ˈskweɚ niə zə ˈdjʉk ˈstoʊi ˈtaʊɚ ðæt ˈeɾiə wəz mʌt͡ʃ ˈniɾə fɔ hɐ ænd mɔə
+tʉ laɪk˺ hɐ ˈlaɪkiŋgə ˈibn̩ so ɔ̃ ha fa˞st ˈmɔnɪŋ ʃi fɛlt͡s s t͡stɹɛst ʃi eɪt ə bɔl̴ ɔb˺ ˈpɔɹʷɪd͡ʒ t͡ʃɛkt hɐ˞sɛlf ɪn ðə
+ˈmiɹəɚ ænd wɑʃt hɐ˞ ɸeɪs ɪn ə ˈhʌ˞li zɛn ʃi pʊt ɑn ə pɹeɪn bə ˈjɛloʊ dɹɛs ænd ə ɸʊlɪɸʊlis ˈd͡ʒækɛt pikt ap
+hɐ˞ kʰit ænd ˈhɛdɪdə fɔ ˈwʌ˞kʰ
