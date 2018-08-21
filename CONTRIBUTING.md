@@ -1,3 +1,5 @@
+#### Pixel Artists Wanted: for Arabic (all four forms) and other Indian scripts. Must willing to follow the styles and have a knowledge in Unicode. Your name will be inscribed in the list of contributors.
+
 You can contribute to the font by fixing wrong glyphs, suggesting better ones, extending character set (letters for other writing systems or filling in the blanks on the existing ones), or code for other game frameworks (not limited to Java). Please leave pull request for that.
 
 Font Spritesheets are stored in ```assets/graphics/fonts``` directory. Image format must be TGA with Alpha — no PNG. If someone needs PNG, they can batch-convert the font using utils like ImageMagick.
@@ -49,36 +51,34 @@ Green-tinted area (should be 10 px tall) contains the tags. Tags are defined as 
       0 == Write on top of prev chars (e.g. diacritics)
       1 == 0 Stack  1 Stack  0 Before  1 Up &
 (MSB) 0 == 0 up     0 down   1 &After  1 Down (e.g. U+0C48)
+```
 
-Extra informations
-
-== Stack Up/Down ==
+#### Stack Up/Down
 
 When the tag is stack-up, it'll be drawn 4 px lower if the underlying
 character is lowercase.
 
-== Align-To-This-X-Pos ==
+#### Align-To-This-X-Pos
 
-Since this tag does not make sense for diacritics, they will use the va-
-lue for compeletely different perporse:
+Since this tag does not make sense for diacritics, they will use the value for compeletely different perporse:
 
-   0 : Nothing special
-   1 : Covers previous character; it's neither stack-up nor down.
-       Will be drawn 2 px lower if the underlying character is lowercase
-   2 : Joiner.
-   3..15: undefined
+    0 : Nothing special
+    1 : Covers previous character; it's neither stack-up nor down.
+        Will be drawn 2 px lower if the underlying character is lowercase
+    2 : Joiner.
+    3..15: undefined
+
+#### Diacritics That Comes Before and After
+
+To implement those, this two extra code points are needed, which are provided in the Unicode's Reference Chart (www.unicode.org/charts/PDF/Uxxxx.pdf) The code points must be "drawn" in the bitmap, in the same manor as a tagging system. The zeroth column (x = 0) has the "before" character, the first column (x = 1) has the "after". All nineteen pixels (bits) are read by the font, which encompasses U+0000..U+EFFFF
+
+For working examples, take a note at the bengali sprite sheet.
 
 
-NOTE: If the diacritics comes before AND after the glyph (e.g. U+103C),
-      "Align before the glyph" must be set too.
-         If glyphs are right or centre aligned, they must be aligned in
-      the same way inside of the bitmap; the program assumes every vari-
-      able-width glyphs to have a width of 15, regardless of the tagged
-      width.
-         If the diacritic is aligned before the glyph, the diacritic it-
-      self is always assumed as left-aligned, as this font will exchange
-      position of said diacritic and the glyph right before it.
-```
+NOTES:
+- If the diacritics comes before AND after the glyph (e.g. U+103C), "Align before the glyph" must be set too.
+- If glyphs are right or centre aligned, they must be aligned in the same way inside of the bitmap; the program assumes every variable-width glyphs to have a width of 15, regardless of the tagged width.
+- If the diacritic is aligned before the glyph, the diacritic itself is always assumed as left-aligned, as this font will exchange position of said diacritic and the glyph right before it.
 
 ![Visual representation of left/right/centre align](alignment_illustration.jpg)
 

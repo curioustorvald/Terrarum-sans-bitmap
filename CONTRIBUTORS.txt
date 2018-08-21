@@ -1,0 +1,9 @@
+Project Maintainer and Programmer
+
+- minjaesong (Torvald)
+
+
+This font was not possible without following artists:
+
+- minjaesong (Torvald)
+<< Append your name here. If you're getting consistent merge conflicts, push without this and leave a Issue on the GitHub page >>

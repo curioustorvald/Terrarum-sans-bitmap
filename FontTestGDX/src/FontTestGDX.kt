@@ -22,10 +22,14 @@ class FontTestGDX : Game() {
 
     lateinit var camera: OrthographicCamera
 
+
+    private val demotextName = "testtext.txt"
+    private val outimageName = "testing.png"
+
     override fun create() {
         font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = true) // must test for two flipY cases
 
-        val inTextFile = Gdx.files.internal("./demotext.txt")
+        val inTextFile = Gdx.files.internal("./$demotextName")
         val reader = inTextFile.reader("UTF-8")
         inputText = reader.readLines()
         reader.close()
@@ -186,7 +190,7 @@ class FontTestGDX : Game() {
             if (!screenshotExported) {
                 val pixmap = ScreenUtils.getFrameBufferPixmap(0, 0, frameBuffer.width, frameBuffer.height)
 
-                PixmapIO.writePNG(Gdx.files.local("testing.PNG"), pixmap)
+                PixmapIO.writePNG(Gdx.files.local(outimageName), pixmap)
                 pixmap.dispose()
 
                 screenshotExported = true
