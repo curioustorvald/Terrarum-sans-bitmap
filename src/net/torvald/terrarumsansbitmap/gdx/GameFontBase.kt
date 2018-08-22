@@ -309,7 +309,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0x3400..0x9FFF,
             0x400..0x52F,
             0xFF00..0xFF1F,
-            0x2000..0x205F,
+            0x2000..0x209F,
             0x370..0x3CE,
             0xE00..0xE5F,
             0x530..0x58F,
@@ -471,123 +471,13 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         if (charSeq.isNotBlank()) {
             if (oldCharSequence != charSeq || firstRun) {
                 textBuffer = charSeq.toCodePoints()
-                val str = textBuffer
-                val widths = getWidthOfCharSeq(str)
-                val texWidth = widths.sum()
+                //val texWidth = widths.sum()
 
                 //if (!firstRun) textTexture.dispose()
                 //textTexture = FrameBuffer(Pixmap.Format.RGBA8888, texWidth, H, true)
 
 
-                glyphWidthBuffer = widths
-
-                posXbuffer = IntArray(str.size, { 0 })
-                posYbuffer = IntArray(str.size, { 0 })
-
-
-                var nonDiacriticCounter = 0 // index of last instance of non-diacritic char
-                var stackUpwardCounter = 0
-                var stackDownwardCounter = 0
-                for (charIndex in 0 until posXbuffer.size) {
-                    if (charIndex > 0) {
-                        // nonDiacriticCounter allows multiple diacritics
-
-                        val thisChar = str[charIndex]
-                        if (glyphProps[thisChar] == null && errorOnUnknownChar) {
-                            val errorGlyphSB = StringBuilder()
-                            Character.toChars(thisChar).forEach { errorGlyphSB.append(it) }
-
-                            throw InternalError("No GlyphProps for char '$errorGlyphSB' " +
-                                    "(${thisChar.charInfo()})")
-                        }
-                        val thisProp = glyphProps[thisChar] ?: nullProp
-                        val lastNonDiacriticChar = str[nonDiacriticCounter]
-                        val itsProp = glyphProps[lastNonDiacriticChar] ?: nullProp
-
-
-                        //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
-
-
-                        val alignmentOffset = when (thisProp.alignWhere) {
-                            GlyphProps.ALIGN_LEFT -> 0
-                            GlyphProps.ALIGN_RIGHT -> thisProp.width - W_VAR_INIT
-                            GlyphProps.ALIGN_CENTRE -> Math.ceil((thisProp.width - W_VAR_INIT) / 2.0).toInt()
-                            else -> 0 // implies "diacriticsBeforeGlyph = true"
-                        }
-
-                        if (!thisProp.writeOnTop) {
-                            posXbuffer[charIndex] =
-                                    if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT)
-                                        posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar
-                                    else
-                                        posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar
-
-                            nonDiacriticCounter = charIndex
-
-                            stackUpwardCounter = 0
-                            stackDownwardCounter = 0
-                        }
-                        else if (thisProp.writeOnTop && thisProp.alignXPos == GlyphProps.DIA_JOINER) {
-                            posXbuffer[charIndex] =
-                                    if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT)
-                                        posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset
-                                    else
-                                        posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset
-                        }
-                        else {
-                            // set X pos according to alignment information
-                            posXbuffer[charIndex] = when (thisProp.alignWhere) {
-                                GlyphProps.ALIGN_LEFT, GlyphProps.ALIGN_BEFORE -> posXbuffer[nonDiacriticCounter]
-                                GlyphProps.ALIGN_RIGHT -> {
-                                    posXbuffer[nonDiacriticCounter] - (W_VAR_INIT - itsProp.width)
-                                }
-                                GlyphProps.ALIGN_CENTRE -> {
-                                    val alignXPos = if (itsProp.alignXPos == 0) itsProp.width.div(2) else itsProp.alignXPos
-
-                                    if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
-                                        posXbuffer[nonDiacriticCounter] + alignXPos + (itsProp.width + 1).div(2)
-                                    }
-                                    else {
-                                        posXbuffer[nonDiacriticCounter] + alignXPos - (W_VAR_INIT - 1).div(2)
-                                    }
-                                }
-                                else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
-                            }
-
-
-                            // set Y pos according to diacritics position
-                            if (thisProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
-                                when (thisProp.stackWhere) {
-                                    GlyphProps.STACK_DOWN -> {
-                                        posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
-                                        stackDownwardCounter++
-                                    }
-                                    GlyphProps.STACK_UP -> {
-                                        posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
-
-                                        // shift down on lowercase if applicable
-                                        if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
-                                                lastNonDiacriticChar.isLowHeight()) {
-                                            if (thisProp.alignXPos == GlyphProps.DIA_OVERLAY)
-                                                posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN
-                                            else
-                                                posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN
-                                        }
-
-                                        stackUpwardCounter++
-                                    }
-                                    GlyphProps.STACK_UP_N_DOWN -> {
-                                        posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
-                                        stackDownwardCounter++
-                                        posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
-                                        stackUpwardCounter++
-                                    }
-                                // for BEFORE_N_AFTER, do nothing in here
-                                }
-                            }
-                        }
-                    }
-                }
+                buildWidthAndPosBuffers()
 
 
                 //print("[TerrarumSansBitmap] widthTable for $textBuffer: ")
@@ -1034,6 +924,133 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
     fun getWidth(text: String): Int {
         return getWidthOfCharSeq(text.toCodePoints()).sum()
+    }
+
+
+    private fun buildWidthAndPosBuffers() {
+        val str = textBuffer
+        val widths = getWidthOfCharSeq(str)
+
+        glyphWidthBuffer = widths
+
+        posXbuffer = IntArray(str.size, { 0 })
+        posYbuffer = IntArray(str.size, { 0 })
+
+
+        var nonDiacriticCounter = 0 // index of last instance of non-diacritic char
+        var stackUpwardCounter = 0
+        var stackDownwardCounter = 0
+
+        val HALF_VAR_INIT = W_VAR_INIT.minus(1).div(2)
+
+        for (charIndex in 0 until posXbuffer.size) {
+            if (charIndex > 0) {
+                // nonDiacriticCounter allows multiple diacritics
+
+                val thisChar = str[charIndex]
+                if (glyphProps[thisChar] == null && errorOnUnknownChar) {
+                    val errorGlyphSB = StringBuilder()
+                    Character.toChars(thisChar).forEach { errorGlyphSB.append(it) }
+
+                    throw InternalError("No GlyphProps for char '$errorGlyphSB' " +
+                            "(${thisChar.charInfo()})")
+                }
+                val thisProp = glyphProps[thisChar] ?: nullProp
+                val lastNonDiacriticChar = str[nonDiacriticCounter]
+                val itsProp = glyphProps[lastNonDiacriticChar] ?: nullProp
+
+
+                //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
+
+
+                val alignmentOffset = when (thisProp.alignWhere) {
+                    GlyphProps.ALIGN_LEFT -> 0
+                    GlyphProps.ALIGN_RIGHT -> thisProp.width - W_VAR_INIT
+                    GlyphProps.ALIGN_CENTRE -> Math.ceil((thisProp.width - W_VAR_INIT) / 2.0).toInt()
+                    else -> 0 // implies "diacriticsBeforeGlyph = true"
+                }
+
+                if (!thisProp.writeOnTop) {
+                    posXbuffer[charIndex] = when (itsProp.alignWhere) {
+                        GlyphProps.ALIGN_RIGHT ->
+                            posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar
+                        GlyphProps.ALIGN_CENTRE ->
+                            posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar
+                        else ->
+                            posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar
+
+                    }
+
+                    nonDiacriticCounter = charIndex
+
+                    stackUpwardCounter = 0
+                    stackDownwardCounter = 0
+                }
+                else if (thisProp.writeOnTop && thisProp.alignXPos == GlyphProps.DIA_JOINER) {
+                    posXbuffer[charIndex] = when (itsProp.alignWhere) {
+                        GlyphProps.ALIGN_RIGHT ->
+                            posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset
+                        //GlyphProps.ALIGN_CENTRE ->
+                        //    posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset
+                        else ->
+                            posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset
+
+                    }
+                }
+                else {
+                    // set X pos according to alignment information
+                    posXbuffer[charIndex] = when (thisProp.alignWhere) {
+                        GlyphProps.ALIGN_LEFT, GlyphProps.ALIGN_BEFORE -> posXbuffer[nonDiacriticCounter]
+                        GlyphProps.ALIGN_RIGHT -> {
+                            posXbuffer[nonDiacriticCounter] - (W_VAR_INIT - itsProp.width)
+                        }
+                        GlyphProps.ALIGN_CENTRE -> {
+                            val alignXPos = if (itsProp.alignXPos == 0) itsProp.width.div(2) else itsProp.alignXPos
+
+                            if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
+                                posXbuffer[nonDiacriticCounter] + alignXPos + (itsProp.width + 1).div(2)
+                            }
+                            else {
+                                posXbuffer[nonDiacriticCounter] + alignXPos - HALF_VAR_INIT
+                            }
+                        }
+                        else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
+                    }
+
+
+                    // set Y pos according to diacritics position
+                    if (thisProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
+                        when (thisProp.stackWhere) {
+                            GlyphProps.STACK_DOWN -> {
+                                posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
+                                stackDownwardCounter++
+                            }
+                            GlyphProps.STACK_UP -> {
+                                posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
+
+                                // shift down on lowercase if applicable
+                                if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
+                                        lastNonDiacriticChar.isLowHeight()) {
+                                    if (thisProp.alignXPos == GlyphProps.DIA_OVERLAY)
+                                        posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN
+                                    else
+                                        posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN
+                                }
+
+                                stackUpwardCounter++
+                            }
+                            GlyphProps.STACK_UP_N_DOWN -> {
+                                posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
+                                stackDownwardCounter++
+                                posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
+                                stackUpwardCounter++
+                            }
+                        // for BEFORE_N_AFTER, do nothing in here
+                        }
+                    }
+                }
+            }
+        }
     }
 
 

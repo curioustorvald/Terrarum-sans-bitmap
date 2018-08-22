@@ -23,8 +23,8 @@ class FontTestGDX : Game() {
     lateinit var camera: OrthographicCamera
 
 
-    private val demotextName = "demotext.txt"
-    private val outimageName = "demo.png"
+    private val demotextName = "testtext.txt"
+    private val outimageName = "testing.png"
 
     override fun create() {
         font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = true) // must test for two flipY cases

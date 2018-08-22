@@ -10,7 +10,7 @@ You somehow found a multilingual one, and it makes your game look like an old co
 “Well, better than nothing… no, it’s ugly.”
 
 You speak japanese and you wish to support it, but then このクソなfont only goot for displaying
-Japanese, it's not even multilingual, and their English look uncanny and inconsistent as hell.
+Japanese, it’s not even multilingual, and their English look uncanny and inconsistent as hell.
 
 Eventually you just mix different fonts together, and the results were always infuriating.
 
@@ -91,13 +91,20 @@ How multilingual? Real multilingual!
 
 􎳌For all those dash-pedants, we have en-dash, em-dash, and even horizontal bars!􀀀
 
+    􏿿5¹⁹⁄₃₂ inch is 142.1 mm · (C₂F₄)ₙ is godly · Error = MoreCode²􀀀
+    􏿿NOTE: we don’t do fractions. 142¹⁄₁₀ mm is illegal!􀀀
+
+􎳌Did you know Unicode supports arbitrary fractions? Actually I didn’t… as they abused super/subscripts!􀀀
+
 􏃯Unicode References:􀀀
 
     Basic Latin   Latin-1   Latin Extension A   Latin Extionsion B   IPA Extension   Greek   Cyrillic
     Cyrillic Supplement   Armenian   Devanagari   Bengali   Thai   Georgian   Runic   Cherokee   Georgian Extended
-    General Punctuations   CJK Symbols   Kana   Kana Phonetic Extension   CJK Unihan Extension A   CJK Unihan
-    Hangul Syllables   Fullwidth Forms   Kana Supplement
+    General Punctuations   Superscripts and Subscripts   CJK Symbols   Kana   Kana Phonetic Extension
+    CJK Unihan Extension A   CJK Unihan   Hangul Syllables   Fullwidth Forms   Kana Supplement
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀.
 You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make
 changes, and make a 􏽕pull request􀀀! I appreciate any and all supports.
+
+� 􎳌文字化け！􀀀 �
