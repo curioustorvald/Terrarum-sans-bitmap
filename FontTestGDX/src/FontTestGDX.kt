@@ -23,8 +23,8 @@ class FontTestGDX : Game() {
     lateinit var camera: OrthographicCamera
 
 
-    private val demotextName = "testtext.txt"
-    private val outimageName = "testing.png"
+    private val demotextName = "demotext.txt"
+    private val outimageName = "demo.png"
 
     override fun create() {
         font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = true) // must test for two flipY cases
@@ -256,7 +256,7 @@ class FontTestGDX : Game() {
 
 lateinit var appConfig: LwjglApplicationConfiguration
 const val TEXW = 874
-const val TEXH = 2060
+const val TEXH = 2400
 
 fun main(args: Array<String>) {
     appConfig = LwjglApplicationConfiguration()

@@ -26,6 +26,7 @@ How multilingual? Real multilingual!
     􏻬գրիչս վայր դրի, վեր կացա և պատրաստվում էի, որ քնեմ, երբ հանկարծ դռանս զանգակը հնչեց􀀀
     􏻬ՄՇԱԿԻՉ ԿԱՄ ԿԵՆՏՐՈՆԱԿԱՆ ՄՇԱԿԻՉ ՀԱՆԳՈՒՅՑԸ ՀԱՆԴԻՍԱՆՈՒՄ Է ՀԱՄԱԿԱՐԳՉԻ ՍԱՐՔԱՎՈՐՈՒՄՆԵՐԻՑ􀀀
     􏻬Zəfər, jaketini də papağını da götür, bu axşam hava çox soyuq olacaq􀀀
+    􏻬আমি কাঁচ খেতে পারি, তাতে আমার কোনো ক্ষতি হয় না। 􀀀
     􏻬󿿹Под южно дърво, цъфтящо в синьо, бягаше малко пухкаво зайче󿿸􀀀
     􏻬ᎠᏍᎦᏯᎡᎦᎢᎾᎨᎢᎣᏍᏓᎤᎩᏍᏗᎥᎴᏓᎯᎲᎢᏔᎵᏕᎦᏟᏗᏖᎸᎳᏗᏗᎧᎵᎢᏘᎴᎩ ᏙᏱᏗᏜᏫᏗᏣᏚᎦᏫᏛᏄᏓᎦᏝᏃᎠᎾᏗᎭᏞᎦᎯᎦᏘᏓᏠᎨᏏᏕᏡᎬᏢᏓᏥᏩᏝᎡᎢᎪᎢ􀀀
     􏻬ᎠᎦᏂᏗᎮᎢᎫᎩᎬᏩᎴᎢᎠᏆᏅᏛᎫᏊᎾᎥᎠᏁᏙᎲᏐᏈᎵᎤᎩᎸᏓᏭᎷᏤᎢᏏᏉᏯᏌᏊ ᎤᏂᏋᎢᏡᎬᎢᎰᏩᎬᏤᎵᏍᏗᏱᎩᎱᎱᎤᎩᎴᎢᏦᎢᎠᏂᏧᏣᏨᎦᏥᎪᎥᏌᏊᎤᎶᏒᎢᎢᏡᎬᎢ􀀀
@@ -93,7 +94,7 @@ How multilingual? Real multilingual!
 􏃯Unicode References:􀀀
 
     Basic Latin   Latin-1   Latin Extension A   Latin Extionsion B   IPA Extension   Greek   Cyrillic
-    Cyrillic Supplement   Armenian   Devanagari   Thai   Georgian   Runic   Cherokee   Georgian Extended
+    Cyrillic Supplement   Armenian   Devanagari   Bengali   Thai   Georgian   Runic   Cherokee   Georgian Extended
     General Punctuations   CJK Symbols   Kana   Kana Phonetic Extension   CJK Unihan Extension A   CJK Unihan
     Hangul Syllables   Fullwidth Forms   Kana Supplement
 

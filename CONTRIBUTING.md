@@ -48,7 +48,7 @@ Green-tinted area (should be 10 px tall) contains the tags. Tags are defined as 
       1 -+ 8 | (if this is zero, floorOf(width/2) will be used instead)
       0 -+ 0 Align  1 Align  0 Align   1 Align before
       1 -+ 0 left   0 right  1 centre  1 the glyph
-      0 == Write on top of prev chars (e.g. diacritics)
+      1 == write-on-top, usually it's diatritics but some are not (e.g. devanagari vowel sign O)
       1 == 0 Stack  1 Stack  0 Before  1 Up &
 (MSB) 0 == 0 up     0 down   1 &After  1 Down (e.g. U+0C48)
 ```

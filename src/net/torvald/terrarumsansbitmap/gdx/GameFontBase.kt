@@ -31,7 +31,6 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.*
 import net.torvald.terrarumsansbitmap.GlyphProps
 import java.io.BufferedOutputStream
-import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.GZIPInputStream
 
@@ -522,7 +521,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                                         posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar
                                     else
                                         posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar
+
                             nonDiacriticCounter = charIndex
+
                             stackUpwardCounter = 0
                             stackDownwardCounter = 0
                         }
@@ -536,46 +537,53 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         else {
                             // set X pos according to alignment information
                             posXbuffer[charIndex] = when (thisProp.alignWhere) {
-                                GlyphProps.ALIGN_LEFT -> posXbuffer[nonDiacriticCounter]
+                                GlyphProps.ALIGN_LEFT, GlyphProps.ALIGN_BEFORE -> posXbuffer[nonDiacriticCounter]
                                 GlyphProps.ALIGN_RIGHT -> {
                                     posXbuffer[nonDiacriticCounter] - (W_VAR_INIT - itsProp.width)
                                 }
                                 GlyphProps.ALIGN_CENTRE -> {
                                     val alignXPos = if (itsProp.alignXPos == 0) itsProp.width.div(2) else itsProp.alignXPos
 
-                                    posXbuffer[nonDiacriticCounter] + alignXPos - (W_VAR_INIT - 1).div(2)
+                                    if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
+                                        posXbuffer[nonDiacriticCounter] + alignXPos + (itsProp.width + 1).div(2)
+                                    }
+                                    else {
+                                        posXbuffer[nonDiacriticCounter] + alignXPos - (W_VAR_INIT - 1).div(2)
+                                    }
                                 }
                                 else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
                             }
 
 
                             // set Y pos according to diacritics position
-                            when (thisProp.stackWhere) {
-                                GlyphProps.STACK_DOWN -> {
-                                    posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
-                                    stackDownwardCounter++
-                                }
-                                GlyphProps.STACK_UP -> {
-                                    posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
-
-                                    // shift down on lowercase if applicable
-                                    if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
-                                            lastNonDiacriticChar.isLowHeight()) {
-                                        if (thisProp.alignXPos == GlyphProps.DIA_OVERLAY)
-                                            posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN
-                                        else
-                                            posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN
+                            if (thisProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
+                                when (thisProp.stackWhere) {
+                                    GlyphProps.STACK_DOWN -> {
+                                        posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
+                                        stackDownwardCounter++
                                     }
+                                    GlyphProps.STACK_UP -> {
+                                        posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
 
-                                    stackUpwardCounter++
-                                }
-                                GlyphProps.STACK_UP_N_DOWN -> {
-                                    posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
-                                    stackDownwardCounter++
-                                    posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
-                                    stackUpwardCounter++
-                                }
+                                        // shift down on lowercase if applicable
+                                        if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
+                                                lastNonDiacriticChar.isLowHeight()) {
+                                            if (thisProp.alignXPos == GlyphProps.DIA_OVERLAY)
+                                                posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN
+                                            else
+                                                posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN
+                                        }
+
+                                        stackUpwardCounter++
+                                    }
+                                    GlyphProps.STACK_UP_N_DOWN -> {
+                                        posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
+                                        stackDownwardCounter++
+                                        posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
+                                        stackUpwardCounter++
+                                    }
                                 // for BEFORE_N_AFTER, do nothing in here
+                                }
                             }
                         }
                     }
@@ -972,6 +980,25 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 glyphWidth = -glyphWidth*/
 
             glyphProps[code] = GlyphProps(width, tags)
+
+            // extra info
+            val extCount = glyphProps[code]?.requiredExtInfoCount() ?: 0
+            if (extCount > 0) {
+
+                glyphProps[code]?.extInfo = IntArray(extCount)
+
+                for (x in 0 until extCount) {
+                    var info = 0
+                    for (y in 0..18) {
+                        // if ALPHA is not zero, assume it's 1
+                        if (pixmap.getPixel(cellX + x, cellY + y).and(0xFF) != 0) {
+                            info = info or (1 shl y)
+                        }
+                    }
+
+                    glyphProps[code]!!.extInfo!![x] = info
+                }
+            }
         }
     }
 
@@ -998,7 +1025,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         glyphProps[0x1D79] = GlyphProps(9, 0)
 
 
-        glyphProps[0xFFFD] = nullProp
+        // U+007F is DEL originally, but this font stores bitmap of Replacement Character (U+FFFD)
+        // to this position. String replacer will replace U+FFFD into U+007F.
+        glyphProps[0x7F] = GlyphProps(15, 0)
     }
 
     private val glyphLayout = GlyphLayout()
@@ -1021,15 +1050,34 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             if (i < this.lastIndex && c.isHighSurrogate()) {
                 val cNext = this[i + 1]
 
-                if (!cNext.isLowSurrogate())
-                    throw IllegalArgumentException("Malformed UTF-16 String: High surrogate must be paired with low surrogate")
+                if (!cNext.isLowSurrogate()) {
+                    // replace with Unicode replacement char
+                    seq.add(0xFFFD)
+                }
+                else {
+                    val H = c
+                    val L = cNext
 
-                val H = c
-                val L = cNext
+                    seq.add(Character.toCodePoint(H, L))
 
-                seq.add(Character.toCodePoint(H, L))
-
-                i++ // skip next char (guaranteed to be Low Surrogate)
+                    i++ // skip next char (guaranteed to be Low Surrogate)
+                }
+            }
+            // rearrange {letter, before-and-after diacritics} as {letter, before-diacritics, after-diacritics}
+            // {letter, before-diacritics} part will be dealt with swapping code below
+            // DOES NOT WORK if said diacritics has codepoint > 0xFFFF
+            else if (i < this.lastIndex && this[i + 1].toInt() <= 0xFFFF &&
+                    glyphProps[this[i + 1].toInt()]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
+                val diacriticsProp = glyphProps[this[i + 1].toInt()]!!
+                seq.add(c.toInt())
+                seq.add(diacriticsProp.extInfo!![0])
+                seq.add(diacriticsProp.extInfo!![1])
+                i++
+            }
+            // U+007F is DEL originally, but this font stores bitmap of Replacement Character (U+FFFD)
+            // to this position. This line will replace U+FFFD into U+007F.
+            else if (c == '�') {
+                seq.add(0x7F)
             }
             else {
                 seq.add(c.toInt())
@@ -1038,10 +1086,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             i++
         }
 
-
         // swap position of {letter, diacritics that comes before the letter}
         i = 1
         while (i <= seq.lastIndex) {
+
             if ((glyphProps[seq[i]] ?: nullProp).alignWhere == GlyphProps.ALIGN_BEFORE) {
                 val t = seq[i - 1]
                 seq[i - 1] = seq[i]
@@ -1050,7 +1098,6 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             i++
         }
-
 
         return seq
     }
