@@ -36,12 +36,12 @@ Although the font is basically a Spritesheet, some of the sheet expects variable
 
 Width is encoded in binary bits, on pixels. On the font spritesheet, every glyph has vertical dots on their top-right side (to be exact, every (16k - 1)th pixel on x axis). Above image is a sample of the font, with width information coloured in magenta. From top to bottom, each dot represents 1, 2, 4 and 8. For example, in the above image, ! (exclamation mark) has width of 5, " (double quote) has width of 6, # (octothorp) has width of 8, $ (dollar sign) has width of 9.
 
-### Glyph Tagging System
+### Glyph Tags
 
 Green-tinted area (should be 10 px tall) contains the tags. Tags are defined as following:
 
 ```
-(LSB) 0 == RTL
+(LSB) 0 == Use Compiler Directive (Undefined right now, keep it as 0)
       1 -+ 1 | Align to this X pos of prev char,
       1  | 2 | only valid if write-on-top is 1
       1  | 4 | and is centre-aligned and non-zero
@@ -70,15 +70,20 @@ Since this tag does not make sense for diacritics, they will use the value for c
 
 #### Diacritics That Comes Before and After
 
+When this tag is set, the font compiler will replace this glyph with two extra code points given in the bitmap.
+
 To implement those, this two extra code points are needed, which are provided in the Unicode's Reference Chart (www.unicode.org/charts/PDF/Uxxxx.pdf) The code points must be "drawn" in the bitmap, in the same manor as a tagging system. The zeroth column (x = 0) has the "before" character, the first column (x = 1) has the "after". All nineteen pixels (bits) are read by the font, which encompasses U+0000..U+EFFFF
 
 For working examples, take a note at the bengali sprite sheet.
 
+This tag can be used as a general "replace this with these" directive, as long as you're replacing it into two letters. (e.g. U+0B94; TAMIL LETTER AU, which is a combination of U+0B92 and U+0BD7
 
-NOTES:
-- If the diacritics comes before AND after the glyph (e.g. U+103C), "Align before the glyph" must be set too.
-- If glyphs are right or centre aligned, they must be aligned in the same way inside of the bitmap; the program assumes every variable-width glyphs to have a width of 15, regardless of the tagged width.
-- If the diacritic is aligned before the glyph, the diacritic itself is always assumed as left-aligned, as this font will exchange position of said diacritic and the glyph right before it.
+Also note that the font compiler will not "stack" these diacritics.
+
+
+#### NOTES
+- If glyphs are right or centre aligned, they must be aligned in the same way inside of the bitmap; the font compiler assumes every variable-width glyphs to have a width of 15, regardless of the tagged width.
+- If the diacritic is aligned before the glyph, the diacritic itself is always assumed as left-aligned, as the font compiler will exchange position of said diacritic and the glyph right before it.
 
 ![Visual representation of left/right/centre align](alignment_illustration.jpg)
 
