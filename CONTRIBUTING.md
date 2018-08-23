@@ -1,4 +1,4 @@
-#### Pixel Artists Wanted: for Arabic (all four forms) and other Indian scripts. Must willing to follow the styles and have a knowledge in Unicode. Your name will be inscribed in the list of contributors.
+#### Pixel Artists Wanted: for Arabic (all four forms) and other Indian scripts (all the ligatures). Must willing to follow the styles and have a knowledge in Unicode. Your name will be inscribed in the list of contributors.
 
 You can contribute to the font by fixing wrong glyphs, suggesting better ones, extending character set (letters for other writing systems or filling in the blanks on the existing ones), or code for other game frameworks (not limited to Java). Please leave pull request for that.
 
@@ -7,7 +7,7 @@ Font Spritesheets are stored in ```assets/graphics/fonts``` directory. Image for
 
 #### Before getting started, you did read our design goals, right? Good. Now you may continue your awesome work.
 
-### Ascenders, descenders, width informations
+### Ascenders, descenders, width informations (aka Glyph Tags)
 
 ![Alas, use more modern browser or get better internet connexion!](glyph_height_pos_annotation.png)
 
@@ -88,6 +88,11 @@ Also note that the font compiler will not "stack" these diacritics.
 ![Visual representation of left/right/centre align](alignment_illustration.jpg)
 
 (fun fact: it was drawn on Rhodia memopad with Lamy 2000, then photographed and edited on my iPhone. Letter used is a Cherokee WE Ꮺ)
+
+### Technical Limitations
+
+- Each spritesheet is 4096x4096 maximum, which is a size of 4K Texture. However it is recommended to be smaller or equal to 1024x1024.
+- Glyphs exceeding 15px of width needs to be broken down with 2 or more characters. Wider sheets WILL NOT BE IMPLEMENTED, can't waste much pixels just for few superwide glyphs.
 
 ### Implementing the Korean writing system
 

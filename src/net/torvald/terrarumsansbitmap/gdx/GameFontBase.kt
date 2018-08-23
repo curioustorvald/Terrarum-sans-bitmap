@@ -29,6 +29,7 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.*
+import com.badlogic.gdx.utils.GdxRuntimeException
 import net.torvald.terrarumsansbitmap.GlyphProps
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
@@ -65,9 +66,9 @@ typealias CodepointSequence = ArrayList<Int>
  *
  * - U+100000: Clear colour keys
  * - U+100001..U+10FFFF: Colour key (in RGBA order)
- * - U+FFFF8: Charset override -- normal (incl. Russian, Ukrainian, etc.)
- * - U+FFFF9: Charset override -- Bulgarian
- * - U+FFFFA: Charset override -- Serbian
+ * - U+FFFC0: Charset override -- Default (incl. Russian, Ukrainian, etc.)
+ * - U+FFFC1: Charset override -- Bulgarian
+ * - U+FFFC2: Charset override -- Serbian
  *
  * ## Auto Shift Down
  *
@@ -139,7 +140,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isLatinExtAdd(c: Int) = c in 0x1E00..0x1EFF
     private fun isBulgarian(c: Int) = c in 0x400..0x45F
     private fun isColourCode(c: Int) = c in 0x100000..0x10FFFF
-    private fun isCharsetOverride(c: Int) = c in 0xFFFF8..0xFFFFF
+    private fun isCharsetOverride(c: Int) = c in 0xFFFC0..0xFFFFF
     private fun isCherokee(c: Int) = c in codeRange[SHEET_TSALAGI_VARW]
     private fun isInsular(c: Int) = c == 0x1D79 || c in 0xA779..0xA787
     private fun isNagariBengali(c: Int) = c in codeRange[SHEET_NAGARI_BENGALI_VARW]
@@ -347,7 +348,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 throw Error("[TerrarumSansBitmap] font is enlisted as variable on the name but not named as")
 
 
-            val pixmap: Pixmap
+            var pixmap: Pixmap
 
 
             if (isVariable) {
@@ -375,7 +376,17 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 //File(tmpFileName).delete()
             }
             else {
-                pixmap = Pixmap(Gdx.files.internal(fontParentDir + it))
+                try {
+                    pixmap = Pixmap(Gdx.files.internal(fontParentDir + it))
+                }
+                catch (e: GdxRuntimeException) {
+                    e.printStackTrace()
+
+                    // if non-ascii chart is missing, replace it with null sheet
+                    pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
+                    // else, notify by error
+                    if (index != 0) System.exit(1)
+                }
             }
 
 
@@ -525,7 +536,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         }
                     }
                     else if (isCharsetOverride(c)) {
-                        charsetOverride = c - CHARSET_OVERRIDE_NULL
+                        charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
                     }
                     else if (sheetID == SHEET_HANGUL) {
                         val hangulSheet = sheets[SHEET_HANGUL]
@@ -903,7 +914,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         this.codeRange[SHEET_UNIHAN].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
         (0xD800..0xDFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
         (0x100000..0x10FFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
-        (0xFFFF8..0xFFFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
+        (0xFFFA0..0xFFFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
 
 
         // manually build width table of Kana Supplements
@@ -1137,7 +1148,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = GameFontBase.toColorCode(r, g, b, a)
     val noColorCode = toColorCode(0x0000)
 
-    val charsetOverrideNormal = Character.toChars(CHARSET_OVERRIDE_NULL)
+    val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT)
     val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG)
     val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR)
 
@@ -1204,12 +1215,21 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
         internal val SHEET_UNKNOWN = 254
 
-        internal val CHARSET_OVERRIDE_NULL = 0xFFFF8
-        internal val CHARSET_OVERRIDE_BG_BG = 0xFFFF9
-        internal val CHARSET_OVERRIDE_SR_SR = 0xFFFFA
+        // custom codepoints
+
+        internal val RICH_TEXT_MODIFIER_RUBY_MASTER = 0xFFFA0
+        internal val RICH_TEXT_MODIFIER_RUBY_SLAVE = 0xFFFA0
+        internal val RICH_TEXT_MODIFIER_TAG_END = 0xFFFA0
+
+        internal val CHARSET_OVERRIDE_DEFAULT = 0xFFFC0
+        internal val CHARSET_OVERRIDE_BG_BG = 0xFFFC1
+        internal val CHARSET_OVERRIDE_SR_SR = 0xFFFC2
 
 
-        val charsetOverrideNormal = Character.toChars(CHARSET_OVERRIDE_NULL)
+
+
+
+        val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT)
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG)
         val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR)
         fun toColorCode(argb4444: Int): String = Character.toChars(0x100000 + argb4444).toColCode()

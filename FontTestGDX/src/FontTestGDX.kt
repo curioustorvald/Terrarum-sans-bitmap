@@ -27,7 +27,7 @@ class FontTestGDX : Game() {
     private val outimageName = "testing.png"
 
     override fun create() {
-        font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = true) // must test for two flipY cases
+        font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = false) // must test for two flipY cases
 
         val inTextFile = Gdx.files.internal("./$demotextName")
         val reader = inTextFile.reader("UTF-8")
@@ -39,107 +39,9 @@ class FontTestGDX : Game() {
 
 
 
-        println("START")
-
-        val l = intArrayOf(0xFF00,
-                0xFF10,
-                0xFF20,
-                0xFF30,
-                0xFF40,
-                0xFF50,
-                0xFF60,
-                0xFF70,
-                0xFF80,
-                0xFF90,
-                0xFFA0,
-                0xFFB0,
-                0xFFC0,
-                0xFFD0,
-                0xFFE0,
-                0xFFF0,
-                0xFEF0,
-                0xFDF0,
-                0xFCF0,
-                0xFBF0,
-                0xFAF0,
-                0xF9F0,
-                0xF8F0,
-                0xF7F0,
-                0xF6F0,
-                0xF5F0,
-                0xF4F0,
-                0xF3F0,
-                0xF2F0,
-                0xF1F0,
-                0xF0F0,
-                0xF0F1,
-                0xF0F2,
-                0xF0F3,
-                0xF0F4,
-                0xF0F5,
-                0xF0F6,
-                0xF0F7,
-                0xF0F8,
-                0xF0F9,
-                0xF0FA,
-                0xF0FB,
-                0xF0FC,
-                0xF0FD,
-                0xF0FE,
-                0xF0FF,
-                0xF0EF,
-                0xF0DF,
-                0xF0CF,
-                0xF0BF,
-                0xF0AF,
-                0xF09F,
-                0xF08F,
-                0xF07F,
-                0xF06F,
-                0xF05F,
-                0xF04F,
-                0xF03F,
-                0xF02F,
-                0xF01F,
-                0xF00F,
-                0xF10F,
-                0xF20F,
-                0xF30F,
-                0xF40F,
-                0xF50F,
-                0xF60F,
-                0xF70F,
-                0xF80F,
-                0xF90F,
-                0xFA0F,
-                0xFB0F,
-                0xFC0F,
-                0xFD0F,
-                0xFE0F,
-                0xFF0F)
-        val s = "ᚱᛂᚴᛋᛂᛋᛏᛋᚮᚾᛔᚢᛏᛚᚮᛋ᛬ᚱᛂᚴᛋᛋᚢᚼᚾᚢᛘᚢᛚᚾᛏᚮ᛬ᛏᚮᛋᛁᚮᚵᛂᚢᛏᚮᚱᛘᛔᚱᛂᚴᛋᛏ᛭ᛋᚢᚼᚾᚢᛋᛘᚮᛁᚵᚾᛁᛂᛏᚮᛑ᛭ᚵᛂᚢᛏᚮᚱ"
-        var lc = 0
-        var sc = 0
-
-        while (lc < l.size) {
-            print(font.toColorCode(l[lc]))
-            print(s[sc])
-
-            lc++
-            sc++
-
-            if (sc == s.length) break
-
-            if (s[sc] == ' ') {
-                print(" ")
-                sc++
-            }
-        }
-
-        println("${font.noColorCode}\nEND")
-
-        println(font.toColorCode(0xF_F07))
-        println(font.toColorCode(0x0000))
+        println(font.charsetOverrideDefault)
+        println(font.charsetOverrideBulgarian)
+        println(font.charsetOverrideSerbian)
 
         frameBuffer = FrameBuffer(Pixmap.Format.RGBA8888, TEXW, TEXH, true)
 

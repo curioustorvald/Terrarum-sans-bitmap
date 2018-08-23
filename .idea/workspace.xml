@@ -7,12 +7,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CONTRIBUTING.md" beforeDir="false" afterPath="$PROJECT_DIR$/CONTRIBUTING.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/ascii_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/ascii_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/unipunct_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/unipunct_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/demo.PNG" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PUA_allocation_chart.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/PUA_allocation_chart.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/LatinExtA_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/LatinExtA_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/ascii_variable.tga" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/demotext.txt" beforeDir="false" afterPath="$PROJECT_DIR$/demotext.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testing.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/testing.PNG" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testtext.txt" beforeDir="false" afterPath="$PROJECT_DIR$/testtext.txt" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -32,8 +38,8 @@
           <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="469">
-                  <caret line="280" column="26" selection-start-line="280" selection-start-column="26" selection-end-line="280" selection-end-column="26" />
+                <state relative-caret-position="533">
+                  <caret line="383" column="30" selection-start-line="383" selection-start-column="30" selection-end-line="383" selection-end-column="30" />
                 </state>
               </provider>
             </entry>
@@ -56,8 +62,13 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="demo.PNG" pinned="false" current-in-tab="true">
+          <file leaf-file-name="demo.PNG" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/demo.PNG">
+              <provider selected="true" editor-type-id="images" />
+            </entry>
+          </file>
+          <file leaf-file-name="testing.PNG" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/testing.PNG">
               <provider selected="true" editor-type-id="images" />
             </entry>
           </file>
@@ -65,11 +76,11 @@
       </split-first>
       <split-second>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-          <file leaf-file-name="FontTestGDX.kt" pinned="false" current-in-tab="false">
+          <file leaf-file-name="FontTestGDX.kt" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="559">
-                  <caret line="43" column="32" selection-start-line="43" selection-start-column="32" selection-end-line="43" selection-end-column="32" />
+                <state relative-caret-position="455">
+                  <caret line="41" column="44" selection-start-line="41" selection-start-column="44" selection-end-line="41" selection-end-column="44" />
                   <folding>
                     <element signature="e#0#384#0" expanded="true" />
                   </folding>
@@ -80,8 +91,8 @@
           <file leaf-file-name="testtext.txt" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/testtext.txt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="52">
-                  <caret line="4" column="26" selection-start-line="4" selection-start-column="26" selection-end-line="4" selection-end-column="26" />
+                <state relative-caret-position="13">
+                  <caret line="1" column="12" selection-start-line="1" selection-start-column="12" selection-end-line="1" selection-end-column="12" />
                 </state>
               </provider>
             </entry>
@@ -89,17 +100,17 @@
           <file leaf-file-name="demotext.txt" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/demotext.txt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="508">
-                  <caret line="94" column="36" selection-start-line="94" selection-start-column="36" selection-end-line="94" selection-end-column="36" />
+                <state relative-caret-position="547">
+                  <caret line="79" column="34" selection-start-line="79" selection-start-column="34" selection-end-line="79" selection-end-column="34" />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="true">
+          <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="381">
-                  <caret line="983" column="31" lean-forward="true" selection-start-line="983" selection-start-column="31" selection-end-line="983" selection-end-column="31" />
+                <state relative-caret-position="108">
+                  <caret line="912" selection-start-line="912" selection-end-line="912" />
                 </state>
               </provider>
             </entry>
@@ -108,8 +119,8 @@
             <entry file="file://$PROJECT_DIR$/CONTRIBUTING.md">
               <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
                 <state split_layout="FIRST">
-                  <first_editor relative-caret-position="663">
-                    <caret line="51" column="45" selection-start-line="51" selection-start-column="45" selection-end-line="51" selection-end-column="45" />
+                  <first_editor relative-caret-position="429">
+                    <caret line="94" column="176" selection-start-line="94" selection-start-column="176" selection-end-line="94" selection-end-column="176" />
                   </first_editor>
                   <second_editor>
                     <js_state />
@@ -131,8 +142,8 @@
             <entry file="file://$PROJECT_DIR$/README.md">
               <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
                 <state split_layout="FIRST">
-                  <first_editor relative-caret-position="325">
-                    <caret line="25" column="97" selection-start-line="25" selection-start-column="97" selection-end-line="25" selection-end-column="97" />
+                  <first_editor relative-caret-position="143">
+                    <caret line="11" column="175" selection-start-line="11" selection-start-column="175" selection-end-line="11" selection-end-column="175" />
                   </first_editor>
                   <second_editor>
                     <js_state />
@@ -154,12 +165,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>Unexp</find>
-      <find>fun getSh</find>
-      <find>codeRange</find>
-      <find>isHangul</find>
-      <find>Ᏽ</find>
-      <find>toColo</find>
       <find>fun relo</find>
       <find>3633</find>
       <find>println(</find>
@@ -184,6 +189,12 @@
       <find>joiner</find>
       <find>va-</find>
       <find>'</find>
+      <find>on the</find>
+      <find>FFFF</find>
+      <find>FFFF8</find>
+      <find>pro</find>
+      <find>system</find>
+      <find>this font</find>
     </findStrings>
     <replaceStrings>
       <replace>.141</replace>
@@ -204,15 +215,15 @@
         <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/testbed/FontTestGDX.kt" />
         <option value="$PROJECT_DIR$/LICENSE.md" />
         <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/slick2d/GameFontBase.kt" />
-        <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/FontTestGDX/demotext.txt" />
         <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/GameFontBase.kt" />
         <option value="$PROJECT_DIR$/CONTRIBUTORS.txt" />
         <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/GlyphProps.kt" />
-        <option value="$PROJECT_DIR$/CONTRIBUTING.md" />
-        <option value="$PROJECT_DIR$/testtext.txt" />
-        <option value="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" />
+        <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/demotext.txt" />
+        <option value="$PROJECT_DIR$/testtext.txt" />
+        <option value="$PROJECT_DIR$/CONTRIBUTING.md" />
+        <option value="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" />
         <option value="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" />
       </list>
     </option>
@@ -559,18 +570,6 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
-        <state split_layout="FIRST">
-          <first_editor relative-caret-position="325">
-            <caret line="25" column="97" selection-start-line="25" selection-start-column="97" selection-end-line="25" selection-end-column="97" />
-          </first_editor>
-          <second_editor>
-            <js_state />
-          </second_editor>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
         <state split_layout="SPLIT">
           <first_editor relative-caret-position="1404">
             <caret line="108" lean-forward="true" selection-start-line="108" selection-end-line="108" />
@@ -855,51 +854,22 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
-      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
-        <state split_layout="FIRST">
-          <first_editor relative-caret-position="325">
-            <caret line="25" column="97" selection-start-line="25" selection-start-column="97" selection-end-line="25" selection-end-column="97" />
-          </first_editor>
-          <second_editor>
-            <js_state />
-          </second_editor>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/GlyphProps.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="91">
-          <caret line="7" column="22" selection-start-line="7" selection-start-column="22" selection-end-line="7" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/CONTRIBUTING.md">
-      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
-        <state split_layout="FIRST">
-          <first_editor relative-caret-position="663">
-            <caret line="51" column="45" selection-start-line="51" selection-start-column="45" selection-end-line="51" selection-end-column="45" />
-          </first_editor>
-          <second_editor>
-            <js_state />
-          </second_editor>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="559">
-          <caret line="43" column="32" selection-start-line="43" selection-start-column="32" selection-end-line="43" selection-end-column="32" />
-          <folding>
-            <element signature="e#0#384#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/CONTRIBUTORS.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state>
           <caret column="23" selection-start-column="23" selection-end-column="23" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+        <state split_layout="FIRST">
+          <first_editor relative-caret-position="143">
+            <caret line="11" column="175" selection-start-line="11" selection-start-column="175" selection-end-line="11" selection-end-column="175" />
+          </first_editor>
+          <second_editor>
+            <js_state />
+          </second_editor>
         </state>
       </provider>
     </entry>
@@ -910,29 +880,61 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/GlyphProps.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="91">
+          <caret line="7" column="22" selection-start-line="7" selection-start-column="22" selection-end-line="7" selection-end-column="22" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/testtext.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="52">
-          <caret line="4" column="26" selection-start-line="4" selection-start-column="26" selection-end-line="4" selection-end-column="26" />
+        <state relative-caret-position="13">
+          <caret line="1" column="12" selection-start-line="1" selection-start-column="12" selection-end-line="1" selection-end-column="12" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/demotext.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="547">
+          <caret line="79" column="34" selection-start-line="79" selection-start-column="34" selection-end-line="79" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CONTRIBUTING.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+        <state split_layout="FIRST">
+          <first_editor relative-caret-position="429">
+            <caret line="94" column="176" selection-start-line="94" selection-start-column="176" selection-end-line="94" selection-end-column="176" />
+          </first_editor>
+          <second_editor>
+            <js_state />
+          </second_editor>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="455">
+          <caret line="41" column="44" selection-start-line="41" selection-start-column="44" selection-end-line="41" selection-end-column="44" />
+          <folding>
+            <element signature="e#0#384#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="533">
+          <caret line="383" column="30" selection-start-line="383" selection-start-column="30" selection-end-line="383" selection-end-column="30" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/demo.PNG">
       <provider selected="true" editor-type-id="images" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/demotext.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="508">
-          <caret line="94" column="36" selection-start-line="94" selection-start-column="36" selection-end-line="94" selection-end-column="36" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="381">
-          <caret line="983" column="31" lean-forward="true" selection-start-line="983" selection-start-column="31" selection-end-line="983" selection-end-column="31" />
-        </state>
-      </provider>
+    <entry file="file://$PROJECT_DIR$/testing.PNG">
+      <provider selected="true" editor-type-id="images" />
     </entry>
   </component>
   <component name="masterDetails">
