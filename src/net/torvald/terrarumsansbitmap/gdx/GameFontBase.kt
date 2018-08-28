@@ -83,46 +83,93 @@ typealias CodepointSequence = ArrayList<Int>
  */
 class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false, val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, var errorOnUnknownChar: Boolean = false) : BitmapFont() {
 
-    private fun getHanChosung(hanIndex: Int) = hanIndex / (JUNG_COUNT * JONG_COUNT)
-    private fun getHanJungseong(hanIndex: Int) = hanIndex / JONG_COUNT % JUNG_COUNT
-    private fun getHanJongseong(hanIndex: Int) = hanIndex % JONG_COUNT
+    // Hangul Implementation Specific //
 
-    private val jungseongWide = arrayOf(8, 12, 13, 17, 18, 21)
-    private val jungseongComplex = arrayOf(9, 10, 11, 14, 15, 16, 22)
+    private fun getWanseongHanChosung(hanIndex: Int) = hanIndex / (JUNG_COUNT * JONG_COUNT)
+    private fun getWanseongHanJungseong(hanIndex: Int) = hanIndex / JONG_COUNT % JUNG_COUNT
+    private fun getWanseongHanJongseong(hanIndex: Int) = hanIndex % JONG_COUNT
 
-    private fun isJungseongWide(hanIndex: Int) = jungseongWide.contains(getHanJungseong(hanIndex))
-    private fun isJungseongComplex(hanIndex: Int) = jungseongComplex.contains(getHanJungseong(hanIndex))
+    private val jungseongWide: Array<Int> = arrayOf(9,13,14,18,19,34,35,39,45,51,53,54,62,64,66,80,83)
+    private val jungseongComplex: Array<Int> = arrayOf(10,11,12,15,16,17,20) + (22..33).toList() + arrayOf(36,37,38) + (40..44).toList() + arrayOf(46,47,48,49,50,52) + (55..60).toList() + arrayOf(63,65) + (67..79).toList() + arrayOf(81,82) + (84..93).toList()
 
-    private fun getHanInitialRow(hanIndex: Int): Int {
-        val ret: Int
+    private fun isJungseongWide(hanIndex: Int) = jungseongWide.binarySearch(hanIndex) >= 0
+    private fun isJungseongComplex(hanIndex: Int) = jungseongComplex.binarySearch(hanIndex) >= 0
 
-        if (isJungseongWide(hanIndex))
-            ret = 2
-        else if (isJungseongComplex(hanIndex))
-            ret = 4
-        else
-            ret = 0
+    /**
+     * @param i Initial (Chosung)
+     * @param p Peak (Jungseong)
+     * @param f Final (Jongseong)
+     */
+    private fun getHanInitialRow(i: Int, p: Int, f: Int): Int {
+        val ret =
+                if (isJungseongWide(p))         2
+                else if (isJungseongComplex(p)) 4
+                else 0
 
-        return if (getHanJongseong(hanIndex) == 0) ret else ret + 1
+        return if (f == 0) ret else ret + 1
     }
 
-    private fun getHanMedialRow(hanIndex: Int) = if (getHanJongseong(hanIndex) == 0) 6 else 7
+    private fun getHanMedialRow(i: Int, p: Int, f: Int) = if (f == 0) 6 else 7
 
-    private fun getHanFinalRow(hanIndex: Int): Int {
-        val jungseongIndex = getHanJungseong(hanIndex)
+    private fun getHanFinalRow(i: Int, p: Int, f: Int): Int {
 
-        return if (jungseongWide.contains(jungseongIndex))
+        return if (isJungseongWide(p))
             8
         else
             9
     }
+
+    private fun isHangulChosung(c: Int) = c in (0x1100..0x115F) || c in (0xA960..0xA97F)
+    private fun isHangulJungseong(c: Int) = c in (0x1160..0x11A7) || c in (0xD7B0..0xD7C6)
+    private fun isHangulJongseong(c: Int) = c in (0x11A8..0x11FF) || c in (0xD7CB..0xD7FB)
+
+    private fun toHangulChosungIndex(c: Int) =
+            if (!isHangulChosung(c)) throw IllegalArgumentException("This Hangul sequence does not begin with Chosung (${c.toHex()})")
+            else if (c in 0x1100..0x115F) c - 0x1100
+            else c - 0xA960 + 96
+    private fun toHangulJungseongIndex(c: Int) =
+            if (!isHangulJungseong(c)) 0
+            else if (c in 0x1160..0x11A7) c - 0x1160
+            else c - 0xD7B0 + 72
+    private fun toHangulJongseongIndex(c: Int) =
+            if (!isHangulJongseong(c)) 0
+            else if (c in 0x11A8..0x11FF) c - 0x11A8 + 1
+            else c - 0xD7CB + 88 + 1
+
+    /**
+     * X-position in the spritesheet
+     *
+     * @param iCP Code point for Initial (Chosung)
+     * @param pCP Code point for Peak (Jungseong)
+     * @param fCP Code point for Final (Jongseong
+     */
+    private fun toHangulIndex(iCP: Int, pCP: Int, fCP: Int): IntArray {
+        val indexI = toHangulChosungIndex(iCP)
+        val indexP = toHangulJungseongIndex(pCP)
+        val indexF = toHangulJongseongIndex(fCP)
+
+        return intArrayOf(indexI, indexP, indexF)
+    }
+
+    private fun toHangulIndexAndRow(iCP: Int, pCP: Int, fCP: Int): Pair<IntArray, IntArray> {
+        val (indexI, indexP, indexF) = toHangulIndex(iCP, pCP, fCP)
+
+        val rowI = getHanInitialRow(indexI, indexP, indexF)
+        val rowP = getHanMedialRow(indexI, indexP, indexF)
+        val rowF = getHanFinalRow(indexI, indexP, indexF)
+
+        return intArrayOf(indexI, indexP, indexF) to intArrayOf(rowI, rowP, rowF)
+    }
+
+
+    // END Hangul //
 
     private fun isHangul(c: Int) = c in codeRange[SHEET_HANGUL]
     private fun isAscii(c: Int) = c in codeRange[SHEET_ASCII_VARW]
     private fun isRunic(c: Int) = c in codeRange[SHEET_RUNIC]
     private fun isExtA(c: Int) = c in codeRange[SHEET_EXTA_VARW]
     private fun isExtB(c: Int) = c in codeRange[SHEET_EXTB_VARW]
-    private fun isKana(c: Int) = c in codeRange[SHEET_KANA] || c in 0x31F0..0x31FF || c in 0x1B000..0x1B001
+    private fun isKana(c: Int) = c in codeRange[SHEET_KANA]
     private fun isCJKPunct(c: Int) = c in codeRange[SHEET_CJK_PUNCT]
     private fun isUniHan(c: Int) = c in codeRange[SHEET_UNIHAN]
     private fun isCyrilic(c: Int) = c in codeRange[SHEET_CYRILIC_VARW]
@@ -218,7 +265,6 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun diacriticalMarksIndexX(c: Int) = (c - 0x300) % 16
     private fun diacriticalMarksIndexY(c: Int) = (c - 0x300) / 16
 
-
     private val lowHeightLetters = "acegijmnopqrsuvwxyzɱɳʙɾɽʒʂʐʋɹɻɥɟɡɢʛȵɲŋɴʀɕʑçʝxɣχʁʜʍɰʟɨʉɯuʊøɘɵɤəɛœɜɞʌɔæɐɶɑɒɚɝɩɪʅʈʏʞ".toSortedSet()
     /**
      * lowercase AND the height is equal to x-height (e.g. lowercase B, D, F, H, K, L, ... does not count
@@ -302,10 +348,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     )
     private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF,
-            0xAC00..0xD7A3,
+            (0x1100..0x11FF) + (0xA960..0xA97F) + (0xD7B0..0xD7FF), // Hangul Jamo, because Hangul Syllables are disassembled prior to the render
             0x100..0x17F,
             0x180..0x24F,
-            0x3040..0x30FF,
+            (0x3040..0x30FF) + (0x31F0..0x31FF) + (0x1B000..0x1B001),
             0x3000..0x303F,
             0x3400..0x9FFF,
             0x400..0x52F,
@@ -322,7 +368,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0xF00000..0xF0005F, // assign them to PUA
             0xF00060..0xF000BF, // assign them to PUA
             0x13A0..0x13F5,
-            0xA770..0xA787,
+            0xA770..0xA787, // if it work, don't fix it (yet--wait until Latin Extended C)
             0x900..0x9FF,
             0x1C90..0x1CBF,
             0x300..0x36F
@@ -510,6 +556,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             //textTexture.begin()
 
+
+            //textBuffer.forEach { print("${it.toHex()} ") }
+            //println()
+
+
             val runs = if (noShadow) 0..0 else 3 downTo 0
             for (run in runs) { // 0: Main, 1..3: Shadows
                 resetHash()
@@ -517,7 +568,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 while (index <= textBuffer.lastIndex) {
                     val c = textBuffer[index]
                     val sheetID = getSheetType(c)
-                    val (sheetX, sheetY) = getSheetwisePosition(c)
+                    val (sheetX, sheetY) =
+                            if (index == 0) getSheetwisePosition(0, c)
+                            else getSheetwisePosition(textBuffer[index - 1], c)
                     val hash = getHash(c)
 
                     if (run == 0) {
@@ -539,16 +592,27 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
                     }
                     else if (sheetID == SHEET_HANGUL) {
+                        // FIXME input text is normalised as Initial-Peak-Final
+                        // requires lookahead for {I, P, F}
+
+                        val cNext = if (index + 1 <= textBuffer.size) textBuffer[index + 1] else 0
+                        val cNextNext = if (index + 2 <= textBuffer.size) textBuffer[index + 2] else 0
+
+                        val hangulLength = if (isHangulJongseong(cNextNext)) 3 else 2
+
+                        val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
+
+                        val (indexCho, indexJung, indexJong) = indices
+                        val (choRow, jungRow, jongRow) = rows
                         val hangulSheet = sheets[SHEET_HANGUL]
-                        val hIndex = c - 0xAC00
 
-                        val indexCho = getHanChosung(hIndex)
-                        val indexJung = getHanJungseong(hIndex)
-                        val indexJong = getHanJongseong(hIndex)
 
-                        val choRow = getHanInitialRow(hIndex)
-                        val jungRow = getHanMedialRow(hIndex)
-                        val jongRow = getHanFinalRow(hIndex)
+                        println("${c.toHex()} ${cNext.toHex()} ${cNextNext.toHex()}")
+                        println("I: $indexCho,\t$choRow")
+                        println("P: $indexJung,\t$jungRow")
+                        println("F: $indexJong,\t$jongRow")
+                        println("skip: $hangulLength")
+                        println("====")
 
 
                         when (run) {
@@ -578,6 +642,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                             }
                         }
+
+
+                        index += hangulLength - 1
 
                     }
                     else {
@@ -742,7 +809,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         // fallback
     }
 
-    private fun getSheetwisePosition(ch: Int): IntArray {
+    private fun getSheetwisePosition(cPrev: Int, ch: Int): IntArray {
         val sheetX: Int; val sheetY: Int
         when (getSheetType(ch)) {
             SHEET_UNIHAN -> {
@@ -842,7 +909,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         return intArrayOf(sheetX, sheetY)
     }
 
-    fun buildWidthTable(pixmap: Pixmap, codeRange: IntRange, cols: Int = 16) {
+    fun buildWidthTable(pixmap: Pixmap, codeRange: Iterable<Int>, cols: Int = 16) {
         val binaryCodeOffset = W_VAR_INIT
 
         val cellW = W_VAR_INIT + 1
@@ -850,8 +917,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
         for (code in codeRange) {
 
-            val cellX = ((code - codeRange.start) % cols) * cellW
-            val cellY = ((code - codeRange.start) / cols) * cellH
+            val cellX = ((code - codeRange.first()) % cols) * cellW
+            val cellY = ((code - codeRange.first()) / cols) * cellH
 
             val codeStartX = cellX + binaryCodeOffset
             val codeStartY = cellY
@@ -917,10 +984,6 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         (0xFFFA0..0xFFFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
 
 
-        // manually build width table of Kana Supplements
-        (0x31F0..0x31FF).forEach { glyphProps[it] = GlyphProps(W_KANA, 0) }
-        (0x1B000..0x1B001).forEach { glyphProps[it] = GlyphProps(W_KANA, 0) }
-
         // manually add width of one orphan insular letter
         // WARNING: glyphs in 0xA770..0xA778 has invalid data, further care is required
         glyphProps[0x1D79] = GlyphProps(9, 0)
@@ -981,7 +1044,14 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     else -> 0 // implies "diacriticsBeforeGlyph = true"
                 }
 
-                if (!thisProp.writeOnTop) {
+
+                if (isHangul(thisChar) && !isHangulChosung(thisChar)) {
+                    posXbuffer[charIndex] = if (isHangulChosung(lastNonDiacriticChar))
+                        posXbuffer[nonDiacriticCounter]
+                    else
+                        posXbuffer[nonDiacriticCounter] + W_HANGUL
+                }
+                else if (!thisProp.writeOnTop) {
                     posXbuffer[charIndex] = when (itsProp.alignWhere) {
                         GlyphProps.ALIGN_RIGHT ->
                             posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar
@@ -1065,8 +1135,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     }
 
 
-    /** UTF-16 to ArrayList of Int. UTF-16 is because of Java
+    /** Takes input string, do normalisation, and returns sequence of codepoints (Int)
+     *
+     * UTF-16 to ArrayList of Int. UTF-16 is because of Java
      * Note: CharSequence IS a String. java.lang.String implements CharSequence.
+     *
+     * Note to Programmer: DO NOT USE CHAR LITERALS, CODE EDITORS WILL CHANGE IT TO SOMETHING ELSE !!
      */
     private fun CharSequence.toCodePoints(): CodepointSequence {
         val seq = ArrayList<Int>()
@@ -1075,12 +1149,15 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         while (i < this.length) {
             val c = this[i]
 
+            // LET THE NORMALISATION BEGIN //
+
+            // check UTF-16 surrogates
             if (i < this.lastIndex && c.isHighSurrogate()) {
                 val cNext = this[i + 1]
 
                 if (!cNext.isLowSurrogate()) {
                     // replace with Unicode replacement char
-                    seq.add(0xFFFD)
+                    seq.add(0x7F) // 0x7F in used internally to display <??> character
                 }
                 else {
                     val H = c
@@ -1090,6 +1167,23 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                     i++ // skip next char (guaranteed to be Low Surrogate)
                 }
+            }
+            // disassemble Hangul Syllables into Initial-Peak-Final encoding
+            else if (c in 0xAC00.toChar()..0xD7A3.toChar()) {
+                val cInt = c.toInt() - 0xAC00
+                val indexCho  = getWanseongHanChosung(cInt)
+                val indexJung = getWanseongHanJungseong(cInt)
+                val indexJong = getWanseongHanJongseong(cInt) - 1 // no Jongseong will be -1
+
+                // these magic numbers only makes sense if you look at the Unicode chart of Hangul Jamo
+                // https://www.unicode.org/charts/PDF/U1100.pdf
+                seq.add(0x1100 + indexCho)
+                seq.add(0x1161 + indexJung)
+                if (indexJong >= 0) seq.add(0x11A8 + indexJong)
+            }
+            // normalise CJK Compatibility area because fuck them
+            else if (c in 0x3300.toChar()..0x33FF.toChar()) {
+                seq.add(0x7F) // fuck them
             }
             // rearrange {letter, before-and-after diacritics} as {letter, before-diacritics, after-diacritics}
             // {letter, before-diacritics} part will be dealt with swapping code below
@@ -1104,8 +1198,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             }
             // U+007F is DEL originally, but this font stores bitmap of Replacement Character (U+FFFD)
             // to this position. This line will replace U+FFFD into U+007F.
-            else if (c == '�') {
-                seq.add(0x7F)
+            else if (c == 0xFFFD.toChar()) {
+                seq.add(0x7F) // 0x7F in used internally to display <??> character
             }
             else {
                 seq.add(c.toInt())
@@ -1164,6 +1258,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         hashAccumulator = hashBasis
     }
 
+    private fun Int.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
+
     companion object {
         internal val JUNG_COUNT = 21
         internal val JONG_COUNT = 28
@@ -1218,8 +1314,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         // custom codepoints
 
         internal val RICH_TEXT_MODIFIER_RUBY_MASTER = 0xFFFA0
-        internal val RICH_TEXT_MODIFIER_RUBY_SLAVE = 0xFFFA0
-        internal val RICH_TEXT_MODIFIER_TAG_END = 0xFFFA0
+        internal val RICH_TEXT_MODIFIER_RUBY_SLAVE = 0xFFFA1
+        internal val RICH_TEXT_MODIFIER_SUPERSCRIPT = 0xFFFA2
+        internal val RICH_TEXT_MODIFIER_SUBSCRIPT = 0xFFFA3
+        internal val RICH_TEXT_MODIFIER_TAG_END = 0xFFFBF
 
         internal val CHARSET_OVERRIDE_DEFAULT = 0xFFFC0
         internal val CHARSET_OVERRIDE_BG_BG = 0xFFFC1
