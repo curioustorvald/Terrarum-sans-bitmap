@@ -77,11 +77,11 @@ class TextureRegionPack(
         else {
             regions = Array<TextureRegion>(horizontalCount * verticalCount, {
                 val region = TextureRegion()
-                val rx = (it % verticalCount * (tileW + hGap)) + hFrame
-                val ry = (it / verticalCount * (tileH + vGap)) + vFrame
+                val rx = (it / verticalCount * (tileW + hGap)) + hFrame
+                val ry = (it % verticalCount * (tileH + vGap)) + vFrame
 
                 region.setRegion(texture)
-                region.setRegion(ry, rx, tileW, tileH)
+                region.setRegion(rx, ry, tileW, tileH)
 
                 region.flip(false, globalFlipY)
 
