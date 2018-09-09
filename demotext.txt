@@ -36,7 +36,7 @@ How multilingual? Real multilingual!
     􏻬PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS􀀀
     􏻬hƿæt ƿe ᵹardena inᵹear ꝺaᵹum þeoꝺ cynninᵹa þꞃym ᵹeꝼꞃumon􀀀
     􏻬Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich    GROẞEN GROẞE􀀀
-    􏻬ζαφείρι δέξου πάγκαλο, βαθων ψυχης το σημα􀀀
+    􏻬ζαφείρι δέξου πάγκαλο, βαθῶν ψυχῆς τὸ σῆμα􀀀
     􏻬ΔΙΑΦΥΛΆΞΤΕ ΓΕΝΙΚΆ ΤΗ ΖΩΉ ΣΑΣ ΑΠΌ ΒΑΘΕΙΆ ΨΥΧΙΚΆ ΤΡΑΎΜΑΤΑ􀀀
     􏻬სწრაფი ყავისფერი მელა გადაახტა ზარმაც ძაღლს    ᲘᲜᲢᲔᲚ ᲞᲔᲜᲢᲘᲣᲛᲘ ᲛᲘᲙᲠᲝᲞᲠᲝᲪᲔᲡᲝᲠᲘ􀀀
     􏻬ऋषियों को सताने वाले दुष्ट राक्षसों के राजा रावण का सर्वनाश करने वाले विष्णुवतार भगवान श्रीराम अयोध्या के महाराज दशरथ के􀀀
@@ -97,12 +97,19 @@ How multilingual? Real multilingual!
 
 􎳌Did you know Unicode supports arbitrary fractions? Actually I didn’t… as they abused super/subscripts!􀀀
 
+    􏿿ᄋᆡ급 일 ᄭᅡᄃᆞᆰ에 영국 ᄒᆞ고 불난셔 ᄒᆞ고 ᄃᆡ단이 시비가 잇슬 모양 인ᄃᆡ􀀀
+    􏿿일본 농샹공부에셔 젼긔학 학ᄉᆞ 셋ᄉᆞᆯ 미국과 구라파로 보내셔 젼화 쓰ᄂᆞᆫ 법을 더ᄇᆡ호게 ᄒᆞ더라􀀀
+    􏿿일쳔 구ᄇᆡᆨ년에 불난셔 셔울 파리스에 만국 박남회를 버릴터 인ᄃᆡ 각국이 다 물화와 졔조품을 거긔 보낼터이더라􀀀
+
+􎳌Rejoice, now we can render Old Korean in a correct way!􀀀
+
 􏃯Unicode References:􀀀
 
     Basic Latin   Latin-1   Latin Extension A   Latin Extionsion B   IPA Extension   Greek   Cyrillic
-    Cyrillic Supplement   Armenian   Devanagari   Bengali   Thai   Georgian   Runic   Cherokee   Georgian Extended
-    General Punctuations   Superscripts and Subscripts   CJK Symbols   Kana   Kana Phonetic Extension
-    CJK Unihan Extension A   CJK Unihan   Hangul Syllables   Fullwidth Forms   Kana Supplement
+    Cyrillic Supplement   Armenian   Devanagari   Bengali   Thai   Georgian   Hangul Jamo   Runic   Cherokee
+    Georgian Extended   General Punctuations   Superscripts and Subscripts   CJK Symbols   Kana
+    Kana Phonetic Extension   CJK Unihan Extension A   CJK Unihan   Hangul Jamo Extended-A   Hangul Syllables
+    Hangul Jamo Extended-B   Fullwidth Forms   Kana Supplement
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀.
 You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make
