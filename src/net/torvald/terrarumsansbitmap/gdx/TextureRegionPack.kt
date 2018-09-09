@@ -38,13 +38,14 @@ class TextureRegionPack(
         val hGap: Int = 0,
         val vGap: Int = 0,
         val hFrame: Int = 0,
-        val vFrame: Int = 0
+        val vFrame: Int = 0,
+        val xySwapped: Boolean = false // because Unicode chart does, duh
 ) {
 
-    constructor(ref: String, tileW: Int, tileH: Int, hGap: Int = 0, vGap: Int = 0, hFrame: Int = 0, vFrame: Int = 0) :
-            this(Texture(ref), tileW, tileH, hGap, vGap, hFrame, vFrame)
-    constructor(fileHandle: FileHandle, tileW: Int, tileH: Int, hGap: Int = 0, vGap: Int = 0, hFrame: Int = 0, vFrame: Int = 0) :
-            this(Texture(fileHandle), tileW, tileH, hGap, vGap, hFrame, vFrame)
+    constructor(ref: String, tileW: Int, tileH: Int, hGap: Int = 0, vGap: Int = 0, hFrame: Int = 0, vFrame: Int = 0, xySwapped: Boolean = false) :
+            this(Texture(ref), tileW, tileH, hGap, vGap, hFrame, vFrame, xySwapped)
+    constructor(fileHandle: FileHandle, tileW: Int, tileH: Int, hGap: Int = 0, vGap: Int = 0, hFrame: Int = 0, vFrame: Int = 0, xySwapped: Boolean = false) :
+            this(Texture(fileHandle), tileW, tileH, hGap, vGap, hFrame, vFrame, xySwapped)
 
     companion object {
         /** Intented for Y-down coord system, typically fon Non-GDX codebase */
@@ -59,18 +60,34 @@ class TextureRegionPack(
     init {
         //println("texture: $texture, dim: ${texture.width} x ${texture.height}, grid: $horizontalCount x $verticalCount, cellDim: $tileW x $tileH")
 
-        regions = Array<TextureRegion>(horizontalCount * verticalCount, {
-            val region = TextureRegion()
-            val rx = (it % horizontalCount * (tileW + hGap)) + hFrame
-            val ry = (it / horizontalCount * (tileH + vGap)) + vFrame
+        if (!xySwapped) {
+            regions = Array<TextureRegion>(horizontalCount * verticalCount, {
+                val region = TextureRegion()
+                val rx = (it % horizontalCount * (tileW + hGap)) + hFrame
+                val ry = (it / horizontalCount * (tileH + vGap)) + vFrame
 
-            region.setRegion(texture)
-            region.setRegion(rx, ry, tileW, tileH)
+                region.setRegion(texture)
+                region.setRegion(rx, ry, tileW, tileH)
 
-            region.flip(false, globalFlipY)
+                region.flip(false, globalFlipY)
 
-            /*return*/region
-        })
+                /*return*/region
+            })
+        }
+        else {
+            regions = Array<TextureRegion>(horizontalCount * verticalCount, {
+                val region = TextureRegion()
+                val rx = (it % verticalCount * (tileW + hGap)) + hFrame
+                val ry = (it / verticalCount * (tileH + vGap)) + vFrame
+
+                region.setRegion(texture)
+                region.setRegion(ry, rx, tileW, tileH)
+
+                region.flip(false, globalFlipY)
+
+                /*return*/region
+            })
+        }
     }
 
     fun get(x: Int, y: Int) = regions[y * horizontalCount + x]

@@ -386,6 +386,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             val isVariable1 = it.endsWith("_variable.tga")
             val isVariable2 = variableWidthSheets.contains(index)
             val isVariable = isVariable1 && isVariable2
+            val isXYSwapped = it.contains("xyswap", true)
 
             // idiocity check
             if (isVariable1 && !isVariable2)
@@ -442,7 +443,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             val texture = Texture(pixmap)
             val texRegPack = if (isVariable) {
-                TextureRegionPack(texture, W_VAR_INIT, H, HGAP_VAR, 0)
+                TextureRegionPack(texture, W_VAR_INIT, H, HGAP_VAR, 0, xySwapped = isXYSwapped)
             }
             else if (index == SHEET_UNIHAN) {
                 TextureRegionPack(texture, W_UNIHAN, H_UNIHAN) // the only exception that is height is 16
@@ -592,8 +593,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
                     }
                     else if (sheetID == SHEET_HANGUL) {
-                        // FIXME input text is normalised as Initial-Peak-Final
-                        // requires lookahead for {I, P, F}
+                        // Flookahead for {I, P, F}
 
                         val cNext = if (index + 1 <= textBuffer.size) textBuffer[index + 1] else 0
                         val cNextNext = if (index + 2 <= textBuffer.size) textBuffer[index + 2] else 0
@@ -607,12 +607,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         val hangulSheet = sheets[SHEET_HANGUL]
 
 
-                        println("${c.toHex()} ${cNext.toHex()} ${cNextNext.toHex()}")
-                        println("I: $indexCho,\t$choRow")
-                        println("P: $indexJung,\t$jungRow")
-                        println("F: $indexJong,\t$jongRow")
-                        println("skip: $hangulLength")
-                        println("====")
+                        //println("${c.toHex()} ${cNext.toHex()} ${cNextNext.toHex()}")
+                        //println("I: $indexCho,\t$choRow")
+                        //println("P: $indexJung,\t$jungRow")
+                        //println("F: $indexJong,\t$jongRow")
+                        //println("skip: $hangulLength")
+                        //println("====")
 
 
                         when (run) {
