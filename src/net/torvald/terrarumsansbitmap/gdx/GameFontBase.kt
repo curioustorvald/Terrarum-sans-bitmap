@@ -194,6 +194,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isKartvelianCaps(c: Int) = c in codeRange[SHEET_KARTULI_CAPS_VARW]
     private fun isDiacriticalMarks(c: Int) = c in codeRange[SHEET_DIACRITICAL_MARKS_VARW]
     private fun isPolytonicGreek(c: Int) = c in codeRange[SHEET_GREEK_POLY_VARW]
+    private fun isExtC(c: Int) = c in codeRange[SHEET_EXTC_VARW]
 
     private fun isCaps(c: Int) = Character.isUpperCase(c) || isKartvelianCaps(c)
 
@@ -269,7 +270,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun polytonicGreekIndexX(c: Int) = (c - 0x1F00) % 16
     private fun polytonicGreekIndexY(c: Int) = (c - 0x1F00) / 16
 
-    private val lowHeightLetters = "acegijmnopqrsuvwxyzɱɳʙɾɽʒʂʐʋɹɻɥɟɡɢʛȵɲŋɴʀɕʑçʝxɣχʁʜʍɰʟɨʉɯuʊøɘɵɤəɛœɜɞʌɔæɐɶɑɒɚɝɩɪʅʈʏʞ".toSortedSet()
+    private fun extCIndexX(c: Int) = (c - 0x2C60) % 16
+    private fun extCIndexY(c: Int) = (c - 0x2C60) / 16
+
+    private val lowHeightLetters = "acegijmnopqrsuvwxyzɱɳʙɾɽʒʂʐʋɹɻɥɟɡɢʛȵɲŋɴʀɕʑçʝxɣχʁʜʍɰʟɨʉɯuʊøɘɵɤəɛœɜɞʌɔæɐɶɑɒɚɝɩɪʅʈʏʞⱥⱦⱱⱳⱴⱶⱷⱸⱺⱻ".toSortedSet()
     /**
      * lowercase AND the height is equal to x-height (e.g. lowercase B, D, F, H, K, L, ... does not count
      */
@@ -317,7 +321,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_NAGARI_BENGALI_VARW,
             SHEET_KARTULI_CAPS_VARW,
             SHEET_DIACRITICAL_MARKS_VARW,
-            SHEET_GREEK_POLY_VARW
+            SHEET_GREEK_POLY_VARW,
+            SHEET_EXTC_VARW
     )
     private val autoShiftDownOnLowercase = arrayOf(
             SHEET_DIACRITICAL_MARKS_VARW
@@ -350,7 +355,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             "devanagari_bengali_variable.tga",
             "kartuli_allcaps_variable.tga",
             "diacritical_marks_variable.tga",
-            "greek_polytonic_xyswap_variable.tga"
+            "greek_polytonic_xyswap_variable.tga",
+            "latinExtC_variable.tga"
     )
     private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF,
@@ -378,7 +384,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0x900..0x9FF,
             0x1C90..0x1CBF,
             0x300..0x36F,
-            0x1F00..0x1FFF
+            0x1F00..0x1FFF,
+            0x2C60..0x2C7F
     )
     private val glyphProps: HashMap<Int, GlyphProps> = HashMap()
     private val sheets: Array<TextureRegionPack>
@@ -822,6 +829,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             return SHEET_DIACRITICAL_MARKS_VARW
         else if (isPolytonicGreek(c))
             return SHEET_GREEK_POLY_VARW
+        else if (isExtC(c))
+            return SHEET_EXTC_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -922,6 +931,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             SHEET_GREEK_POLY_VARW -> {
                 sheetX = polytonicGreekIndexX(ch)
                 sheetY = polytonicGreekIndexY(ch)
+            }
+            SHEET_EXTC_VARW -> {
+                sheetX = extCIndexX(ch)
+                sheetY = extCIndexY(ch)
             }
             else -> {
                 sheetX = ch % 16
@@ -1332,6 +1345,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         internal val SHEET_KARTULI_CAPS_VARW = 23
         internal val SHEET_DIACRITICAL_MARKS_VARW = 24
         internal val SHEET_GREEK_POLY_VARW   = 25
+        internal val SHEET_EXTC_VARW =         26
 
         internal val SHEET_UNKNOWN = 254
 
