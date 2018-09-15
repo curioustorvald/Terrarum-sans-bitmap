@@ -27,7 +27,7 @@ class FontTestGDX : Game() {
     private val outimageName = "demo.png"
 
     override fun create() {
-        font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = true) // must test for two flipY cases
+        font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = false) // must test for two flipY cases
 
         val inTextFile = Gdx.files.internal("./$demotextName")
         val reader = inTextFile.reader("UTF-8")
