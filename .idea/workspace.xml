@@ -32,8 +32,8 @@
           <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="468">
-                  <caret line="673" column="29" selection-start-line="673" selection-start-column="29" selection-end-line="673" selection-end-column="29" />
+                <state relative-caret-position="424">
+                  <caret line="1366" column="5" selection-start-line="1366" selection-start-column="5" selection-end-line="1366" selection-end-column="5" />
                 </state>
               </provider>
             </entry>
@@ -89,8 +89,8 @@
           <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="435">
-                  <caret line="481" column="13" lean-forward="true" selection-start-line="481" selection-start-column="13" selection-end-line="481" selection-end-column="13" />
+                <state relative-caret-position="533">
+                  <caret line="678" column="28" selection-start-line="678" selection-start-column="28" selection-end-line="678" selection-end-column="28" />
                 </state>
               </provider>
             </entry>
@@ -163,11 +163,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>lastNonDiacriticChar</find>
-      <find>c.toInt()</find>
-      <find>har.toInt()</find>
-      <find>println</find>
-      <find>!!</find>
       <find>ArrayList&lt;Int&gt;</find>
       <find>appConfig.height</find>
       <find>textBuffer</find>
@@ -193,6 +188,11 @@
       <find>getWidth</find>
       <find>getWidthOfCharSeq</find>
       <find>makeShadow</find>
+      <find>fun draw</find>
+      <find>glyphWidthBuffer</find>
+      <find>oldCharSequence</find>
+      <find>charSeq.toCodeP</find>
+      <find>resetH</find>
     </findStrings>
     <replaceStrings>
       <replace>.141</replace>
@@ -507,7 +507,7 @@
     <layout>
       <window_info anchor="right" id="Palette" order="3" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Messages" order="7" weight="0.32745826" />
+      <window_info anchor="bottom" id="Messages" order="7" weight="0.20779221" />
       <window_info anchor="right" id="Palette&#9;" order="3" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
       <window_info anchor="right" id="Maven Projects" order="3" />
@@ -932,8 +932,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="435">
-          <caret line="481" column="13" lean-forward="true" selection-start-line="481" selection-start-column="13" selection-end-line="481" selection-end-column="13" />
+        <state relative-caret-position="533">
+          <caret line="678" column="28" selection-start-line="678" selection-start-column="28" selection-end-line="678" selection-end-column="28" />
         </state>
       </provider>
     </entry>

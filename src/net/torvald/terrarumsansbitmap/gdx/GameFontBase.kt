@@ -33,6 +33,8 @@ import com.badlogic.gdx.utils.GdxRuntimeException
 import net.torvald.terrarumsansbitmap.GlyphProps
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
+import java.security.MessageDigest
+import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
 
 typealias CodepointSequence = ArrayList<Int>
@@ -278,6 +280,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
      * lowercase AND the height is equal to x-height (e.g. lowercase B, D, F, H, K, L, ... does not count
      */
     private fun Int.isLowHeight() = this.and(0xFFFF).toChar() in lowHeightLetters
+
+
+    private data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val posXbuffer: IntArray, val posYbuffer: IntArray)
+    private val textCache = HashMap<CharSequence, ShittyGlyphLayout>()
 
 
     private fun getColour(codePoint: Int): Color { // input: 0x10ARGB, out: RGBA8888
@@ -531,12 +537,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
     private var firstRun = true
     private var textBuffer = CodepointSequence(256)
-    private var oldCharSequence = ""
-    //private lateinit var textTexture: FrameBuffer
-    //private val textTexCamera = OrthographicCamera()
+    //private var oldCharSequence = ""
     private var posXbuffer = intArrayOf() // absolute posX of glyphs from print-origin
     private var posYbuffer = intArrayOf() // absolute posY of glyphs from print-origin
-    private var glyphWidthBuffer = intArrayOf() // width of each glyph
 
     private lateinit var originalColour: Color
 
@@ -555,8 +558,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
 
         if (charSeq.isNotBlank()) {
-            if (oldCharSequence != charSeq || firstRun) {
+
+
+            if (!textCache.containsKey(charSeq) || firstRun) {
                 textBuffer = charSeq.toCodePoints()
+
                 //val texWidth = widths.sum()
 
                 //if (!firstRun) textTexture.dispose()
@@ -569,7 +575,24 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 //print("[TerrarumSansBitmap] widthTable for $textBuffer: ")
                 //posXbuffer.forEach { print("$it ") }; println()
 
+
+                textCache[charSeq] = ShittyGlyphLayout(
+                        textBuffer,
+                        posXbuffer,
+                        posYbuffer
+                )
+
+
                 firstRun = false
+
+                //println("text not in buffer: $charSeq")
+            }
+            else {
+                val bufferObj = textCache[charSeq]
+
+                textBuffer = bufferObj!!.textBuffer
+                posXbuffer = bufferObj!!.posXbuffer
+                posYbuffer = bufferObj!!.posYbuffer
             }
 
 
@@ -589,7 +612,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             //println()
 
 
-            resetHash()
+            resetHash(charSeq, x, y)
             var index = 0
             while (index <= textBuffer.lastIndex) {
                 val c = textBuffer[index]
@@ -597,7 +620,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 val (sheetX, sheetY) =
                         if (index == 0) getSheetwisePosition(0, c)
                         else getSheetwisePosition(textBuffer[index - 1], c)
-                val hash = getHash(c)
+                val hash = getHash(c) // to be used with Bad Transmission Modifier
 
                 if (isColourCode(c)) {
                     if (c == 0x100000) {
@@ -642,7 +665,6 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 }
                 else {
                     try {
-
                         val posY = y + posYbuffer[index].flipY() +
                                 if (sheetID == SHEET_UNIHAN) // evil exceptions
                                     offsetUnihan
@@ -1049,8 +1071,6 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         val str = textBuffer
         val widths = getWidthOfCharSeq(str)
 
-        glyphWidthBuffer = widths
-
         posXbuffer = IntArray(str.size, { 0 })
         posYbuffer = IntArray(str.size, { 0 })
 
@@ -1338,11 +1358,40 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         hashAccumulator *= hashPrime
         return hashAccumulator
     }
-    fun resetHash() {
+    fun resetHash(charSeq: CharSequence, x: Float, y: Float) {
         hashAccumulator = hashBasis
+
+        getHash(charSeq.crc32())
+        getHash(x.toRawBits())
+        getHash(y.toRawBits())
     }
 
     private fun Int.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
+
+    private fun CharSequence.sha256(): ByteArray {
+        val digest = MessageDigest.getInstance("SHA-256")
+        this.forEach {
+            val it = it.toInt()
+            val b1 = it.shl(8).and(255).toByte()
+            val b2 = it.and(255).toByte()
+            digest.update(b1)
+            digest.update(b2)
+        }
+
+        return digest.digest()
+    }
+    private fun CharSequence.crc32(): Int {
+        val crc = CRC32()
+        this.forEach {
+            val it = it.toInt()
+            val b1 = it.shl(8).and(255)
+            val b2 = it.and(255)
+            crc.update(b1)
+            crc.update(b2)
+        }
+
+        return crc.value.toInt()
+    }
 
     companion object {
         internal val JUNG_COUNT = 21
