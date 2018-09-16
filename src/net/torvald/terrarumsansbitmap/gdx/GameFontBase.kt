@@ -619,10 +619,15 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     else if (sheetID == SHEET_HANGUL) {
                         // Flookahead for {I, P, F}
 
-                        val cNext = if (index + 1 <= textBuffer.size) textBuffer[index + 1] else 0
-                        val cNextNext = if (index + 2 <= textBuffer.size) textBuffer[index + 2] else 0
+                        val cNext = if (index + 1 < textBuffer.size) textBuffer[index + 1] else 0
+                        val cNextNext = if (index + 2 < textBuffer.size) textBuffer[index + 2] else 0
 
-                        val hangulLength = if (isHangulJongseong(cNextNext)) 3 else 2
+                        val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
+                            3
+                        else if (isHangulJungseong(cNext))
+                            2
+                        else
+                            1
 
                         val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
 
@@ -1033,7 +1038,62 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private val glyphLayout = GlyphLayout()
 
     fun getWidth(text: String): Int {
-        return getWidthOfCharSeq(text.toCodePoints()).sum()
+        var s = text.toCodePoints()
+        var len = 0
+
+        var i = 0
+        while (i <= s.lastIndex) {
+            val chr = s[i]
+            val ctype = getSheetType(s[i])
+
+            var len2 = 0
+            if (variableWidthSheets.contains(ctype)) {
+                if (!glyphProps.containsKey(chr)) {
+                    System.err.println("[TerrarumSansBitmap] no width data for glyph number ${Integer.toHexString(chr.toInt()).toUpperCase()}")
+                    len2 = W_LATIN_WIDE
+                }
+
+                val prop = glyphProps[chr] ?: nullProp
+
+                if (!prop.writeOnTop)
+                    len2 = prop.width
+            }
+            else if (isColourCode(chr) || isCharsetOverride(chr))
+                len2 = 0
+            else if (ctype == SHEET_CJK_PUNCT)
+                len2 = W_ASIAN_PUNCT
+            else if (ctype == SHEET_HANGUL) {
+                // hangul IPF canonical and special cases
+                val cNext = if (i + 1 < s.size) s[i + 1] else 0
+                val cNextNext = if (i + 2 < s.size) s[i + 2] else 0
+                val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
+                    3
+                else if (isHangulJungseong(cNext))
+                    2
+                else
+                    1
+
+                len2 = W_HANGUL
+                i += hangulLength - 1
+            }
+            else if (ctype == SHEET_KANA)
+                len2 = W_KANA
+            else if (unihanWidthSheets.contains(ctype))
+                len2 = W_UNIHAN
+            else if (ctype == SHEET_CUSTOM_SYM)
+                len2 = SIZE_CUSTOM_SYM
+            else
+                len2 = W_LATIN_WIDE
+
+
+            len += len2 * scale
+
+            if (i < s.lastIndex) len += interchar
+
+
+            i++
+        }
+        return len
     }
 
 
