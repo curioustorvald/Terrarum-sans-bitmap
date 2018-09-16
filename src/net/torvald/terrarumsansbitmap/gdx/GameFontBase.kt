@@ -460,9 +460,13 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 }
             }
 
-
             if (isVariable) buildWidthTable(pixmap, codeRange[index], 16)
             buildWidthTableFixed()
+
+
+            if (!noShadow) {
+                makeShadow(pixmap)
+            }
 
 
             val texture = Texture(pixmap)
@@ -576,7 +580,6 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             originalColour = batch.color.cpy()
             var mainCol = originalColour
-            var shadowCol = mainCol.cpy().mul(0.5f, 0.5f, 0.5f, 1f)
 
 
             //textTexture.begin()
@@ -586,136 +589,81 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             //println()
 
 
-            val runs = if (noShadow) 0..0 else 3 downTo 0
-            for (run in runs) { // 0: Main, 1..3: Shadows
-                resetHash()
-                var index = 0
-                while (index <= textBuffer.lastIndex) {
-                    val c = textBuffer[index]
-                    val sheetID = getSheetType(c)
-                    val (sheetX, sheetY) =
-                            if (index == 0) getSheetwisePosition(0, c)
-                            else getSheetwisePosition(textBuffer[index - 1], c)
-                    val hash = getHash(c)
+            resetHash()
+            var index = 0
+            while (index <= textBuffer.lastIndex) {
+                val c = textBuffer[index]
+                val sheetID = getSheetType(c)
+                val (sheetX, sheetY) =
+                        if (index == 0) getSheetwisePosition(0, c)
+                        else getSheetwisePosition(textBuffer[index - 1], c)
+                val hash = getHash(c)
 
-                    if (run == 0) {
-                        //println("[TerrarumSansBitmap] sprite:  $sheetID:${sheetX}x${sheetY}")
-                    }
-
-
-                    if (isColourCode(c)) {
-                        if (c == 0x100000) {
-                            mainCol = originalColour
-                            shadowCol = mainCol.cpy().mul(0.5f, 0.5f, 0.5f, 1f)
-                        }
-                        else {
-                            mainCol = getColour(c)
-                            shadowCol = mainCol.cpy().mul(0.5f, 0.5f, 0.5f, 1f)
-                        }
-                    }
-                    else if (isCharsetOverride(c)) {
-                        charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
-                    }
-                    else if (sheetID == SHEET_HANGUL) {
-                        // Flookahead for {I, P, F}
-
-                        val cNext = if (index + 1 < textBuffer.size) textBuffer[index + 1] else 0
-                        val cNextNext = if (index + 2 < textBuffer.size) textBuffer[index + 2] else 0
-
-                        val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
-                            3
-                        else if (isHangulJungseong(cNext))
-                            2
-                        else
-                            1
-
-                        val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
-
-                        val (indexCho, indexJung, indexJong) = indices
-                        val (choRow, jungRow, jongRow) = rows
-                        val hangulSheet = sheets[SHEET_HANGUL]
-
-
-                        //println("${c.toHex()} ${cNext.toHex()} ${cNextNext.toHex()}")
-                        //println("I: $indexCho,\t$choRow")
-                        //println("P: $indexJung,\t$jungRow")
-                        //println("F: $indexJong,\t$jongRow")
-                        //println("skip: $hangulLength")
-                        //println("====")
-
-
-                        when (run) {
-                            0 -> {
-                                batch.color = mainCol
-                                batch.draw(hangulSheet.get(indexCho, choRow), x + posXbuffer[index].toFloat(), y)
-                                batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index].toFloat(), y)
-                                batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index].toFloat(), y)
-                            }
-                            1 -> {
-                                batch.color = shadowCol
-                                batch.draw(hangulSheet.get(indexCho, choRow), x + posXbuffer[index] + 1, y)
-                                batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index] + 1, y)
-                                batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index] + 1, y)
-                            }
-                            2 -> {
-                                batch.color = shadowCol
-                                batch.draw(hangulSheet.get(indexCho, choRow), x + posXbuffer[index], y + 1.flipY())
-                                batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index], y + 1.flipY())
-                                batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index], y + 1.flipY())
-                            }
-                            3 -> {
-                                batch.color = shadowCol
-                                batch.draw(hangulSheet.get(indexCho, choRow), x + posXbuffer[index] + 1, y + 1.flipY())
-                                batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index] + 1, y + 1.flipY())
-                                batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index] + 1, y + 1.flipY())
-
-                            }
-                        }
-
-
-                        index += hangulLength - 1
-
+                if (isColourCode(c)) {
+                    if (c == 0x100000) {
+                        mainCol = originalColour
                     }
                     else {
-                        try {
-
-                            val posY = y + posYbuffer[index].flipY() +
-                                    if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                        offsetUnihan
-                                    else if (sheetID == SHEET_CUSTOM_SYM)
-                                        offsetCustomSym
-                                    else 0
-
-                            val posX = x + posXbuffer[index]
-                            val texture = sheets[sheetID].get(sheetX, sheetY)
-
-                            when (run) {
-                                0 -> {
-                                    batch.color = mainCol
-                                    batch.draw(texture, posX, posY)
-                                }
-                                1 -> {
-                                    batch.color = shadowCol
-                                    batch.draw(texture, posX + 1, posY)
-                                }
-                                2 -> {
-                                    batch.color = shadowCol
-                                    batch.draw(texture, posX, posY + 1.flipY())
-                                }
-                                3 -> {
-                                    batch.color = shadowCol
-                                    batch.draw(texture, posX + 1, posY + 1.flipY())
-                                }
-                            }
-                        }
-                        catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
-                            batch.color = mainCol
-                        }
+                        mainCol = getColour(c)
                     }
-
-
-                    index++
                 }
+                else if (isCharsetOverride(c)) {
+                    charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
+                }
+                else if (sheetID == SHEET_HANGUL) {
+                    // Flookahead for {I, P, F}
+
+                    val cNext = if (index + 1 < textBuffer.size) textBuffer[index + 1] else 0
+                    val cNextNext = if (index + 2 < textBuffer.size) textBuffer[index + 2] else 0
+
+                    val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
+                        3
+                    else if (isHangulJungseong(cNext))
+                        2
+                    else
+                        1
+
+                    val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
+
+                    val (indexCho, indexJung, indexJong) = indices
+                    val (choRow, jungRow, jongRow) = rows
+                    val hangulSheet = sheets[SHEET_HANGUL]
+
+
+
+                    batch.color = mainCol
+                    batch.draw(hangulSheet.get(indexCho, choRow), x + posXbuffer[index].toFloat(), y)
+                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index].toFloat(), y)
+                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index].toFloat(), y)
+
+
+                    index += hangulLength - 1
+
+                }
+                else {
+                    try {
+
+                        val posY = y + posYbuffer[index].flipY() +
+                                if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                    offsetUnihan
+                                else if (sheetID == SHEET_CUSTOM_SYM)
+                                    offsetCustomSym
+                                else 0
+
+                        val posX = x + posXbuffer[index]
+                        val texture = sheets[sheetID].get(sheetX, sheetY)
+
+                        batch.color = mainCol
+                        batch.draw(texture, posX, posY)
+
+                    }
+                    catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
+                        batch.color = mainCol
+                    }
+                }
+
+
+                index++
             }
 
             /*textTexture.end()
@@ -1318,6 +1266,46 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         }
 
         return seq
+    }
+
+
+    /**
+     * Edits the given pixmap so that it would have a shadow on it.
+     *
+     * This function must be called `AFTER buildWidthTable()`
+     *
+     * The pixmap must be mutable (beware of concurrentmodificationexception).
+     */
+    private fun makeShadow(pixmap: Pixmap) {
+
+
+        for (y in 0..pixmap.height - 2) {
+            for (x in 0..pixmap.width - 2) {
+                val pxNow = pixmap.getPixel(x, y) // RGBA8888
+
+                // if you have read CONTRIBUTING.md, it says the actual glyph part MUST HAVE alpha of 255.
+                // but some of the older spritesheets still have width tag drawn as alpha of 255.
+                // therefore we still skip every x+15th pixels
+
+                if (x % 16 != 15) {
+                    if (pxNow and 0xFF == 255) {
+                        val pxRight = (x + 1) to y
+                        val pxBottom = x to (y + 1)
+                        val pxBottomRight = (x + 1) to (y + 1)
+                        val opCue = listOf(pxRight, pxBottom, pxBottomRight)
+
+                        opCue.forEach {
+                            if (pixmap.getPixel(it.first, it.second) and 0xFF == 0) {
+                                pixmap.drawPixel(it.first, it.second,
+                                        // the shadow has the same colour, but alpha halved
+                                        pxNow.and(0xFFFFFF00.toInt()).or(0x7F)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
 

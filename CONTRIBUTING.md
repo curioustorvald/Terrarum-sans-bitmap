@@ -93,6 +93,7 @@ Also note that the font compiler will not "stack" these diacritics.
 
 - Each spritesheet is 4096x4096 maximum, which is a size of 4K Texture. However it is recommended to be smaller or equal to 1024x1024.
 - Glyphs exceeding 15px of width needs to be broken down with 2 or more characters. Wider sheets WILL NOT BE IMPLEMENTED, can't waste much pixels just for few superwide glyphs.
+- Due to how the compiler is coded, actual glyph must have alpha value of 255, the tags must have alpha values LESS THAN 255 (and obviously greater than zero). RGB plane of the TGA image doesn't do anything, keep it as #FFFFFF white.
 
 ### Implementing the Korean writing system
 
