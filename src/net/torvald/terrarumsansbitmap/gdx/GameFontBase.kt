@@ -394,12 +394,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0x2C60..0x2C7F
     )
     private val glyphProps: HashMap<Int, GlyphProps> = HashMap()
-    private val sheets: Array<TextureRegionPack>
+    private val sheets: Array<PixmapRegionPack>
 
     private var charsetOverride = 0
 
     init {
-        val sheetsPack = ArrayList<TextureRegionPack>()
+        val sheetsPack = ArrayList<PixmapRegionPack>()
 
         // first we create pixmap to read pixels, then make texture using pixmap
         fileList.forEachIndexed { index, it ->
@@ -470,44 +470,46 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             buildWidthTableFixed()
 
 
-            if (!noShadow) {
-                makeShadow(pixmap)
-            }
+            /*if (!noShadow) {
+                makeShadowForSheet(pixmap)
+            }*/
 
 
-            val texture = Texture(pixmap)
+            //val texture = Texture(pixmap)
             val texRegPack = if (isVariable) {
-                TextureRegionPack(texture, W_VAR_INIT, H, HGAP_VAR, 0, xySwapped = isXYSwapped)
+                PixmapRegionPack(pixmap, W_VAR_INIT, H, HGAP_VAR, 0, xySwapped = isXYSwapped)
             }
             else if (index == SHEET_UNIHAN) {
-                TextureRegionPack(texture, W_UNIHAN, H_UNIHAN) // the only exception that is height is 16
+                PixmapRegionPack(pixmap, W_UNIHAN, H_UNIHAN) // the only exception that is height is 16
             }
             // below they all have height of 20 'H'
             else if (index == SHEET_FW_UNI) {
-                TextureRegionPack(texture, W_UNIHAN, H)
+                PixmapRegionPack(pixmap, W_UNIHAN, H)
             }
             else if (index == SHEET_CJK_PUNCT) {
-                TextureRegionPack(texture, W_ASIAN_PUNCT, H)
+                PixmapRegionPack(pixmap, W_ASIAN_PUNCT, H)
             }
             else if (index == SHEET_KANA) {
-                TextureRegionPack(texture, W_KANA, H)
+                PixmapRegionPack(pixmap, W_KANA, H)
             }
             else if (index == SHEET_HANGUL) {
-                TextureRegionPack(texture, W_HANGUL, H)
+                PixmapRegionPack(pixmap, W_HANGUL, H)
             }
             else if (index == SHEET_CUSTOM_SYM) {
-                TextureRegionPack(texture, SIZE_CUSTOM_SYM, SIZE_CUSTOM_SYM) // TODO variable
+                PixmapRegionPack(pixmap, SIZE_CUSTOM_SYM, SIZE_CUSTOM_SYM) // TODO variable
             }
             else if (index == SHEET_RUNIC) {
-                TextureRegionPack(texture, W_LATIN_WIDE, H)
+                PixmapRegionPack(pixmap, W_LATIN_WIDE, H)
             }
             else throw IllegalArgumentException("[TerrarumSansBitmap] Unknown sheet index: $index")
 
-            texRegPack.texture.setFilter(minFilter, magFilter)
+            //texRegPack.texture.setFilter(minFilter, magFilter)
 
             sheetsPack.add(texRegPack)
 
-            pixmap.dispose() // you are terminated
+
+
+            //pixmap.dispose() // you are terminated
         }
 
         sheets = sheetsPack.toTypedArray()
@@ -545,6 +547,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
     private var nullProp = GlyphProps(15, 0)
 
+    private var pixmapTextureHolder: Texture? = null
+    private var pixmapHolder: Pixmap? = null
+
+    private val pixmapOffsetY = -10
 
     override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float): GlyphLayout? {
         val oldProjectionMatrix = batch.projectionMatrix
@@ -553,12 +559,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
 
         // always draw at integer position; this is bitmap font after all
-        val x = Math.round(x).toFloat()
-        val y = Math.round(y).toFloat()
+        val x = Math.round(x).toInt()//.toFloat()
+        val y = Math.round(y).toInt()//.toFloat()
 
 
         if (charSeq.isNotBlank()) {
-
 
             if (!textCache.containsKey(charSeq) || firstRun) {
                 textBuffer = charSeq.toCodePoints()
@@ -612,7 +617,13 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             //println()
 
 
-            resetHash(charSeq, x, y)
+            resetHash(charSeq, x.toFloat(), y.toFloat())
+
+            pixmapHolder?.dispose() /* you can do this one */
+            //pixmapTextureHolder?.dispose() /* you CAN'T do this however */
+
+            pixmapHolder = Pixmap(getWidth(textBuffer), H + -(pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
+
             var index = 0
             while (index <= textBuffer.lastIndex) {
                 val c = textBuffer[index]
@@ -654,10 +665,18 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
 
 
-                    batch.color = mainCol
-                    batch.draw(hangulSheet.get(indexCho, choRow), x + posXbuffer[index].toFloat(), y)
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index].toFloat(), y)
-                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index].toFloat(), y)
+                    //batch.color = mainCol
+                    val choTex = hangulSheet.get(indexCho, choRow)
+                    val jungTex = hangulSheet.get(indexJung, jungRow)
+                    val jongTex = hangulSheet.get(indexJong, jongRow)
+
+                    pixmapHolder?.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY)
+                    pixmapHolder?.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY)
+                    pixmapHolder?.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY)
+
+                    //batch.draw(choTex, x + posXbuffer[index].toFloat(), y)
+                    //batch.draw(jungTex, x + posXbuffer[index].toFloat(), y)
+                    //batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index].toFloat(), y)
 
 
                     index += hangulLength - 1
@@ -665,28 +684,35 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 }
                 else {
                     try {
-                        val posY = y + posYbuffer[index].flipY() +
+                        val posY = posYbuffer[index].flipY() +
                                 if (sheetID == SHEET_UNIHAN) // evil exceptions
                                     offsetUnihan
                                 else if (sheetID == SHEET_CUSTOM_SYM)
                                     offsetCustomSym
                                 else 0
 
-                        val posX = x + posXbuffer[index]
+                        val posX = posXbuffer[index]
                         val texture = sheets[sheetID].get(sheetX, sheetY)
 
-                        batch.color = mainCol
-                        batch.draw(texture, posX, posY)
+                        //batch.color = mainCol
+                        pixmapHolder?.drawPixmap(texture, posX, posY + pixmapOffsetY)
+
+                        //batch.draw(texture, posX, posY)
 
                     }
                     catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
-                        batch.color = mainCol
+                        //batch.color = mainCol
                     }
                 }
 
 
                 index++
             }
+
+            batch.color = mainCol
+            makeShadow(pixmapHolder)
+            pixmapTextureHolder = Texture(pixmapHolder)
+            batch.draw(pixmapTextureHolder, x.toFloat(), y.toFloat())
 
             /*textTexture.end()
 
@@ -713,6 +739,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         sheets.forEach { it.dispose() }
     }
 
+    /**
+     * Used for positioning letters, NOT for the actual width.
+     *
+     * For actual width, use `getWidth()`
+     */
     private fun getWidthOfCharSeq(s: CodepointSequence): IntArray {
         val len = IntArray(s.size)
         for (i in 0..s.lastIndex) {
@@ -1007,8 +1038,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
     private val glyphLayout = GlyphLayout()
 
-    fun getWidth(text: String): Int {
-        var s = text.toCodePoints()
+    fun getWidth(text: String) = getWidth(text.toCodePoints())
+
+    fun getWidth(s: CodepointSequence): Int {
         var len = 0
 
         var i = 0
@@ -1296,9 +1328,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
      *
      * The pixmap must be mutable (beware of concurrentmodificationexception).
      */
-    private fun makeShadow(pixmap: Pixmap) {
-
-
+    private fun makeShadowForSheet(pixmap: Pixmap) {
         for (y in 0..pixmap.height - 2) {
             for (x in 0..pixmap.width - 2) {
                 val pxNow = pixmap.getPixel(x, y) // RGBA8888
@@ -1321,6 +1351,40 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                                         pxNow.and(0xFFFFFF00.toInt()).or(0x7F)
                                 )
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Edits the given pixmap so that it would have a shadow on it.
+     *
+     * Meant to be used to give shadow to a linotype (typeset-finished line of pixmap)
+     *
+     * The pixmap must be mutable (beware of concurrentmodificationexception).
+     */
+    private fun makeShadow(pixmap: Pixmap?) {
+        if (pixmap == null) return
+
+        for (y in 0..pixmap.height - 2) {
+            for (x in 0..pixmap.width - 2) {
+                val pxNow = pixmap.getPixel(x, y) // RGBA8888
+
+                if (pxNow and 0xFF == 255) {
+                    val pxRight = (x + 1) to y
+                    val pxBottom = x to (y + 1)
+                    val pxBottomRight = (x + 1) to (y + 1)
+                    val opCue = listOf(pxRight, pxBottom, pxBottomRight)
+
+                    opCue.forEach {
+                        if (pixmap.getPixel(it.first, it.second) and 0xFF == 0) {
+                            pixmap.drawPixel(it.first, it.second,
+                                    // the shadow has the same colour, but alpha halved
+                                    pxNow.and(0xFFFFFF00.toInt()).or(0x7F)
+                            )
                         }
                     }
                 }
