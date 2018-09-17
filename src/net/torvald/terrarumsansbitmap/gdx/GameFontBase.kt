@@ -36,6 +36,7 @@ import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
+import kotlin.math.roundToInt
 
 typealias CodepointSequence = ArrayList<Int>
 
@@ -282,6 +283,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun Int.isLowHeight() = this.and(0xFFFF).toChar() in lowHeightLetters
 
 
+    // TODO (val posXbuffer: IntArray, val posYbuffer: IntArray) -> (val linotype: Pixmap)
     private data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val posXbuffer: IntArray, val posYbuffer: IntArray)
     private val textCache = HashMap<CharSequence, ShittyGlyphLayout>()
 
@@ -633,6 +635,16 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             pixmapHolder = Pixmap(getWidth(textBuffer), H + (pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
 
+            // TEST: does the new instance of pixmap is all zero?
+            repeat(pixmapHolder?.pixels?.capacity() ?: 0) {
+                if (pixmapHolder?.pixels?.get() != 0.toByte()) {
+                    throw InternalError("pixmap is not all zero, wtf?!")
+                }
+            }
+            pixmapHolder?.pixels?.rewind()
+
+
+
             var index = 0
             while (index <= textBuffer.lastIndex) {
                 val c = textBuffer[index]
@@ -674,15 +686,16 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
 
 
-                    //batch.color = mainCol
                     val choTex = hangulSheet.get(indexCho, choRow)
                     val jungTex = hangulSheet.get(indexJung, jungRow)
                     val jongTex = hangulSheet.get(indexJong, jongRow)
 
-                    pixmapHolder?.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY)
-                    pixmapHolder?.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY)
-                    pixmapHolder?.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY)
+                    pixmapHolder?.setColor(mainCol)
+                    pixmapHolder?.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY, mainCol)
+                    pixmapHolder?.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY, mainCol)
+                    pixmapHolder?.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY, mainCol)
 
+                    //batch.color = mainCol
                     //batch.draw(choTex, x + posXbuffer[index].toFloat(), y)
                     //batch.draw(jungTex, x + posXbuffer[index].toFloat(), y)
                     //batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index].toFloat(), y)
@@ -703,9 +716,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         val posX = posXbuffer[index]
                         val texture = sheets[sheetID].get(sheetX, sheetY)
 
-                        //batch.color = mainCol
-                        pixmapHolder?.drawPixmap(texture, posX, posY + pixmapOffsetY)
+                        pixmapHolder?.drawPixmap(texture, posX, posY + pixmapOffsetY, mainCol)
 
+                        //batch.color = mainCol
                         //batch.draw(texture, posX, posY)
 
                     }
@@ -1378,28 +1391,61 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun makeShadow(pixmap: Pixmap?) {
         if (pixmap == null) return
 
-        for (y in 0..pixmap.height - 2) {
-            for (x in 0..pixmap.width - 2) {
-                val pxNow = pixmap.getPixel(x, y) // RGBA8888
 
-                if (pxNow and 0xFF == 255) {
-                    val pxRight = (x + 1) to y
-                    val pxBottom = x to (y + 1)
-                    val pxBottomRight = (x + 1) to (y + 1)
-                    val opCue = listOf(pxRight, pxBottom, pxBottomRight)
+        // TODO
+        // make three more pixmap (pixmap 2 3 4)
+        // translate source image over new pixmap, shift the texture to be a shadow
+        // draw (3, 4) -> 2, px by px s.t. only overwrites RGBA==0 pixels in 2
+        // for all pxs in 2, do:
+        //      halve the alpha in 2
+        //      draw 1 -> 2 s.t. only RGBA!=0-px-in-1 is drawn on 2; draw by overwrite
+        // copy 2 -> 1 px by px
+        // ---------------------------------------------------------------------------
+        // this is under assumption that new pixmap is always all zero
+        // it is possible the blending in the pixmap is bugged
 
-                    opCue.forEach {
-                        if (pixmap.getPixel(it.first, it.second) and 0xFF == 0) {
-                            pixmap.drawPixel(it.first, it.second,
-                                    // the shadow has the same colour, but alpha halved
-                                    pxNow.and(0xFFFFFF00.toInt()).or(0x7F)
-                            )
-                        }
-                    }
-                }
+    }
+
+
+    private fun Pixmap.drawPixmap(pixmap: Pixmap, xPos: Int, yPos: Int, col: Color) {
+        for (y in 0 until pixmap.height) {
+            for (x in 0 until pixmap.width) {
+                val pixel = pixmap.getPixel(x, y) // Pixmap uses RGBA8888, while Color uses ARGB. What the fuck?
+
+                val newPixel = pixel colorTimes col.toRGBA8888()
+
+                this.drawPixel(xPos + x, yPos + y, newPixel)
             }
         }
     }
+
+    private fun Color.toRGBA8888() =
+            (this.r * 255f).toInt().shl(24) or
+                    (this.g * 255f).toInt().shl(16) or
+                    (this.b * 255f).toInt().shl(8) or
+                    (this.a * 255f).toInt()
+
+    private infix fun Int.colorTimes(other: Int): Int {
+        val thisBytes = IntArray(4, { this.ushr(it * 8).and(255) })
+        val otherBytes = IntArray(4, { other.ushr(it * 8).and(255) })
+
+        return (thisBytes[0] times256 otherBytes[0]) or
+               (thisBytes[1] times256 otherBytes[1]).shl(8) or
+               (thisBytes[2] times256 otherBytes[2]).shl(16) or
+               (thisBytes[3] times256 otherBytes[3]).shl(24)
+    }
+
+    private infix fun Int.times256(other: Int) = multTable255[this][other]
+
+    private val multTable255 = Array(256,
+            { left ->
+                IntArray(256,
+                        { right ->
+                            (255f * (left / 255f).times(right / 255f)).roundToInt()
+                        }
+                )
+            }
+    )
 
 
     /** High surrogate comes before the low. */
