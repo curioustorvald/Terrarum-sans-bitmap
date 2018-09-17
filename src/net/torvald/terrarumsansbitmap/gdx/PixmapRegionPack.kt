@@ -55,9 +55,10 @@ class PixmapRegionPack(
     init {
         if (!xySwapped) {
             regions = Array<Pixmap>(horizontalCount * verticalCount, {
-                val region = Pixmap(tileW, tileH, Pixmap.Format.RGBA8888)
                 val rx = (it % horizontalCount * (tileW + hGap)) + hFrame // pixel, not index
                 val ry = (it / horizontalCount * (tileH + vGap)) + vFrame // pixel, not index
+
+                val region = Pixmap(tileW, tileH, Pixmap.Format.RGBA8888)
 
                 /*region.setColor(Color.WHITE)
                 region.drawPixmap(pixmap, 0, 0,
@@ -71,9 +72,6 @@ class PixmapRegionPack(
 
                 //println(region.pixels.capacity())
 
-                //val bytesBucket = ByteArray(4 * tileW * tileH)
-                //var bytesBucketHead = 0
-
                 for (y in 0 until tileH) {
                     //println("${pixmap.width * pixmap.height * 4} ==? ${pixmap.pixels.capacity()}")
 
@@ -86,8 +84,24 @@ class PixmapRegionPack(
 
                     pixmap.pixels.position(offsetY + offsetX)
                     pixmap.pixels.get(bytesBuffer, 0, bytesBuffer.size)
+
+                    // test print bytesbuffer
+                    bytesBuffer.forEachIndexed { index, it ->
+                        if (index % 4 == 3) {
+                            if (it == 255.toByte()) print("█") else print("·")
+                        }
+                    }
+                    println()
+
                     region.pixels.put(bytesBuffer)
                 }
+
+
+                println()
+
+                //val region = Pixmap(5, 20, Pixmap.Format.RGBA8888)
+                //region.pixels.rewind()
+                //region.pixels.put(byteArrayOf(-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0,-1,-1,-1,0))
 
                 // todo globalFlipY ?
 

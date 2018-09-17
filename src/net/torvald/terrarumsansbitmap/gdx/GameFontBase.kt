@@ -440,16 +440,23 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             if (it.endsWith(".gz")) {
                 val tmpFileName = "tmp_${it.dropLast(7)}.tga"
 
-                val gzi = GZIPInputStream(Gdx.files.internal(fontParentDir + it).read(8192))
-                val wholeFile = gzi.readBytes()
-                gzi.close()
-                val fos = BufferedOutputStream(FileOutputStream(tmpFileName))
-                fos.write(wholeFile)
-                fos.flush()
-                fos.close()
+                try {
+                    val gzi = GZIPInputStream(Gdx.files.internal(fontParentDir + it).read(8192))
+                    val wholeFile = gzi.readBytes()
+                    gzi.close()
+                    val fos = BufferedOutputStream(FileOutputStream(tmpFileName))
+                    fos.write(wholeFile)
+                    fos.flush()
+                    fos.close()
 
-                pixmap = Pixmap(Gdx.files.internal(tmpFileName))
+                    pixmap = Pixmap(Gdx.files.internal(tmpFileName))
+                }
+                catch (e: GdxRuntimeException) {
+                    //e.printStackTrace()
+                    System.err.println("[TerrarumSansBitmap] said texture not found, skipping...")
 
+                    pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
+                }
                 //File(tmpFileName).delete()
             }
             else {
@@ -457,12 +464,16 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     pixmap = Pixmap(Gdx.files.internal(fontParentDir + it))
                 }
                 catch (e: GdxRuntimeException) {
-                    e.printStackTrace()
+                    //e.printStackTrace()
+                    System.err.println("[TerrarumSansBitmap] said texture not found, skipping...")
 
                     // if non-ascii chart is missing, replace it with null sheet
                     pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
                     // else, notify by error
-                    if (index != 0) System.exit(1)
+                    if (index == 0) {
+                        System.err.println("[TerrarumSansBitmap] The ASCII sheet is gone, something is wrong.")
+                        System.exit(1)
+                    }
                 }
             }
 
