@@ -507,9 +507,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
             sheetsPack.add(texRegPack)
 
-
-
-            //pixmap.dispose() // you are terminated
+            pixmap.dispose() // you are terminated
         }
 
         sheets = sheetsPack.toTypedArray()
@@ -550,7 +548,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private var pixmapTextureHolder: Texture? = null
     private var pixmapHolder: Pixmap? = null
 
-    private val pixmapOffsetY = -10
+    private val pixmapOffsetY = 10
 
     override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float): GlyphLayout? {
         val oldProjectionMatrix = batch.projectionMatrix
@@ -622,7 +620,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             pixmapHolder?.dispose() /* you can do this one */
             //pixmapTextureHolder?.dispose() /* you CAN'T do this however */
 
-            pixmapHolder = Pixmap(getWidth(textBuffer), H + -(pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
+            pixmapHolder = Pixmap(getWidth(textBuffer), H + (pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
 
             var index = 0
             while (index <= textBuffer.lastIndex) {
@@ -712,7 +710,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             batch.color = mainCol
             makeShadow(pixmapHolder)
             pixmapTextureHolder = Texture(pixmapHolder)
-            batch.draw(pixmapTextureHolder, x.toFloat(), y.toFloat())
+            batch.draw(pixmapTextureHolder, x.toFloat(), (y - pixmapOffsetY).toFloat())
 
             /*textTexture.end()
 
