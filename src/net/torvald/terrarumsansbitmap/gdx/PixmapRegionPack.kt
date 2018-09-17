@@ -25,6 +25,7 @@
 package net.torvald.terrarumsansbitmap.gdx
 
 import com.badlogic.gdx.files.FileHandle
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Pixmap
 
 /**
@@ -55,14 +56,38 @@ class PixmapRegionPack(
         if (!xySwapped) {
             regions = Array<Pixmap>(horizontalCount * verticalCount, {
                 val region = Pixmap(tileW, tileH, Pixmap.Format.RGBA8888)
-                val rx = (it % horizontalCount * (tileW + hGap)) + hFrame
-                val ry = (it / horizontalCount * (tileH + vGap)) + vFrame
+                val rx = (it % horizontalCount * (tileW + hGap)) + hFrame // pixel, not index
+                val ry = (it / horizontalCount * (tileH + vGap)) + vFrame // pixel, not index
 
+                /*region.setColor(Color.WHITE)
                 region.drawPixmap(pixmap, 0, 0,
                         rx * (tileW + hGap),
                         ry * (tileH + vGap),
-                        tileW, tileH
-                )
+                        tileW,
+                        tileH
+                )*/
+
+                region.pixels.rewind()
+
+                //println(region.pixels.capacity())
+
+                //val bytesBucket = ByteArray(4 * tileW * tileH)
+                //var bytesBucketHead = 0
+
+                for (y in 0 until tileH) {
+                    //println("${pixmap.width * pixmap.height * 4} ==? ${pixmap.pixels.capacity()}")
+
+                    val offsetY = ry * (pixmap.width * 4) + (vFrame * pixmap.width * 4)
+                    val offsetX = rx * 4 + hFrame * 4
+
+                    //println("($rx, $ry): ${offsetY + offsetX} / ${pixmap.pixels.capacity()}; $offsetY, $offsetX")
+
+                    val bytesBuffer = ByteArray(4 * tileW)
+
+                    pixmap.pixels.position(offsetY + offsetX)
+                    pixmap.pixels.get(bytesBuffer, 0, bytesBuffer.size)
+                    region.pixels.put(bytesBuffer)
+                }
 
                 // todo globalFlipY ?
 
