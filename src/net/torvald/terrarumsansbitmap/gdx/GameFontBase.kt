@@ -189,7 +189,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isIPA(c: Int) = c in codeRange[SHEET_IPA_VARW]
     private fun isLatinExtAdd(c: Int) = c in 0x1E00..0x1EFF
     private fun isBulgarian(c: Int) = c in 0x400..0x45F
-    private fun isColourCode(c: Int) = c in 0x100000..0x10FFFF
+    private fun isColourCode(c: Int) = c == 0x100000 || c in 0x10F000..0x10FFFF
     private fun isCharsetOverride(c: Int) = c in 0xFFFC0..0xFFFFF
     private fun isCherokee(c: Int) = c in codeRange[SHEET_TSALAGI_VARW]
     private fun isInsular(c: Int) = c == 0x1D79 || c in 0xA779..0xA787
@@ -288,23 +288,25 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private val textCache = HashMap<CharSequence, ShittyGlyphLayout>()
 
 
-    private fun getColour(codePoint: Int): Color { // input: 0x10ARGB, out: RGBA8888
+    private fun getColour(codePoint: Int): Int { // input: 0x10F_RGB, out: RGBA8888
         if (colourBuffer.containsKey(codePoint))
             return colourBuffer[codePoint]!!
 
-        val a = codePoint.and(0xF000).ushr(12)
         val r = codePoint.and(0x0F00).ushr(8)
         val g = codePoint.and(0x00F0).ushr(4)
         val b = codePoint.and(0x000F)
 
-        val col = Color(r.shl(28) or r.shl(24) or g.shl(20) or g.shl(16) or b.shl(12) or b.shl(8) or a.shl(4) or a)
+        val col = r.shl(28) or r.shl(24) or
+                  g.shl(20) or g.shl(16) or
+                  b.shl(12) or b.shl(8) or
+                  0xFF
 
 
         colourBuffer[codePoint] = col
         return col
     }
 
-    private val colourBuffer = HashMap<Int, Color>()
+    private val colourBuffer = HashMap<Int, Int>()
 
     private val unihanWidthSheets = arrayOf(
             SHEET_UNIHAN,
@@ -618,7 +620,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
 
             originalColour = batch.color.cpy()
-            var mainCol = originalColour
+            val mainColObj = originalColour
+            var mainCol: Int = originalColour.toRGBA8888().forceOpaque()
 
 
             //textTexture.begin()
@@ -636,12 +639,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             pixmapHolder = Pixmap(getWidth(textBuffer), H + (pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
 
             // TEST: does the new instance of pixmap is all zero?
-            repeat(pixmapHolder?.pixels?.capacity() ?: 0) {
+            /*repeat(pixmapHolder?.pixels?.capacity() ?: 0) {
                 if (pixmapHolder?.pixels?.get() != 0.toByte()) {
                     throw InternalError("pixmap is not all zero, wtf?!")
                 }
             }
-            pixmapHolder?.pixels?.rewind()
+            pixmapHolder?.pixels?.rewind()*/
 
 
 
@@ -656,7 +659,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                 if (isColourCode(c)) {
                     if (c == 0x100000) {
-                        mainCol = originalColour
+                        mainCol = originalColour.toRGBA8888().forceOpaque()
                     }
                     else {
                         mainCol = getColour(c)
@@ -731,7 +734,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 index++
             }
 
-            batch.color = mainCol
+            batch.color = mainColObj
             makeShadow(pixmapHolder)
             pixmapTextureHolder = Texture(pixmapHolder)
             batch.draw(pixmapTextureHolder, x.toFloat(), (y - pixmapOffsetY).toFloat())
@@ -1391,8 +1394,9 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun makeShadow(pixmap: Pixmap?) {
         if (pixmap == null) return
 
+        pixmap.blending = Pixmap.Blending.None
 
-        // TODO
+        // TODO when semitransparency is needed (e.g. anti-aliased)
         // make three more pixmap (pixmap 2 3 4)
         // translate source image over new pixmap, shift the texture to be a shadow
         // draw (3, 4) -> 2, px by px s.t. only overwrites RGBA==0 pixels in 2
@@ -1403,16 +1407,47 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         // ---------------------------------------------------------------------------
         // this is under assumption that new pixmap is always all zero
         // it is possible the blending in the pixmap is bugged
+        //
+        // for now, no semitransparency (in colourcode && spritesheet)
+
+        val jobQueue = arrayOf(
+                1 to 0,
+                0 to 1,
+                1 to 1
+        )
+
+        jobQueue.forEach {
+            for (y in 0 until pixmap.height) {
+                for (x in 0 until pixmap.width) {
+                    val pixel = pixmap.getPixel(x, y) // RGBA8888
+
+
+                    // in the current version, all colour-coded glyphs are guaranteed
+                    // to be opaque
+                    if (pixel and 0xFF == 0xFF) {
+                        val newPixel = pixmap.getPixel(x + it.first, y + it.second)
+                        val newColour = pixel.and(0xFFFFFF00.toInt()) or 0x80
+
+                        if (newPixel and 0xFF == 0) {
+                            pixmap.drawPixel(x + it.first, y + it.second, newColour)
+                        }
+                    }
+                }
+            }
+        }
 
     }
 
 
-    private fun Pixmap.drawPixmap(pixmap: Pixmap, xPos: Int, yPos: Int, col: Color) {
+    /***
+     * @param col RGBA8888 representation
+     */
+    private fun Pixmap.drawPixmap(pixmap: Pixmap, xPos: Int, yPos: Int, col: Int) {
         for (y in 0 until pixmap.height) {
             for (x in 0 until pixmap.width) {
                 val pixel = pixmap.getPixel(x, y) // Pixmap uses RGBA8888, while Color uses ARGB. What the fuck?
 
-                val newPixel = pixel colorTimes col.toRGBA8888()
+                val newPixel = pixel colorTimes col
 
                 this.drawPixel(xPos + x, yPos + y, newPixel)
             }
@@ -1424,6 +1459,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     (this.g * 255f).toInt().shl(16) or
                     (this.b * 255f).toInt().shl(8) or
                     (this.a * 255f).toInt()
+
+    /**
+     * RGBA8888 representation
+     */
+    private fun Int.forceOpaque() = this.and(0xFFFFFF00.toInt()) or 0xFF
 
     private infix fun Int.colorTimes(other: Int): Int {
         val thisBytes = IntArray(4, { this.ushr(it * 8).and(255) })

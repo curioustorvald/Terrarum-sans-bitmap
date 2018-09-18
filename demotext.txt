@@ -76,7 +76,7 @@ How multilingual? Real multilingual!
 
     􏼀ᚱ􏼐ᛂ􏼠ᚴ􏼰ᛋ􏽀ᛂ􏽐ᛋ􏽠ᛏ􏽰ᛋ􏾀ᚮ􏾐ᚾ􏾠ᛔ􏾰ᚢ􏿀ᛏ􏿐ᛚ􏿠ᚮ􏿰ᛋ􏻰᛬􏷰ᚱ􏳰ᛂ􏯰ᚴ􏫰ᛋ􏧰ᛋ􏣰ᚢ􏟰ᚼ􏛰ᚾ􏗰ᚢ􏓰ᛘ􏏰ᚢ􏋰ᛚ􏇰ᚾ􏃰ᛏ􏃱ᚮ􏃲᛬􏃳ᛏ􏃴ᚮ􏃵ᛋ􏃶ᛁ􏃷ᚮ􏃸ᚵ􏃹ᛂ􏃺ᚢ􏃻ᛏ􏃼ᚮ􏃽ᚱ􏃾ᛘ􏃿ᛔ􏃯ᚱ􏃟ᛂ􏃏ᚴ􏂿ᛋ􏂯ᛏ􏂟᛭􏂏ᛋ􏁿ᚢ􏁯ᚼ􏁟ᚾ􏁏ᚢ􏀿ᛋ􏀯ᛘ􏀟ᚮ􏀏ᛁ􏄏ᚵ􏈏ᚾ􏌏ᛁ􏐏ᛂ􏔏ᛏ􏘏ᚮ􏜏ᛑ􏠏᛭􏤏ᚵ􏨏ᛂ􏬏ᚢ􏰏ᛏ􏴏ᚮ􏸏ᚱ􀀀
 
-􎳌Colour-code that supports 65535 opaque or semi-transparent colours via 4 bit ARGB􀀀
+􎳌Colour-code that supports 4096 colours via 4 bit RGB􀀀
 
     􏿿󿿁Щиглецът се яде само пържен в юфка без чушки и хвойна󿿀 (Bulgarian)􀀀
     􏿿󿿂Љубазни фењерџија чађавог лица хоће да ми покаже штос󿿀 (Serbian)􀀀
