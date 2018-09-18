@@ -284,7 +284,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
 
     // TODO (val posXbuffer: IntArray, val posYbuffer: IntArray) -> (val linotype: Pixmap)
-    private data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val posXbuffer: IntArray, val posYbuffer: IntArray)
+    private data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val linotype: Pixmap)
     private val textCache = HashMap<CharSequence, ShittyGlyphLayout>()
 
 
@@ -550,23 +550,23 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private val offsetUnihan = (H - H_UNIHAN) / 2
     private val offsetCustomSym = (H - SIZE_CUSTOM_SYM) / 2
 
-    private var firstRun = true
+    private var flagFirstRun = true
     private var textBuffer = CodepointSequence(256)
     //private var oldCharSequence = ""
-    private var posXbuffer = intArrayOf() // absolute posX of glyphs from print-origin
-    private var posYbuffer = intArrayOf() // absolute posY of glyphs from print-origin
+    //private var posXbuffer = intArrayOf() // absolute posX of glyphs from print-origin
+    //private var posYbuffer = intArrayOf() // absolute posY of glyphs from print-origin
+    private var linotype: Pixmap? = null
 
     private lateinit var originalColour: Color
 
     private var nullProp = GlyphProps(15, 0)
 
     private var pixmapTextureHolder: Texture? = null
-    private var pixmapHolder: Pixmap? = null
+    //private var pixmapHolder: Pixmap? = null
 
     private val pixmapOffsetY = 10
 
     override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float): GlyphLayout? {
-        val oldProjectionMatrix = batch.projectionMatrix
 
         fun Int.flipY() = this * if (flipY) 1 else -1
 
@@ -575,179 +575,160 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         val x = Math.round(x).toInt()//.toFloat()
         val y = Math.round(y).toInt()//.toFloat()
 
+        originalColour = batch.color.cpy()
+        val mainColObj = originalColour
+        var mainCol: Int = originalColour.toRGBA8888().forceOpaque()
+
 
         if (charSeq.isNotBlank()) {
 
-            if (!textCache.containsKey(charSeq) || firstRun) {
+            if (!textCache.containsKey(charSeq) || flagFirstRun) {
                 textBuffer = charSeq.toCodePoints()
 
-                //val texWidth = widths.sum()
+                val (posXbuffer, posYbuffer) = buildWidthAndPosBuffers()
 
-                //if (!firstRun) textTexture.dispose()
-                //textTexture = FrameBuffer(Pixmap.Format.RGBA8888, texWidth, H, true)
-
-
-                buildWidthAndPosBuffers()
-
-
-                //print("[TerrarumSansBitmap] widthTable for $textBuffer: ")
-                //posXbuffer.forEach { print("$it ") }; println()
-
-
-                textCache[charSeq] = ShittyGlyphLayout(
-                        textBuffer,
-                        posXbuffer,
-                        posYbuffer
-                )
-
-
-                firstRun = false
+                linotype = null // use new linotype
+                flagFirstRun = false
 
                 //println("text not in buffer: $charSeq")
+
+
+                //textBuffer.forEach { print("${it.toHex()} ") }
+                //println()
+
+
+                resetHash(charSeq, x.toFloat(), y.toFloat())
+
+                //pixmapTextureHolder?.dispose() /* you CAN'T do this however */
+
+                linotype = Pixmap(getWidth(textBuffer), H + (pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
+
+                // TEST: does the new instance of pixmap is all zero?
+                /*repeat(pixmapHolder?.pixels?.capacity() ?: 0) {
+                    if (pixmapHolder?.pixels?.get() != 0.toByte()) {
+                        throw InternalError("pixmap is not all zero, wtf?!")
+                    }
+                }
+                pixmapHolder?.pixels?.rewind()*/
+
+
+
+                var index = 0
+                while (index <= textBuffer.lastIndex) {
+                    val c = textBuffer[index]
+                    val sheetID = getSheetType(c)
+                    val (sheetX, sheetY) =
+                            if (index == 0) getSheetwisePosition(0, c)
+                            else getSheetwisePosition(textBuffer[index - 1], c)
+                    val hash = getHash(c) // to be used with Bad Transmission Modifier
+
+                    if (isColourCode(c)) {
+                        if (c == 0x100000) {
+                            mainCol = originalColour.toRGBA8888().forceOpaque()
+                        }
+                        else {
+                            mainCol = getColour(c)
+                        }
+                    }
+                    else if (isCharsetOverride(c)) {
+                        charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
+                    }
+                    else if (sheetID == SHEET_HANGUL) {
+                        // Flookahead for {I, P, F}
+
+                        val cNext = if (index + 1 < textBuffer.size) textBuffer[index + 1] else 0
+                        val cNextNext = if (index + 2 < textBuffer.size) textBuffer[index + 2] else 0
+
+                        val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
+                            3
+                        else if (isHangulJungseong(cNext))
+                            2
+                        else
+                            1
+
+                        val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
+
+                        val (indexCho, indexJung, indexJong) = indices
+                        val (choRow, jungRow, jongRow) = rows
+                        val hangulSheet = sheets[SHEET_HANGUL]
+
+
+
+                        val choTex = hangulSheet.get(indexCho, choRow)
+                        val jungTex = hangulSheet.get(indexJung, jungRow)
+                        val jongTex = hangulSheet.get(indexJong, jongRow)
+
+                        linotype?.setColor(mainCol)
+                        linotype?.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY, mainCol)
+                        linotype?.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY, mainCol)
+                        linotype?.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY, mainCol)
+
+                        //batch.color = mainCol
+                        //batch.draw(choTex, x + posXbuffer[index].toFloat(), y)
+                        //batch.draw(jungTex, x + posXbuffer[index].toFloat(), y)
+                        //batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index].toFloat(), y)
+
+
+                        index += hangulLength - 1
+
+                    }
+                    else {
+                        try {
+                            val posY = posYbuffer[index].flipY() +
+                                    if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                        offsetUnihan
+                                    else if (sheetID == SHEET_CUSTOM_SYM)
+                                        offsetCustomSym
+                                    else 0
+
+                            val posX = posXbuffer[index]
+                            val texture = sheets[sheetID].get(sheetX, sheetY)
+
+                            linotype?.drawPixmap(texture, posX, posY + pixmapOffsetY, mainCol)
+
+                            //batch.color = mainCol
+                            //batch.draw(texture, posX, posY)
+
+                        }
+                        catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
+                            //batch.color = mainCol
+                        }
+                    }
+
+
+                    index++
+                }
+
+
+                makeShadow(linotype)
+
+
+                // put things into cache
+                textCache[charSeq] = ShittyGlyphLayout(textBuffer, linotype!!)
             }
             else {
                 val bufferObj = textCache[charSeq]
 
                 textBuffer = bufferObj!!.textBuffer
-                posXbuffer = bufferObj!!.posXbuffer
-                posYbuffer = bufferObj!!.posYbuffer
+                linotype = bufferObj!!.linotype
             }
 
 
-            //textTexCamera.setToOrtho(false, textTexture.width.toFloat(), textTexture.height.toFloat())
-            //textTexCamera.update()
-            //batch.projectionMatrix = textTexCamera.combined
-
-
-            originalColour = batch.color.cpy()
-            val mainColObj = originalColour
-            var mainCol: Int = originalColour.toRGBA8888().forceOpaque()
-
-
-            //textTexture.begin()
-
-
-            //textBuffer.forEach { print("${it.toHex()} ") }
-            //println()
-
-
-            resetHash(charSeq, x.toFloat(), y.toFloat())
-
-            pixmapHolder?.dispose() /* you can do this one */
-            //pixmapTextureHolder?.dispose() /* you CAN'T do this however */
-
-            pixmapHolder = Pixmap(getWidth(textBuffer), H + (pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
-
-            // TEST: does the new instance of pixmap is all zero?
-            /*repeat(pixmapHolder?.pixels?.capacity() ?: 0) {
-                if (pixmapHolder?.pixels?.get() != 0.toByte()) {
-                    throw InternalError("pixmap is not all zero, wtf?!")
-                }
-            }
-            pixmapHolder?.pixels?.rewind()*/
-
-
-
-            var index = 0
-            while (index <= textBuffer.lastIndex) {
-                val c = textBuffer[index]
-                val sheetID = getSheetType(c)
-                val (sheetX, sheetY) =
-                        if (index == 0) getSheetwisePosition(0, c)
-                        else getSheetwisePosition(textBuffer[index - 1], c)
-                val hash = getHash(c) // to be used with Bad Transmission Modifier
-
-                if (isColourCode(c)) {
-                    if (c == 0x100000) {
-                        mainCol = originalColour.toRGBA8888().forceOpaque()
-                    }
-                    else {
-                        mainCol = getColour(c)
-                    }
-                }
-                else if (isCharsetOverride(c)) {
-                    charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
-                }
-                else if (sheetID == SHEET_HANGUL) {
-                    // Flookahead for {I, P, F}
-
-                    val cNext = if (index + 1 < textBuffer.size) textBuffer[index + 1] else 0
-                    val cNextNext = if (index + 2 < textBuffer.size) textBuffer[index + 2] else 0
-
-                    val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
-                        3
-                    else if (isHangulJungseong(cNext))
-                        2
-                    else
-                        1
-
-                    val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
-
-                    val (indexCho, indexJung, indexJong) = indices
-                    val (choRow, jungRow, jongRow) = rows
-                    val hangulSheet = sheets[SHEET_HANGUL]
-
-
-
-                    val choTex = hangulSheet.get(indexCho, choRow)
-                    val jungTex = hangulSheet.get(indexJung, jungRow)
-                    val jongTex = hangulSheet.get(indexJong, jongRow)
-
-                    pixmapHolder?.setColor(mainCol)
-                    pixmapHolder?.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY, mainCol)
-                    pixmapHolder?.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY, mainCol)
-                    pixmapHolder?.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY, mainCol)
-
-                    //batch.color = mainCol
-                    //batch.draw(choTex, x + posXbuffer[index].toFloat(), y)
-                    //batch.draw(jungTex, x + posXbuffer[index].toFloat(), y)
-                    //batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index].toFloat(), y)
-
-
-                    index += hangulLength - 1
-
-                }
-                else {
-                    try {
-                        val posY = posYbuffer[index].flipY() +
-                                if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                    offsetUnihan
-                                else if (sheetID == SHEET_CUSTOM_SYM)
-                                    offsetCustomSym
-                                else 0
-
-                        val posX = posXbuffer[index]
-                        val texture = sheets[sheetID].get(sheetX, sheetY)
-
-                        pixmapHolder?.drawPixmap(texture, posX, posY + pixmapOffsetY, mainCol)
-
-                        //batch.color = mainCol
-                        //batch.draw(texture, posX, posY)
-
-                    }
-                    catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
-                        //batch.color = mainCol
-                    }
-                }
-
-
-                index++
-            }
 
             batch.color = mainColObj
-            makeShadow(pixmapHolder)
-            pixmapTextureHolder = Texture(pixmapHolder)
-            batch.draw(pixmapTextureHolder, x.toFloat(), (y - pixmapOffsetY).toFloat())
+            pixmapTextureHolder = Texture(linotype)
 
-            /*textTexture.end()
-
-
-        batch.color = originalColour
-        batch.projectionMatrix = oldProjectionMatrix
-        val textTex = textTexture.colorBufferTexture
-
-        batch.draw(textTex, x, y, textTex.width.toFloat(), textTex.height.toFloat())
-        */
+            if (!flipY) {
+                batch.draw(pixmapTextureHolder, x.toFloat(), (y - pixmapOffsetY).toFloat())
+            }
+            else {
+                batch.draw(pixmapTextureHolder,
+                        x.toFloat(),
+                        (y - pixmapOffsetY + (pixmapTextureHolder?.height ?: 0)).toFloat(),
+                        (pixmapTextureHolder?.width?.toFloat()) ?: 0f,
+                        -(pixmapTextureHolder?.height?.toFloat() ?: 0f)
+                )
+            }
 
         }
 
@@ -1124,12 +1105,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     }
 
 
-    private fun buildWidthAndPosBuffers() {
+    private fun buildWidthAndPosBuffers(): Pair<IntArray, IntArray> {
         val str = textBuffer
         val widths = getWidthOfCharSeq(str)
 
-        posXbuffer = IntArray(str.size, { 0 })
-        posYbuffer = IntArray(str.size, { 0 })
+        val posXbuffer = IntArray(str.size, { 0 })
+        val posYbuffer = IntArray(str.size, { 0 })
 
 
         var nonDiacriticCounter = 0 // index of last instance of non-diacritic char
@@ -1253,6 +1234,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 }
             }
         }
+
+        return posXbuffer to posYbuffer
     }
 
 

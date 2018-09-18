@@ -9,9 +9,6 @@
     <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PUA_allocation_chart.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/PUA_allocation_chart.xlsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/demo.PNG" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demotext.txt" beforeDir="false" afterPath="$PROJECT_DIR$/demotext.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
@@ -32,8 +29,8 @@
           <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="402">
-                  <caret line="1433" column="21" selection-start-line="1433" selection-start-column="21" selection-end-line="1433" selection-end-column="21" />
+                <state relative-caret-position="293">
+                  <caret line="567" selection-start-line="567" selection-end-line="567" />
                   <folding>
                     <element signature="e#1207#1689#0" expanded="true" />
                   </folding>
@@ -84,11 +81,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="false">
+          <file leaf-file-name="GameFontBase.kt" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="597">
-                  <caret line="661" column="75" selection-start-line="661" selection-start-column="75" selection-end-line="661" selection-end-column="75" />
+                <state relative-caret-position="537">
+                  <caret line="727" column="36" lean-forward="true" selection-start-line="727" selection-start-column="36" selection-end-line="727" selection-end-column="36" />
                   <folding>
                     <element signature="e#1207#1689#0" expanded="true" />
                   </folding>
@@ -123,7 +120,7 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="demo.PNG" pinned="false" current-in-tab="true">
+          <file leaf-file-name="demo.PNG" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/demo.PNG">
               <provider selected="true" editor-type-id="images" />
             </entry>
@@ -178,10 +175,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>va-</find>
-      <find>'</find>
-      <find>FFFF</find>
-      <find>FFFF8</find>
       <find>pro</find>
       <find>system</find>
       <find>posXbuffer</find>
@@ -208,6 +201,10 @@
       <find>isColourCode</find>
       <find>makeSha</find>
       <find>toRGBA</find>
+      <find>posXbuff</find>
+      <find>buildWidthAndPos</find>
+      <find>flagMake</find>
+      <find>pixmapHolder?.dis</find>
     </findStrings>
     <replaceStrings>
       <replace>.141</replace>
@@ -520,6 +517,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1216" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info anchor="right" id="Palette" order="3" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -923,8 +921,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="402">
-          <caret line="1433" column="21" selection-start-line="1433" selection-start-column="21" selection-end-line="1433" selection-end-column="21" />
+        <state relative-caret-position="537">
+          <caret line="727" column="36" lean-forward="true" selection-start-line="727" selection-start-column="36" selection-end-line="727" selection-end-column="36" />
           <folding>
             <element signature="e#1207#1689#0" expanded="true" />
           </folding>
