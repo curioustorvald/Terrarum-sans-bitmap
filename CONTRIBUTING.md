@@ -42,15 +42,15 @@ Green-tinted area (should be 10 px tall) contains the tags. Tags are defined as 
 
 ```
 (LSB) 0 == Use Compiler Directive (Undefined right now, keep it as 0)
-      1 -+ 1 | Align to this X pos of prev char,
-      1  | 2 | only valid if write-on-top is 1
-      1  | 4 | and is centre-aligned and non-zero
-      1 -+ 8 | (if this is zero, floorOf(width/2) will be used instead)
-      0 -+ 0 Align  1 Align  0 Align   1 Align before
-      1 -+ 0 left   0 right  1 centre  1 the glyph
-      1 == write-on-top, usually it's diatritics but some are not (e.g. devanagari vowel sign O)
-      1 == 0 Stack  1 Stack  0 Before  1 Up &
-(MSB) 0 == 0 up     0 down   1 &After  1 Down (e.g. U+0C48)
+      1 -, 1 = Align to this X pos of prev char,
+      1  | 2 = only valid if write-on-top is 1
+      1  | 4 = and is centre-aligned and non-zero
+      1 -' 8 = (if this is zero, floorOf(width/2) will be used instead)
+      0 -, 0 Align  1 Align  0 Align   1 Align before
+      1 -' 0 left   0 right  1 centre  1 the glyph
+      1 == write-on-top, usually it's diatritics but not always (e.g. devanagari vowel sign O)
+      1 -, 0 Stack  1 Stack  0 Before  1 Up &
+(MSB) 0 -' 0 up     0 down   1 &After  1 Down (e.g. U+0C48)
 ```
 
 #### Stack Up/Down
@@ -60,7 +60,7 @@ character is lowercase.
 
 #### Align-To-This-X-Pos
 
-Since this tag does not make sense for diacritics, they will use the value for compeletely different perporse:
+Since this tag does not make sense for diacritics, they will use the value for compeletely different purpose:
 
     0 : Nothing special
     1 : Covers previous character; it's neither stack-up nor down.
@@ -76,7 +76,7 @@ To implement those, this two extra code points are needed, which are provided in
 
 For working examples, take a note at the bengali sprite sheet.
 
-This tag can be used as a general "replace this with these" directive, as long as you're replacing it into two letters. (e.g. U+0B94; TAMIL LETTER AU, which is a combination of U+0B92 and U+0BD7
+This tag can be used as a general "replace this with these" directive, as long as you're replacing it into two letters. This directive is exploited to construct dutch ligature "IJ" (U+0132 and U+0133), in the sheet LatinExtA.
 
 Also note that the font compiler will not "stack" these diacritics.
 
@@ -101,12 +101,16 @@ On this font, Hangul letters are printed by assemblying two or three letter piec
 
 This is a Kotlin-like pseudocode for assembling the glyph:
 
+    // NOTE: this code implements modern Hangul only, in the unicode range of 0xAC00..0xD7A3.
+    // the spritesheet is made to accomodate Johab encoding scheme, but can still be used with the following code.
+    // for the code for full Johab encoding (U+1100.. that includes Old Korean), please refer to the actual code in the repo.
+    
     function getHanChosung(hanIndex: Int) = hanIndex / (21 * 28)
     function getHanJungseong(hanIndex: Int) = hanIndex / 28 % 21
     function getHanJongseong(hanIndex: Int) = hanIndex % 28
 
-    jungseongWide = arrayOf(8, 12, 13, 17, 18, 21)
-    jungseongComplex = arrayOf(9, 10, 11, 14, 15, 16, 22)
+    jungseongWide = arrayOf(9,13,14,18,19)
+    jungseongComplex = arrayOf(10,11,12,15,16,17,20,23)
 
     function getHanInitialRow(hanIndex: Int): Int {
         val ret: Int
