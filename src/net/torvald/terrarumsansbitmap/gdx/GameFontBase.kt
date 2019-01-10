@@ -88,7 +88,7 @@ internal typealias Hash = Long
  *
  * Created by minjaesong on 2017-06-15.
  */
-class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false, val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, var errorOnUnknownChar: Boolean = false, val textCacheSize: Int = 128, val debug: Boolean = false) : BitmapFont() {
+class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false, val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, var errorOnUnknownChar: Boolean = false, val textCacheSize: Int = 64, val debug: Boolean = false) : BitmapFont() {
 
     // Hangul Implementation Specific //
 
@@ -476,33 +476,33 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             "latinExtC_variable.tga"
     )
     private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
-            0..0xFF,
-            (0x1100..0x11FF) + (0xA960..0xA97F) + (0xD7B0..0xD7FF), // Hangul Jamo, because Hangul Syllables are disassembled prior to the render
-            0x100..0x17F,
-            0x180..0x24F,
-            (0x3040..0x30FF) + (0x31F0..0x31FF) + (0x1B000..0x1B001),
-            0x3000..0x303F,
-            0x3400..0x9FFF,
-            0x400..0x52F,
-            0xFF00..0xFF1F,
-            0x2000..0x209F,
-            0x370..0x3CE,
-            0xE00..0xE5F,
-            0x530..0x58F,
-            0x10D0..0x10FF,
-            0x250..0x2FF,
-            0x16A0..0x16FF,
-            0x1E00..0x1EFF,
-            0xE000..0xE0FF,
-            0xF00000..0xF0005F, // assign them to PUA
-            0xF00060..0xF000BF, // assign them to PUA
-            0x13A0..0x13F5,
-            0xA770..0xA787, // if it work, don't fix it (yet--wait until Latin Extended C)
-            0x900..0x9FF,
-            0x1C90..0x1CBF,
-            0x300..0x36F,
-            0x1F00..0x1FFF,
-            0x2C60..0x2C7F
+            0..0xFF, // SHEET_ASCII_VARW
+            (0x1100..0x11FF) + (0xA960..0xA97F) + (0xD7B0..0xD7FF), // SHEET_HANGUL, because Hangul Syllables are disassembled prior to the render
+            0x100..0x17F, // SHEET_EXTA_VARW
+            0x180..0x24F, // SHEET_EXTB_VARW
+            (0x3040..0x30FF) + (0x31F0..0x31FF) + (0x1B000..0x1B001), // SHEET_KANA
+            0x3000..0x303F, // SHEET_CJK_PUNCT
+            0x3400..0x9FFF, // SHEET_UNIHAN
+            0x400..0x52F, // SHEET_CYRILIC_VARW
+            0xFF00..0xFF1F, // SHEET_FW_UNI
+            0x2000..0x209F, // SHEET_UNI_PUNCT_VARW
+            0x370..0x3CE, // SHEET_GREEK_VARW
+            0xE00..0xE5F, // SHEET_THAI_VARW
+            0x530..0x58F, // SHEET_HAYEREN_VARW
+            0x10D0..0x10FF, // SHEET_KARTULI_VARW
+            0x250..0x2FF, // SHEET_IPA_VARW
+            0x16A0..0x16FF, // SHEET_RUNIC
+            0x1E00..0x1EFF, // SHEET_LATIN_EXT_ADD_VARW
+            0xE000..0xE0FF, // SHEET_CUSTOM_SYM
+            0xF00000..0xF0005F, // SHEET_BULGARIAN_VARW; assign them to PUA
+            0xF00060..0xF000BF, // SHEET_SERBIAN_VARW; assign them to PUA
+            0x13A0..0x13F5, // SHEET_TSALAGI_VARW
+            0xA770..0xA787, // SHEET_INSULAR_VARW; if it work, don't fix it (yet--wait until Latin Extended C)
+            0x900..0x9FF, // SHEET_NAGARI_BENGALI_VARW
+            0x1C90..0x1CBF, // SHEET_KARTULI_CAPS_VARW
+            0x300..0x36F, // SHEET_DIACRITICAL_MARKS_VARW
+            0x1F00..0x1FFF, // SHEET_GREEK_POLY_VARW
+            0x2C60..0x2C7F // SHEET_EXTC_VARW
     )
     /** Props of all printable Unicode points. */
     private val glyphProps: HashMap<CodePoint, GlyphProps> = HashMap()
