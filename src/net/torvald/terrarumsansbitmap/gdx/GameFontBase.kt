@@ -33,10 +33,10 @@ import com.badlogic.gdx.utils.GdxRuntimeException
 import net.torvald.terrarumsansbitmap.GlyphProps
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
-import java.lang.NullPointerException
 import java.security.MessageDigest
 import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
+import kotlin.NullPointerException
 import kotlin.math.roundToInt
 
 typealias CodepointSequence = ArrayList<CodePoint>
@@ -288,7 +288,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
 
     // TODO (val posXbuffer: IntArray, val posYbuffer: IntArray) -> (val linotype: Pixmap)
-    private data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val linotype: Pixmap)
+    private data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val linotype: Pixmap, val width: Int)
 
     //private val textCache = HashMap<CharSequence, ShittyGlyphLayout>()
 
@@ -300,7 +300,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     /**
      * Insertion sorts the last element fo the textCache
      */
-    private fun addToCache(text: CodepointSequence, linotype: Pixmap) {
+    private fun addToCache(text: CodepointSequence, linotype: Pixmap, width: Int) {
         // make room first
         if (textCacheCap == textCacheSize - 1) {
             var c = 0
@@ -323,7 +323,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
 
         // put new element at the end
-        textCache[textCacheCap] = TextCacheObj(textCacheCap, text.getHash(), ShittyGlyphLayout(text, linotype))
+        textCache[textCacheCap] = TextCacheObj(textCacheCap, text.getHash(), ShittyGlyphLayout(text, linotype, width))
 
 
 
@@ -698,7 +698,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             if (!cacheContains(charSeqHash) || flagFirstRun) {
                 textBuffer = charSeq.toCodePoints()
 
-                val (posXbuffer, posYbuffer) = buildWidthAndPosBuffers()
+                val (posXbuffer, posYbuffer) = buildWidthAndPosBuffers(textBuffer)
 
                 linotype = null // use new linotype
                 flagFirstRun = false
@@ -714,7 +714,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                 //pixmapTextureHolder?.dispose() /* you CAN'T do this however */
 
-                linotype = Pixmap(getWidth(textBuffer), H + (pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
+                linotype = Pixmap(posXbuffer.last(), H + (pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
 
                 // TEST: does the new instance of pixmap is all zero?
                 /*repeat(pixmapHolder?.pixels?.capacity() ?: 0) {
@@ -818,7 +818,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                 // put things into cache
                 //textCache[charSeq] = ShittyGlyphLayout(textBuffer, linotype!!)
-                addToCache(textBuffer, linotype!!)
+                addToCache(textBuffer, linotype!!, posXbuffer.last())
             }
             else {
                 val bufferObj = getCache(charSeqHash)
@@ -1161,69 +1161,21 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     fun getWidth(text: String) = getWidth(text.toCodePoints())
 
     fun getWidth(s: CodepointSequence): Int {
-        var len = 0
-
-        var i = 0
-        while (i <= s.lastIndex) {
-            val chr = s[i]
-            val ctype = getSheetType(s[i])
-
-            var len2 = 0
-            if (variableWidthSheets.contains(ctype)) {
-                if (!glyphProps.containsKey(chr)) {
-                    System.err.println("[TerrarumSansBitmap] no width data for glyph number ${Integer.toHexString(chr.toInt()).toUpperCase()}")
-                    len2 = W_LATIN_WIDE
-                }
-
-                val prop = glyphProps[chr] ?: nullProp
-
-                if (!prop.writeOnTop)
-                    len2 = prop.width
-            }
-            else if (isColourCode(chr) || isCharsetOverride(chr))
-                len2 = 0
-            else if (ctype == SHEET_CJK_PUNCT)
-                len2 = W_ASIAN_PUNCT
-            else if (ctype == SHEET_HANGUL) {
-                // hangul IPF canonical and special cases
-                val cNext = if (i + 1 < s.size) s[i + 1] else 0
-                val cNextNext = if (i + 2 < s.size) s[i + 2] else 0
-                val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
-                    3
-                else if (isHangulJungseong(cNext))
-                    2
-                else
-                    1
-
-                len2 = W_HANGUL
-                i += hangulLength - 1
-            }
-            else if (ctype == SHEET_KANA)
-                len2 = W_KANA
-            else if (unihanWidthSheets.contains(ctype))
-                len2 = W_UNIHAN
-            else if (ctype == SHEET_CUSTOM_SYM)
-                len2 = SIZE_CUSTOM_SYM
-            else
-                len2 = W_LATIN_WIDE
-
-
-            len += len2 * scale
-
-            if (i < s.lastIndex) len += interchar
-
-
-            i++
+        try {
+            val cacheObj = getCache(s.getHash())
+            return cacheObj.glyphLayout!!.width
         }
-        return len
+        catch (e: NullPointerException) {
+            return buildWidthAndPosBuffers(s).first.last()
+        }
     }
 
 
-    private fun buildWidthAndPosBuffers(): Pair<IntArray, IntArray> {
-        val str = textBuffer
-        val widths = getWidthOfCharSeq(str)
-
-        val posXbuffer = IntArray(str.size, { 0 })
+    /**
+     * posXbuffer's size is greater than the string, last element marks the width of entire string.
+     */
+    private fun buildWidthAndPosBuffers(str: CodepointSequence): Pair<IntArray, IntArray> {
+        val posXbuffer = IntArray(str.size + 1, { 0 })
         val posYbuffer = IntArray(str.size, { 0 })
 
 
@@ -1233,7 +1185,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
         val HALF_VAR_INIT = W_VAR_INIT.minus(1).div(2)
 
-        for (charIndex in 0 until posXbuffer.size) {
+        for (charIndex in 0 until posXbuffer.size - 1) {
             if (charIndex > 0) {
                 // nonDiacriticCounter allows multiple diacritics
 
@@ -1347,6 +1299,30 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     }
                 }
             }
+        }
+
+        // fill the last of the posXbuffer
+        if (str.isNotEmpty()) {
+            val lastCharProp = glyphProps[str.last()]
+            val penultCharProp = glyphProps[nonDiacriticCounter]!!
+            posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
+                    if (lastCharProp?.writeOnTop == true) {
+                        val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
+                            (lastCharProp.width).div(2) + penultCharProp.alignXPos
+                        }
+                        else if (lastCharProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
+                            (lastCharProp.width) + penultCharProp.alignXPos
+                        }
+                        else 0
+
+                        maxOf(penultCharProp.width, realDiacriticWidth)
+                    }
+                    else {
+                        (lastCharProp?.width ?: 0)
+                    }
+        }
+        else {
+            posXbuffer[0] = 0
         }
 
         return posXbuffer to posYbuffer
