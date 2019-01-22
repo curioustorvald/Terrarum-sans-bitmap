@@ -36,8 +36,13 @@ import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
+import kotlin.NullPointerException
+import kotlin.math.roundToInt
 
-typealias CodepointSequence = ArrayList<Int>
+typealias CodepointSequence = ArrayList<CodePoint>
+internal typealias CodePoint = Int
+internal typealias ARGB8888 = Int
+internal typealias Hash = Long
 
 /**
  * LibGDX port of Terrarum Sans Bitmap implementation
@@ -83,7 +88,7 @@ typealias CodepointSequence = ArrayList<Int>
  *
  * Created by minjaesong on 2017-06-15.
  */
-class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false, val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, var errorOnUnknownChar: Boolean = false) : BitmapFont() {
+class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false, val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, var errorOnUnknownChar: Boolean = false, val textCacheSize: Int = 64, val debug: Boolean = false) : BitmapFont() {
 
     // Hangul Implementation Specific //
 
@@ -121,19 +126,19 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             9
     }
 
-    private fun isHangulChosung(c: Int) = c in (0x1100..0x115F) || c in (0xA960..0xA97F)
-    private fun isHangulJungseong(c: Int) = c in (0x1160..0x11A7) || c in (0xD7B0..0xD7C6)
-    private fun isHangulJongseong(c: Int) = c in (0x11A8..0x11FF) || c in (0xD7CB..0xD7FB)
+    private fun isHangulChosung(c: CodePoint) = c in (0x1100..0x115F) || c in (0xA960..0xA97F)
+    private fun isHangulJungseong(c: CodePoint) = c in (0x1160..0x11A7) || c in (0xD7B0..0xD7C6)
+    private fun isHangulJongseong(c: CodePoint) = c in (0x11A8..0x11FF) || c in (0xD7CB..0xD7FB)
 
-    private fun toHangulChosungIndex(c: Int) =
+    private fun toHangulChosungIndex(c: CodePoint) =
             if (!isHangulChosung(c)) throw IllegalArgumentException("This Hangul sequence does not begin with Chosung (${c.toHex()})")
             else if (c in 0x1100..0x115F) c - 0x1100
             else c - 0xA960 + 96
-    private fun toHangulJungseongIndex(c: Int) =
+    private fun toHangulJungseongIndex(c: CodePoint) =
             if (!isHangulJungseong(c)) 0
             else if (c in 0x1160..0x11A7) c - 0x1160
             else c - 0xD7B0 + 72
-    private fun toHangulJongseongIndex(c: Int) =
+    private fun toHangulJongseongIndex(c: CodePoint) =
             if (!isHangulJongseong(c)) 0
             else if (c in 0x11A8..0x11FF) c - 0x11A8 + 1
             else c - 0xD7CB + 88 + 1
@@ -145,7 +150,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
      * @param pCP Code point for Peak (Jungseong)
      * @param fCP Code point for Final (Jongseong
      */
-    private fun toHangulIndex(iCP: Int, pCP: Int, fCP: Int): IntArray {
+    private fun toHangulIndex(iCP: CodePoint, pCP: CodePoint, fCP: CodePoint): IntArray {
         val indexI = toHangulChosungIndex(iCP)
         val indexP = toHangulJungseongIndex(pCP)
         val indexF = toHangulJongseongIndex(fCP)
@@ -153,7 +158,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         return intArrayOf(indexI, indexP, indexF)
     }
 
-    private fun toHangulIndexAndRow(iCP: Int, pCP: Int, fCP: Int): Pair<IntArray, IntArray> {
+    private fun toHangulIndexAndRow(iCP: CodePoint, pCP: CodePoint, fCP: CodePoint): Pair<IntArray, IntArray> {
         val (indexI, indexP, indexF) = toHangulIndex(iCP, pCP, fCP)
 
         val rowI = getHanInitialRow(indexI, indexP, indexF)
@@ -166,114 +171,114 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
     // END Hangul //
 
-    private fun isHangul(c: Int) = c in codeRange[SHEET_HANGUL]
-    private fun isAscii(c: Int) = c in codeRange[SHEET_ASCII_VARW]
-    private fun isRunic(c: Int) = c in codeRange[SHEET_RUNIC]
-    private fun isExtA(c: Int) = c in codeRange[SHEET_EXTA_VARW]
-    private fun isExtB(c: Int) = c in codeRange[SHEET_EXTB_VARW]
-    private fun isKana(c: Int) = c in codeRange[SHEET_KANA]
-    private fun isCJKPunct(c: Int) = c in codeRange[SHEET_CJK_PUNCT]
-    private fun isUniHan(c: Int) = c in codeRange[SHEET_UNIHAN]
-    private fun isCyrilic(c: Int) = c in codeRange[SHEET_CYRILIC_VARW]
-    private fun isFullwidthUni(c: Int) = c in codeRange[SHEET_FW_UNI]
-    private fun isUniPunct(c: Int) = c in codeRange[SHEET_UNI_PUNCT_VARW]
-    private fun isGreek(c: Int) = c in codeRange[SHEET_GREEK_VARW]
-    private fun isThai(c: Int) = c in codeRange[SHEET_THAI_VARW]
-    /*private fun isDiacritics(c: Int) = c in 0xE34..0xE3A
+    private fun isHangul(c: CodePoint) = c in codeRange[SHEET_HANGUL]
+    private fun isAscii(c: CodePoint) = c in codeRange[SHEET_ASCII_VARW]
+    private fun isRunic(c: CodePoint) = c in codeRange[SHEET_RUNIC]
+    private fun isExtA(c: CodePoint) = c in codeRange[SHEET_EXTA_VARW]
+    private fun isExtB(c: CodePoint) = c in codeRange[SHEET_EXTB_VARW]
+    private fun isKana(c: CodePoint) = c in codeRange[SHEET_KANA]
+    private fun isCJKPunct(c: CodePoint) = c in codeRange[SHEET_CJK_PUNCT]
+    private fun isUniHan(c: CodePoint) = c in codeRange[SHEET_UNIHAN]
+    private fun isCyrilic(c: CodePoint) = c in codeRange[SHEET_CYRILIC_VARW]
+    private fun isFullwidthUni(c: CodePoint) = c in codeRange[SHEET_FW_UNI]
+    private fun isUniPunct(c: CodePoint) = c in codeRange[SHEET_UNI_PUNCT_VARW]
+    private fun isGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_VARW]
+    private fun isThai(c: CodePoint) = c in codeRange[SHEET_THAI_VARW]
+    /*private fun isDiacritics(c: CodePoint) = c in 0xE34..0xE3A
             || c in 0xE47..0xE4E
             || c == 0xE31*/
-    private fun isCustomSym(c: Int) = c in codeRange[SHEET_CUSTOM_SYM]
-    private fun isArmenian(c: Int) = c in codeRange[SHEET_HAYEREN_VARW]
-    private fun isKartvelian(c: Int) = c in codeRange[SHEET_KARTULI_VARW]
-    private fun isIPA(c: Int) = c in codeRange[SHEET_IPA_VARW]
-    private fun isLatinExtAdd(c: Int) = c in 0x1E00..0x1EFF
-    private fun isBulgarian(c: Int) = c in 0x400..0x45F
-    private fun isColourCode(c: Int) = c in 0x100000..0x10FFFF
-    private fun isCharsetOverride(c: Int) = c in 0xFFFC0..0xFFFFF
-    private fun isCherokee(c: Int) = c in codeRange[SHEET_TSALAGI_VARW]
-    private fun isInsular(c: Int) = c == 0x1D79 || c in 0xA779..0xA787
-    private fun isNagariBengali(c: Int) = c in codeRange[SHEET_NAGARI_BENGALI_VARW]
-    private fun isKartvelianCaps(c: Int) = c in codeRange[SHEET_KARTULI_CAPS_VARW]
-    private fun isDiacriticalMarks(c: Int) = c in codeRange[SHEET_DIACRITICAL_MARKS_VARW]
-    private fun isPolytonicGreek(c: Int) = c in codeRange[SHEET_GREEK_POLY_VARW]
-    private fun isExtC(c: Int) = c in codeRange[SHEET_EXTC_VARW]
+    private fun isCustomSym(c: CodePoint) = c in codeRange[SHEET_CUSTOM_SYM]
+    private fun isArmenian(c: CodePoint) = c in codeRange[SHEET_HAYEREN_VARW]
+    private fun isKartvelian(c: CodePoint) = c in codeRange[SHEET_KARTULI_VARW]
+    private fun isIPA(c: CodePoint) = c in codeRange[SHEET_IPA_VARW]
+    private fun isLatinExtAdd(c: CodePoint) = c in 0x1E00..0x1EFF
+    private fun isBulgarian(c: CodePoint) = c in 0x400..0x45F
+    private fun isColourCode(c: CodePoint) = c == 0x100000 || c in 0x10F000..0x10FFFF
+    private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFFF
+    private fun isCherokee(c: CodePoint) = c in codeRange[SHEET_TSALAGI_VARW]
+    private fun isInsular(c: CodePoint) = c == 0x1D79 || c in 0xA779..0xA787
+    private fun isNagariBengali(c: CodePoint) = c in codeRange[SHEET_NAGARI_BENGALI_VARW]
+    private fun isKartvelianCaps(c: CodePoint) = c in codeRange[SHEET_KARTULI_CAPS_VARW]
+    private fun isDiacriticalMarks(c: CodePoint) = c in codeRange[SHEET_DIACRITICAL_MARKS_VARW]
+    private fun isPolytonicGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_POLY_VARW]
+    private fun isExtC(c: CodePoint) = c in codeRange[SHEET_EXTC_VARW]
 
-    private fun isCaps(c: Int) = Character.isUpperCase(c) || isKartvelianCaps(c)
+    private fun isCaps(c: CodePoint) = Character.isUpperCase(c) || isKartvelianCaps(c)
 
 
-    private fun extAindexX(c: Int) = (c - 0x100) % 16
-    private fun extAindexY(c: Int) = (c - 0x100) / 16
+    private fun extAindexX(c: CodePoint) = (c - 0x100) % 16
+    private fun extAindexY(c: CodePoint) = (c - 0x100) / 16
 
-    private fun extBindexX(c: Int) = (c - 0x180) % 16
-    private fun extBindexY(c: Int) = (c - 0x180) / 16
+    private fun extBindexX(c: CodePoint) = (c - 0x180) % 16
+    private fun extBindexY(c: CodePoint) = (c - 0x180) / 16
 
-    private fun runicIndexX(c: Int) = (c - 0x16A0) % 16
-    private fun runicIndexY(c: Int) = (c - 0x16A0) / 16
+    private fun runicIndexX(c: CodePoint) = (c - 0x16A0) % 16
+    private fun runicIndexY(c: CodePoint) = (c - 0x16A0) / 16
 
-    private fun kanaIndexX(c: Int) = (c - 0x3040) % 16
-    private fun kanaIndexY(c: Int) =
+    private fun kanaIndexX(c: CodePoint) = (c - 0x3040) % 16
+    private fun kanaIndexY(c: CodePoint) =
             if (c in 0x31F0..0x31FF) 12
             else if (c in 0x1B000..0x1B00F) 13
             else (c - 0x3040) / 16
 
-    private fun cjkPunctIndexX(c: Int) = (c - 0x3000) % 16
-    private fun cjkPunctIndexY(c: Int) = (c - 0x3000) / 16
+    private fun cjkPunctIndexX(c: CodePoint) = (c - 0x3000) % 16
+    private fun cjkPunctIndexY(c: CodePoint) = (c - 0x3000) / 16
 
-    private fun cyrilicIndexX(c: Int) = (c - 0x400) % 16
-    private fun cyrilicIndexY(c: Int) = (c - 0x400) / 16
+    private fun cyrilicIndexX(c: CodePoint) = (c - 0x400) % 16
+    private fun cyrilicIndexY(c: CodePoint) = (c - 0x400) / 16
 
-    private fun fullwidthUniIndexX(c: Int) = (c - 0xFF00) % 16
-    private fun fullwidthUniIndexY(c: Int) = (c - 0xFF00) / 16
+    private fun fullwidthUniIndexX(c: CodePoint) = (c - 0xFF00) % 16
+    private fun fullwidthUniIndexY(c: CodePoint) = (c - 0xFF00) / 16
 
-    private fun uniPunctIndexX(c: Int) = (c - 0x2000) % 16
-    private fun uniPunctIndexY(c: Int) = (c - 0x2000) / 16
+    private fun uniPunctIndexX(c: CodePoint) = (c - 0x2000) % 16
+    private fun uniPunctIndexY(c: CodePoint) = (c - 0x2000) / 16
 
-    private fun unihanIndexX(c: Int) = (c - 0x3400) % 256
-    private fun unihanIndexY(c: Int) = (c - 0x3400) / 256
+    private fun unihanIndexX(c: CodePoint) = (c - 0x3400) % 256
+    private fun unihanIndexY(c: CodePoint) = (c - 0x3400) / 256
 
-    private fun greekIndexX(c: Int) = (c - 0x370) % 16
-    private fun greekIndexY(c: Int) = (c - 0x370) / 16
+    private fun greekIndexX(c: CodePoint) = (c - 0x370) % 16
+    private fun greekIndexY(c: CodePoint) = (c - 0x370) / 16
 
-    private fun thaiIndexX(c: Int) = (c - 0xE00) % 16
-    private fun thaiIndexY(c: Int) = (c - 0xE00) / 16
+    private fun thaiIndexX(c: CodePoint) = (c - 0xE00) % 16
+    private fun thaiIndexY(c: CodePoint) = (c - 0xE00) / 16
 
-    private fun symbolIndexX(c: Int) = (c - 0xE000) % 16
-    private fun symbolIndexY(c: Int) = (c - 0xE000) / 16
+    private fun symbolIndexX(c: CodePoint) = (c - 0xE000) % 16
+    private fun symbolIndexY(c: CodePoint) = (c - 0xE000) / 16
 
-    private fun armenianIndexX(c: Int) = (c - 0x530) % 16
-    private fun armenianIndexY(c: Int) = (c - 0x530) / 16
+    private fun armenianIndexX(c: CodePoint) = (c - 0x530) % 16
+    private fun armenianIndexY(c: CodePoint) = (c - 0x530) / 16
 
-    private fun kartvelianIndexX(c: Int) = (c - 0x10D0) % 16
-    private fun kartvelianIndexY(c: Int) = (c - 0x10D0) / 16
+    private fun kartvelianIndexX(c: CodePoint) = (c - 0x10D0) % 16
+    private fun kartvelianIndexY(c: CodePoint) = (c - 0x10D0) / 16
 
-    private fun ipaIndexX(c: Int) = (c - 0x250) % 16
-    private fun ipaIndexY(c: Int) = (c - 0x250) / 16
+    private fun ipaIndexX(c: CodePoint) = (c - 0x250) % 16
+    private fun ipaIndexY(c: CodePoint) = (c - 0x250) / 16
 
-    private fun latinExtAddX(c: Int) = (c - 0x1E00) % 16
-    private fun latinExtAddY(c: Int) = (c - 0x1E00) / 16
+    private fun latinExtAddX(c: CodePoint) = (c - 0x1E00) % 16
+    private fun latinExtAddY(c: CodePoint) = (c - 0x1E00) / 16
 
-    private fun cherokeeIndexX(c: Int) = (c - 0x13A0) % 16
-    private fun cherokeeIndexY(c: Int) = (c - 0x13A0) / 16
+    private fun cherokeeIndexX(c: CodePoint) = (c - 0x13A0) % 16
+    private fun cherokeeIndexY(c: CodePoint) = (c - 0x13A0) / 16
 
-    private fun insularIndexX(c: Int) =
+    private fun insularIndexX(c: CodePoint) =
             if (c == 0x1D79) 0 else (c - 0xA770) % 16
-    private fun insularIndexY(c: Int) =
+    private fun insularIndexY(c: CodePoint) =
             if (c == 0x1D79) 0 else (c - 0xA770) / 16
 
-    private fun nagariIndexX(c: Int) = (c - 0x900) % 16
-    private fun nagariIndexY(c: Int) = (c - 0x900) / 16
+    private fun nagariIndexX(c: CodePoint) = (c - 0x900) % 16
+    private fun nagariIndexY(c: CodePoint) = (c - 0x900) / 16
 
-    private fun kartvelianCapsIndexX(c: Int) = (c - 0x1C90) % 16
-    private fun kartvelianCapsIndexY(c: Int) = (c - 0x1C90) / 16
+    private fun kartvelianCapsIndexX(c: CodePoint) = (c - 0x1C90) % 16
+    private fun kartvelianCapsIndexY(c: CodePoint) = (c - 0x1C90) / 16
 
-    private fun diacriticalMarksIndexX(c: Int) = (c - 0x300) % 16
-    private fun diacriticalMarksIndexY(c: Int) = (c - 0x300) / 16
+    private fun diacriticalMarksIndexX(c: CodePoint) = (c - 0x300) % 16
+    private fun diacriticalMarksIndexY(c: CodePoint) = (c - 0x300) / 16
 
-    private fun polytonicGreekIndexX(c: Int) = (c - 0x1F00) % 16
-    private fun polytonicGreekIndexY(c: Int) = (c - 0x1F00) / 16
+    private fun polytonicGreekIndexX(c: CodePoint) = (c - 0x1F00) % 16
+    private fun polytonicGreekIndexY(c: CodePoint) = (c - 0x1F00) / 16
 
-    private fun extCIndexX(c: Int) = (c - 0x2C60) % 16
-    private fun extCIndexY(c: Int) = (c - 0x2C60) / 16
+    private fun extCIndexX(c: CodePoint) = (c - 0x2C60) % 16
+    private fun extCIndexY(c: CodePoint) = (c - 0x2C60) / 16
 
     private val lowHeightLetters = "acegijmnopqrsuvwxyzɱɳʙɾɽʒʂʐʋɹɻɥɟɡɢʛȵɲŋɴʀɕʑçʝxɣχʁʜʍɰʟɨʉɯuʊøɘɵɤəɛœɜɞʌɔæɐɶɑɒɚɝɩɪʅʈʏʞⱥⱦⱱⱳⱴⱶⱷⱸⱺⱻ".toSortedSet()
     /**
@@ -282,27 +287,133 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun Int.isLowHeight() = this.and(0xFFFF).toChar() in lowHeightLetters
 
 
-    private data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val posXbuffer: IntArray, val posYbuffer: IntArray)
-    private val textCache = HashMap<CharSequence, ShittyGlyphLayout>()
+    // TODO (val posXbuffer: IntArray, val posYbuffer: IntArray) -> (val linotype: Pixmap)
+    private data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val linotype: Pixmap, val width: Int)
+
+    //private val textCache = HashMap<CharSequence, ShittyGlyphLayout>()
+
+    private data class TextCacheObj(var age: Int, val hash: Long, val glyphLayout: ShittyGlyphLayout?)
+    private var textCacheCap = 0
+
+    private val textCache = Array(textCacheSize) { TextCacheObj(-1, -1L, null) }
+
+    /**
+     * Insertion sorts the last element fo the textCache
+     */
+    private fun addToCache(text: CodepointSequence, linotype: Pixmap, width: Int) {
+        // make room first
+        if (textCacheCap == textCacheSize - 1) {
+            var c = 0
+            var mark = -1
+            while (c < textCacheSize - 1) {
+                if (textCache[c].age == 0 && mark == -1) // if unmarked and age == 0, mark it
+                    mark = c
+
+                if (mark >= 0) { // if marked then ...
+                    // shift left everyting by 1
+                    textCache[c] = textCache[c + 1]
+                }
+
+                c += 1
+            }
+        }
+
+        // count down all the elements' age by 1
+        textCache.forEach { it.age -= 1 }
 
 
-    private fun getColour(codePoint: Int): Color { // input: 0x10ARGB, out: RGBA8888
+        // put new element at the end
+        textCache[textCacheCap] = TextCacheObj(textCacheCap, text.getHash(), ShittyGlyphLayout(text, linotype, width))
+
+
+
+        // insertion sort last elem (sorted by hash)
+        if (textCacheCap >= 1) { // when there's two or more elem...
+            var j = textCacheCap - 1
+            val x = textCache[textCacheCap]
+            while (j >= 0 && textCache[j].hash > x.hash) {
+                textCache[j + 1] = textCache[j]
+                j -= 1
+            }
+            textCache[j + 1] = x
+        }
+
+
+        if (textCacheCap < textCacheSize - 1) {
+            textCacheCap++
+        }
+    }
+
+    private fun getCache(hash: Long): TextCacheObj {
+        var low = 0
+        var high = textCacheCap
+        var key = -1
+
+
+        while (low <= high) {
+            val mid = (low + high).ushr(1) // safe from overflows
+
+            val midVal = textCache[mid]
+
+            if (hash > midVal.hash)
+                low = mid + 1
+            else if (hash < midVal.hash)
+                high = mid - 1
+            else {
+                key = mid
+                break // the condition is not enough to break the loop
+            }
+        }
+
+        if (key < 0)
+            throw NullPointerException("No element found")
+
+        return textCache[key]
+    }
+
+    private fun cacheContains(hash: Long): Boolean {
+        var low = 0
+        var high = textCacheCap
+        var key = -1
+
+
+        while (low <= high) {
+            val mid = (low + high).ushr(1) // safe from overflows
+
+            val midVal = textCache[mid]
+
+            if (hash > midVal.hash)
+                low = mid + 1
+            else if (hash < midVal.hash)
+                high = mid - 1
+            else {
+                key = mid
+                break // the condition is not enough to break the loop
+            }
+        }
+
+        return (key >= 0)
+    }
+
+    private fun getColour(codePoint: Int): Int { // input: 0x10F_RGB, out: RGBA8888
         if (colourBuffer.containsKey(codePoint))
             return colourBuffer[codePoint]!!
 
-        val a = codePoint.and(0xF000).ushr(12)
         val r = codePoint.and(0x0F00).ushr(8)
         val g = codePoint.and(0x00F0).ushr(4)
         val b = codePoint.and(0x000F)
 
-        val col = Color(r.shl(28) or r.shl(24) or g.shl(20) or g.shl(16) or b.shl(12) or b.shl(8) or a.shl(4) or a)
+        val col = r.shl(28) or r.shl(24) or
+                  g.shl(20) or g.shl(16) or
+                  b.shl(12) or b.shl(8) or
+                  0xFF
 
 
         colourBuffer[codePoint] = col
         return col
     }
 
-    private val colourBuffer = HashMap<Int, Color>()
+    private val colourBuffer = HashMap<CodePoint, ARGB8888>()
 
     private val unihanWidthSheets = arrayOf(
             SHEET_UNIHAN,
@@ -365,41 +476,42 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             "latinExtC_variable.tga"
     )
     private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
-            0..0xFF,
-            (0x1100..0x11FF) + (0xA960..0xA97F) + (0xD7B0..0xD7FF), // Hangul Jamo, because Hangul Syllables are disassembled prior to the render
-            0x100..0x17F,
-            0x180..0x24F,
-            (0x3040..0x30FF) + (0x31F0..0x31FF) + (0x1B000..0x1B001),
-            0x3000..0x303F,
-            0x3400..0x9FFF,
-            0x400..0x52F,
-            0xFF00..0xFF1F,
-            0x2000..0x209F,
-            0x370..0x3CE,
-            0xE00..0xE5F,
-            0x530..0x58F,
-            0x10D0..0x10FF,
-            0x250..0x2FF,
-            0x16A0..0x16FF,
-            0x1E00..0x1EFF,
-            0xE000..0xE0FF,
-            0xF00000..0xF0005F, // assign them to PUA
-            0xF00060..0xF000BF, // assign them to PUA
-            0x13A0..0x13F5,
-            0xA770..0xA787, // if it work, don't fix it (yet--wait until Latin Extended C)
-            0x900..0x9FF,
-            0x1C90..0x1CBF,
-            0x300..0x36F,
-            0x1F00..0x1FFF,
-            0x2C60..0x2C7F
+            0..0xFF, // SHEET_ASCII_VARW
+            (0x1100..0x11FF) + (0xA960..0xA97F) + (0xD7B0..0xD7FF), // SHEET_HANGUL, because Hangul Syllables are disassembled prior to the render
+            0x100..0x17F, // SHEET_EXTA_VARW
+            0x180..0x24F, // SHEET_EXTB_VARW
+            (0x3040..0x30FF) + (0x31F0..0x31FF) + (0x1B000..0x1B001), // SHEET_KANA
+            0x3000..0x303F, // SHEET_CJK_PUNCT
+            0x3400..0x9FFF, // SHEET_UNIHAN
+            0x400..0x52F, // SHEET_CYRILIC_VARW
+            0xFF00..0xFF1F, // SHEET_FW_UNI
+            0x2000..0x209F, // SHEET_UNI_PUNCT_VARW
+            0x370..0x3CE, // SHEET_GREEK_VARW
+            0xE00..0xE5F, // SHEET_THAI_VARW
+            0x530..0x58F, // SHEET_HAYEREN_VARW
+            0x10D0..0x10FF, // SHEET_KARTULI_VARW
+            0x250..0x2FF, // SHEET_IPA_VARW
+            0x16A0..0x16FF, // SHEET_RUNIC
+            0x1E00..0x1EFF, // SHEET_LATIN_EXT_ADD_VARW
+            0xE000..0xE0FF, // SHEET_CUSTOM_SYM
+            0xF00000..0xF0005F, // SHEET_BULGARIAN_VARW; assign them to PUA
+            0xF00060..0xF000BF, // SHEET_SERBIAN_VARW; assign them to PUA
+            0x13A0..0x13F5, // SHEET_TSALAGI_VARW
+            0xA770..0xA787, // SHEET_INSULAR_VARW; if it work, don't fix it (yet--wait until Latin Extended C)
+            0x900..0x9FF, // SHEET_NAGARI_BENGALI_VARW
+            0x1C90..0x1CBF, // SHEET_KARTULI_CAPS_VARW
+            0x300..0x36F, // SHEET_DIACRITICAL_MARKS_VARW
+            0x1F00..0x1FFF, // SHEET_GREEK_POLY_VARW
+            0x2C60..0x2C7F // SHEET_EXTC_VARW
     )
-    private val glyphProps: HashMap<Int, GlyphProps> = HashMap()
-    private val sheets: Array<TextureRegionPack>
+    /** Props of all printable Unicode points. */
+    private val glyphProps: HashMap<CodePoint, GlyphProps> = HashMap()
+    private val sheets: Array<PixmapRegionPack>
 
     private var charsetOverride = 0
 
     init {
-        val sheetsPack = ArrayList<TextureRegionPack>()
+        val sheetsPack = ArrayList<PixmapRegionPack>()
 
         // first we create pixmap to read pixels, then make texture using pixmap
         fileList.forEachIndexed { index, it ->
@@ -440,16 +552,23 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             if (it.endsWith(".gz")) {
                 val tmpFileName = "tmp_${it.dropLast(7)}.tga"
 
-                val gzi = GZIPInputStream(Gdx.files.internal(fontParentDir + it).read(8192))
-                val wholeFile = gzi.readBytes()
-                gzi.close()
-                val fos = BufferedOutputStream(FileOutputStream(tmpFileName))
-                fos.write(wholeFile)
-                fos.flush()
-                fos.close()
+                try {
+                    val gzi = GZIPInputStream(Gdx.files.internal(fontParentDir + it).read(8192))
+                    val wholeFile = gzi.readBytes()
+                    gzi.close()
+                    val fos = BufferedOutputStream(FileOutputStream(tmpFileName))
+                    fos.write(wholeFile)
+                    fos.flush()
+                    fos.close()
 
-                pixmap = Pixmap(Gdx.files.internal(tmpFileName))
+                    pixmap = Pixmap(Gdx.files.internal(tmpFileName))
+                }
+                catch (e: GdxRuntimeException) {
+                    //e.printStackTrace()
+                    System.err.println("[TerrarumSansBitmap] said texture not found, skipping...")
 
+                    pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
+                }
                 //File(tmpFileName).delete()
             }
             else {
@@ -457,12 +576,16 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                     pixmap = Pixmap(Gdx.files.internal(fontParentDir + it))
                 }
                 catch (e: GdxRuntimeException) {
-                    e.printStackTrace()
+                    //e.printStackTrace()
+                    System.err.println("[TerrarumSansBitmap] said texture not found, skipping...")
 
                     // if non-ascii chart is missing, replace it with null sheet
                     pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
                     // else, notify by error
-                    if (index != 0) System.exit(1)
+                    if (index == 0) {
+                        System.err.println("[TerrarumSansBitmap] The ASCII sheet is gone, something is wrong.")
+                        System.exit(1)
+                    }
                 }
             }
 
@@ -470,40 +593,40 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             buildWidthTableFixed()
 
 
-            if (!noShadow) {
-                makeShadow(pixmap)
-            }
+            /*if (!noShadow) {
+                makeShadowForSheet(pixmap)
+            }*/
 
 
-            val texture = Texture(pixmap)
+            //val texture = Texture(pixmap)
             val texRegPack = if (isVariable) {
-                TextureRegionPack(texture, W_VAR_INIT, H, HGAP_VAR, 0, xySwapped = isXYSwapped)
+                PixmapRegionPack(pixmap, W_VAR_INIT, H, HGAP_VAR, 0, xySwapped = isXYSwapped)
             }
             else if (index == SHEET_UNIHAN) {
-                TextureRegionPack(texture, W_UNIHAN, H_UNIHAN) // the only exception that is height is 16
+                PixmapRegionPack(pixmap, W_UNIHAN, H_UNIHAN) // the only exception that is height is 16
             }
             // below they all have height of 20 'H'
             else if (index == SHEET_FW_UNI) {
-                TextureRegionPack(texture, W_UNIHAN, H)
+                PixmapRegionPack(pixmap, W_UNIHAN, H)
             }
             else if (index == SHEET_CJK_PUNCT) {
-                TextureRegionPack(texture, W_ASIAN_PUNCT, H)
+                PixmapRegionPack(pixmap, W_ASIAN_PUNCT, H)
             }
             else if (index == SHEET_KANA) {
-                TextureRegionPack(texture, W_KANA, H)
+                PixmapRegionPack(pixmap, W_KANA, H)
             }
             else if (index == SHEET_HANGUL) {
-                TextureRegionPack(texture, W_HANGUL, H)
+                PixmapRegionPack(pixmap, W_HANGUL, H)
             }
             else if (index == SHEET_CUSTOM_SYM) {
-                TextureRegionPack(texture, SIZE_CUSTOM_SYM, SIZE_CUSTOM_SYM) // TODO variable
+                PixmapRegionPack(pixmap, SIZE_CUSTOM_SYM, SIZE_CUSTOM_SYM) // TODO variable
             }
             else if (index == SHEET_RUNIC) {
-                TextureRegionPack(texture, W_LATIN_WIDE, H)
+                PixmapRegionPack(pixmap, W_LATIN_WIDE, H)
             }
             else throw IllegalArgumentException("[TerrarumSansBitmap] Unknown sheet index: $index")
 
-            texRegPack.texture.setFilter(minFilter, magFilter)
+            //texRegPack.texture.setFilter(minFilter, magFilter)
 
             sheetsPack.add(texRegPack)
 
@@ -535,168 +658,191 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private val offsetUnihan = (H - H_UNIHAN) / 2
     private val offsetCustomSym = (H - SIZE_CUSTOM_SYM) / 2
 
-    private var firstRun = true
+    private var flagFirstRun = true
     private var textBuffer = CodepointSequence(256)
     //private var oldCharSequence = ""
-    private var posXbuffer = intArrayOf() // absolute posX of glyphs from print-origin
-    private var posYbuffer = intArrayOf() // absolute posY of glyphs from print-origin
+    //private var posXbuffer = intArrayOf() // absolute posX of glyphs from print-origin
+    //private var posYbuffer = intArrayOf() // absolute posY of glyphs from print-origin
+    private var linotype: Pixmap? = null
 
     private lateinit var originalColour: Color
 
     private var nullProp = GlyphProps(15, 0)
 
+    private var pixmapTextureHolder: Texture? = null
+    //private var pixmapHolder: Pixmap? = null
+
+    private val pixmapOffsetY = 10
 
     override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float): GlyphLayout? {
-        val oldProjectionMatrix = batch.projectionMatrix
+        if (debug)
+            println("[TerrarumSansBitmap] max age: $textCacheCap")
+
+
 
         fun Int.flipY() = this * if (flipY) 1 else -1
 
 
         // always draw at integer position; this is bitmap font after all
-        val x = Math.round(x).toFloat()
-        val y = Math.round(y).toFloat()
+        val x = Math.round(x).toInt()//.toFloat()
+        val y = Math.round(y).toInt()//.toFloat()
 
+        originalColour = batch.color.cpy()
+        val mainColObj = originalColour
+        var mainCol: Int = originalColour.toRGBA8888().forceOpaque()
+
+        val charSeqHash = charSeq.toCodePoints().getHash()
 
         if (charSeq.isNotBlank()) {
 
-
-            if (!textCache.containsKey(charSeq) || firstRun) {
+            if (!cacheContains(charSeqHash) || flagFirstRun) {
                 textBuffer = charSeq.toCodePoints()
 
-                //val texWidth = widths.sum()
+                val (posXbuffer, posYbuffer) = buildWidthAndPosBuffers(textBuffer)
 
-                //if (!firstRun) textTexture.dispose()
-                //textTexture = FrameBuffer(Pixmap.Format.RGBA8888, texWidth, H, true)
-
-
-                buildWidthAndPosBuffers()
-
-
-                //print("[TerrarumSansBitmap] widthTable for $textBuffer: ")
-                //posXbuffer.forEach { print("$it ") }; println()
-
-
-                textCache[charSeq] = ShittyGlyphLayout(
-                        textBuffer,
-                        posXbuffer,
-                        posYbuffer
-                )
-
-
-                firstRun = false
+                linotype = null // use new linotype
+                flagFirstRun = false
 
                 //println("text not in buffer: $charSeq")
-            }
-            else {
-                val bufferObj = textCache[charSeq]
-
-                textBuffer = bufferObj!!.textBuffer
-                posXbuffer = bufferObj!!.posXbuffer
-                posYbuffer = bufferObj!!.posYbuffer
-            }
 
 
-            //textTexCamera.setToOrtho(false, textTexture.width.toFloat(), textTexture.height.toFloat())
-            //textTexCamera.update()
-            //batch.projectionMatrix = textTexCamera.combined
+                //textBuffer.forEach { print("${it.toHex()} ") }
+                //println()
 
 
-            originalColour = batch.color.cpy()
-            var mainCol = originalColour
+                resetHash(charSeq, x.toFloat(), y.toFloat())
+
+                //pixmapTextureHolder?.dispose() /* you CAN'T do this however */
+
+                linotype = Pixmap(posXbuffer.last(), H + (pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
+
+                // TEST: does the new instance of pixmap is all zero?
+                /*repeat(pixmapHolder?.pixels?.capacity() ?: 0) {
+                    if (pixmapHolder?.pixels?.get() != 0.toByte()) {
+                        throw InternalError("pixmap is not all zero, wtf?!")
+                    }
+                }
+                pixmapHolder?.pixels?.rewind()*/
 
 
-            //textTexture.begin()
+
+                var index = 0
+                while (index <= textBuffer.lastIndex) {
+                    val c = textBuffer[index]
+                    val sheetID = getSheetType(c)
+                    val (sheetX, sheetY) =
+                            if (index == 0) getSheetwisePosition(0, c)
+                            else getSheetwisePosition(textBuffer[index - 1], c)
+                    val hash = getHash(c) // to be used with Bad Transmission Modifier
+
+                    if (isColourCode(c)) {
+                        if (c == 0x100000) {
+                            mainCol = originalColour.toRGBA8888().forceOpaque()
+                        }
+                        else {
+                            mainCol = getColour(c)
+                        }
+                    }
+                    else if (isCharsetOverride(c)) {
+                        charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
+                    }
+                    else if (sheetID == SHEET_HANGUL) {
+                        // Flookahead for {I, P, F}
+
+                        val cNext = if (index + 1 < textBuffer.size) textBuffer[index + 1] else 0
+                        val cNextNext = if (index + 2 < textBuffer.size) textBuffer[index + 2] else 0
+
+                        val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
+                            3
+                        else if (isHangulJungseong(cNext))
+                            2
+                        else
+                            1
+
+                        val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
+
+                        val (indexCho, indexJung, indexJong) = indices
+                        val (choRow, jungRow, jongRow) = rows
+                        val hangulSheet = sheets[SHEET_HANGUL]
 
 
-            //textBuffer.forEach { print("${it.toHex()} ") }
-            //println()
+
+                        val choTex = hangulSheet.get(indexCho, choRow)
+                        val jungTex = hangulSheet.get(indexJung, jungRow)
+                        val jongTex = hangulSheet.get(indexJong, jongRow)
+
+                        linotype?.setColor(mainCol)
+                        linotype?.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY, mainCol)
+                        linotype?.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY, mainCol)
+                        linotype?.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY, mainCol)
+
+                        //batch.color = mainCol
+                        //batch.draw(choTex, x + posXbuffer[index].toFloat(), y)
+                        //batch.draw(jungTex, x + posXbuffer[index].toFloat(), y)
+                        //batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index].toFloat(), y)
 
 
-            resetHash(charSeq, x, y)
-            var index = 0
-            while (index <= textBuffer.lastIndex) {
-                val c = textBuffer[index]
-                val sheetID = getSheetType(c)
-                val (sheetX, sheetY) =
-                        if (index == 0) getSheetwisePosition(0, c)
-                        else getSheetwisePosition(textBuffer[index - 1], c)
-                val hash = getHash(c) // to be used with Bad Transmission Modifier
+                        index += hangulLength - 1
 
-                if (isColourCode(c)) {
-                    if (c == 0x100000) {
-                        mainCol = originalColour
                     }
                     else {
-                        mainCol = getColour(c)
+                        try {
+                            val posY = posYbuffer[index].flipY() +
+                                    if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                        offsetUnihan
+                                    else if (sheetID == SHEET_CUSTOM_SYM)
+                                        offsetCustomSym
+                                    else 0
+
+                            val posX = posXbuffer[index]
+                            val texture = sheets[sheetID].get(sheetX, sheetY)
+
+                            linotype?.drawPixmap(texture, posX, posY + pixmapOffsetY, mainCol)
+
+                            //batch.color = mainCol
+                            //batch.draw(texture, posX, posY)
+
+                        }
+                        catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
+                            //batch.color = mainCol
+                        }
                     }
-                }
-                else if (isCharsetOverride(c)) {
-                    charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
-                }
-                else if (sheetID == SHEET_HANGUL) {
-                    // Flookahead for {I, P, F}
-
-                    val cNext = if (index + 1 < textBuffer.size) textBuffer[index + 1] else 0
-                    val cNextNext = if (index + 2 < textBuffer.size) textBuffer[index + 2] else 0
-
-                    val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
-                        3
-                    else if (isHangulJungseong(cNext))
-                        2
-                    else
-                        1
-
-                    val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
-
-                    val (indexCho, indexJung, indexJong) = indices
-                    val (choRow, jungRow, jongRow) = rows
-                    val hangulSheet = sheets[SHEET_HANGUL]
 
 
-
-                    batch.color = mainCol
-                    batch.draw(hangulSheet.get(indexCho, choRow), x + posXbuffer[index].toFloat(), y)
-                    batch.draw(hangulSheet.get(indexJung, jungRow), x + posXbuffer[index].toFloat(), y)
-                    batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index].toFloat(), y)
-
-
-                    index += hangulLength - 1
-
-                }
-                else {
-                    try {
-                        val posY = y + posYbuffer[index].flipY() +
-                                if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                    offsetUnihan
-                                else if (sheetID == SHEET_CUSTOM_SYM)
-                                    offsetCustomSym
-                                else 0
-
-                        val posX = x + posXbuffer[index]
-                        val texture = sheets[sheetID].get(sheetX, sheetY)
-
-                        batch.color = mainCol
-                        batch.draw(texture, posX, posY)
-
-                    }
-                    catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
-                        batch.color = mainCol
-                    }
+                    index++
                 }
 
 
-                index++
+                makeShadow(linotype)
+
+
+                // put things into cache
+                //textCache[charSeq] = ShittyGlyphLayout(textBuffer, linotype!!)
+                addToCache(textBuffer, linotype!!, posXbuffer.last())
+            }
+            else {
+                val bufferObj = getCache(charSeqHash)
+
+                textBuffer = bufferObj.glyphLayout!!.textBuffer
+                linotype = bufferObj.glyphLayout!!.linotype
             }
 
-            /*textTexture.end()
 
 
-        batch.color = originalColour
-        batch.projectionMatrix = oldProjectionMatrix
-        val textTex = textTexture.colorBufferTexture
+            batch.color = mainColObj
+            pixmapTextureHolder = Texture(linotype)
 
-        batch.draw(textTex, x, y, textTex.width.toFloat(), textTex.height.toFloat())
-        */
+            if (!flipY) {
+                batch.draw(pixmapTextureHolder, x.toFloat(), (y - pixmapOffsetY).toFloat())
+            }
+            else {
+                batch.draw(pixmapTextureHolder,
+                        x.toFloat(),
+                        (y - pixmapOffsetY + (pixmapTextureHolder?.height ?: 0)).toFloat(),
+                        (pixmapTextureHolder?.width?.toFloat()) ?: 0f,
+                        -(pixmapTextureHolder?.height?.toFloat() ?: 0f)
+                )
+            }
 
         }
 
@@ -713,6 +859,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         sheets.forEach { it.dispose() }
     }
 
+    /**
+     * Used for positioning letters, NOT for the actual width.
+     *
+     * For actual width, use `getWidth()`
+     */
     private fun getWidthOfCharSeq(s: CodepointSequence): IntArray {
         val len = IntArray(s.size)
         for (i in 0..s.lastIndex) {
@@ -751,7 +902,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         return len
     }
 
-    private fun getSheetType(c: Int): Int {
+    private fun getSheetType(c: CodePoint): Int {
         if (charsetOverride == 1 && isBulgarian(c))
             return SHEET_BULGARIAN_VARW
         else if (charsetOverride == 2 && isBulgarian(c))
@@ -1007,72 +1158,25 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
     private val glyphLayout = GlyphLayout()
 
-    fun getWidth(text: String): Int {
-        var s = text.toCodePoints()
-        var len = 0
+    fun getWidth(text: String) = getWidth(text.toCodePoints())
 
-        var i = 0
-        while (i <= s.lastIndex) {
-            val chr = s[i]
-            val ctype = getSheetType(s[i])
-
-            var len2 = 0
-            if (variableWidthSheets.contains(ctype)) {
-                if (!glyphProps.containsKey(chr)) {
-                    System.err.println("[TerrarumSansBitmap] no width data for glyph number ${Integer.toHexString(chr.toInt()).toUpperCase()}")
-                    len2 = W_LATIN_WIDE
-                }
-
-                val prop = glyphProps[chr] ?: nullProp
-
-                if (!prop.writeOnTop)
-                    len2 = prop.width
-            }
-            else if (isColourCode(chr) || isCharsetOverride(chr))
-                len2 = 0
-            else if (ctype == SHEET_CJK_PUNCT)
-                len2 = W_ASIAN_PUNCT
-            else if (ctype == SHEET_HANGUL) {
-                // hangul IPF canonical and special cases
-                val cNext = if (i + 1 < s.size) s[i + 1] else 0
-                val cNextNext = if (i + 2 < s.size) s[i + 2] else 0
-                val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
-                    3
-                else if (isHangulJungseong(cNext))
-                    2
-                else
-                    1
-
-                len2 = W_HANGUL
-                i += hangulLength - 1
-            }
-            else if (ctype == SHEET_KANA)
-                len2 = W_KANA
-            else if (unihanWidthSheets.contains(ctype))
-                len2 = W_UNIHAN
-            else if (ctype == SHEET_CUSTOM_SYM)
-                len2 = SIZE_CUSTOM_SYM
-            else
-                len2 = W_LATIN_WIDE
-
-
-            len += len2 * scale
-
-            if (i < s.lastIndex) len += interchar
-
-
-            i++
+    fun getWidth(s: CodepointSequence): Int {
+        try {
+            val cacheObj = getCache(s.getHash())
+            return cacheObj.glyphLayout!!.width
         }
-        return len
+        catch (e: NullPointerException) {
+            return buildWidthAndPosBuffers(s).first.last()
+        }
     }
 
 
-    private fun buildWidthAndPosBuffers() {
-        val str = textBuffer
-        val widths = getWidthOfCharSeq(str)
-
-        posXbuffer = IntArray(str.size, { 0 })
-        posYbuffer = IntArray(str.size, { 0 })
+    /**
+     * posXbuffer's size is greater than the string, last element marks the width of entire string.
+     */
+    private fun buildWidthAndPosBuffers(str: CodepointSequence): Pair<IntArray, IntArray> {
+        val posXbuffer = IntArray(str.size + 1, { 0 })
+        val posYbuffer = IntArray(str.size, { 0 })
 
 
         var nonDiacriticCounter = 0 // index of last instance of non-diacritic char
@@ -1081,7 +1185,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
         val HALF_VAR_INIT = W_VAR_INIT.minus(1).div(2)
 
-        for (charIndex in 0 until posXbuffer.size) {
+        for (charIndex in 0 until posXbuffer.size - 1) {
             if (charIndex > 0) {
                 // nonDiacriticCounter allows multiple diacritics
 
@@ -1196,6 +1300,32 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 }
             }
         }
+
+        // fill the last of the posXbuffer
+        if (str.isNotEmpty()) {
+            val lastCharProp = glyphProps[str.last()]
+            val penultCharProp = glyphProps[nonDiacriticCounter]!!
+            posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
+                    if (lastCharProp?.writeOnTop == true) {
+                        val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
+                            (lastCharProp.width).div(2) + penultCharProp.alignXPos
+                        }
+                        else if (lastCharProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
+                            (lastCharProp.width) + penultCharProp.alignXPos
+                        }
+                        else 0
+
+                        maxOf(penultCharProp.width, realDiacriticWidth)
+                    }
+                    else {
+                        (lastCharProp?.width ?: 0)
+                    }
+        }
+        else {
+            posXbuffer[0] = 0
+        }
+
+        return posXbuffer to posYbuffer
     }
 
 
@@ -1296,9 +1426,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
      *
      * The pixmap must be mutable (beware of concurrentmodificationexception).
      */
-    private fun makeShadow(pixmap: Pixmap) {
-
-
+    private fun makeShadowForSheet(pixmap: Pixmap) {
         for (y in 0..pixmap.height - 2) {
             for (x in 0..pixmap.width - 2) {
                 val pxNow = pixmap.getPixel(x, y) // RGBA8888
@@ -1329,6 +1457,110 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     }
 
 
+    /**
+     * Edits the given pixmap so that it would have a shadow on it.
+     *
+     * Meant to be used to give shadow to a linotype (typeset-finished line of pixmap)
+     *
+     * The pixmap must be mutable (beware of concurrentmodificationexception).
+     */
+    private fun makeShadow(pixmap: Pixmap?) {
+        if (pixmap == null) return
+
+        pixmap.blending = Pixmap.Blending.None
+
+        // TODO when semitransparency is needed (e.g. anti-aliased)
+        // make three more pixmap (pixmap 2 3 4)
+        // translate source image over new pixmap, shift the texture to be a shadow
+        // draw (3, 4) -> 2, px by px s.t. only overwrites RGBA==0 pixels in 2
+        // for all pxs in 2, do:
+        //      halve the alpha in 2
+        //      draw 1 -> 2 s.t. only RGBA!=0-px-in-1 is drawn on 2; draw by overwrite
+        // copy 2 -> 1 px by px
+        // ---------------------------------------------------------------------------
+        // this is under assumption that new pixmap is always all zero
+        // it is possible the blending in the pixmap is bugged
+        //
+        // for now, no semitransparency (in colourcode && spritesheet)
+
+        val jobQueue = arrayOf(
+                1 to 0,
+                0 to 1,
+                1 to 1
+        )
+
+        jobQueue.forEach {
+            for (y in 0 until pixmap.height) {
+                for (x in 0 until pixmap.width) {
+                    val pixel = pixmap.getPixel(x, y) // RGBA8888
+
+
+                    // in the current version, all colour-coded glyphs are guaranteed
+                    // to be opaque
+                    if (pixel and 0xFF == 0xFF) {
+                        val newPixel = pixmap.getPixel(x + it.first, y + it.second)
+                        val newColour = pixel.and(0xFFFFFF00.toInt()) or 0x80
+
+                        if (newPixel and 0xFF == 0) {
+                            pixmap.drawPixel(x + it.first, y + it.second, newColour)
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+
+    /***
+     * @param col RGBA8888 representation
+     */
+    private fun Pixmap.drawPixmap(pixmap: Pixmap, xPos: Int, yPos: Int, col: Int) {
+        for (y in 0 until pixmap.height) {
+            for (x in 0 until pixmap.width) {
+                val pixel = pixmap.getPixel(x, y) // Pixmap uses RGBA8888, while Color uses ARGB. What the fuck?
+
+                val newPixel = pixel colorTimes col
+
+                this.drawPixel(xPos + x, yPos + y, newPixel)
+            }
+        }
+    }
+
+    private fun Color.toRGBA8888() =
+            (this.r * 255f).toInt().shl(24) or
+                    (this.g * 255f).toInt().shl(16) or
+                    (this.b * 255f).toInt().shl(8) or
+                    (this.a * 255f).toInt()
+
+    /**
+     * RGBA8888 representation
+     */
+    private fun Int.forceOpaque() = this.and(0xFFFFFF00.toInt()) or 0xFF
+
+    private infix fun Int.colorTimes(other: Int): Int {
+        val thisBytes = IntArray(4, { this.ushr(it * 8).and(255) })
+        val otherBytes = IntArray(4, { other.ushr(it * 8).and(255) })
+
+        return (thisBytes[0] times256 otherBytes[0]) or
+               (thisBytes[1] times256 otherBytes[1]).shl(8) or
+               (thisBytes[2] times256 otherBytes[2]).shl(16) or
+               (thisBytes[3] times256 otherBytes[3]).shl(24)
+    }
+
+    private infix fun Int.times256(other: Int) = multTable255[this][other]
+
+    private val multTable255 = Array(256,
+            { left ->
+                IntArray(256,
+                        { right ->
+                            (255f * (left / 255f).times(right / 255f)).roundToInt()
+                        }
+                )
+            }
+    )
+
+
     /** High surrogate comes before the low. */
     private fun Char.isHighSurrogate() = (this.toInt() in 0xD800..0xDBFF)
     /** CodePoint = 0x10000 + (H - 0xD800) * 0x400 + (L - 0xDC00) */
@@ -1350,6 +1582,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG)
     val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR)
 
+    // randomiser effect hash ONLY
     private val hashBasis = -3750763034362895579L
     private val hashPrime = 1099511628211L
     private var hashAccumulator = hashBasis
@@ -1365,6 +1598,21 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         getHash(x.toRawBits())
         getHash(y.toRawBits())
     }
+
+
+    fun CodepointSequence.getHash(): Long {
+        val hashBasis = -3750763034362895579L
+        val hashPrime = 1099511628211L
+        var hashAccumulator = hashBasis
+
+        this.forEach {
+            hashAccumulator = hashAccumulator xor it.toLong()
+            hashAccumulator *= hashPrime
+        }
+
+        return hashAccumulator
+    }
+
 
     private fun Int.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
 
