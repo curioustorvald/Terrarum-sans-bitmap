@@ -2,7 +2,7 @@
 
 ![Font sample](demo.PNG)
 
-This font is a bitmap font used in [my game project called Terrarum](https://gitlab.com/minjaesong/terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese and Korean. More technical side, it supports Latin-1 Supplement, Latin Ext-A, Latin Ext-B, IPA Extension (required by some languages), Greek, Cyrillic (+ Bulgarian, Serbian variants) and the supplement, Armenian, Thai (beta version), Georgian, Unicode Punctuations, CJK Punctuations, Kana, Chinese (limited to Unihan and Ext-A), Hangul (all 11 172 possible syllables) and Fullwidth forms.
+This font is a bitmap font used in [my game project called Terrarum](https://github.com/minjaesong/Terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese and Korean. More technical side, it supports Latin-1 Supplement, Latin Ext-A, Latin Ext-B, IPA Extension (required by some languages), Greek, Cyrillic (+ Bulgarian, Serbian variants) and the supplement, Armenian, Thai (beta version), Georgian, Unicode Punctuations, CJK Punctuations, Kana, Chinese (limited to Unihan and Ext-A), Hangul (all 11 172 possible syllables) and Fullwidth forms.
 
 The JAR package is meant to be used with Slick2d (extends ```Font``` class) and LibGDX (extends ```BitmapFont``` class). If you are not using the framework, please refer to the __Font metrics__ section to implement the font metrics correctly on your system.
 
