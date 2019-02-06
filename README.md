@@ -4,7 +4,7 @@
 
 This font is a bitmap font used in [my game project called Terrarum](https://github.com/minjaesong/Terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese and Korean. More technical side, it supports Latin-1 Supplement, Latin Ext-A, Latin Ext-B, IPA Extension (required by some languages), Greek, Cyrillic (+ Bulgarian, Serbian variants) and the supplement, Armenian, Thai (beta version), Georgian, Unicode Punctuations, CJK Punctuations, Kana, Chinese (limited to Unihan and Ext-A), Hangul (all 11 172 possible syllables) and Fullwidth forms.
 
-The JAR package is meant to be used with Slick2d (extends ```Font``` class) and LibGDX (extends ```BitmapFont``` class). If you are not using the framework, please refer to the __Font metrics__ section to implement the font metrics correctly on your system.
+The JAR package is meant to be used with LibGDX (extends ```BitmapFont``` class). If you are not using the framework, please refer to the __Font metrics__ section to implement the font metrics correctly on your system.
 
 The issue page is open. If you have some issues to submit, or have a question, please leave it on the page.
 
@@ -12,6 +12,7 @@ The issue page is open. If you have some issues to submit, or have a question, p
 - To display Bulgarian/Serbian variants, you need special Control Characters. (GameFontBase.charsetOverrideBulgarian -- U+FFFC1; GameFontBase.charsetOverrideSerbian -- U+FFFC2)
 - All Han characters are in Chinese variant, no other variants are to be supported as most Chinese, Japanese and Korean can understand other's variant and to be honest, we don't bother anyway.
 - Indian script in general is not perfect: this font will never do the proper ligatures (I can't draw all the 1 224 possible combinations). Hopefully it's still be able to understand without them.
+- Slick2d versions are now unsupported. I couldn't extend myself to work on both versions, but I'm still welcome to merge your pull requests.
 
 ### Design Goals
 
@@ -20,6 +21,9 @@ The issue page is open. If you have some issues to submit, or have a question, p
     - Combininig with the sans-serif, this stands for **no over-simplification**
 - Condensed capitals for efficient space usage
 
+## Download
+
+- Go ahead to the [release tab](https://github.com/minjaesong/Terrarum-sans-bitmap/releases), and download the most recent version. It is **not** advised to use the .jar found within the repository, they're experimental builds I use during the development, and may contain bugs like leaking memory.
 
 ## Using on your game
 
