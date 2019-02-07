@@ -34,10 +34,12 @@ import net.torvald.terrarumsansbitmap.GlyphProps
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
 import java.security.MessageDigest
+import java.util.*
 import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
 import kotlin.NullPointerException
 import kotlin.math.roundToInt
+import kotlin.math.sign
 
 typealias CodepointSequence = ArrayList<CodePoint>
 internal typealias CodePoint = Int
@@ -67,7 +69,8 @@ internal typealias Hash = Long
  * Glyphs are drawn lazily (calculated on-the-fly, rather than load up all), which is inevitable as we just can't load
  * up 40k+ characters on the machine, which will certainly make loading time painfully long.
  *
- * Color Codes have following Unicode mapping: U+10RGBA, A must be non-zero to be visible. U+100000 reverts any colour code effects.
+ * Color Codes have following Unicode mapping: U+10RGBA, A must be non-zero to be visible. U+100000 reverts any colour
+ * code effects.
  *
  * ## Control Characters
  *
@@ -79,16 +82,19 @@ internal typealias Hash = Long
  *
  * ## Auto Shift Down
  *
- * Certain characters (e.g. Combining Diacritical Marks) will automatically shift down to accomodate lowercase letters. Shiftdown only occurs when non-diacritic character before the mark is lowercase, and the mark itself would stack up. Stack-up or down is defined using Tag system.
+ * Certain characters (e.g. Combining Diacritical Marks) will automatically shift down to accomodate lowercase letters.
+ * Shiftdown only occurs when non-diacritic character before the mark is lowercase, and the mark itself would stack up.
+ * Stack-up or down is defined using Tag system.
  *
  *
  *
  * @param noShadow Self-explanatory
- * @param flipY If you have Y-down coord system implemented on your GDX (e.g. legacy codebase), set this to ```true``` so that the shadow won't be upside-down. For glyph getting upside-down, set ```TextureRegionPack.globalFlipY = true```.
+ * @param flipY If you have Y-down coord system implemented on your GDX (e.g. legacy codebase), set this to ```true```
+ * so that the shadow won't be upside-down. For glyph getting upside-down, set ```TextureRegionPack.globalFlipY = true```.
  *
  * Created by minjaesong on 2017-06-15.
  */
-class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false, val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, var errorOnUnknownChar: Boolean = false, val textCacheSize: Int = 64, val debug: Boolean = false) : BitmapFont() {
+class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false, val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, var errorOnUnknownChar: Boolean = false, val textCacheSize: Int = 256, val debug: Boolean = false) : BitmapFont() {
 
     // Hangul Implementation Specific //
 
@@ -288,11 +294,19 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
 
     // TODO (val posXbuffer: IntArray, val posYbuffer: IntArray) -> (val linotype: Pixmap)
-    private data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val linotype: Pixmap, val width: Int)
+    private data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val linotype: Texture, val width: Int)
 
     //private val textCache = HashMap<CharSequence, ShittyGlyphLayout>()
 
-    private data class TextCacheObj(var age: Int, val hash: Long, val glyphLayout: ShittyGlyphLayout?)
+    private data class TextCacheObj(var age: Int, val hash: Long, val glyphLayout: ShittyGlyphLayout?): Comparable<TextCacheObj> {
+        fun dispose() {
+            glyphLayout?.linotype?.dispose()
+        }
+
+        override fun compareTo(other: TextCacheObj): Int {
+            return (this.hash - other.hash).sign
+        }
+    }
     private var textCacheCap = 0
 
     private val textCache = Array(textCacheSize) { TextCacheObj(-1, -1L, null) }
@@ -300,53 +314,50 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     /**
      * Insertion sorts the last element fo the textCache
      */
-    private fun addToCache(text: CodepointSequence, linotype: Pixmap, width: Int) {
-        // make room first
-        if (textCacheCap == textCacheSize - 1) {
-            var c = 0
-            var mark = -1
-            while (c < textCacheSize - 1) {
-                if (textCache[c].age == 0 && mark == -1) // if unmarked and age == 0, mark it
-                    mark = c
+    private fun addToCache(text: CodepointSequence, linotype: Texture, width: Int) {
+        // Caching rules:
+        // 1. always accept new element.
+        // 2. often-called element have higher chance of survival (see: getCache(long))
 
-                if (mark >= 0) { // if marked then ...
-                    // shift left everyting by 1
-                    textCache[c] = textCache[c + 1]
+
+        if (textCacheCap < textCacheSize) {
+            textCache[textCacheCap] = TextCacheObj(0, text.getHash(), ShittyGlyphLayout(text, linotype, width))
+            textCacheCap += 1
+
+            // make everybody age
+            textCache.forEach {
+                it.age += 1
+            }
+        }
+        else {
+            // search for an oldest element
+            var oldestElemIndex = 0
+            var ageOfOldest = textCacheCap
+            textCache.forEachIndexed { index, it ->
+                // make everybody age
+                textCache[index].age += 1
+
+                // mark oldest
+                if (it.age > ageOfOldest) {
+                    oldestElemIndex = index
                 }
-
-                c += 1
             }
+
+
+            // dispose of the oldest one before overwriting
+            textCache[oldestElemIndex].dispose()
+
+            // overwrite oldest one
+            textCache[oldestElemIndex] = TextCacheObj(0, text.getHash(), ShittyGlyphLayout(text, linotype, width))
         }
 
-        // count down all the elements' age by 1
-        textCache.forEach { it.age -= 1 }
-
-
-        // put new element at the end
-        textCache[textCacheCap] = TextCacheObj(textCacheCap, text.getHash(), ShittyGlyphLayout(text, linotype, width))
-
-
-
-        // insertion sort last elem (sorted by hash)
-        if (textCacheCap >= 1) { // when there's two or more elem...
-            var j = textCacheCap - 1
-            val x = textCache[textCacheCap]
-            while (j >= 0 && textCache[j].hash > x.hash) {
-                textCache[j + 1] = textCache[j]
-                j -= 1
-            }
-            textCache[j + 1] = x
-        }
-
-
-        if (textCacheCap < textCacheSize - 1) {
-            textCacheCap++
-        }
+        // sort the list
+        textCache.sortBy { it.hash }
     }
 
-    private fun getCache(hash: Long): TextCacheObj {
+    private fun getCache(hash: Long): TextCacheObj? {
         var low = 0
-        var high = textCacheCap
+        var high = textCacheCap - 1
         var key = -1
 
 
@@ -366,34 +377,14 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         }
 
         if (key < 0)
-            throw NullPointerException("No element found")
+            return null
+
+        // increment age count (see: addToCache(CodepointSequence, Pixmap, Int))
+        textCache[key].age += 1
 
         return textCache[key]
     }
 
-    private fun cacheContains(hash: Long): Boolean {
-        var low = 0
-        var high = textCacheCap
-        var key = -1
-
-
-        while (low <= high) {
-            val mid = (low + high).ushr(1) // safe from overflows
-
-            val midVal = textCache[mid]
-
-            if (hash > midVal.hash)
-                low = mid + 1
-            else if (hash < midVal.hash)
-                high = mid - 1
-            else {
-                key = mid
-                break // the condition is not enough to break the loop
-            }
-        }
-
-        return (key >= 0)
-    }
 
     private fun getColour(codePoint: Int): Int { // input: 0x10F_RGB, out: RGBA8888
         if (colourBuffer.containsKey(codePoint))
@@ -660,17 +651,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
     private var flagFirstRun = true
     private var textBuffer = CodepointSequence(256)
-    //private var oldCharSequence = ""
-    //private var posXbuffer = intArrayOf() // absolute posX of glyphs from print-origin
-    //private var posYbuffer = intArrayOf() // absolute posY of glyphs from print-origin
-    private var linotype: Pixmap? = null
+
+    private lateinit var tempLinotype: Texture
 
     private lateinit var originalColour: Color
 
     private var nullProp = GlyphProps(15, 0)
-
-    private var pixmapTextureHolder: Texture? = null
-    //private var pixmapHolder: Pixmap? = null
 
     private val pixmapOffsetY = 10
 
@@ -678,14 +664,11 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         if (debug)
             println("[TerrarumSansBitmap] max age: $textCacheCap")
 
-
-
         fun Int.flipY() = this * if (flipY) 1 else -1
 
-
         // always draw at integer position; this is bitmap font after all
-        val x = Math.round(x).toInt()//.toFloat()
-        val y = Math.round(y).toInt()//.toFloat()
+        val x = Math.round(x)
+        val y = Math.round(y)
 
         originalColour = batch.color.cpy()
         val mainColObj = originalColour
@@ -695,12 +678,13 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
         if (charSeq.isNotBlank()) {
 
-            if (!cacheContains(charSeqHash) || flagFirstRun) {
+            val cacheObj = getCache(charSeqHash)
+
+            if (cacheObj == null || flagFirstRun) {
                 textBuffer = charSeq.toCodePoints()
 
                 val (posXbuffer, posYbuffer) = buildWidthAndPosBuffers(textBuffer)
 
-                linotype = null // use new linotype
                 flagFirstRun = false
 
                 //println("text not in buffer: $charSeq")
@@ -712,18 +696,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
                 resetHash(charSeq, x.toFloat(), y.toFloat())
 
-                //pixmapTextureHolder?.dispose() /* you CAN'T do this however */
-
-                linotype = Pixmap(posXbuffer.last(), H + (pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
-
-                // TEST: does the new instance of pixmap is all zero?
-                /*repeat(pixmapHolder?.pixels?.capacity() ?: 0) {
-                    if (pixmapHolder?.pixels?.get() != 0.toByte()) {
-                        throw InternalError("pixmap is not all zero, wtf?!")
-                    }
-                }
-                pixmapHolder?.pixels?.rewind()*/
-
+                val linotypePixmap = Pixmap(posXbuffer.last(), H + (pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
 
 
                 var index = 0
@@ -771,10 +744,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                         val jungTex = hangulSheet.get(indexJung, jungRow)
                         val jongTex = hangulSheet.get(indexJong, jongRow)
 
-                        linotype?.setColor(mainCol)
-                        linotype?.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY, mainCol)
-                        linotype?.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY, mainCol)
-                        linotype?.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY, mainCol)
+                        linotypePixmap.setColor(mainCol)
+                        linotypePixmap.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY, mainCol)
+                        linotypePixmap.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY, mainCol)
+                        linotypePixmap.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY, mainCol)
 
                         //batch.color = mainCol
                         //batch.draw(choTex, x + posXbuffer[index].toFloat(), y)
@@ -797,7 +770,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                             val posX = posXbuffer[index]
                             val texture = sheets[sheetID].get(sheetX, sheetY)
 
-                            linotype?.drawPixmap(texture, posX, posY + pixmapOffsetY, mainCol)
+                            linotypePixmap.drawPixmap(texture, posX, posY + pixmapOffsetY, mainCol)
 
                             //batch.color = mainCol
                             //batch.draw(texture, posX, posY)
@@ -813,34 +786,34 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 }
 
 
-                makeShadow(linotype)
+                makeShadow(linotypePixmap)
 
+                tempLinotype = Texture(linotypePixmap)
+                tempLinotype.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
 
                 // put things into cache
                 //textCache[charSeq] = ShittyGlyphLayout(textBuffer, linotype!!)
-                addToCache(textBuffer, linotype!!, posXbuffer.last())
+                addToCache(textBuffer, tempLinotype, posXbuffer.last())
+                linotypePixmap.dispose()
             }
             else {
-                val bufferObj = getCache(charSeqHash)
-
-                textBuffer = bufferObj.glyphLayout!!.textBuffer
-                linotype = bufferObj.glyphLayout!!.linotype
+                textBuffer = cacheObj.glyphLayout!!.textBuffer
+                tempLinotype = cacheObj.glyphLayout!!.linotype
             }
 
 
 
             batch.color = mainColObj
-            pixmapTextureHolder = Texture(linotype)
 
             if (!flipY) {
-                batch.draw(pixmapTextureHolder, x.toFloat(), (y - pixmapOffsetY).toFloat())
+                batch.draw(tempLinotype, x.toFloat(), (y - pixmapOffsetY).toFloat())
             }
             else {
-                batch.draw(pixmapTextureHolder,
+                batch.draw(tempLinotype,
                         x.toFloat(),
-                        (y - pixmapOffsetY + (pixmapTextureHolder?.height ?: 0)).toFloat(),
-                        (pixmapTextureHolder?.width?.toFloat()) ?: 0f,
-                        -(pixmapTextureHolder?.height?.toFloat() ?: 0f)
+                        (y - pixmapOffsetY + (tempLinotype.height)).toFloat(),
+                        (tempLinotype.width.toFloat()),
+                        -(tempLinotype.height.toFloat())
                 )
             }
 
@@ -855,7 +828,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
 
     override fun dispose() {
         super.dispose()
-
+        textCache.forEach { it.dispose() }
         sheets.forEach { it.dispose() }
     }
 
@@ -1161,11 +1134,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     fun getWidth(text: String) = getWidth(text.toCodePoints())
 
     fun getWidth(s: CodepointSequence): Int {
-        try {
-            val cacheObj = getCache(s.getHash())
+        val cacheObj = getCache(s.getHash())
+
+        if (cacheObj != null) {
             return cacheObj.glyphLayout!!.width
         }
-        catch (e: NullPointerException) {
+        else {
             return buildWidthAndPosBuffers(s).first.last()
         }
     }
