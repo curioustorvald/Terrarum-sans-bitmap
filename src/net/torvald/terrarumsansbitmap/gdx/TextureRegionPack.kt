@@ -27,6 +27,7 @@ package net.torvald.terrarumsansbitmap.gdx
 import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.badlogic.gdx.utils.Disposable
 
 /**
  * Created by minjaesong on 2017-06-15.
@@ -40,7 +41,7 @@ class TextureRegionPack(
         val hFrame: Int = 0,
         val vFrame: Int = 0,
         val xySwapped: Boolean = false // because Unicode chart does, duh
-) {
+): Disposable {
 
     constructor(ref: String, tileW: Int, tileH: Int, hGap: Int = 0, vGap: Int = 0, hFrame: Int = 0, vFrame: Int = 0, xySwapped: Boolean = false) :
             this(Texture(ref), tileW, tileH, hGap, vGap, hFrame, vFrame, xySwapped)
@@ -61,7 +62,7 @@ class TextureRegionPack(
         //println("texture: $texture, dim: ${texture.width} x ${texture.height}, grid: $horizontalCount x $verticalCount, cellDim: $tileW x $tileH")
 
         if (!xySwapped) {
-            regions = Array<TextureRegion>(horizontalCount * verticalCount, {
+            regions = Array<TextureRegion>(horizontalCount * verticalCount) {
                 val region = TextureRegion()
                 val rx = (it % horizontalCount * (tileW + hGap)) + hFrame
                 val ry = (it / horizontalCount * (tileH + vGap)) + vFrame
@@ -72,10 +73,10 @@ class TextureRegionPack(
                 region.flip(false, globalFlipY)
 
                 /*return*/region
-            })
+            }
         }
         else {
-            regions = Array<TextureRegion>(horizontalCount * verticalCount, {
+            regions = Array<TextureRegion>(horizontalCount * verticalCount) {
                 val region = TextureRegion()
                 val rx = (it / verticalCount * (tileW + hGap)) + hFrame
                 val ry = (it % verticalCount * (tileH + vGap)) + vFrame
@@ -86,13 +87,13 @@ class TextureRegionPack(
                 region.flip(false, globalFlipY)
 
                 /*return*/region
-            })
+            }
         }
     }
 
     fun get(x: Int, y: Int) = regions[y * horizontalCount + x]
 
-    fun dispose() {
+    override fun dispose() {
         texture.dispose()
     }
 
