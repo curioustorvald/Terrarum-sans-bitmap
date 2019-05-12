@@ -115,21 +115,21 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
      */
     private fun getHanInitialRow(i: Int, p: Int, f: Int): Int {
         val ret =
-                if (isJungseongWide(p))         2
-                else if (isJungseongComplex(p)) 4
-                else 0
+                if (isJungseongWide(p))         3
+                else if (isJungseongComplex(p)) 5
+                else 1
 
         return if (f == 0) ret else ret + 1
     }
 
-    private fun getHanMedialRow(i: Int, p: Int, f: Int) = if (f == 0) 6 else 7
+    private fun getHanMedialRow(i: Int, p: Int, f: Int) = if (f == 0) 7 else 8
 
     private fun getHanFinalRow(i: Int, p: Int, f: Int): Int {
 
         return if (isJungseongWide(p))
-            8
-        else
             9
+        else
+            10
     }
 
     private fun isHangulChosung(c: CodePoint) = c in (0x1100..0x115F) || c in (0xA960..0xA97F)
@@ -208,8 +208,10 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isDiacriticalMarks(c: CodePoint) = c in codeRange[SHEET_DIACRITICAL_MARKS_VARW]
     private fun isPolytonicGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_POLY_VARW]
     private fun isExtC(c: CodePoint) = c in codeRange[SHEET_EXTC_VARW]
+    private fun isHangulCompat(c: CodePoint) = c in 0x3130..0x318F
 
-    private fun isCaps(c: CodePoint) = Character.isUpperCase(c) || isKartvelianCaps(c)
+    // underscored name: not a charset
+    private fun _isCaps(c: CodePoint) = Character.isUpperCase(c) || isKartvelianCaps(c)
 
 
     private fun extAindexX(c: CodePoint) = (c - 0x100) % 16
