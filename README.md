@@ -1,8 +1,8 @@
 # Terrarum Sans Bitmap
 
-![Font sample](demo.PNG)
+![Font sample — necessary information in this image is also provided below.](demo.PNG)
 
-This font is a bitmap font used in [my game project called Terrarum](https://github.com/minjaesong/Terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese and Korean. More technical side, it supports Latin-1 Supplement, Latin Ext-A, Latin Ext-B, IPA Extension (required by some languages), Greek, Cyrillic (+ Bulgarian, Serbian variants) and the supplement, Armenian, Thai (beta version), Georgian, Unicode Punctuations, CJK Punctuations, Kana, Chinese (limited to Unihan and Ext-A), Hangul (all 11 172 possible syllables) and Fullwidth forms.
+This font is a bitmap font used in [my game project called Terrarum](https://github.com/minjaesong/Terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese and Korean. More technical side, it supports Latin-1 Supplement, Latin Ext-A/B/C, IPA Extension, Greek, Cyrillic (+ Bulgarian, Serbian variants) and the supplement, Armenian, Devanagari, Bengali, Thai, Georgian (Mkhedruli and Mtavruli), General Punctuations, Super/Subscrips, CJK Punctuations, All of the Kana (minus the Hentaigana), Chinese (limited to Unihan and Ext-A), Hangul (every possible syllables) and Fullwidth forms.
 
 The JAR package is meant to be used with LibGDX (extends ```BitmapFont``` class). If you are not using the framework, please refer to the __Font metrics__ section to implement the font metrics correctly on your system.
 
@@ -10,8 +10,8 @@ The issue page is open. If you have some issues to submit, or have a question, p
 
 #### Little notes
 - To display Bulgarian/Serbian variants, you need special Control Characters. (GameFontBase.charsetOverrideBulgarian -- U+FFFC1; GameFontBase.charsetOverrideSerbian -- U+FFFC2)
-- All Han characters are in Chinese variant, no other variants are to be supported as most Chinese, Japanese and Korean can understand other's variant and to be honest, we don't bother anyway.
-- Indian script in general is not perfect: this font will never do the proper ligatures (I can't draw all the 1 224 possible combinations). Hopefully it's still be able to understand without them.
+- All Han characters are in Chinese variant, no other variants are to be supported as most Chinese, Japanese and Korean people can understand other's variant and as long as I can, we don't bother anyway.
+- Indian script in general is not perfect: right now this font will never do the proper ligatures (I can't draw all the 1 224 possible combinations). Hopefully it's still be able to understand without them.
 - Slick2d versions are now unsupported. I couldn't extend myself to work on both versions, but I'm still welcome to merge your pull requests.
 
 ### Design Goals
@@ -72,7 +72,7 @@ On your code (Java):
     }
 
 
-### Using on Slick2d
+### Using on Slick2d (legacy version only)
 
 On your code (Kotlin):
 
@@ -130,4 +130,4 @@ Please refer to [CONTRIBUTING.md](https://github.com/minjaesong/Terrarum-sans-bi
 
 Thanks to kind people of [/r/Typography](https://www.reddit.com/r/typography/) for amazing feedbacks.
 
-CJK Ideographs are powered by [WenQuanYi Font](http://wenq.org/wqy2/index.cgi?BitmapSong). The font is distributed under the GNU GPL version 2. Although, in some countries including where I'm based on, the shapes of typefaces are not copyrightable (the program codes—e.g. TTF—do), we would like to give a credit for the font and the people behind it.
+CJK Ideographs are powered by [WenQuanYi Font](http://wenq.org/wqy2/index.cgi?BitmapSong). The font is distributed under the GNU GPL version 2. Although the shapes of typefaces are not copyrightable (the program codes—e.g. TTF—do), we would like to give a credit for the font and the people behind it.
