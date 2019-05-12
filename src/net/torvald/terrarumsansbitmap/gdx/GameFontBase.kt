@@ -164,20 +164,32 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         return intArrayOf(indexI, indexP, indexF)
     }
 
+    /**
+     * @param iCP 0x1100..0x115F, 0xA960..0xA97F, 0x3130..0x318F
+     * @param pCP 0x00, 0x1160..0x11A7, 0xD7B0..0xD7CA
+     * @param fCP 0x00, 0x11A8..0x11FF, 0xD7BB..0xD7FF
+     *
+     * @return IntArray pair representing Hangul indices and rows (in this order)
+     */
     private fun toHangulIndexAndRow(iCP: CodePoint, pCP: CodePoint, fCP: CodePoint): Pair<IntArray, IntArray> {
-        val (indexI, indexP, indexF) = toHangulIndex(iCP, pCP, fCP)
+        if (isHangulCompat(iCP)) {
+            return intArrayOf(iCP - 0x3130, 0, 0) to intArrayOf(0, 7, 9)
+        }
+        else {
+            val (indexI, indexP, indexF) = toHangulIndex(iCP, pCP, fCP)
 
-        val rowI = getHanInitialRow(indexI, indexP, indexF)
-        val rowP = getHanMedialRow(indexI, indexP, indexF)
-        val rowF = getHanFinalRow(indexI, indexP, indexF)
+            val rowI = getHanInitialRow(indexI, indexP, indexF)
+            val rowP = getHanMedialRow(indexI, indexP, indexF)
+            val rowF = getHanFinalRow(indexI, indexP, indexF)
 
-        return intArrayOf(indexI, indexP, indexF) to intArrayOf(rowI, rowP, rowF)
+            return intArrayOf(indexI, indexP, indexF) to intArrayOf(rowI, rowP, rowF)
+        }
     }
 
 
     // END Hangul //
 
-    private fun isHangul(c: CodePoint) = c in codeRange[SHEET_HANGUL]
+    private fun isHangul(c: CodePoint) = c in codeRange[SHEET_HANGUL] || c in 0x3130..0x318F
     private fun isAscii(c: CodePoint) = c in codeRange[SHEET_ASCII_VARW]
     private fun isRunic(c: CodePoint) = c in codeRange[SHEET_RUNIC]
     private fun isExtA(c: CodePoint) = c in codeRange[SHEET_EXTA_VARW]
@@ -208,7 +220,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isDiacriticalMarks(c: CodePoint) = c in codeRange[SHEET_DIACRITICAL_MARKS_VARW]
     private fun isPolytonicGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_POLY_VARW]
     private fun isExtC(c: CodePoint) = c in codeRange[SHEET_EXTC_VARW]
-    private fun isHangulCompat(c: CodePoint) = c in 0x3130..0x318F
+    private fun isHangulCompat(c: CodePoint) = c in codeRangeHangulCompat
 
     // underscored name: not a charset
     private fun _isCaps(c: CodePoint) = Character.isUpperCase(c) || isKartvelianCaps(c)
@@ -497,6 +509,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             0x1F00..0x1FFF, // SHEET_GREEK_POLY_VARW
             0x2C60..0x2C7F // SHEET_EXTC_VARW
     )
+    private val codeRangeHangulCompat = 0x3130..0x318F
     /** Props of all printable Unicode points. */
     private val glyphProps: HashMap<CodePoint, GlyphProps> = HashMap()
     private val sheets: Array<PixmapRegionPack>
@@ -1113,6 +1126,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         this.codeRange[SHEET_CUSTOM_SYM].forEach { glyphProps[it] = GlyphProps(20, 0) }
         this.codeRange[SHEET_FW_UNI].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
         this.codeRange[SHEET_HANGUL].forEach { glyphProps[it] = GlyphProps(W_HANGUL, 0) }
+        codeRangeHangulCompat.forEach { glyphProps[it] = GlyphProps(W_HANGUL, 0) }
         this.codeRange[SHEET_KANA].forEach { glyphProps[it] = GlyphProps(W_KANA, 0) }
         this.codeRange[SHEET_RUNIC].forEach { glyphProps[it] = GlyphProps(9, 0) }
         this.codeRange[SHEET_UNIHAN].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
@@ -1189,8 +1203,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 }
 
 
-                if (isHangul(thisChar) && !isHangulChosung(thisChar)) {
-                    posXbuffer[charIndex] = if (isHangulChosung(lastNonDiacriticChar))
+                if (isHangul(thisChar) && !isHangulChosung(thisChar) && !isHangulCompat(thisChar)) {
+                    posXbuffer[charIndex] = if (isHangulChosung(lastNonDiacriticChar) || isHangulCompat(lastNonDiacriticChar))
                         posXbuffer[nonDiacriticCounter]
                     else
                         posXbuffer[nonDiacriticCounter] + W_HANGUL
