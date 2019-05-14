@@ -45,7 +45,7 @@ How multilingual? Real multilingual!
     􏻬あめつちほしそら やまかはみねたに くもきりむろこけ ひといぬうへすゑ ゆわさるおふせよ えの𛀁をなれゐて􀀀
     􏻬トリナクコヱス ユメサマセ ミヨアケワタル ヒンカシヲ ソライロハエテ オキツヘニ ホフネムレヰヌ モヤノウチ􀀀
     􏻬田居に出で 菜摘むわれをぞ 君召すと 求食り追ひゆく 山城の 打酔へる子ら 藻葉干せよ え舟繋けぬ􀀀
-    􏻬정 참판 양반댁 규수 큰 교자 타고 혼례 치른 날    하얬다 도럄직한 퀡봹퉪헰ꥸᅦퟗꥸᅦퟗᄋힳᆫ􀀀
+    􏻬정 참판 양반댁 규수 큰 교자 타고 혼례 치른 날    하얬다 도럄직한 퀡봹퉪헰ꥸᅦퟗꥸᅦퟗᄋힳᆫㅗㅜㅑㄷ􀀀
     􏻬Četri psihi faķīri vēlu vakarā zāģēja guļbūvei durvis, fonā šņācot mežam􀀀
     􏻬Įlinkdama fechtuotojo špaga sublykčiojusi pragręžė apvalų arbūzą􀀀
     􏻬Ѕидарски пејзаж: шугав билмез со чудење џвака ќофте и кељ на туѓ цех􀀀
@@ -108,8 +108,9 @@ How multilingual? Real multilingual!
     Basic Latin   Latin-1 Supplement   Latin Extended-A   Latin Extended-B   IPA Extension   Greek   Cyrillic
     Cyrillic Supplement   Armenian   Devanagari   Bengali   Thai   Georgian   Hangul Jamo   Cherokee   Runic
     Georgian Extended   Greek Extended   General Punctuations   Superscripts and Subscripts   CJK Symbols
-    Latin Extended-C   Kana   Kana Phonetic Extension   CJK Unihan Extension A   CJK Unihan
-    Hangul Jamo Extended-A   Hangul Syllables   Hangul Jamo Extended-B   Fullwidth Forms   Kana Supplement
+    Latin Extended-C   Kana   Hangul Compatibility Jamo   Kana Phonetic Extensions   CJK Unihan Extension A
+    CJK Unihan   Hangul Jamo Extended-A   Hangul Syllables   Hangul Jamo Extended-B   Fullwidth Forms
+    Kana Supplement
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀.
 You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make
