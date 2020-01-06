@@ -1,7 +1,7 @@
 /*
  * Terrarum Sans Bitmap
  * 
- * Copyright (c) 2017-2018 Minjae Song (Torvald)
+ * Copyright (c) 2017-2020 Minjae Song (Torvald)
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -94,11 +94,21 @@ internal typealias Hash = Long
  *
  * Created by minjaesong on 2017-06-15.
  */
-class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Boolean = false, val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, var errorOnUnknownChar: Boolean = false, val textCacheSize: Int = 256, val debug: Boolean = false) : BitmapFont() {
+class GameFontBase(
+        fontDir: String, 
+        val noShadow: Boolean = false, 
+        val flipY: Boolean = false, 
+        val invertShadow: Boolean = false,
+        val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, 
+        val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, 
+        var errorOnUnknownChar: Boolean = false, 
+        val textCacheSize: Int = 256, 
+        val debug: Boolean = false
+) : BitmapFont() {
 
     // Hangul Implementation Specific //
 
-    private fun getWanseongHanChosung(hanIndex: Int) = hanIndex / (JUNG_COUNT * JONG_COUNT)
+    private fun getWanseongHanChoseong(hanIndex: Int) = hanIndex / (JUNG_COUNT * JONG_COUNT)
     private fun getWanseongHanJungseong(hanIndex: Int) = hanIndex / JONG_COUNT % JUNG_COUNT
     private fun getWanseongHanJongseong(hanIndex: Int) = hanIndex % JONG_COUNT
 
@@ -109,7 +119,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     private fun isJungseongComplex(hanIndex: Int) = jungseongComplex.binarySearch(hanIndex) >= 0
 
     /**
-     * @param i Initial (Chosung)
+     * @param i Initial (Choseong)
      * @param p Peak (Jungseong)
      * @param f Final (Jongseong)
      */
@@ -132,12 +142,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             10
     }
 
-    private fun isHangulChosung(c: CodePoint) = c in (0x1100..0x115F) || c in (0xA960..0xA97F)
+    private fun isHangulChoseong(c: CodePoint) = c in (0x1100..0x115F) || c in (0xA960..0xA97F)
     private fun isHangulJungseong(c: CodePoint) = c in (0x1160..0x11A7) || c in (0xD7B0..0xD7C6)
     private fun isHangulJongseong(c: CodePoint) = c in (0x11A8..0x11FF) || c in (0xD7CB..0xD7FB)
 
-    private fun toHangulChosungIndex(c: CodePoint) =
-            if (!isHangulChosung(c)) throw IllegalArgumentException("This Hangul sequence does not begin with Chosung (${c.toHex()})")
+    private fun toHangulChoseongIndex(c: CodePoint) =
+            if (!isHangulChoseong(c)) throw IllegalArgumentException("This Hangul sequence does not begin with Choseong (${c.toHex()})")
             else if (c in 0x1100..0x115F) c - 0x1100
             else c - 0xA960 + 96
     private fun toHangulJungseongIndex(c: CodePoint) =
@@ -152,12 +162,12 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
     /**
      * X-position in the spritesheet
      *
-     * @param iCP Code point for Initial (Chosung)
+     * @param iCP Code point for Initial (Choseong)
      * @param pCP Code point for Peak (Jungseong)
-     * @param fCP Code point for Final (Jongseong
+     * @param fCP Code point for Final (Jongseong)
      */
     private fun toHangulIndex(iCP: CodePoint, pCP: CodePoint, fCP: CodePoint): IntArray {
-        val indexI = toHangulChosungIndex(iCP)
+        val indexI = toHangulChoseongIndex(iCP)
         val indexP = toHangulJungseongIndex(pCP)
         val indexF = toHangulJongseongIndex(fCP)
 
@@ -1203,8 +1213,8 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
                 }
 
 
-                if (isHangul(thisChar) && !isHangulChosung(thisChar) && !isHangulCompat(thisChar)) {
-                    posXbuffer[charIndex] = if (isHangulChosung(lastNonDiacriticChar) || isHangulCompat(lastNonDiacriticChar))
+                if (isHangul(thisChar) && !isHangulChoseong(thisChar) && !isHangulCompat(thisChar)) {
+                    posXbuffer[charIndex] = if (isHangulChoseong(lastNonDiacriticChar) || isHangulCompat(lastNonDiacriticChar))
                         posXbuffer[nonDiacriticCounter]
                     else
                         posXbuffer[nonDiacriticCounter] + W_HANGUL
@@ -1355,7 +1365,7 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
             // disassemble Hangul Syllables into Initial-Peak-Final encoding
             else if (c in 0xAC00.toChar()..0xD7A3.toChar()) {
                 val cInt = c.toInt() - 0xAC00
-                val indexCho  = getWanseongHanChosung(cInt)
+                val indexCho  = getWanseongHanChoseong(cInt)
                 val indexJung = getWanseongHanJungseong(cInt)
                 val indexJong = getWanseongHanJongseong(cInt) - 1 // no Jongseong will be -1
 
@@ -1473,10 +1483,14 @@ class GameFontBase(fontDir: String, val noShadow: Boolean = false, val flipY: Bo
         //
         // for now, no semitransparency (in colourcode && spritesheet)
 
-        val jobQueue = arrayOf(
+        val jobQueue = if (!invertShadow) arrayOf(
                 1 to 0,
                 0 to 1,
                 1 to 1
+        ) else arrayOf(
+                -1 to  0,
+                 0 to -1,
+                -1 to -1
         )
 
         jobQueue.forEach {
