@@ -6,77 +6,7 @@
     </artifacts-to-build>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/FontDemoGDX.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/FontDemoGDX.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/TerrarumSansBitmap.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/TerrarumSansBitmap.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/GdxLib.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/GdxLib.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/KotlinJavaRuntime.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/KotlinJavaRuntime.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/TesterLib.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/TesterLib.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/markdown-navigator.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/markdown-navigator.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/markdown-navigator/profiles_settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/markdown-navigator/profiles_settings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" beforeDir="false" afterPath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CONTRIBUTING.md" beforeDir="false" afterPath="$PROJECT_DIR$/CONTRIBUTING.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CONTRIBUTORS.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CONTRIBUTORS.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontDemoGDX.jar" beforeDir="false" afterPath="$PROJECT_DIR$/FontDemoGDX.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/META-INF/MANIFEST.MF" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LICENSE.md" beforeDir="false" afterPath="$PROJECT_DIR$/LICENSE.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/META-INF/MANIFEST.MF" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PUA_allocation_chart.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/PUA_allocation_chart.xlsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/alignment_illustration.jpg" beforeDir="false" afterPath="$PROJECT_DIR$/alignment_illustration.jpg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/ascii_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/ascii_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/cjkpunct.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/cjkpunct.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/cyrilic_bulgarian_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/cyrilic_bulgarian_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/cyrilic_serbian_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/cyrilic_serbian_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/cyrilic_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/cyrilic_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/devanagari_bengali_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/devanagari_bengali_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/diacritical_marks_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/diacritical_marks_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/fullwidth_forms.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/fullwidth_forms.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/futhark.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/futhark.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/greek_polytonic_xyswap_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/greek_polytonic_xyswap_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/greek_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/greek_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/hangul_johab.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/hangul_johab.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/hayeren_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/hayeren_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/insular_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/insular_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/ipa_ext_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/ipa_ext_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/kana.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/kana.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/kartuli_allcaps_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/kartuli_allcaps_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/kartuli_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/kartuli_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/latinExt_additional_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/latinExt_additional_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/puae000-e0ff.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/puae000-e0ff.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/richtext_furigana.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/richtext_furigana.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/thai_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/thai_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/tsalagi_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/tsalagi_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/unipunct_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/unipunct_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/wenquanyi.tga.gz" beforeDir="false" afterPath="$PROJECT_DIR$/assets/wenquanyi.tga.gz" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/demo.PNG" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demotext.txt" beforeDir="false" afterPath="$PROJECT_DIR$/demotext.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/font_drawing_template.png" beforeDir="false" afterPath="$PROJECT_DIR$/font_drawing_template.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/glyph_height_pos_annotation.png" beforeDir="false" afterPath="$PROJECT_DIR$/glyph_height_pos_annotation.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/samples/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/samples/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/samples/wikipedia_x86.png" beforeDir="false" afterPath="$PROJECT_DIR$/samples/wikipedia_x86.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/GlyphProps.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/GlyphProps.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/PixmapRegionPack.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/PixmapRegionPack.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/TextureRegionPack.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/TextureRegionPack.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/readme.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/terrarum_sans_cyrillic_2.png" beforeDir="false" afterPath="$PROJECT_DIR$/terrarum_sans_cyrillic_2.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testing.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/testing.PNG" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testtext.txt" beforeDir="false" afterPath="$PROJECT_DIR$/testtext.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/width_bit_encoding_annotated.png" beforeDir="false" afterPath="$PROJECT_DIR$/width_bit_encoding_annotated.png" afterDir="false" />
-    </list>
+    <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -271,38 +201,38 @@
       <screen x="1920" y="0" width="1920" height="1200" />
     </state>
     <state x="2731" y="492" key="#com.intellij.ide.util.projectWizard.JdkChooserPanel.MyDialog/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586812200948" />
-    <state width="1872" height="400" key="GridCell.Tab.0.bottom" timestamp="1586813964625">
+    <state width="1872" height="400" key="GridCell.Tab.0.bottom" timestamp="1586816654562">
       <screen x="1920" y="0" width="1920" height="1200" />
     </state>
-    <state width="1872" height="400" key="GridCell.Tab.0.bottom/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586813964625" />
-    <state width="1872" height="400" key="GridCell.Tab.0.center" timestamp="1586813964625">
+    <state width="1872" height="400" key="GridCell.Tab.0.bottom/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586816654562" />
+    <state width="1872" height="400" key="GridCell.Tab.0.center" timestamp="1586816654562">
       <screen x="1920" y="0" width="1920" height="1200" />
     </state>
-    <state width="1872" height="400" key="GridCell.Tab.0.center/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586813964625" />
-    <state width="1872" height="400" key="GridCell.Tab.0.left" timestamp="1586813964625">
+    <state width="1872" height="400" key="GridCell.Tab.0.center/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586816654562" />
+    <state width="1872" height="400" key="GridCell.Tab.0.left" timestamp="1586816654560">
       <screen x="1920" y="0" width="1920" height="1200" />
     </state>
-    <state width="1872" height="400" key="GridCell.Tab.0.left/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586813964625" />
-    <state width="1872" height="400" key="GridCell.Tab.0.right" timestamp="1586813964625">
+    <state width="1872" height="400" key="GridCell.Tab.0.left/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586816654560" />
+    <state width="1872" height="400" key="GridCell.Tab.0.right" timestamp="1586816654562">
       <screen x="1920" y="0" width="1920" height="1200" />
     </state>
-    <state width="1872" height="400" key="GridCell.Tab.0.right/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586813964625" />
-    <state width="1872" height="400" key="GridCell.Tab.1.bottom" timestamp="1586813964471">
+    <state width="1872" height="400" key="GridCell.Tab.0.right/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586816654562" />
+    <state width="1872" height="400" key="GridCell.Tab.1.bottom" timestamp="1586816654480">
       <screen x="1920" y="0" width="1920" height="1200" />
     </state>
-    <state width="1872" height="400" key="GridCell.Tab.1.bottom/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586813964471" />
-    <state width="1872" height="400" key="GridCell.Tab.1.center" timestamp="1586813964471">
+    <state width="1872" height="400" key="GridCell.Tab.1.bottom/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586816654480" />
+    <state width="1872" height="400" key="GridCell.Tab.1.center" timestamp="1586816654480">
       <screen x="1920" y="0" width="1920" height="1200" />
     </state>
-    <state width="1872" height="400" key="GridCell.Tab.1.center/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586813964471" />
-    <state width="1872" height="400" key="GridCell.Tab.1.left" timestamp="1586813964471">
+    <state width="1872" height="400" key="GridCell.Tab.1.center/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586816654480" />
+    <state width="1872" height="400" key="GridCell.Tab.1.left" timestamp="1586816654480">
       <screen x="1920" y="0" width="1920" height="1200" />
     </state>
-    <state width="1872" height="400" key="GridCell.Tab.1.left/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586813964471" />
-    <state width="1872" height="400" key="GridCell.Tab.1.right" timestamp="1586813964471">
+    <state width="1872" height="400" key="GridCell.Tab.1.left/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586816654480" />
+    <state width="1872" height="400" key="GridCell.Tab.1.right" timestamp="1586816654480">
       <screen x="1920" y="0" width="1920" height="1200" />
     </state>
-    <state width="1872" height="400" key="GridCell.Tab.1.right/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586813964471" />
+    <state width="1872" height="400" key="GridCell.Tab.1.right/1920.0.1920.1200/3840.75.1680.1050/0.0.1920.1200@1920.0.1920.1200" timestamp="1586816654480" />
   </component>
   <component name="antWorkspaceConfiguration">
     <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
