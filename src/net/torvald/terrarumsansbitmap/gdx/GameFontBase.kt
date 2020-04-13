@@ -224,12 +224,13 @@ class GameFontBase(
     private fun isColourCode(c: CodePoint) = c == 0x100000 || c in 0x10F000..0x10FFFF
     private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFFF
     private fun isCherokee(c: CodePoint) = c in codeRange[SHEET_TSALAGI_VARW]
-    private fun isInsular(c: CodePoint) = c == 0x1D79 || c in 0xA779..0xA787
+    private fun isInsular(c: CodePoint) = c == 0x1D79
     private fun isNagariBengali(c: CodePoint) = c in codeRange[SHEET_NAGARI_BENGALI_VARW]
     private fun isKartvelianCaps(c: CodePoint) = c in codeRange[SHEET_KARTULI_CAPS_VARW]
     private fun isDiacriticalMarks(c: CodePoint) = c in codeRange[SHEET_DIACRITICAL_MARKS_VARW]
     private fun isPolytonicGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_POLY_VARW]
     private fun isExtC(c: CodePoint) = c in codeRange[SHEET_EXTC_VARW]
+    private fun isExtD(c: CodePoint) = c in codeRange[SHEET_EXTD_VARW]
     private fun isHangulCompat(c: CodePoint) = c in codeRangeHangulCompat
 
     // underscored name: not a charset
@@ -310,7 +311,10 @@ class GameFontBase(
     private fun extCIndexX(c: CodePoint) = (c - 0x2C60) % 16
     private fun extCIndexY(c: CodePoint) = (c - 0x2C60) / 16
 
-    private val lowHeightLetters = "acegijmnopqrsuvwxyzɱɳʙɾɽʒʂʐʋɹɻɥɟɡɢʛȵɲŋɴʀɕʑçʝxɣχʁʜʍɰʟɨʉɯuʊøɘɵɤəɛœɜɞʌɔæɐɶɑɒɚɝɩɪʅʈʏʞⱥⱦⱱⱳⱴⱶⱷⱸⱺⱻ".toSortedSet()
+    private fun extDIndexX(c: CodePoint) = (c - 0xA720) % 16
+    private fun extDIndexY(c: CodePoint) = (c - 0xA720) / 16
+
+    private val lowHeightLetters = "acegijmnopqrsuvwxyzɱɳʙɾɽʒʂʐʋɹɻɥɟɡɢʛȵɲŋɴʀɕʑçʝxɣχʁʜʍɰʟɨʉɯuʊøɘɵɤəɛœɜɞʌɔæɐɶɑɒɚɝɩɪʅʈʏʞⱥⱦⱱⱳⱴⱶⱷⱸⱺⱻꜥꜩꜫꜭꜯꜰꜱꜳꜵꜷꜹꜻꜽꜿꝋꝍꝏꝑꝓꝕꝗꝙꝛꝝꝟꝡꝫꝯꝳꝴꝵꝶꝷꝺꝼꝿꞁꞃꞅꞇꞑꞓꞔꞛꞝꞟꞡꞥꞧꞩꞮ\uA7AFꞷ\uA7B9\uA7C3\uA7CAꟺ".toSortedSet()
     /**
      * lowercase AND the height is equal to x-height (e.g. lowercase B, D, F, H, K, L, ... does not count
      */
@@ -454,7 +458,8 @@ class GameFontBase(
             SHEET_KARTULI_CAPS_VARW,
             SHEET_DIACRITICAL_MARKS_VARW,
             SHEET_GREEK_POLY_VARW,
-            SHEET_EXTC_VARW
+            SHEET_EXTC_VARW,
+            SHEET_EXTD_VARW
     )
     private val autoShiftDownOnLowercase = arrayOf(
             SHEET_DIACRITICAL_MARKS_VARW
@@ -488,7 +493,8 @@ class GameFontBase(
             "kartuli_allcaps_variable.tga",
             "diacritical_marks_variable.tga",
             "greek_polytonic_xyswap_variable.tga",
-            "latinExtC_variable.tga"
+            "latinExtC_variable.tga",
+            "latinExtD_variable.tga"
     )
     private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -517,7 +523,8 @@ class GameFontBase(
             0x1C90..0x1CBF, // SHEET_KARTULI_CAPS_VARW
             0x300..0x36F, // SHEET_DIACRITICAL_MARKS_VARW
             0x1F00..0x1FFF, // SHEET_GREEK_POLY_VARW
-            0x2C60..0x2C7F // SHEET_EXTC_VARW
+            0x2C60..0x2C7F, // SHEET_EXTC_VARW
+            0xA720..0xA7FF // SHEET_EXTD_VARW
     )
     private val codeRangeHangulCompat = 0x3130..0x318F
     /** Props of all printable Unicode points. */
@@ -955,6 +962,8 @@ class GameFontBase(
             return SHEET_GREEK_POLY_VARW
         else if (isExtC(c))
             return SHEET_EXTC_VARW
+        else if (isExtD(c))
+            return SHEET_EXTD_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -1059,6 +1068,10 @@ class GameFontBase(
             SHEET_EXTC_VARW -> {
                 sheetX = extCIndexX(ch)
                 sheetY = extCIndexY(ch)
+            }
+            SHEET_EXTD_VARW -> {
+                sheetX = extDIndexX(ch)
+                sheetY = extDIndexY(ch)
             }
             else -> {
                 sheetX = ch % 16
@@ -1543,8 +1556,8 @@ class GameFontBase(
     private fun Int.forceOpaque() = this.and(0xFFFFFF00.toInt()) or 0xFF
 
     private infix fun Int.colorTimes(other: Int): Int {
-        val thisBytes = IntArray(4, { this.ushr(it * 8).and(255) })
-        val otherBytes = IntArray(4, { other.ushr(it * 8).and(255) })
+        val thisBytes = IntArray(4) { this.ushr(it * 8).and(255) }
+        val otherBytes = IntArray(4) { other.ushr(it * 8).and(255) }
 
         return (thisBytes[0] times256 otherBytes[0]) or
                (thisBytes[1] times256 otherBytes[1]).shl(8) or
@@ -1554,15 +1567,11 @@ class GameFontBase(
 
     private infix fun Int.times256(other: Int) = multTable255[this][other]
 
-    private val multTable255 = Array(256,
-            { left ->
-                IntArray(256,
-                        { right ->
-                            (255f * (left / 255f).times(right / 255f)).roundToInt()
-                        }
-                )
-            }
-    )
+    private val multTable255 = Array(256) { left ->
+        IntArray(256) { right ->
+            (255f * (left / 255f).times(right / 255f)).roundToInt()
+        }
+    }
 
 
     /** High surrogate comes before the low. */
@@ -1689,12 +1698,13 @@ class GameFontBase(
         internal val SHEET_BULGARIAN_VARW =    18
         internal val SHEET_SERBIAN_VARW =      19
         internal val SHEET_TSALAGI_VARW =      20
-        internal val SHEET_INSUAR_VARW =       21
+        internal val SHEET_INSUAR_VARW =       21 // currently only for U+1D79
         internal val SHEET_NAGARI_BENGALI_VARW=22
         internal val SHEET_KARTULI_CAPS_VARW = 23
         internal val SHEET_DIACRITICAL_MARKS_VARW = 24
         internal val SHEET_GREEK_POLY_VARW   = 25
         internal val SHEET_EXTC_VARW =         26
+        internal val SHEET_EXTD_VARW =         27
 
         internal val SHEET_UNKNOWN = 254
 

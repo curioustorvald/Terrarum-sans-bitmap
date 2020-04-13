@@ -41,7 +41,7 @@ How multilingual? Real multilingual!
     􏻬სწრაფი ყავისფერი მელა გადაახტა ზარმაც ძაღლს    ᲘᲜᲢᲔᲚ ᲞᲔᲜᲢᲘᲣᲛᲘ ᲛᲘᲙᲠᲝᲞᲠᲝᲪᲔᲡᲝᲠᲘ􀀀
     􏻬ऋषियों को सताने वाले दुष्ट राक्षसों के राजा रावण का सर्वनाश करने वाले विष्णुवतार भगवान श्रीराम अयोध्या के महाराज दशरथ के􀀀
     􏻬Kæmi ný öxi hér, ykist þjófum nú bæði víl og ádrepa􀀀
-    􏻬Ċuaiġ bé ṁórṡáċ le dlúṫspád fíorḟinn trí hata mo ḋea-ṗorcáin ḃig􀀀
+    􏻬Ċuaiġ bé ṁórṡáċ le dlúṫspád fíoꝛḟinn trí hata mo ḋea-ṗoꝛcáin ḃig􀀀
     􏻬あめつちほしそら やまかはみねたに くもきりむろこけ ひといぬうへすゑ ゆわさるおふせよ えの𛀁をなれゐて􀀀
     􏻬トリナクコヱス ユメサマセ ミヨアケワタル ヒンカシヲ ソライロハエテ オキツヘニ ホフネムレヰヌ モヤノウチ􀀀
     􏻬田居に出で 菜摘むわれをぞ 君召すと 求食り追ひゆく 山城の 打酔へる子ら 藻葉干せよ え舟繋けぬ􀀀
@@ -109,8 +109,8 @@ How multilingual? Real multilingual!
     Cyrillic Supplement   Armenian   Devanagari   Bengali   Thai   Georgian   Hangul Jamo   Cherokee   Runic
     Georgian Extended   Greek Extended   General Punctuations   Superscripts and Subscripts   CJK Symbols
     Latin Extended-C   Kana   Hangul Compatibility Jamo   Kana Phonetic Extensions   CJK Unihan Extension A
-    CJK Unihan   Hangul Jamo Extended-A   Hangul Syllables   Hangul Jamo Extended-B   Fullwidth Forms
-    Kana Supplement
+    CJK Unihan   Latin Extended-D   Hangul Jamo Extended-A   Hangul Syllables   Hangul Jamo Extended-B
+    Fullwidth Forms   Kana Supplement
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀.
 You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make
