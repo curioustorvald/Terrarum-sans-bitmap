@@ -1207,13 +1207,37 @@ for c in s:
         }
     }
 
+    private fun getKerning(prevChar: CodePoint, thisChar: CodePoint): Int {
+        return if (prevChar in lowHeightLetters) {
+            return if (thisChar in kernTees) kernTee // lh - T
+            else if (thisChar in kernYees) kernYee   // lh - Y
+            else 0
+        }
+        else if (prevChar in kernTees) {
+            return if (thisChar in lowHeightLetters) kernTee // T - lh
+            else 0
+        }
+        else if (prevChar in kernYees) {
+            return if (thisChar in lowHeightLetters) kernYee // Y - lh
+            else 0
+        }
+        else if (prevChar in kernAyes) {
+            return if (thisChar in kernVees) kernAV  // A - V
+            else 0
+        }
+        else if (prevChar in kernVees) {
+            return if (thisChar in kernAyes) kernAV  // V - A
+            else 0
+        }
+        else 0
+    }
 
     /**
      * posXbuffer's size is greater than the string, last element marks the width of entire string.
      */
     private fun buildWidthAndPosBuffers(str: CodepointSequence): Pair<IntArray, IntArray> {
-        val posXbuffer = IntArray(str.size + 1, { 0 })
-        val posYbuffer = IntArray(str.size, { 0 })
+        val posXbuffer = IntArray(str.size + 1) { 0 }
+        val posYbuffer = IntArray(str.size) { 0 }
 
 
         var nonDiacriticCounter = 0 // index of last instance of non-diacritic char
@@ -1237,6 +1261,7 @@ for c in s:
                 val thisProp = glyphProps[thisChar] ?: nullProp
                 val lastNonDiacriticChar = str[nonDiacriticCounter]
                 val itsProp = glyphProps[lastNonDiacriticChar] ?: nullProp
+                val kerning = getKerning(lastNonDiacriticChar, thisChar)
 
 
                 //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
@@ -1259,11 +1284,11 @@ for c in s:
                 else if (!thisProp.writeOnTop) {
                     posXbuffer[charIndex] = when (itsProp.alignWhere) {
                         GlyphProps.ALIGN_RIGHT ->
-                            posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar
+                            posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar + kerning
                         GlyphProps.ALIGN_CENTRE ->
-                            posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar
+                            posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar + kerning
                         else ->
-                            posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar
+                            posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning
 
                     }
 

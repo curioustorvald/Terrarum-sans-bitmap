@@ -22,7 +22,7 @@ class FontTestGDX : Game() {
 
     lateinit var camera: OrthographicCamera
 
-    private val testing = true
+    private val testing = false
 
     private val demotextName = if (testing) "testtext.txt" else "demotext.txt"
     private val outimageName = if (testing) "testing.PNG" else "demo.PNG"
