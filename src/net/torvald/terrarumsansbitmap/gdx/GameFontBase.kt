@@ -335,6 +335,12 @@ for c in s:
     // AÀÁÂÃÄÅĀĂĄǍǞǠǺȀȂȦɅΆΑΛАДЛѦӅӐӒԮḀẠẢẤẦẨẪẬẮẰẲẴẶἈἉἊἋἌἍἎἏᾸᾹᾺΆꓥꓮꙞꙢꙤꚀꚈꜲ
     private val kernAyes = intArrayOf(0x41,0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0x100,0x102,0x104,0x1cd,0x1de,0x1e0,0x1fa,0x200,0x202,0x226,0x245,0x386,0x391,0x39b,0x410,0x414,0x41b,0x466,0x4c5,0x4d0,0x4d2,0x52e,0x1e00,0x1ea0,0x1ea2,0x1ea4,0x1ea6,0x1ea8,0x1eaa,0x1eac,0x1eae,0x1eb0,0x1eb2,0x1eb4,0x1eb6,0x1f08,0x1f09,0x1f0a,0x1f0b,0x1f0c,0x1f0d,0x1f0e,0x1f0f,0x1fb8,0x1fb9,0x1fba,0x1fbb,0xa4e5,0xa4ee,0xa65e,0xa662,0xa664,0xa680,0xa688,0xa732).toSortedSet()
 
+    private val kernElls = intArrayOf(0x4c)
+
+    private val kernGammas = intArrayOf(0x393)
+
+    private val kernJays = intArrayOf(0x4a)
+
     private val kernTee = -2
     private val kernYee = -1
     private val kernAV = -1
@@ -1213,8 +1219,15 @@ for c in s:
             else if (thisChar in kernYees) kernYee   // lh - Y
             else 0
         }
+        else if (prevChar in kernElls) {
+            return if (thisChar in kernTees) kernTee // L - T
+            else if (thisChar in kernVees) kernYee   // L - V
+            else 0
+        }
         else if (prevChar in kernTees) {
             return if (thisChar in lowHeightLetters) kernTee // T - lh
+            else if (thisChar in kernJays) kernTee           // T - J
+            else if (thisChar in kernAyes) kernYee           // T - A
             else 0
         }
         else if (prevChar in kernYees) {
@@ -1223,10 +1236,17 @@ for c in s:
         }
         else if (prevChar in kernAyes) {
             return if (thisChar in kernVees) kernAV  // A - V
+            else if (thisChar in kernTees) kernAV    // A - T
             else 0
         }
         else if (prevChar in kernVees) {
             return if (thisChar in kernAyes) kernAV  // V - A
+            else if (thisChar in kernJays) kernAV    // V - J
+            else 0
+        }
+        else if (prevChar in kernGammas) {
+            return if (thisChar in kernAyes) kernYee       // Γ - Α
+            else if (thisChar in lowHeightLetters) kernTee // Γ - lh
             else 0
         }
         else 0
