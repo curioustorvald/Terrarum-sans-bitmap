@@ -1247,6 +1247,7 @@ for c in s:
         else if (prevChar in kernGammas) {
             return if (thisChar in kernAyes) kernYee       // Γ - Α
             else if (thisChar in lowHeightLetters) kernTee // Γ - lh
+            else if (thisChar in kernJays) kernTee         // Γ - J
             else 0
         }
         else 0
