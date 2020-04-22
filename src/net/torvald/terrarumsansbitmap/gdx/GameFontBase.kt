@@ -1227,6 +1227,7 @@ for c in s:
         else if (prevChar in kernElls) {
             return if (thisChar in kernTees) kernTee // L - T
             else if (thisChar in kernVees) kernYee   // L - V
+            else if (thisChar in kernYees) kernYee   // L - Y
             else 0
         }
         else if (prevChar in kernTees) {
@@ -1237,11 +1238,14 @@ for c in s:
         }
         else if (prevChar in kernYees) {
             return if (thisChar in lowHeightLetters) kernYee // Y - lh
+            else if (thisChar in kernAyes) kernYee           // Y - A
+            else if (thisChar in kernJays) kernYee           // Y - J
             else 0
         }
         else if (prevChar in kernAyes) {
             return if (thisChar in kernVees) kernAV  // A - V
             else if (thisChar in kernTees) kernAV    // A - T
+            else if (thisChar in kernYees) kernYee   // A - Y
             else 0
         }
         else if (prevChar in kernVees) {
