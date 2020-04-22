@@ -112,11 +112,16 @@ class GameFontBase(
     private fun getWanseongHanJungseong(hanIndex: Int) = hanIndex / JONG_COUNT % JUNG_COUNT
     private fun getWanseongHanJongseong(hanIndex: Int) = hanIndex % JONG_COUNT
 
+    // ㅗ ㅛ ㅜ ㅠ ㅡ etc
     private val jungseongWide: Array<Int> = arrayOf(9,13,14,18,19,34,35,39,45,51,53,54,62,64,66,80,83)
+    // ㅘ ㅙ ㅚ etc
     private val jungseongComplex: Array<Int> = arrayOf(10,11,12,15,16,17,20) + (22..33).toList() + arrayOf(36,37,38) + (40..44).toList() + arrayOf(46,47,48,49,50,52) + (55..60).toList() + arrayOf(63,65) + (67..79).toList() + arrayOf(81,82) + (84..93).toList()
+    // ㅓ ㅔ ㅕ etc
+    private val jungseongRightie: Array<Int> = arrayOf(2,4,6,8,11,16,32,33,37,42,44,48,50,71,72,75,78,79,83,86,87,88,94)
 
     private fun isJungseongWide(hanIndex: Int) = jungseongWide.binarySearch(hanIndex) >= 0
     private fun isJungseongComplex(hanIndex: Int) = jungseongComplex.binarySearch(hanIndex) >= 0
+    private fun isJungseongRighie(hanIndex: Int) = jungseongRightie.binarySearch(hanIndex) >= 0
 
     /**
      * @param i Initial (Choseong)
@@ -136,10 +141,10 @@ class GameFontBase(
 
     private fun getHanFinalRow(i: Int, p: Int, f: Int): Int {
 
-        return if (isJungseongWide(p))
-            9
-        else
+        return if (isJungseongRighie(p))
             10
+        else
+            9
     }
 
     private fun isHangulChoseong(c: CodePoint) = c in (0x1100..0x115F) || c in (0xA960..0xA97F)
