@@ -37,7 +37,6 @@ import java.security.MessageDigest
 import java.util.*
 import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
-import kotlin.NullPointerException
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
@@ -106,218 +105,7 @@ class GameFontBase(
         val debug: Boolean = false
 ) : BitmapFont() {
 
-    // Hangul Implementation Specific //
 
-    private fun getWanseongHanChoseong(hanIndex: Int) = hanIndex / (JUNG_COUNT * JONG_COUNT)
-    private fun getWanseongHanJungseong(hanIndex: Int) = hanIndex / JONG_COUNT % JUNG_COUNT
-    private fun getWanseongHanJongseong(hanIndex: Int) = hanIndex % JONG_COUNT
-
-    // ㅗ ㅛ ㅜ ㅠ ㅡ etc
-    private val jungseongWide: Array<Int> = arrayOf(9,13,14,18,19,34,35,39,45,51,53,54,62,64,66,80,83)
-    // ㅘ ㅙ ㅚ etc
-    private val jungseongComplex: Array<Int> = arrayOf(10,11,12,15,16,17,20) + (22..33).toList() + arrayOf(36,37,38) + (40..44).toList() + arrayOf(46,47,48,49,50,52) + (55..60).toList() + arrayOf(63,65) + (67..79).toList() + arrayOf(81,82) + (84..93).toList()
-    // ㅓ ㅔ ㅕ etc
-    private val jungseongRightie: Array<Int> = arrayOf(2,4,6,8,11,16,32,33,37,42,44,48,50,71,72,75,78,79,83,86,87,88,94)
-
-    private fun isJungseongWide(hanIndex: Int) = jungseongWide.binarySearch(hanIndex) >= 0
-    private fun isJungseongComplex(hanIndex: Int) = jungseongComplex.binarySearch(hanIndex) >= 0
-    private fun isJungseongRighie(hanIndex: Int) = jungseongRightie.binarySearch(hanIndex) >= 0
-
-    /**
-     * @param i Initial (Choseong)
-     * @param p Peak (Jungseong)
-     * @param f Final (Jongseong)
-     */
-    private fun getHanInitialRow(i: Int, p: Int, f: Int): Int {
-        val ret =
-                if (isJungseongWide(p))         3
-                else if (isJungseongComplex(p)) 5
-                else 1
-
-        return if (f == 0) ret else ret + 1
-    }
-
-    private fun getHanMedialRow(i: Int, p: Int, f: Int) = if (f == 0) 7 else 8
-
-    private fun getHanFinalRow(i: Int, p: Int, f: Int): Int {
-
-        return if (isJungseongRighie(p))
-            10
-        else
-            9
-    }
-
-    private fun isHangulChoseong(c: CodePoint) = c in (0x1100..0x115F) || c in (0xA960..0xA97F)
-    private fun isHangulJungseong(c: CodePoint) = c in (0x1160..0x11A7) || c in (0xD7B0..0xD7C6)
-    private fun isHangulJongseong(c: CodePoint) = c in (0x11A8..0x11FF) || c in (0xD7CB..0xD7FB)
-
-    private fun toHangulChoseongIndex(c: CodePoint) =
-            if (!isHangulChoseong(c)) throw IllegalArgumentException("This Hangul sequence does not begin with Choseong (${c.toHex()})")
-            else if (c in 0x1100..0x115F) c - 0x1100
-            else c - 0xA960 + 96
-    private fun toHangulJungseongIndex(c: CodePoint) =
-            if (!isHangulJungseong(c)) 0
-            else if (c in 0x1160..0x11A7) c - 0x1160
-            else c - 0xD7B0 + 72
-    private fun toHangulJongseongIndex(c: CodePoint) =
-            if (!isHangulJongseong(c)) 0
-            else if (c in 0x11A8..0x11FF) c - 0x11A8 + 1
-            else c - 0xD7CB + 88 + 1
-
-    /**
-     * X-position in the spritesheet
-     *
-     * @param iCP Code point for Initial (Choseong)
-     * @param pCP Code point for Peak (Jungseong)
-     * @param fCP Code point for Final (Jongseong)
-     */
-    private fun toHangulIndex(iCP: CodePoint, pCP: CodePoint, fCP: CodePoint): IntArray {
-        val indexI = toHangulChoseongIndex(iCP)
-        val indexP = toHangulJungseongIndex(pCP)
-        val indexF = toHangulJongseongIndex(fCP)
-
-        return intArrayOf(indexI, indexP, indexF)
-    }
-
-    /**
-     * @param iCP 0x1100..0x115F, 0xA960..0xA97F, 0x3130..0x318F
-     * @param pCP 0x00, 0x1160..0x11A7, 0xD7B0..0xD7CA
-     * @param fCP 0x00, 0x11A8..0x11FF, 0xD7BB..0xD7FF
-     *
-     * @return IntArray pair representing Hangul indices and rows (in this order)
-     */
-    private fun toHangulIndexAndRow(iCP: CodePoint, pCP: CodePoint, fCP: CodePoint): Pair<IntArray, IntArray> {
-        if (isHangulCompat(iCP)) {
-            return intArrayOf(iCP - 0x3130, 0, 0) to intArrayOf(0, 7, 9)
-        }
-        else {
-            val (indexI, indexP, indexF) = toHangulIndex(iCP, pCP, fCP)
-
-            val rowI = getHanInitialRow(indexI, indexP, indexF)
-            val rowP = getHanMedialRow(indexI, indexP, indexF)
-            val rowF = getHanFinalRow(indexI, indexP, indexF)
-
-            return intArrayOf(indexI, indexP, indexF) to intArrayOf(rowI, rowP, rowF)
-        }
-    }
-
-
-    // END Hangul //
-
-    private fun isHangul(c: CodePoint) = c in codeRange[SHEET_HANGUL] || c in 0x3130..0x318F
-    private fun isAscii(c: CodePoint) = c in codeRange[SHEET_ASCII_VARW]
-    private fun isRunic(c: CodePoint) = c in codeRange[SHEET_RUNIC]
-    private fun isExtA(c: CodePoint) = c in codeRange[SHEET_EXTA_VARW]
-    private fun isExtB(c: CodePoint) = c in codeRange[SHEET_EXTB_VARW]
-    private fun isKana(c: CodePoint) = c in codeRange[SHEET_KANA]
-    private fun isCJKPunct(c: CodePoint) = c in codeRange[SHEET_CJK_PUNCT]
-    private fun isUniHan(c: CodePoint) = c in codeRange[SHEET_UNIHAN]
-    private fun isCyrilic(c: CodePoint) = c in codeRange[SHEET_CYRILIC_VARW]
-    private fun isFullwidthUni(c: CodePoint) = c in codeRange[SHEET_FW_UNI]
-    private fun isUniPunct(c: CodePoint) = c in codeRange[SHEET_UNI_PUNCT_VARW]
-    private fun isGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_VARW]
-    private fun isThai(c: CodePoint) = c in codeRange[SHEET_THAI_VARW]
-    /*private fun isDiacritics(c: CodePoint) = c in 0xE34..0xE3A
-            || c in 0xE47..0xE4E
-            || c == 0xE31*/
-    private fun isCustomSym(c: CodePoint) = c in codeRange[SHEET_CUSTOM_SYM]
-    private fun isArmenian(c: CodePoint) = c in codeRange[SHEET_HAYEREN_VARW]
-    private fun isKartvelian(c: CodePoint) = c in codeRange[SHEET_KARTULI_VARW]
-    private fun isIPA(c: CodePoint) = c in codeRange[SHEET_IPA_VARW]
-    private fun isLatinExtAdd(c: CodePoint) = c in 0x1E00..0x1EFF
-    private fun isBulgarian(c: CodePoint) = c in 0x400..0x45F
-    private fun isColourCode(c: CodePoint) = c == 0x100000 || c in 0x10F000..0x10FFFF
-    private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFFF
-    private fun isCherokee(c: CodePoint) = c in codeRange[SHEET_TSALAGI_VARW]
-    private fun isInsular(c: CodePoint) = c == 0x1D79
-    private fun isNagariBengali(c: CodePoint) = c in codeRange[SHEET_NAGARI_BENGALI_VARW]
-    private fun isKartvelianCaps(c: CodePoint) = c in codeRange[SHEET_KARTULI_CAPS_VARW]
-    private fun isDiacriticalMarks(c: CodePoint) = c in codeRange[SHEET_DIACRITICAL_MARKS_VARW]
-    private fun isPolytonicGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_POLY_VARW]
-    private fun isExtC(c: CodePoint) = c in codeRange[SHEET_EXTC_VARW]
-    private fun isExtD(c: CodePoint) = c in codeRange[SHEET_EXTD_VARW]
-    private fun isHangulCompat(c: CodePoint) = c in codeRangeHangulCompat
-
-    // underscored name: not a charset
-    private fun _isCaps(c: CodePoint) = Character.isUpperCase(c) || isKartvelianCaps(c)
-
-
-    private fun extAindexX(c: CodePoint) = (c - 0x100) % 16
-    private fun extAindexY(c: CodePoint) = (c - 0x100) / 16
-
-    private fun extBindexX(c: CodePoint) = (c - 0x180) % 16
-    private fun extBindexY(c: CodePoint) = (c - 0x180) / 16
-
-    private fun runicIndexX(c: CodePoint) = (c - 0x16A0) % 16
-    private fun runicIndexY(c: CodePoint) = (c - 0x16A0) / 16
-
-    private fun kanaIndexX(c: CodePoint) = (c - 0x3040) % 16
-    private fun kanaIndexY(c: CodePoint) =
-            if (c in 0x31F0..0x31FF) 12
-            else if (c in 0x1B000..0x1B00F) 13
-            else (c - 0x3040) / 16
-
-    private fun cjkPunctIndexX(c: CodePoint) = (c - 0x3000) % 16
-    private fun cjkPunctIndexY(c: CodePoint) = (c - 0x3000) / 16
-
-    private fun cyrilicIndexX(c: CodePoint) = (c - 0x400) % 16
-    private fun cyrilicIndexY(c: CodePoint) = (c - 0x400) / 16
-
-    private fun fullwidthUniIndexX(c: CodePoint) = (c - 0xFF00) % 16
-    private fun fullwidthUniIndexY(c: CodePoint) = (c - 0xFF00) / 16
-
-    private fun uniPunctIndexX(c: CodePoint) = (c - 0x2000) % 16
-    private fun uniPunctIndexY(c: CodePoint) = (c - 0x2000) / 16
-
-    private fun unihanIndexX(c: CodePoint) = (c - 0x3400) % 256
-    private fun unihanIndexY(c: CodePoint) = (c - 0x3400) / 256
-
-    private fun greekIndexX(c: CodePoint) = (c - 0x370) % 16
-    private fun greekIndexY(c: CodePoint) = (c - 0x370) / 16
-
-    private fun thaiIndexX(c: CodePoint) = (c - 0xE00) % 16
-    private fun thaiIndexY(c: CodePoint) = (c - 0xE00) / 16
-
-    private fun symbolIndexX(c: CodePoint) = (c - 0xE000) % 16
-    private fun symbolIndexY(c: CodePoint) = (c - 0xE000) / 16
-
-    private fun armenianIndexX(c: CodePoint) = (c - 0x530) % 16
-    private fun armenianIndexY(c: CodePoint) = (c - 0x530) / 16
-
-    private fun kartvelianIndexX(c: CodePoint) = (c - 0x10D0) % 16
-    private fun kartvelianIndexY(c: CodePoint) = (c - 0x10D0) / 16
-
-    private fun ipaIndexX(c: CodePoint) = (c - 0x250) % 16
-    private fun ipaIndexY(c: CodePoint) = (c - 0x250) / 16
-
-    private fun latinExtAddX(c: CodePoint) = (c - 0x1E00) % 16
-    private fun latinExtAddY(c: CodePoint) = (c - 0x1E00) / 16
-
-    private fun cherokeeIndexX(c: CodePoint) = (c - 0x13A0) % 16
-    private fun cherokeeIndexY(c: CodePoint) = (c - 0x13A0) / 16
-
-    private fun insularIndexX(c: CodePoint) =
-            if (c == 0x1D79) 0 else (c - 0xA770) % 16
-    private fun insularIndexY(c: CodePoint) =
-            if (c == 0x1D79) 0 else (c - 0xA770) / 16
-
-    private fun nagariIndexX(c: CodePoint) = (c - 0x900) % 16
-    private fun nagariIndexY(c: CodePoint) = (c - 0x900) / 16
-
-    private fun kartvelianCapsIndexX(c: CodePoint) = (c - 0x1C90) % 16
-    private fun kartvelianCapsIndexY(c: CodePoint) = (c - 0x1C90) / 16
-
-    private fun diacriticalMarksIndexX(c: CodePoint) = (c - 0x300) % 16
-    private fun diacriticalMarksIndexY(c: CodePoint) = (c - 0x300) / 16
-
-    private fun polytonicGreekIndexX(c: CodePoint) = (c - 0x1F00) % 16
-    private fun polytonicGreekIndexY(c: CodePoint) = (c - 0x1F00) / 16
-
-    private fun extCIndexX(c: CodePoint) = (c - 0x2C60) % 16
-    private fun extCIndexY(c: CodePoint) = (c - 0x2C60) / 16
-
-    private fun extDIndexX(c: CodePoint) = (c - 0xA720) % 16
-    private fun extDIndexY(c: CodePoint) = (c - 0xA720) / 16
 
 
     /**
@@ -437,101 +225,11 @@ class GameFontBase(
         return col
     }
 
+
     private val colourBuffer = HashMap<CodePoint, ARGB8888>()
-
-    private val unihanWidthSheets = arrayOf(
-            SHEET_UNIHAN,
-            SHEET_FW_UNI
-    )
-    private val variableWidthSheets = arrayOf(
-            SHEET_ASCII_VARW,
-            SHEET_EXTA_VARW,
-            SHEET_EXTB_VARW,
-            SHEET_CYRILIC_VARW,
-            SHEET_UNI_PUNCT_VARW,
-            SHEET_GREEK_VARW,
-            SHEET_THAI_VARW,
-            SHEET_HAYEREN_VARW,
-            SHEET_KARTULI_VARW,
-            SHEET_IPA_VARW,
-            SHEET_LATIN_EXT_ADD_VARW,
-            SHEET_BULGARIAN_VARW,
-            SHEET_SERBIAN_VARW,
-            SHEET_TSALAGI_VARW,
-            SHEET_INSUAR_VARW,
-            SHEET_NAGARI_BENGALI_VARW,
-            SHEET_KARTULI_CAPS_VARW,
-            SHEET_DIACRITICAL_MARKS_VARW,
-            SHEET_GREEK_POLY_VARW,
-            SHEET_EXTC_VARW,
-            SHEET_EXTD_VARW
-    )
-    private val autoShiftDownOnLowercase = arrayOf(
-            SHEET_DIACRITICAL_MARKS_VARW
-    )
-
     private val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
-    private val fileList = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
-            "ascii_variable.tga",
-            "hangul_johab.tga",
-            "latinExtA_variable.tga",
-            "latinExtB_variable.tga",
-            "kana.tga",
-            "cjkpunct.tga",
-            "wenquanyi.tga.gz",
-            "cyrilic_variable.tga",
-            "fullwidth_forms.tga",
-            "unipunct_variable.tga",
-            "greek_variable.tga",
-            "thai_variable.tga",
-            "hayeren_variable.tga",
-            "kartuli_variable.tga",
-            "ipa_ext_variable.tga",
-            "futhark.tga",
-            "latinExt_additional_variable.tga",
-            "puae000-e0ff.tga",
-            "cyrilic_bulgarian_variable.tga",
-            "cyrilic_serbian_variable.tga",
-            "tsalagi_variable.tga",
-            "insular_variable.tga",
-            "devanagari_bengali_variable.tga",
-            "kartuli_allcaps_variable.tga",
-            "diacritical_marks_variable.tga",
-            "greek_polytonic_xyswap_variable.tga",
-            "latinExtC_variable.tga",
-            "latinExtD_variable.tga"
-    )
-    private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
-            0..0xFF, // SHEET_ASCII_VARW
-            (0x1100..0x11FF) + (0xA960..0xA97F) + (0xD7B0..0xD7FF), // SHEET_HANGUL, because Hangul Syllables are disassembled prior to the render
-            0x100..0x17F, // SHEET_EXTA_VARW
-            0x180..0x24F, // SHEET_EXTB_VARW
-            (0x3040..0x30FF) + (0x31F0..0x31FF) + (0x1B000..0x1B001), // SHEET_KANA
-            0x3000..0x303F, // SHEET_CJK_PUNCT
-            0x3400..0x9FFF, // SHEET_UNIHAN
-            0x400..0x52F, // SHEET_CYRILIC_VARW
-            0xFF00..0xFF1F, // SHEET_FW_UNI
-            0x2000..0x209F, // SHEET_UNI_PUNCT_VARW
-            0x370..0x3CE, // SHEET_GREEK_VARW
-            0xE00..0xE5F, // SHEET_THAI_VARW
-            0x530..0x58F, // SHEET_HAYEREN_VARW
-            0x10D0..0x10FF, // SHEET_KARTULI_VARW
-            0x250..0x2FF, // SHEET_IPA_VARW
-            0x16A0..0x16FF, // SHEET_RUNIC
-            0x1E00..0x1EFF, // SHEET_LATIN_EXT_ADD_VARW
-            0xE000..0xE0FF, // SHEET_CUSTOM_SYM
-            0xF00000..0xF0005F, // SHEET_BULGARIAN_VARW; assign them to PUA
-            0xF00060..0xF000BF, // SHEET_SERBIAN_VARW; assign them to PUA
-            0x13A0..0x13F5, // SHEET_TSALAGI_VARW
-            0xA770..0xA787, // SHEET_INSULAR_VARW; if it work, don't fix it (yet--wait until Latin Extended C)
-            0x900..0x9FF, // SHEET_NAGARI_BENGALI_VARW
-            0x1C90..0x1CBF, // SHEET_KARTULI_CAPS_VARW
-            0x300..0x36F, // SHEET_DIACRITICAL_MARKS_VARW
-            0x1F00..0x1FFF, // SHEET_GREEK_POLY_VARW
-            0x2C60..0x2C7F, // SHEET_EXTC_VARW
-            0xA720..0xA7FF // SHEET_EXTD_VARW
-    )
-    private val codeRangeHangulCompat = 0x3130..0x318F
+
+
     /** Props of all printable Unicode points. */
     private val glyphProps: HashMap<CodePoint, GlyphProps> = HashMap()
     private val sheets: Array<PixmapRegionPack>
@@ -1150,14 +848,14 @@ class GameFontBase(
 
     fun buildWidthTableFixed() {
         // fixed-width props
-        this.codeRange[SHEET_CJK_PUNCT].forEach { glyphProps[it] = GlyphProps(W_ASIAN_PUNCT, 0) }
-        this.codeRange[SHEET_CUSTOM_SYM].forEach { glyphProps[it] = GlyphProps(20, 0) }
-        this.codeRange[SHEET_FW_UNI].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
-        this.codeRange[SHEET_HANGUL].forEach { glyphProps[it] = GlyphProps(W_HANGUL, 0) }
+        codeRange[SHEET_CJK_PUNCT].forEach { glyphProps[it] = GlyphProps(W_ASIAN_PUNCT, 0) }
+        codeRange[SHEET_CUSTOM_SYM].forEach { glyphProps[it] = GlyphProps(20, 0) }
+        codeRange[SHEET_FW_UNI].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
+        codeRange[SHEET_HANGUL].forEach { glyphProps[it] = GlyphProps(W_HANGUL, 0) }
         codeRangeHangulCompat.forEach { glyphProps[it] = GlyphProps(W_HANGUL, 0) }
-        this.codeRange[SHEET_KANA].forEach { glyphProps[it] = GlyphProps(W_KANA, 0) }
-        this.codeRange[SHEET_RUNIC].forEach { glyphProps[it] = GlyphProps(9, 0) }
-        this.codeRange[SHEET_UNIHAN].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
+        codeRange[SHEET_KANA].forEach { glyphProps[it] = GlyphProps(W_KANA, 0) }
+        codeRange[SHEET_RUNIC].forEach { glyphProps[it] = GlyphProps(9, 0) }
+        codeRange[SHEET_UNIHAN].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
         (0xD800..0xDFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
         (0x100000..0x10FFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
         (0xFFFA0..0xFFFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
@@ -1634,7 +1332,6 @@ class GameFontBase(
     }
 
 
-    private fun Int.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
 
     private fun CharSequence.sha256(): ByteArray {
         val digest = MessageDigest.getInstance("SHA-256")
@@ -1728,6 +1425,330 @@ class GameFontBase(
         internal val CHARSET_OVERRIDE_SR_SR = 0xFFFC2
 
 
+        private val unihanWidthSheets = arrayOf(
+                SHEET_UNIHAN,
+                SHEET_FW_UNI
+        )
+        private val variableWidthSheets = arrayOf(
+                SHEET_ASCII_VARW,
+                SHEET_EXTA_VARW,
+                SHEET_EXTB_VARW,
+                SHEET_CYRILIC_VARW,
+                SHEET_UNI_PUNCT_VARW,
+                SHEET_GREEK_VARW,
+                SHEET_THAI_VARW,
+                SHEET_HAYEREN_VARW,
+                SHEET_KARTULI_VARW,
+                SHEET_IPA_VARW,
+                SHEET_LATIN_EXT_ADD_VARW,
+                SHEET_BULGARIAN_VARW,
+                SHEET_SERBIAN_VARW,
+                SHEET_TSALAGI_VARW,
+                SHEET_INSUAR_VARW,
+                SHEET_NAGARI_BENGALI_VARW,
+                SHEET_KARTULI_CAPS_VARW,
+                SHEET_DIACRITICAL_MARKS_VARW,
+                SHEET_GREEK_POLY_VARW,
+                SHEET_EXTC_VARW,
+                SHEET_EXTD_VARW
+        )
+        private val autoShiftDownOnLowercase = arrayOf(
+                SHEET_DIACRITICAL_MARKS_VARW
+        )
+
+        private val fileList = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
+                "ascii_variable.tga",
+                "hangul_johab.tga",
+                "latinExtA_variable.tga",
+                "latinExtB_variable.tga",
+                "kana.tga",
+                "cjkpunct.tga",
+                "wenquanyi.tga.gz",
+                "cyrilic_variable.tga",
+                "fullwidth_forms.tga",
+                "unipunct_variable.tga",
+                "greek_variable.tga",
+                "thai_variable.tga",
+                "hayeren_variable.tga",
+                "kartuli_variable.tga",
+                "ipa_ext_variable.tga",
+                "futhark.tga",
+                "latinExt_additional_variable.tga",
+                "puae000-e0ff.tga",
+                "cyrilic_bulgarian_variable.tga",
+                "cyrilic_serbian_variable.tga",
+                "tsalagi_variable.tga",
+                "insular_variable.tga",
+                "devanagari_bengali_variable.tga",
+                "kartuli_allcaps_variable.tga",
+                "diacritical_marks_variable.tga",
+                "greek_polytonic_xyswap_variable.tga",
+                "latinExtC_variable.tga",
+                "latinExtD_variable.tga"
+        )
+        private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
+                0..0xFF, // SHEET_ASCII_VARW
+                (0x1100..0x11FF) + (0xA960..0xA97F) + (0xD7B0..0xD7FF), // SHEET_HANGUL, because Hangul Syllables are disassembled prior to the render
+                0x100..0x17F, // SHEET_EXTA_VARW
+                0x180..0x24F, // SHEET_EXTB_VARW
+                (0x3040..0x30FF) + (0x31F0..0x31FF) + (0x1B000..0x1B001), // SHEET_KANA
+                0x3000..0x303F, // SHEET_CJK_PUNCT
+                0x3400..0x9FFF, // SHEET_UNIHAN
+                0x400..0x52F, // SHEET_CYRILIC_VARW
+                0xFF00..0xFF1F, // SHEET_FW_UNI
+                0x2000..0x209F, // SHEET_UNI_PUNCT_VARW
+                0x370..0x3CE, // SHEET_GREEK_VARW
+                0xE00..0xE5F, // SHEET_THAI_VARW
+                0x530..0x58F, // SHEET_HAYEREN_VARW
+                0x10D0..0x10FF, // SHEET_KARTULI_VARW
+                0x250..0x2FF, // SHEET_IPA_VARW
+                0x16A0..0x16FF, // SHEET_RUNIC
+                0x1E00..0x1EFF, // SHEET_LATIN_EXT_ADD_VARW
+                0xE000..0xE0FF, // SHEET_CUSTOM_SYM
+                0xF00000..0xF0005F, // SHEET_BULGARIAN_VARW; assign them to PUA
+                0xF00060..0xF000BF, // SHEET_SERBIAN_VARW; assign them to PUA
+                0x13A0..0x13F5, // SHEET_TSALAGI_VARW
+                0xA770..0xA787, // SHEET_INSULAR_VARW; if it work, don't fix it (yet--wait until Latin Extended C)
+                0x900..0x9FF, // SHEET_NAGARI_BENGALI_VARW
+                0x1C90..0x1CBF, // SHEET_KARTULI_CAPS_VARW
+                0x300..0x36F, // SHEET_DIACRITICAL_MARKS_VARW
+                0x1F00..0x1FFF, // SHEET_GREEK_POLY_VARW
+                0x2C60..0x2C7F, // SHEET_EXTC_VARW
+                0xA720..0xA7FF // SHEET_EXTD_VARW
+        )
+        private val codeRangeHangulCompat = 0x3130..0x318F
+
+        private fun Int.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
+
+        // Hangul Implementation Specific //
+
+        private fun getWanseongHanChoseong(hanIndex: Int) = hanIndex / (JUNG_COUNT * JONG_COUNT)
+        private fun getWanseongHanJungseong(hanIndex: Int) = hanIndex / JONG_COUNT % JUNG_COUNT
+        private fun getWanseongHanJongseong(hanIndex: Int) = hanIndex % JONG_COUNT
+
+        // ㅣ
+        private val jungseongI: Array<Int> = arrayOf(21,61)
+        // ㅗ ㅛ ㅜ ㅠ
+        private val jungseongOU: Array<Int> = arrayOf(9,13,14,18,34,35,39,45,51,53,54,64,80,83)
+        // ㅘ ㅙ ㅝ ㅞ
+        private val jungseongOUComplex: Array<Int> = arrayOf(10,11,15,16) + (22..33).toList() + arrayOf(36,37,38) + (41..44).toList() + arrayOf(46,47,48,49,50) + (56..59).toList() + arrayOf(63) + (67..79).toList() + arrayOf(81,82) + (84..93).toList()
+        // ㅐ ㅒ ㅔ ㅖ etc
+        private val jungseongRightie: Array<Int> = arrayOf(2,4,6,8,11,16,32,33,37,42,44,48,50,71,72,75,78,79,83,86,87,88,94)
+        // ㅚ ㅟ
+        private val jungseongOEWI: Array<Int> = arrayOf(12,17,40,52,55,89,90,91)
+        // ㅡ
+        private val jungseongEU: Array<Int> = arrayOf(19,62,66)
+        // ㅢ
+        private val jungseongYI: Array<Int> = arrayOf(20,60,65)
+
+        private fun isJungseongI(hanIndex: Int) = jungseongI.binarySearch(hanIndex) >= 0
+        private fun isJungseongOU(hanIndex: Int) = jungseongOU.binarySearch(hanIndex) >= 0
+        private fun isJungseongOUComplex(hanIndex: Int) = jungseongOUComplex.binarySearch(hanIndex) >= 0
+        private fun isJungseongRighie(hanIndex: Int) = jungseongRightie.binarySearch(hanIndex) >= 0
+        private fun isJungseongOEWI(hanIndex: Int) = jungseongOEWI.binarySearch(hanIndex) >= 0
+        private fun isJungseongEU(hanIndex: Int) = jungseongEU.binarySearch(hanIndex) >= 0
+        private fun isJungseongYI(hanIndex: Int) = jungseongYI.binarySearch(hanIndex) >= 0
+
+
+        /**
+         * @param i Initial (Choseong)
+         * @param p Peak (Jungseong)
+         * @param f Final (Jongseong)
+         */
+        private fun getHanInitialRow(i: Int, p: Int, f: Int): Int {
+            val ret =
+                    if (isJungseongI(p)) 3
+                    else if (isJungseongOUComplex(p)) 7
+                    else if (isJungseongOEWI(p)) 11
+                    else if (isJungseongOU(p)) 5
+                    else if (isJungseongEU(p)) 9
+                    else if (isJungseongYI(p)) 13
+                    else 1
+
+            return if (f == 0) ret else ret + 1
+        }
+
+        private fun getHanMedialRow(i: Int, p: Int, f: Int) = if (f == 0) 15 else 16
+
+        private fun getHanFinalRow(i: Int, p: Int, f: Int): Int {
+
+            return if (!isJungseongRighie(p))
+                17
+            else
+                18
+        }
+
+        private fun isHangulChoseong(c: CodePoint) = c in (0x1100..0x115F) || c in (0xA960..0xA97F)
+        private fun isHangulJungseong(c: CodePoint) = c in (0x1160..0x11A7) || c in (0xD7B0..0xD7C6)
+        private fun isHangulJongseong(c: CodePoint) = c in (0x11A8..0x11FF) || c in (0xD7CB..0xD7FB)
+
+        private fun toHangulChoseongIndex(c: CodePoint) =
+                if (!isHangulChoseong(c)) throw IllegalArgumentException("This Hangul sequence does not begin with Choseong (${c.toHex()})")
+                else if (c in 0x1100..0x115F) c - 0x1100
+                else c - 0xA960 + 96
+        private fun toHangulJungseongIndex(c: CodePoint) =
+                if (!isHangulJungseong(c)) 0
+                else if (c in 0x1160..0x11A7) c - 0x1160
+                else c - 0xD7B0 + 72
+        private fun toHangulJongseongIndex(c: CodePoint) =
+                if (!isHangulJongseong(c)) 0
+                else if (c in 0x11A8..0x11FF) c - 0x11A8 + 1
+                else c - 0xD7CB + 88 + 1
+
+        /**
+         * X-position in the spritesheet
+         *
+         * @param iCP Code point for Initial (Choseong)
+         * @param pCP Code point for Peak (Jungseong)
+         * @param fCP Code point for Final (Jongseong)
+         */
+        private fun toHangulIndex(iCP: CodePoint, pCP: CodePoint, fCP: CodePoint): IntArray {
+            val indexI = toHangulChoseongIndex(iCP)
+            val indexP = toHangulJungseongIndex(pCP)
+            val indexF = toHangulJongseongIndex(fCP)
+
+            return intArrayOf(indexI, indexP, indexF)
+        }
+
+        /**
+         * @param iCP 0x1100..0x115F, 0xA960..0xA97F, 0x3130..0x318F
+         * @param pCP 0x00, 0x1160..0x11A7, 0xD7B0..0xD7CA
+         * @param fCP 0x00, 0x11A8..0x11FF, 0xD7BB..0xD7FF
+         *
+         * @return IntArray pair representing Hangul indices and rows (in this order)
+         */
+        private fun toHangulIndexAndRow(iCP: CodePoint, pCP: CodePoint, fCP: CodePoint): Pair<IntArray, IntArray> {
+            if (isHangulCompat(iCP)) {
+                return intArrayOf(iCP - 0x3130, 0, 0) to intArrayOf(0, 15, 17)
+            }
+            else {
+                val (indexI, indexP, indexF) = toHangulIndex(iCP, pCP, fCP)
+
+                val rowI = getHanInitialRow(indexI, indexP, indexF)
+                val rowP = getHanMedialRow(indexI, indexP, indexF)
+                val rowF = getHanFinalRow(indexI, indexP, indexF)
+
+                return intArrayOf(indexI, indexP, indexF) to intArrayOf(rowI, rowP, rowF)
+            }
+        }
+
+
+        // END Hangul //
+
+        private fun isHangul(c: CodePoint) = c in codeRange[SHEET_HANGUL] || c in 0x3130..0x318F
+        private fun isAscii(c: CodePoint) = c in codeRange[SHEET_ASCII_VARW]
+        private fun isRunic(c: CodePoint) = c in codeRange[SHEET_RUNIC]
+        private fun isExtA(c: CodePoint) = c in codeRange[SHEET_EXTA_VARW]
+        private fun isExtB(c: CodePoint) = c in codeRange[SHEET_EXTB_VARW]
+        private fun isKana(c: CodePoint) = c in codeRange[SHEET_KANA]
+        private fun isCJKPunct(c: CodePoint) = c in codeRange[SHEET_CJK_PUNCT]
+        private fun isUniHan(c: CodePoint) = c in codeRange[SHEET_UNIHAN]
+        private fun isCyrilic(c: CodePoint) = c in codeRange[SHEET_CYRILIC_VARW]
+        private fun isFullwidthUni(c: CodePoint) = c in codeRange[SHEET_FW_UNI]
+        private fun isUniPunct(c: CodePoint) = c in codeRange[SHEET_UNI_PUNCT_VARW]
+        private fun isGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_VARW]
+        private fun isThai(c: CodePoint) = c in codeRange[SHEET_THAI_VARW]
+        /*private fun isDiacritics(c: CodePoint) = c in 0xE34..0xE3A
+                || c in 0xE47..0xE4E
+                || c == 0xE31*/
+        private fun isCustomSym(c: CodePoint) = c in codeRange[SHEET_CUSTOM_SYM]
+        private fun isArmenian(c: CodePoint) = c in codeRange[SHEET_HAYEREN_VARW]
+        private fun isKartvelian(c: CodePoint) = c in codeRange[SHEET_KARTULI_VARW]
+        private fun isIPA(c: CodePoint) = c in codeRange[SHEET_IPA_VARW]
+        private fun isLatinExtAdd(c: CodePoint) = c in 0x1E00..0x1EFF
+        private fun isBulgarian(c: CodePoint) = c in 0x400..0x45F
+        private fun isColourCode(c: CodePoint) = c == 0x100000 || c in 0x10F000..0x10FFFF
+        private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFFF
+        private fun isCherokee(c: CodePoint) = c in codeRange[SHEET_TSALAGI_VARW]
+        private fun isInsular(c: CodePoint) = c == 0x1D79
+        private fun isNagariBengali(c: CodePoint) = c in codeRange[SHEET_NAGARI_BENGALI_VARW]
+        private fun isKartvelianCaps(c: CodePoint) = c in codeRange[SHEET_KARTULI_CAPS_VARW]
+        private fun isDiacriticalMarks(c: CodePoint) = c in codeRange[SHEET_DIACRITICAL_MARKS_VARW]
+        private fun isPolytonicGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_POLY_VARW]
+        private fun isExtC(c: CodePoint) = c in codeRange[SHEET_EXTC_VARW]
+        private fun isExtD(c: CodePoint) = c in codeRange[SHEET_EXTD_VARW]
+        private fun isHangulCompat(c: CodePoint) = c in codeRangeHangulCompat
+
+        // underscored name: not a charset
+        private fun _isCaps(c: CodePoint) = Character.isUpperCase(c) || isKartvelianCaps(c)
+
+
+        private fun extAindexX(c: CodePoint) = (c - 0x100) % 16
+        private fun extAindexY(c: CodePoint) = (c - 0x100) / 16
+
+        private fun extBindexX(c: CodePoint) = (c - 0x180) % 16
+        private fun extBindexY(c: CodePoint) = (c - 0x180) / 16
+
+        private fun runicIndexX(c: CodePoint) = (c - 0x16A0) % 16
+        private fun runicIndexY(c: CodePoint) = (c - 0x16A0) / 16
+
+        private fun kanaIndexX(c: CodePoint) = (c - 0x3040) % 16
+        private fun kanaIndexY(c: CodePoint) =
+                if (c in 0x31F0..0x31FF) 12
+                else if (c in 0x1B000..0x1B00F) 13
+                else (c - 0x3040) / 16
+
+        private fun cjkPunctIndexX(c: CodePoint) = (c - 0x3000) % 16
+        private fun cjkPunctIndexY(c: CodePoint) = (c - 0x3000) / 16
+
+        private fun cyrilicIndexX(c: CodePoint) = (c - 0x400) % 16
+        private fun cyrilicIndexY(c: CodePoint) = (c - 0x400) / 16
+
+        private fun fullwidthUniIndexX(c: CodePoint) = (c - 0xFF00) % 16
+        private fun fullwidthUniIndexY(c: CodePoint) = (c - 0xFF00) / 16
+
+        private fun uniPunctIndexX(c: CodePoint) = (c - 0x2000) % 16
+        private fun uniPunctIndexY(c: CodePoint) = (c - 0x2000) / 16
+
+        private fun unihanIndexX(c: CodePoint) = (c - 0x3400) % 256
+        private fun unihanIndexY(c: CodePoint) = (c - 0x3400) / 256
+
+        private fun greekIndexX(c: CodePoint) = (c - 0x370) % 16
+        private fun greekIndexY(c: CodePoint) = (c - 0x370) / 16
+
+        private fun thaiIndexX(c: CodePoint) = (c - 0xE00) % 16
+        private fun thaiIndexY(c: CodePoint) = (c - 0xE00) / 16
+
+        private fun symbolIndexX(c: CodePoint) = (c - 0xE000) % 16
+        private fun symbolIndexY(c: CodePoint) = (c - 0xE000) / 16
+
+        private fun armenianIndexX(c: CodePoint) = (c - 0x530) % 16
+        private fun armenianIndexY(c: CodePoint) = (c - 0x530) / 16
+
+        private fun kartvelianIndexX(c: CodePoint) = (c - 0x10D0) % 16
+        private fun kartvelianIndexY(c: CodePoint) = (c - 0x10D0) / 16
+
+        private fun ipaIndexX(c: CodePoint) = (c - 0x250) % 16
+        private fun ipaIndexY(c: CodePoint) = (c - 0x250) / 16
+
+        private fun latinExtAddX(c: CodePoint) = (c - 0x1E00) % 16
+        private fun latinExtAddY(c: CodePoint) = (c - 0x1E00) / 16
+
+        private fun cherokeeIndexX(c: CodePoint) = (c - 0x13A0) % 16
+        private fun cherokeeIndexY(c: CodePoint) = (c - 0x13A0) / 16
+
+        private fun insularIndexX(c: CodePoint) =
+                if (c == 0x1D79) 0 else (c - 0xA770) % 16
+        private fun insularIndexY(c: CodePoint) =
+                if (c == 0x1D79) 0 else (c - 0xA770) / 16
+
+        private fun nagariIndexX(c: CodePoint) = (c - 0x900) % 16
+        private fun nagariIndexY(c: CodePoint) = (c - 0x900) / 16
+
+        private fun kartvelianCapsIndexX(c: CodePoint) = (c - 0x1C90) % 16
+        private fun kartvelianCapsIndexY(c: CodePoint) = (c - 0x1C90) / 16
+
+        private fun diacriticalMarksIndexX(c: CodePoint) = (c - 0x300) % 16
+        private fun diacriticalMarksIndexY(c: CodePoint) = (c - 0x300) / 16
+
+        private fun polytonicGreekIndexX(c: CodePoint) = (c - 0x1F00) % 16
+        private fun polytonicGreekIndexY(c: CodePoint) = (c - 0x1F00) / 16
+
+        private fun extCIndexX(c: CodePoint) = (c - 0x2C60) % 16
+        private fun extCIndexY(c: CodePoint) = (c - 0x2C60) / 16
+
+        private fun extDIndexX(c: CodePoint) = (c - 0xA720) % 16
+        private fun extDIndexY(c: CodePoint) = (c - 0xA720) / 16
 
         /*
 #!/usr/bin/python3
@@ -1737,9 +1758,7 @@ s = "charseq"
 for c in s:
 #print(ord(c))
 print("0x{0:x}".format(ord(c)))
- */
-
-        // acegijmnopqrsuvwxyzɱɳʙɾɽʒʂʐʋɹɻɥɟɡɢʛȵɲŋɴʀɕʑçʝxɣχʁʜʍɰʟɨʉɯuʊøɘɵɤəɛœɜɞʌɔæɐɶɑɒɚɝɩɪʅʈʏʞⱥⱦⱱⱳⱴⱶⱷⱸⱺⱻꜥꜩꜫꜭꜯꜰꜱꜳꜵꜷꜹꜻꜽꜿꝋꝍꝏꝑꝓꝕꝗꝙꝛꝝꝟꝡꝫꝯꝳꝴꝵꝶꝷꝺꝼꝿꞁꞃꞅꞇꞑꞓꞔꞛꞝꞟꞡꞥꞧꞩꞮꞷꟺ\uA7AF\uA7B9\uA7C3\uA7CA
+ */     // acegijmnopqrsuvwxyzɱɳʙɾɽʒʂʐʋɹɻɥɟɡɢʛȵɲŋɴʀɕʑçʝxɣχʁʜʍɰʟɨʉɯuʊøɘɵɤəɛœɜɞʌɔæɐɶɑɒɚɝɩɪʅʈʏʞⱥⱦⱱⱳⱴⱶⱷⱸⱺⱻꜥꜩꜫꜭꜯꜰꜱꜳꜵꜷꜹꜻꜽꜿꝋꝍꝏꝑꝓꝕꝗꝙꝛꝝꝟꝡꝫꝯꝳꝴꝵꝶꝷꝺꝼꝿꞁꞃꞅꞇꞑꞓꞔꞛꞝꞟꞡꞥꞧꞩꞮꞷꟺ\uA7AF\uA7B9\uA7C3\uA7CA
         private val lowHeightLetters = intArrayOf(0x61,0x63,0x65,0x67,0x69,0x6a,0x6d,0x6e,0x6f,0x70,0x71,0x72,0x73,0x75,0x76,0x77,0x78,0x79,0x7a,0x271,0x273,0x299,0x27e,0x27d,0x292,0x282,0x290,0x28b,0x279,0x27b,0x265,0x25f,0x261,0x262,0x29b,0x235,0x272,0x14b,0x274,0x280,0x255,0x291,0xe7,0x29d,0x78,0x263,0x3c7,0x281,0x29c,0x28d,0x270,0x29f,0x268,0x289,0x26f,0x75,0x28a,0xf8,0x258,0x275,0x264,0x259,0x25b,0x153,0x25c,0x25e,0x28c,0x254,0xe6,0x250,0x276,0x251,0x252,0x25a,0x25d,0x269,0x26a,0x285,0x288,0x28f,0x29e,0x2c65,0x2c66,0x2c71,0x2c73,0x2c74,0x2c76,0x2c77,0x2c78,0x2c7a,0x2c7b,0xa725,0xa729,0xa72b,0xa72d,0xa72f,0xa730,0xa731,0xa733,0xa735,0xa737,0xa739,0xa73b,0xa73d,0xa73f,0xa74b,0xa74d,0xa74f,0xa751,0xa753,0xa755,0xa757,0xa759,0xa75b,0xa75d,0xa75f,0xa761,0xa76b,0xa76f,0xa773,0xa774,0xa775,0xa776,0xa777,0xa77a,0xa77c,0xa77f,0xa781,0xa783,0xa785,0xa787,0xa791,0xa793,0xa794,0xa79b,0xa79d,0xa79f,0xa7a1,0xa7a5,0xa7a7,0xa7a9,0xa7ae,0xa7b7,0xa7fa,0xa7af,0xa7b9,0xa7c3,0xa7ca).toSortedSet()
         // TŢŤƬƮȚͲΤТҬᛏṪṬṮṰⲦϮϯⴶꚌꚐᎢᛠꓔ
         private val kernTees = intArrayOf(0x54,0x162,0x164,0x1ac,0x1ae,0x21a,0x372,0x3a4,0x422,0x4ac,0x16cf,0x1e6a,0x1e6c,0x1e6e,0x1e70,0x2ca6,0x3ee,0x3ef,0x2d36,0xa68c,0xa690,0x13a2,0x16e0,0xa4d4).toSortedSet()
