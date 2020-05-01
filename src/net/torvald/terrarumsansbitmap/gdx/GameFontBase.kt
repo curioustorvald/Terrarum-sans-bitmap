@@ -1530,12 +1530,12 @@ class GameFontBase(
         private val jungseongI: Array<Int> = arrayOf(21,61)
         // ㅗ ㅛ ㅜ ㅠ
         private val jungseongOU: Array<Int> = arrayOf(9,13,14,18,34,35,39,45,51,53,54,64,80,83)
-        // ㅘ ㅙ ㅝ ㅞ
-        private val jungseongOUComplex: Array<Int> = arrayOf(10,11,15,16) + (22..33).toList() + arrayOf(36,37,38) + (41..44).toList() + arrayOf(46,47,48,49,50) + (56..59).toList() + arrayOf(63) + (67..79).toList() + arrayOf(81,82) + (84..93).toList()
+        // ㅘ ㅙ ㅞ
+        private val jungseongOUComplex: Array<Int> = arrayOf(10,11,16) + (22..33).toList() + arrayOf(36,37,38) + (41..44).toList() + arrayOf(46,47,48,49,50) + (56..59).toList() + arrayOf(63) + (67..79).toList() + arrayOf(81,82) + (84..93).toList()
         // ㅐ ㅒ ㅔ ㅖ etc
         private val jungseongRightie: Array<Int> = arrayOf(2,4,6,8,11,16,32,33,37,42,44,48,50,71,72,75,78,79,83,86,87,88,94)
-        // ㅚ ㅟ
-        private val jungseongOEWI: Array<Int> = arrayOf(12,17,40,52,55,89,90,91)
+        // ㅚ *ㅝ* ㅟ
+        private val jungseongOEWI: Array<Int> = arrayOf(12,15,17,40,52,55,89,90,91)
         // ㅡ
         private val jungseongEU: Array<Int> = arrayOf(19,62,66)
         // ㅢ
