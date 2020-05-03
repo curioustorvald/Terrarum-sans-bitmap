@@ -197,8 +197,8 @@ class GameFontBase(
         if (key < 0)
             return null
 
-        // increment age count (see: addToCache(CodepointSequence, Pixmap, Int))
-        textCache[key].age += 1
+        // decrement age count (see: addToCache(CodepointSequence, Pixmap, Int))
+        if (textCache[key].age > 0) textCache[key].age -= 1
 
         return textCache[key]
     }
