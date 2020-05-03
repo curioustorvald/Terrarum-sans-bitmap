@@ -891,8 +891,14 @@ class GameFontBase(
 
 
                 // shoehorn the wider-hangul-width thingamajig
-                if (toHangulJungseongIndex(thisChar) in hangulPeaksWithExtraWidth) {
+                // widen only when the next hangul char is not "jungseongWide"
+                // (애 in "애슬론" should not be widened)
+                if (hangulPeaksWithExtraWidth.binarySearch(toHangulJungseongIndex(thisChar)) >= 0 && (
+                                jungseongWide.binarySearch(toHangulJungseongIndex(str.getOrElse(charIndex + 2) { 0 })) < 0 &&
+                                jungseongWide.binarySearch(toHangulJungseongIndex(str.getOrElse(charIndex + 3) { 0 })) < 0
+                                )) {
                     //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
+                    println("${thisChar.charInfo()}  ${str.getOrNull(charIndex + 2)?.charInfo()}  ${str.getOrNull(charIndex + 3)?.charInfo()}")
                     extraWidth += 1
                 }
 
@@ -1504,6 +1510,9 @@ class GameFontBase(
         private val jungseongEU: Array<Int> = arrayOf(19,62,66)
         // ㅢ
         private val jungseongYI: Array<Int> = arrayOf(20,60,65)
+
+        private val jungseongWide: Array<Int> = (jungseongOU + jungseongEU).sortedArray()
+
         // index of the peak, 0 being blank, 1 being ㅏ
         // indices of peaks that number of lit pixels (vertically counted) on x=11 is greater than 7
         private val hangulPeaksWithExtraWidth = arrayOf(2,4,6,8,11,16,32,33,37,42,44,48,50,71,75,78,79,83,86,87,88,94)
