@@ -893,12 +893,15 @@ class GameFontBase(
                 // shoehorn the wider-hangul-width thingamajig
                 // widen only when the next hangul char is not "jungseongWide"
                 // (애 in "애슬론" should not be widened)
-                if (hangulPeaksWithExtraWidth.binarySearch(toHangulJungseongIndex(thisChar)) >= 0 && (
-                                jungseongWide.binarySearch(toHangulJungseongIndex(str.getOrElse(charIndex + 2) { 0 })) < 0 &&
-                                jungseongWide.binarySearch(toHangulJungseongIndex(str.getOrElse(charIndex + 3) { 0 })) < 0
-                                )) {
+                val thisHangulJungseongIndex = toHangulJungseongIndex(thisChar)
+                val nextHangulJungseong1 = toHangulJungseongIndex(str.getOrNull(charIndex + 2) ?: 0) ?: -1
+                val nextHangulJungseong2 = toHangulJungseongIndex(str.getOrNull(charIndex + 3) ?: 0) ?: -1
+                if (isHangulJungseong(thisChar) && thisHangulJungseongIndex in hangulPeaksWithExtraWidth && (
+                                nextHangulJungseong1 !in jungseongWide ||
+                                nextHangulJungseong2 !in jungseongWide
+                        )) {
                     //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
-                    println("${thisChar.charInfo()}  ${str.getOrNull(charIndex + 2)?.charInfo()}  ${str.getOrNull(charIndex + 3)?.charInfo()}")
+                    //println("${thisChar.charInfo()}  ${str.getOrNull(charIndex + 2)?.charInfo()}  ${str.getOrNull(charIndex + 3)?.charInfo()}")
                     extraWidth += 1
                 }
 
@@ -1497,34 +1500,25 @@ class GameFontBase(
 
         // THESE ARRAYS MUST BE SORTED
         // ㅣ
-        private val jungseongI: Array<Int> = arrayOf(21,61)
+        private val jungseongI = arrayOf(21,61).toSortedSet()
         // ㅗ ㅛ ㅜ ㅠ
-        private val jungseongOU: Array<Int> = arrayOf(9,13,14,18,34,35,39,45,51,53,54,64,80,83)
+        private val jungseongOU = arrayOf(9,13,14,18,34,35,39,45,51,53,54,64,80,83).toSortedSet()
         // ㅘ ㅙ ㅞ
-        private val jungseongOUComplex: Array<Int> = arrayOf(10,11,16) + (22..33).toList() + arrayOf(36,37,38) + (41..44).toList() + arrayOf(46,47,48,49,50) + (56..59).toList() + arrayOf(63) + (67..79).toList() + arrayOf(81,82) + (84..93).toList()
+        private val jungseongOUComplex = (arrayOf(10,11,16) + (22..33).toList() + arrayOf(36,37,38) + (41..44).toList() + arrayOf(46,47,48,49,50) + (56..59).toList() + arrayOf(63) + (67..79).toList() + arrayOf(81,82) + (84..93).toList()).toSortedSet()
         // ㅐ ㅒ ㅔ ㅖ etc
-        private val jungseongRightie: Array<Int> = arrayOf(2,4,6,8,11,16,32,33,37,42,44,48,50,71,72,75,78,79,83,86,87,88,94)
+        private val jungseongRightie = arrayOf(2,4,6,8,11,16,32,33,37,42,44,48,50,71,72,75,78,79,83,86,87,88,94).toSortedSet()
         // ㅚ *ㅝ* ㅟ
-        private val jungseongOEWI: Array<Int> = arrayOf(12,15,17,40,52,55,89,90,91)
+        private val jungseongOEWI = arrayOf(12,15,17,40,52,55,89,90,91).toSortedSet()
         // ㅡ
-        private val jungseongEU: Array<Int> = arrayOf(19,62,66)
+        private val jungseongEU = arrayOf(19,62,66).toSortedSet()
         // ㅢ
-        private val jungseongYI: Array<Int> = arrayOf(20,60,65)
+        private val jungseongYI = arrayOf(20,60,65).toSortedSet()
 
-        private val jungseongWide: Array<Int> = (jungseongOU + jungseongEU).sortedArray()
+        private val jungseongWide = (jungseongOU.toList() + jungseongEU.toList()).toSortedSet()
 
         // index of the peak, 0 being blank, 1 being ㅏ
         // indices of peaks that number of lit pixels (vertically counted) on x=11 is greater than 7
-        private val hangulPeaksWithExtraWidth = arrayOf(2,4,6,8,11,16,32,33,37,42,44,48,50,71,75,78,79,83,86,87,88,94)
-
-        private fun isJungseongI(hanIndex: Int) = jungseongI.binarySearch(hanIndex) >= 0
-        private fun isJungseongOU(hanIndex: Int) = jungseongOU.binarySearch(hanIndex) >= 0
-        private fun isJungseongOUComplex(hanIndex: Int) = jungseongOUComplex.binarySearch(hanIndex) >= 0
-        private fun isJungseongRighie(hanIndex: Int) = jungseongRightie.binarySearch(hanIndex) >= 0
-        private fun isJungseongOEWI(hanIndex: Int) = jungseongOEWI.binarySearch(hanIndex) >= 0
-        private fun isJungseongEU(hanIndex: Int) = jungseongEU.binarySearch(hanIndex) >= 0
-        private fun isJungseongYI(hanIndex: Int) = jungseongYI.binarySearch(hanIndex) >= 0
-
+        private val hangulPeaksWithExtraWidth = arrayOf(2,4,6,8,11,16,32,33,37,42,44,48,50,71,75,78,79,83,86,87,88,94).toSortedSet()
 
         /**
          * @param i Initial (Choseong)
@@ -1533,12 +1527,12 @@ class GameFontBase(
          */
         private fun getHanInitialRow(i: Int, p: Int, f: Int): Int {
             val ret =
-                    if (isJungseongI(p)) 3
-                    else if (isJungseongOUComplex(p)) 7
-                    else if (isJungseongOEWI(p)) 11
-                    else if (isJungseongOU(p)) 5
-                    else if (isJungseongEU(p)) 9
-                    else if (isJungseongYI(p)) 13
+                    if (p in jungseongI) 3
+                    else if (p in jungseongOUComplex) 7
+                    else if (p in jungseongOEWI) 11
+                    else if (p in jungseongOU) 5
+                    else if (p in jungseongEU) 9
+                    else if (p in jungseongYI) 13
                     else 1
 
             return if (f == 0) ret else ret + 1
@@ -1548,7 +1542,7 @@ class GameFontBase(
 
         private fun getHanFinalRow(i: Int, p: Int, f: Int): Int {
 
-            return if (!isJungseongRighie(p))
+            return if (p !in jungseongRightie)
                 17
             else
                 18
@@ -1563,11 +1557,11 @@ class GameFontBase(
                 else if (c in 0x1100..0x115F) c - 0x1100
                 else c - 0xA960 + 96
         private fun toHangulJungseongIndex(c: CodePoint) =
-                if (!isHangulJungseong(c)) 0
+                if (!isHangulJungseong(c)) null
                 else if (c in 0x1160..0x11A7) c - 0x1160
                 else c - 0xD7B0 + 72
         private fun toHangulJongseongIndex(c: CodePoint) =
-                if (!isHangulJongseong(c)) 0
+                if (!isHangulJongseong(c)) null
                 else if (c in 0x11A8..0x11FF) c - 0x11A8 + 1
                 else c - 0xD7CB + 88 + 1
 
@@ -1580,8 +1574,8 @@ class GameFontBase(
          */
         private fun toHangulIndex(iCP: CodePoint, pCP: CodePoint, fCP: CodePoint): IntArray {
             val indexI = toHangulChoseongIndex(iCP)
-            val indexP = toHangulJungseongIndex(pCP)
-            val indexF = toHangulJongseongIndex(fCP)
+            val indexP = toHangulJungseongIndex(pCP) ?: 0
+            val indexF = toHangulJongseongIndex(fCP) ?: 0
 
             return intArrayOf(indexI, indexP, indexF)
         }
