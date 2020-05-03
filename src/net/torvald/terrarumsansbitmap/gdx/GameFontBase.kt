@@ -105,9 +105,6 @@ class GameFontBase(
         val debug: Boolean = false
 ) : BitmapFont() {
 
-
-
-
     /**
      * lowercase AND the height is equal to x-height (e.g. lowercase B, D, F, H, K, L, ... does not count
      */
@@ -342,7 +339,7 @@ class GameFontBase(
                 PixmapRegionPack(pixmap, W_KANA, H)
             }
             else if (index == SHEET_HANGUL) {
-                PixmapRegionPack(pixmap, W_HANGUL, H)
+                PixmapRegionPack(pixmap, W_HANGUL_BASE, H)
             }
             else if (index == SHEET_CUSTOM_SYM) {
                 PixmapRegionPack(pixmap, SIZE_CUSTOM_SYM, SIZE_CUSTOM_SYM) // TODO variable
@@ -565,49 +562,6 @@ class GameFontBase(
         super.dispose()
         textCache.forEach { it.dispose() }
         sheets.forEach { it.dispose() }
-    }
-
-    /**
-     * Used for positioning letters, NOT for the actual width.
-     *
-     * For actual width, use `getWidth()`
-     */
-    private fun getWidthOfCharSeq(s: CodepointSequence): IntArray {
-        val len = IntArray(s.size)
-        for (i in 0..s.lastIndex) {
-            val chr = s[i]
-            val ctype = getSheetType(s[i])
-
-            if (variableWidthSheets.contains(ctype)) {
-                if (!glyphProps.containsKey(chr)) {
-                    System.err.println("[TerrarumSansBitmap] no width data for glyph number ${Integer.toHexString(chr.toInt()).toUpperCase()}")
-                    len[i] = W_LATIN_WIDE
-                }
-
-                val prop = glyphProps[chr] ?: nullProp
-                //println("${chr.toInt()} -> $prop")
-                len[i] = prop.width * (if (prop.writeOnTop) -1 else 1)
-            }
-            else if (isColourCode(chr) || isCharsetOverride(chr))
-                len[i] = 0
-            else if (ctype == SHEET_CJK_PUNCT)
-                len[i] = W_ASIAN_PUNCT
-            else if (ctype == SHEET_HANGUL)
-                len[i] = W_HANGUL
-            else if (ctype == SHEET_KANA)
-                len[i] = W_KANA
-            else if (unihanWidthSheets.contains(ctype))
-                len[i] = W_UNIHAN
-            else if (ctype == SHEET_CUSTOM_SYM)
-                len[i] = SIZE_CUSTOM_SYM
-            else
-                len[i] = W_LATIN_WIDE
-
-            if (scale > 1) len[i] *= scale
-
-            if (i < s.lastIndex) len[i] += interchar
-        }
-        return len
     }
 
     private fun getSheetType(c: CodePoint): Int {
@@ -846,13 +800,13 @@ class GameFontBase(
         }
     }
 
-    fun buildWidthTableFixed() {
+    private fun buildWidthTableFixed() {
         // fixed-width props
         codeRange[SHEET_CJK_PUNCT].forEach { glyphProps[it] = GlyphProps(W_ASIAN_PUNCT, 0) }
         codeRange[SHEET_CUSTOM_SYM].forEach { glyphProps[it] = GlyphProps(20, 0) }
         codeRange[SHEET_FW_UNI].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
-        codeRange[SHEET_HANGUL].forEach { glyphProps[it] = GlyphProps(W_HANGUL, 0) }
-        codeRangeHangulCompat.forEach { glyphProps[it] = GlyphProps(W_HANGUL, 0) }
+        codeRange[SHEET_HANGUL].forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE, 0) }
+        codeRangeHangulCompat.forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE, 0) }
         codeRange[SHEET_KANA].forEach { glyphProps[it] = GlyphProps(W_KANA, 0) }
         codeRange[SHEET_RUNIC].forEach { glyphProps[it] = GlyphProps(9, 0) }
         codeRange[SHEET_UNIHAN].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
@@ -869,6 +823,7 @@ class GameFontBase(
         // U+007F is DEL originally, but this font stores bitmap of Replacement Character (U+FFFD)
         // to this position. String replacer will replace U+FFFD into U+007F.
         glyphProps[0x7F] = GlyphProps(15, 0)
+
     }
 
     private val glyphLayout = GlyphLayout()
@@ -902,6 +857,10 @@ class GameFontBase(
 
         val HALF_VAR_INIT = W_VAR_INIT.minus(1).div(2)
 
+        // this is starting to get dirty...
+        // persisting value. the value is set a few characters before the actual usage
+        var extraWidth = 0
+
         for (charIndex in 0 until posXbuffer.size - 1) {
             if (charIndex > 0) {
                 // nonDiacriticCounter allows multiple diacritics
@@ -923,7 +882,7 @@ class GameFontBase(
                 //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
 
 
-                val alignmentOffset = when (thisProp.alignWhere) {
+                var alignmentOffset = when (thisProp.alignWhere) {
                     GlyphProps.ALIGN_LEFT -> 0
                     GlyphProps.ALIGN_RIGHT -> thisProp.width - W_VAR_INIT
                     GlyphProps.ALIGN_CENTRE -> Math.ceil((thisProp.width - W_VAR_INIT) / 2.0).toInt()
@@ -931,27 +890,31 @@ class GameFontBase(
                 }
 
 
+                // shoehorn the wider-hangul-width thingamajig
+                if (toHangulJungseongIndex(thisChar) in hangulPeaksWithExtraWidth) {
+                    //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
+                    extraWidth += 1
+                }
+
+
                 if (isHangul(thisChar) && !isHangulChoseong(thisChar) && !isHangulCompat(thisChar)) {
-                    posXbuffer[charIndex] = if (isHangulChoseong(lastNonDiacriticChar) || isHangulCompat(lastNonDiacriticChar))
-                        posXbuffer[nonDiacriticCounter]
-                    else
-                        posXbuffer[nonDiacriticCounter] + W_HANGUL
+                    posXbuffer[charIndex] = posXbuffer[nonDiacriticCounter]
                 }
                 else if (!thisProp.writeOnTop) {
                     posXbuffer[charIndex] = when (itsProp.alignWhere) {
                         GlyphProps.ALIGN_RIGHT ->
-                            posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar + kerning
+                            posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
                         GlyphProps.ALIGN_CENTRE ->
-                            posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar + kerning
+                            posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
                         else ->
-                            posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning
-
+                            posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
                     }
 
                     nonDiacriticCounter = charIndex
 
                     stackUpwardCounter = 0
                     stackDownwardCounter = 0
+                    extraWidth = 0
                 }
                 else if (thisProp.writeOnTop && thisProp.alignXPos == GlyphProps.DIA_JOINER) {
                     posXbuffer[charIndex] = when (itsProp.alignWhere) {
@@ -1363,7 +1326,7 @@ class GameFontBase(
         internal val JONG_COUNT = 28
 
         internal val W_ASIAN_PUNCT = 10
-        internal val W_HANGUL = 13
+        internal val W_HANGUL_BASE = 13
         internal val W_KANA = 12
         internal val W_UNIHAN = 16
         internal val W_LATIN_WIDE = 9 // width of regular letters
@@ -1526,6 +1489,7 @@ class GameFontBase(
         private fun getWanseongHanJungseong(hanIndex: Int) = hanIndex / JONG_COUNT % JUNG_COUNT
         private fun getWanseongHanJongseong(hanIndex: Int) = hanIndex % JONG_COUNT
 
+        // THESE ARRAYS MUST BE SORTED
         // ㅣ
         private val jungseongI: Array<Int> = arrayOf(21,61)
         // ㅗ ㅛ ㅜ ㅠ
@@ -1540,6 +1504,9 @@ class GameFontBase(
         private val jungseongEU: Array<Int> = arrayOf(19,62,66)
         // ㅢ
         private val jungseongYI: Array<Int> = arrayOf(20,60,65)
+        // index of the peak, 0 being blank, 1 being ㅏ
+        // indices of peaks that number of lit pixels (vertically counted) on x=11 is greater than 7
+        private val hangulPeaksWithExtraWidth = arrayOf(2,4,6,8,11,16,32,33,37,42,44,48,50,71,75,78,79,83,86,87,88,94)
 
         private fun isJungseongI(hanIndex: Int) = jungseongI.binarySearch(hanIndex) >= 0
         private fun isJungseongOU(hanIndex: Int) = jungseongOU.binarySearch(hanIndex) >= 0
