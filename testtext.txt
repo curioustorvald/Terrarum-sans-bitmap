@@ -8,5 +8,6 @@ Yd
 /œ̃/
 /ɛ̃/
 ẽ
+/ẽ
 when the line ends with a diacritics, whole letter wont render
 if the line starts with a letter-with-diacritic, it will error out

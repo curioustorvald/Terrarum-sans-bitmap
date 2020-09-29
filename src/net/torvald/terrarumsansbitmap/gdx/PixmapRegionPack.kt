@@ -25,14 +25,15 @@
 package net.torvald.terrarumsansbitmap.gdx
 
 import com.badlogic.gdx.files.FileHandle
-import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Pixmap
 
 /**
+ * Breaks one pixmap atlas into many child pixmaps
+ *
  * Created by minjaesong on 2018-09-17.
  */
 class PixmapRegionPack(
-        pixmap: Pixmap,
+        pixmapAtlas: Pixmap,
         val tileW: Int,
         val tileH: Int,
         val hGap: Int = 0,
@@ -47,8 +48,8 @@ class PixmapRegionPack(
     constructor(fileHandle: FileHandle, tileW: Int, tileH: Int, hGap: Int = 0, vGap: Int = 0, hFrame: Int = 0, vFrame: Int = 0, xySwapped: Boolean = false) :
             this(Pixmap(fileHandle), tileW, tileH, hGap, vGap, hFrame, vFrame, xySwapped)
 
-    val horizontalCount = (pixmap.width - 2 * hFrame + hGap) / (tileW + hGap)
-    val verticalCount = (pixmap.height - 2 * vFrame + vGap) / (tileH + vGap)
+    val horizontalCount = (pixmapAtlas.width - 2 * hFrame + hGap) / (tileW + hGap)
+    val verticalCount = (pixmapAtlas.height - 2 * vFrame + vGap) / (tileH + vGap)
 
     val regions: Array<Pixmap>
 
@@ -70,10 +71,10 @@ class PixmapRegionPack(
 
 
 
-        pixmap.pixels.rewind()
+        pixmapAtlas.pixels.rewind()
 
         if (!xySwapped) {
-            regions = Array<Pixmap>(horizontalCount * verticalCount, {
+            regions = Array<Pixmap>(horizontalCount * verticalCount) {
                 val rx = (it % horizontalCount * (tileW + hGap)) + hFrame // pixel, not index
                 val ry = (it / horizontalCount * (tileH + vGap)) + vFrame // pixel, not index
 
@@ -84,15 +85,15 @@ class PixmapRegionPack(
                 // for every "scanline"
                 for (y in 0 until tileH) {
 
-                    val offsetY = (ry + y) * (pixmap.width * 4) + (vFrame * pixmap.width * 4)
+                    val offsetY = (ry + y) * (pixmapAtlas.width * 4) + (vFrame * pixmapAtlas.width * 4)
                     val offsetX = rx * 4 + hFrame * 4
 
                     //println("offset: ${offsetX + offsetY}")
 
                     val bytesBuffer = ByteArray(4 * tileW)
 
-                    pixmap.pixels.position(offsetY + offsetX)
-                    pixmap.pixels.get(bytesBuffer, 0, bytesBuffer.size)
+                    pixmapAtlas.pixels.position(offsetY + offsetX)
+                    pixmapAtlas.pixels.get(bytesBuffer, 0, bytesBuffer.size)
 
                     // test print bytesbuffer
                     /*bytesBuffer.forEachIndexed { index, it ->
@@ -112,10 +113,10 @@ class PixmapRegionPack(
                 // todo globalFlipY ?
 
                 /*return*/region
-            })
+            }
         }
         else {
-            regions = Array<Pixmap>(horizontalCount * verticalCount, {
+            regions = Array<Pixmap>(horizontalCount * verticalCount) {
                 val rx = (it / verticalCount * (tileW + hGap)) + hFrame
                 val ry = (it % verticalCount * (tileH + vGap)) + vFrame
 
@@ -126,15 +127,15 @@ class PixmapRegionPack(
                 // for every "scanline"
                 for (y in 0 until tileH) {
 
-                    val offsetY = (ry + y) * (pixmap.width * 4) + (vFrame * pixmap.width * 4)
+                    val offsetY = (ry + y) * (pixmapAtlas.width * 4) + (vFrame * pixmapAtlas.width * 4)
                     val offsetX = rx * 4 + hFrame * 4
 
                     //println("offset: ${offsetX + offsetY}")
 
                     val bytesBuffer = ByteArray(4 * tileW)
 
-                    pixmap.pixels.position(offsetY + offsetX)
-                    pixmap.pixels.get(bytesBuffer, 0, bytesBuffer.size)
+                    pixmapAtlas.pixels.position(offsetY + offsetX)
+                    pixmapAtlas.pixels.get(bytesBuffer, 0, bytesBuffer.size)
 
                     // test print bytesbuffer
                     /*bytesBuffer.forEachIndexed { index, it ->
@@ -154,7 +155,7 @@ class PixmapRegionPack(
                 // todo globalFlipY ?
 
                 /*return*/region
-            })
+            }
         }
     }
 

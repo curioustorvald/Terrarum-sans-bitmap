@@ -357,6 +357,11 @@ class GameFontBase(
         }
 
         sheets = sheetsPack.toTypedArray()
+
+        // make sure null char is actually null (draws nothing and has zero width)
+        sheets[SHEET_ASCII_VARW].regions[0].setColor(0)
+        sheets[SHEET_ASCII_VARW].regions[0].fill()
+        glyphProps[0] = GlyphProps(0, 0)
     }
 
     override fun getLineHeight(): Float = H.toFloat()
@@ -396,6 +401,13 @@ class GameFontBase(
         if (debug)
             println("[TerrarumSansBitmap] max age: $textCacheCap")
 
+        // Q&D fix for issue #12
+        // When the line ends with a diacritics, the whole letter won't render
+        // If the line starts with a letter-with-diacritic, it will error out
+        // Some diacritics (e.g. COMBINING TILDE) do not obey lowercase letters
+        val charSeqNotBlank = charSeq.isNotBlank() // determine emptiness BEFORE you hack a null chars in
+        val charSeq = "\u0000" + charSeq + 0.toChar()
+
         fun Int.flipY() = this * if (flipY) 1 else -1
 
         // always draw at integer position; this is bitmap font after all
@@ -408,7 +420,7 @@ class GameFontBase(
 
         val charSeqHash = charSeq.toCodePoints().getHash()
 
-        if (charSeq.isNotBlank()) {
+        if (charSeqNotBlank) {
 
             val cacheObj = getCache(charSeqHash)
 
