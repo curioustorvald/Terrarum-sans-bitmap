@@ -428,7 +428,11 @@ class GameFontBase(
 
                 resetHash(charSeq, x.toFloat(), y.toFloat())
 
-                val linotypePixmap = Pixmap(posXbuffer.last(), H + (pixmapOffsetY * 2), Pixmap.Format.RGBA8888)
+
+                val _pw = posXbuffer.last()
+                val _ph = H + (pixmapOffsetY * 2)
+                if (_pw < 0 || _ph < 0) throw RuntimeException("Illegal linotype dimension (w: $_pw, h: $_ph)")
+                val linotypePixmap = Pixmap(_pw, _ph, Pixmap.Format.RGBA8888)
 
 
                 var index = 0
@@ -1744,6 +1748,10 @@ print("0x{0:x}".format(ord(c)))
         private val kernGammas = intArrayOf(0x393,0x403,0x413,0x490,0x492,0x4f6,0x4fa,0x13b1,0x16a8,0x16a9,0x16aa,0x16ab,0x16b9,0x16c7,0x16da,0x16db,0x16e2,0x16ee,0x2c84,0xa4e9,0xa784).toSortedSet()
         // JĴɹɺɻͿᛇᴊᎫᏗꓕꓙꞱꭻꮧ
         private val kernJays = intArrayOf(0x4a,0x134,0x279,0x27a,0x27b,0x37f,0x16c7,0x1d0a,0x13ab,0x13d7,0xa4d5,0xa4d9,0xa7b1,0xab7b,0xaba7).toSortedSet()
+        // d
+        private val kernDees = intArrayOf(0x64)
+        // b
+        private val kernBees = intArrayOf(0x62)
 
         private val kernTee = -2
         private val kernYee = -1

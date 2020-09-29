@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Class-Path: lib/gdx.jar lib/gdx-backend-lwjgl.jar lib/gdx-backend-lwjg
- l-natives.jar lib/gdx-natives.jar lib/kotlin-stdlib.jar TerrarumSansB
+ l-natives.jar lib/gdx-natives.jar lib/kotlin-stdlib.jar lib/TerrarumSansB
  itmap.jar
 Main-Class: FontTestGDXKt
 
