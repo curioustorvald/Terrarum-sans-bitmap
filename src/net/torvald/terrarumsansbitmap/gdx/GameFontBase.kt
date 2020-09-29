@@ -427,7 +427,7 @@ class GameFontBase(
             if (cacheObj == null || flagFirstRun) {
                 textBuffer = charSeq.toCodePoints()
 
-                val (posXbuffer, posYbuffer) = buildWidthAndPosBuffers(textBuffer)
+                val (posXbuffer, posYbuffer) = buildPosMap(textBuffer)
 
                 flagFirstRun = false
 
@@ -853,7 +853,7 @@ class GameFontBase(
             return cacheObj.glyphLayout!!.width
         }
         else {
-            return buildWidthAndPosBuffers(s).first.last()
+            return buildPosMap(s).first.last()
         }
     }
 
@@ -862,7 +862,7 @@ class GameFontBase(
     /**
      * posXbuffer's size is greater than the string, last element marks the width of entire string.
      */
-    private fun buildWidthAndPosBuffers(str: CodepointSequence): Pair<IntArray, IntArray> {
+    private fun buildPosMap(str: CodepointSequence): Pair<IntArray, IntArray> {
         val posXbuffer = IntArray(str.size + 1) { 0 }
         val posYbuffer = IntArray(str.size) { 0 }
 
