@@ -986,10 +986,13 @@ class GameFontBase(
                                 // shift down on lowercase if applicable
                                 if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
                                         lastNonDiacriticChar.isLowHeight()) {
+                                    //println("AAARRRRHHHH for character ${thisChar.toHex()}")
+                                    //println("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
+                                    //println("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
                                     if (thisProp.alignXPos == GlyphProps.DIA_OVERLAY)
-                                        posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN
+                                        posYbuffer[charIndex] -= H_OVERLAY_LOWERCASE_SHIFTDOWN // if minus-assign doesn't work, try plus-assign
                                     else
-                                        posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN
+                                        posYbuffer[charIndex] -= H_STACKUP_LOWERCASE_SHIFTDOWN // if minus-assign doesn't work, try plus-assign
                                 }
 
                                 stackUpwardCounter++
