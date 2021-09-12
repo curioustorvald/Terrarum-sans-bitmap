@@ -391,8 +391,6 @@ class GameFontBase(
 
     private lateinit var tempLinotype: Texture
 
-    private lateinit var originalColour: Color
-
     private var nullProp = GlyphProps(15, 0)
 
     private val pixmapOffsetY = 10
@@ -414,11 +412,9 @@ class GameFontBase(
         val x = Math.round(x)
         val y = Math.round(y)
 
-        originalColour = batch.color.cpy()
-        val mainColObj = originalColour
-        var mainCol: Int = originalColour.toRGBA8888().forceOpaque()
-
         val charSeqHash = charSeq.toCodePoints().getHash()
+
+        var renderCol = -1 // subject to change with the colour code
 
         if (charSeqNotBlank) {
 
@@ -458,10 +454,10 @@ class GameFontBase(
 
                     if (isColourCode(c)) {
                         if (c == 0x100000) {
-                            mainCol = originalColour.toRGBA8888().forceOpaque()
+                            renderCol = -1
                         }
                         else {
-                            mainCol = getColour(c)
+                            renderCol = getColour(c)
                         }
                     }
                     else if (isCharsetOverride(c)) {
@@ -492,15 +488,9 @@ class GameFontBase(
                         val jungTex = hangulSheet.get(indexJung, jungRow)
                         val jongTex = hangulSheet.get(indexJong, jongRow)
 
-                        linotypePixmap.setColor(mainCol)
-                        linotypePixmap.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY, mainCol)
-                        linotypePixmap.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY, mainCol)
-                        linotypePixmap.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY, mainCol)
-
-                        //batch.color = mainCol
-                        //batch.draw(choTex, x + posXbuffer[index].toFloat(), y)
-                        //batch.draw(jungTex, x + posXbuffer[index].toFloat(), y)
-                        //batch.draw(hangulSheet.get(indexJong, jongRow), x + posXbuffer[index].toFloat(), y)
+                        linotypePixmap.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY, renderCol)
+                        linotypePixmap.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY, renderCol)
+                        linotypePixmap.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY, renderCol)
 
 
                         index += hangulLength - 1
@@ -518,14 +508,11 @@ class GameFontBase(
                             val posX = posXbuffer[index]
                             val texture = sheets[sheetID].get(sheetX, sheetY)
 
-                            linotypePixmap.drawPixmap(texture, posX, posY + pixmapOffsetY, mainCol)
+                            linotypePixmap.drawPixmap(texture, posX, posY + pixmapOffsetY, renderCol)
 
-                            //batch.color = mainCol
-                            //batch.draw(texture, posX, posY)
 
                         }
                         catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
-                            //batch.color = mainCol
                         }
                     }
 
@@ -550,9 +537,6 @@ class GameFontBase(
             }
 
 
-
-            batch.color = mainColObj
-
             if (!flipY) {
                 batch.draw(tempLinotype, x.toFloat(), (y - pixmapOffsetY).toFloat())
             }
@@ -567,7 +551,6 @@ class GameFontBase(
 
         }
 
-        batch.color = originalColour
         return null
     }
 
