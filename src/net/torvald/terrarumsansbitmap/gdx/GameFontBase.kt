@@ -1270,9 +1270,9 @@ class GameFontBase(
     fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = GameFontBase.toColorCode(r, g, b, a)
     val noColorCode = toColorCode(0x0000)
 
-    val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT)
-    val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG)
-    val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR)
+    val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
+    val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
+    val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR).toSurrogatedString()
 
     // randomiser effect hash ONLY
     private val hashBasis = -3750763034362895579L
@@ -1809,12 +1809,12 @@ print("0x{0:x}".format(ord(c)))
         }
 
 
-        val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT)
-        val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG)
-        val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR)
-        fun toColorCode(argb4444: Int): String = Character.toChars(0x100000 + argb4444).toColCode()
+        val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
+        val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
+        val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR).toSurrogatedString()
+        fun toColorCode(argb4444: Int): String = Character.toChars(0x100000 + argb4444).toSurrogatedString()
         fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = toColorCode(a.shl(12) or r.shl(8) or g.shl(4) or b)
-        private fun CharArray.toColCode(): String = "${this[0]}${this[1]}"
+        private fun CharArray.toSurrogatedString(): String = "${this[0]}${this[1]}"
 
         val noColorCode = toColorCode(0x0000)
     }
