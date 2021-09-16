@@ -1,6 +1,6 @@
 import com.badlogic.gdx.*
-import com.badlogic.gdx.backends.lwjgl.LwjglApplication
-import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.FrameBuffer
@@ -109,7 +109,7 @@ class FontTestGDX : Game() {
 
         batch.begin()
         batch.color = Color.WHITE
-        batch.draw(tex, 0f, (TEXH.toFloat()/appConfig.height)*TEXH - scrollOffsetY, TEXW.toFloat(), -(TEXH.toFloat() / appConfig.height) * TEXH.toFloat())
+        batch.draw(tex, 0f, (TEXH.toFloat()/HEIGHT)*TEXH - scrollOffsetY, TEXW.toFloat(), -(TEXH.toFloat() / HEIGHT) * TEXH.toFloat())
 
 
         batch.end()
@@ -129,19 +129,19 @@ class FontTestGDX : Game() {
     }
 
     fun scrollAdd(x: Int = 1) {
-        scrollOffsetY -= (TEXH.toFloat() / appConfig.height) * 20f * x
+        scrollOffsetY -= (TEXH.toFloat() / HEIGHT) * 20f * x
     }
 
     fun scrollSub(x: Int = 1) {
-        scrollOffsetY += (TEXH.toFloat() / appConfig.height) * 20f * x
+        scrollOffsetY += (TEXH.toFloat() / HEIGHT) * 20f * x
     }
 
     class Navigator(val main: FontTestGDX) : InputAdapter() {
-        override fun scrolled(amount: Int): Boolean {
-            if (amount >= 0)
-                main.scrollSub(amount)
+        override fun scrolled(amountX: Float, amountY: Float): Boolean {
+            if (amountY >= 0)
+                main.scrollSub(amountY.toInt())
             else
-                main.scrollAdd(-amount)
+                main.scrollAdd(-amountY.toInt())
 
             return true
         }
@@ -157,17 +157,19 @@ class FontTestGDX : Game() {
     }
 }
 
-lateinit var appConfig: LwjglApplicationConfiguration
+lateinit var appConfig: Lwjgl3ApplicationConfiguration
 const val TEXW = 874
 const val TEXH = 2400
 
-fun main(args: Array<String>) {
-    appConfig = LwjglApplicationConfiguration()
-    appConfig.vSyncEnabled = false
-    appConfig.resizable = false//true;
-    appConfig.width = TEXW
-    appConfig.height = 768
-    appConfig.title = "Terrarum Sans Bitmap Test (GDX)"
+const val WIDTH = TEXW
+const val HEIGHT = 768
 
-    LwjglApplication(FontTestGDX(), appConfig)
+fun main(args: Array<String>) {
+    appConfig = Lwjgl3ApplicationConfiguration()
+    appConfig.useVsync(false)
+    appConfig.setResizable(false)
+    appConfig.setWindowedMode(WIDTH, HEIGHT)
+    appConfig.setTitle("Terrarum Sans Bitmap Test")
+    
+    Lwjgl3Application(FontTestGDX(), appConfig)
 }

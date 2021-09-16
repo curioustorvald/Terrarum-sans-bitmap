@@ -1,0 +1,48 @@
+<component name="libraryTable">
+  <library name="badlogicgames.gdx.backend.lwjgl3" type="repository">
+    <properties maven-id="com.badlogicgames.gdx:gdx-backend-lwjgl3:1.10.0" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/badlogicgames/gdx/gdx-backend-lwjgl3/1.10.0/gdx-backend-lwjgl3-1.10.0.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/badlogicgames/gdx/gdx/1.10.0/gdx-1.10.0.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl/3.2.3/lwjgl-3.2.3.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl/3.2.3/lwjgl-3.2.3-natives-windows.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl/3.2.3/lwjgl-3.2.3-natives-windows-x86.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl/3.2.3/lwjgl-3.2.3-natives-linux.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl/3.2.3/lwjgl-3.2.3-natives-linux-arm32.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl/3.2.3/lwjgl-3.2.3-natives-linux-arm64.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl/3.2.3/lwjgl-3.2.3-natives-macos.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-glfw/3.2.3/lwjgl-glfw-3.2.3.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-glfw/3.2.3/lwjgl-glfw-3.2.3-natives-windows.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-glfw/3.2.3/lwjgl-glfw-3.2.3-natives-windows-x86.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-glfw/3.2.3/lwjgl-glfw-3.2.3-natives-linux.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-glfw/3.2.3/lwjgl-glfw-3.2.3-natives-linux-arm32.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-glfw/3.2.3/lwjgl-glfw-3.2.3-natives-linux-arm64.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-glfw/3.2.3/lwjgl-glfw-3.2.3-natives-macos.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-jemalloc/3.2.3/lwjgl-jemalloc-3.2.3.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-jemalloc/3.2.3/lwjgl-jemalloc-3.2.3-natives-windows.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-jemalloc/3.2.3/lwjgl-jemalloc-3.2.3-natives-windows-x86.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-jemalloc/3.2.3/lwjgl-jemalloc-3.2.3-natives-linux.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-jemalloc/3.2.3/lwjgl-jemalloc-3.2.3-natives-linux-arm32.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-jemalloc/3.2.3/lwjgl-jemalloc-3.2.3-natives-linux-arm64.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-jemalloc/3.2.3/lwjgl-jemalloc-3.2.3-natives-macos.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-opengl/3.2.3/lwjgl-opengl-3.2.3.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-opengl/3.2.3/lwjgl-opengl-3.2.3-natives-windows.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-opengl/3.2.3/lwjgl-opengl-3.2.3-natives-windows-x86.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-opengl/3.2.3/lwjgl-opengl-3.2.3-natives-linux.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-opengl/3.2.3/lwjgl-opengl-3.2.3-natives-linux-arm32.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-opengl/3.2.3/lwjgl-opengl-3.2.3-natives-linux-arm64.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-opengl/3.2.3/lwjgl-opengl-3.2.3-natives-macos.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-openal/3.2.3/lwjgl-openal-3.2.3.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-openal/3.2.3/lwjgl-openal-3.2.3-natives-windows.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-openal/3.2.3/lwjgl-openal-3.2.3-natives-windows-x86.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-openal/3.2.3/lwjgl-openal-3.2.3-natives-linux.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-openal/3.2.3/lwjgl-openal-3.2.3-natives-linux-arm32.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-openal/3.2.3/lwjgl-openal-3.2.3-natives-linux-arm64.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/lwjgl/lwjgl-openal/3.2.3/lwjgl-openal-3.2.3-natives-macos.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/badlogicgames/jlayer/jlayer/1.0.1-gdx/jlayer-1.0.1-gdx.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/jcraft/jorbis/0.0.17/jorbis-0.0.17.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

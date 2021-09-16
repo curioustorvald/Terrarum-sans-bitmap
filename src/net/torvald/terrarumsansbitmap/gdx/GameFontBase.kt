@@ -37,6 +37,7 @@ import java.security.MessageDigest
 import java.util.*
 import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
+import kotlin.collections.HashMap
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
@@ -117,8 +118,11 @@ class GameFontBase(
     //private val textCache = HashMap<CharSequence, ShittyGlyphLayout>()
 
     private data class TextCacheObj(var age: Int, val hash: Long, val glyphLayout: ShittyGlyphLayout?): Comparable<TextCacheObj> {
+//        var disposed = false; private set
+
         fun dispose() {
             glyphLayout?.linotype?.dispose()
+//            disposed = true
         }
 
         override fun compareTo(other: TextCacheObj): Int {
@@ -127,80 +131,41 @@ class GameFontBase(
     }
     private var textCacheCap = 0
 
-    private val textCache = Array(textCacheSize) { TextCacheObj(-1, -1L, null) }
+    private val textCache = TreeMap<Long, TextCacheObj>()
 
     /**
      * Insertion sorts the last element fo the textCache
      */
     private fun addToCache(text: CodepointSequence, linotype: Texture, width: Int) {
-        // Caching rules:
-        // 1. always accept new element.
-        // 2. often-called element have higher chance of survival (see: getCache(long))
-
+        val cacheObj = TextCacheObj(0, text.getHash(), ShittyGlyphLayout(text, linotype, width))
 
         if (textCacheCap < textCacheSize) {
-            textCache[textCacheCap] = TextCacheObj(0, text.getHash(), ShittyGlyphLayout(text, linotype, width))
+            textCache[cacheObj.hash] = cacheObj
             textCacheCap += 1
-
-            // make everybody age
-            textCache.forEach {
-                it.age += 1
-            }
         }
         else {
-            // search for an oldest element
-            var oldestElemIndex = 0
-            var ageOfOldest = textCacheCap
-            textCache.forEachIndexed { index, it ->
-                // make everybody age
-                textCache[index].age += 1
+            // randomly eliminate one
+            textCache.remove(textCache.keys.random())!!.dispose()
 
-                // mark oldest
-                if (it.age > ageOfOldest) {
-                    oldestElemIndex = index
-                }
-            }
-
-
-            // dispose of the oldest one before overwriting
-            textCache[oldestElemIndex].dispose()
-
-            // overwrite oldest one
-            textCache[oldestElemIndex] = TextCacheObj(0, text.getHash(), ShittyGlyphLayout(text, linotype, width))
+            // add new one
+            textCache[cacheObj.hash] = cacheObj
         }
-
-        // sort the list
-        textCache.sortBy { it.hash }
     }
 
     private fun getCache(hash: Long): TextCacheObj? {
-        var low = 0
-        var high = textCacheCap - 1
-        var key = -1
+        val cache = textCache[hash]
 
-
-        while (low <= high) {
-            val mid = (low + high).ushr(1) // safe from overflows
-
-            val midVal = textCache[mid]
-
-            if (hash > midVal.hash)
-                low = mid + 1
-            else if (hash < midVal.hash)
-                high = mid - 1
-            else {
-                key = mid
-                break // the condition is not enough to break the loop
-            }
-        }
-
-        if (key < 0)
+        if (cache == null)
             return null
-
-        // decrement age count (see: addToCache(CodepointSequence, Pixmap, Int))
-        if (textCache[key].age > 0) textCache[key].age -= 1
-
-        return textCache[key]
+//        else if (cache.disposed) {
+//            textCache.remove(hash)
+//            return null
+//        }
+        else {
+            // decrement age count (see: addToCache(CodepointSequence, Pixmap, Int))
+            if (cache.age > 0) cache.age -= 1
+            return cache
+        }
     }
 
 
@@ -559,7 +524,7 @@ class GameFontBase(
 
     override fun dispose() {
         super.dispose()
-        textCache.forEach { it.dispose() }
+        textCache.values.forEach { it.dispose() }
         sheets.forEach { it.dispose() }
     }
 
@@ -1307,18 +1272,6 @@ class GameFontBase(
 
 
 
-    private fun CharSequence.sha256(): ByteArray {
-        val digest = MessageDigest.getInstance("SHA-256")
-        this.forEach {
-            val it = it.toInt()
-            val b1 = it.shl(8).and(255).toByte()
-            val b2 = it.and(255).toByte()
-            digest.update(b1)
-            digest.update(b2)
-        }
-
-        return digest.digest()
-    }
     private fun CharSequence.crc32(): Int {
         val crc = CRC32()
         this.forEach {

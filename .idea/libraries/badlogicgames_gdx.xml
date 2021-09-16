@@ -1,5 +1,5 @@
 <component name="libraryTable">
-  <library name="com.badlogicgames.gdx:gdx:1.10.0" type="repository">
+  <library name="badlogicgames.gdx" type="repository">
     <properties maven-id="com.badlogicgames.gdx:gdx:1.10.0" />
     <CLASSES>
       <root url="jar://$MAVEN_REPOSITORY$/com/badlogicgames/gdx/gdx/1.10.0/gdx-1.10.0.jar!/" />
