@@ -103,8 +103,12 @@ class GameFontBase(
         val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, 
         var errorOnUnknownChar: Boolean = false, 
         val textCacheSize: Int = 256, 
-        val debug: Boolean = false
+        val debug: Boolean = false,
+        val shadowAlpha: Float = 0.5f,
+        val shadowAlphaPremultiply: Boolean = false
 ) : BitmapFont() {
+
+    constructor(fontDir: String, noShadow: Boolean, flipY: Boolean, invertShadow: Boolean) : this(fontDir, noShadow, flipY, invertShadow, Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest, false, 256, false)
 
     /**
      * lowercase AND the height is equal to x-height (e.g. lowercase B, D, F, H, K, L, ... does not count
@@ -1160,10 +1164,17 @@ class GameFontBase(
                     // to be opaque
                     if (pixel and 0xFF == 0xFF) {
                         val newPixel = pixmap.getPixel(x + it.first, y + it.second)
-                        val newColour = pixel.and(0xFFFFFF00.toInt()) or 0x80
+                        val newColour = Color(); Color.rgba8888ToColor(newColour, pixel)
+                        newColour.a = shadowAlpha
+
+                        if (shadowAlphaPremultiply) {
+                            newColour.r *= shadowAlpha
+                            newColour.g *= shadowAlpha
+                            newColour.b *= shadowAlpha
+                        }
 
                         if (newPixel and 0xFF == 0) {
-                            pixmap.drawPixel(x + it.first, y + it.second, newColour)
+                            pixmap.drawPixel(x + it.first, y + it.second, newColour.toRGBA8888())
                         }
                     }
                 }
