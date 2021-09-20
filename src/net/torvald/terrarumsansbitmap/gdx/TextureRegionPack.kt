@@ -40,13 +40,15 @@ class TextureRegionPack(
         val vGap: Int = 0,
         val hFrame: Int = 0,
         val vFrame: Int = 0,
-        val xySwapped: Boolean = false // because Unicode chart does, duh
+        val xySwapped: Boolean = false, // because Unicode chart does, duh
+        val flipX: Boolean = false,
+        val flipY: Boolean = false
 ): Disposable {
 
-    constructor(ref: String, tileW: Int, tileH: Int, hGap: Int = 0, vGap: Int = 0, hFrame: Int = 0, vFrame: Int = 0, xySwapped: Boolean = false) :
-            this(Texture(ref), tileW, tileH, hGap, vGap, hFrame, vFrame, xySwapped)
-    constructor(fileHandle: FileHandle, tileW: Int, tileH: Int, hGap: Int = 0, vGap: Int = 0, hFrame: Int = 0, vFrame: Int = 0, xySwapped: Boolean = false) :
-            this(Texture(fileHandle), tileW, tileH, hGap, vGap, hFrame, vFrame, xySwapped)
+    constructor(ref: String, tileW: Int, tileH: Int, hGap: Int = 0, vGap: Int = 0, hFrame: Int = 0, vFrame: Int = 0, xySwapped: Boolean = false, flipX: Boolean = false, flipY: Boolean = false) :
+            this(Texture(ref), tileW, tileH, hGap, vGap, hFrame, vFrame, xySwapped, flipX, flipY)
+    constructor(fileHandle: FileHandle, tileW: Int, tileH: Int, hGap: Int = 0, vGap: Int = 0, hFrame: Int = 0, vFrame: Int = 0, xySwapped: Boolean = false, flipX: Boolean = false, flipY: Boolean = false) :
+            this(Texture(fileHandle), tileW, tileH, hGap, vGap, hFrame, vFrame, xySwapped, flipX, flipY)
 
     companion object {
         /** Intented for Y-down coord system, typically fon Non-GDX codebase */
@@ -70,7 +72,7 @@ class TextureRegionPack(
                 region.setRegion(texture)
                 region.setRegion(rx, ry, tileW, tileH)
 
-                region.flip(false, globalFlipY)
+                region.flip(flipX, if (flipY) !globalFlipY else globalFlipY)
 
                 /*return*/region
             }
@@ -84,7 +86,7 @@ class TextureRegionPack(
                 region.setRegion(texture)
                 region.setRegion(rx, ry, tileW, tileH)
 
-                region.flip(false, globalFlipY)
+                region.flip(flipX, if (flipY) !globalFlipY else globalFlipY)
 
                 /*return*/region
             }
@@ -92,6 +94,8 @@ class TextureRegionPack(
     }
 
     fun get(x: Int, y: Int) = regions[y * horizontalCount + x]
+
+    fun forEach(action: (TextureRegion) -> Unit) = regions.forEach(action)
 
     override fun dispose() {
         texture.dispose()
