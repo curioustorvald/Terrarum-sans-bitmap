@@ -5,16 +5,39 @@
       <artifact name="TerrarumSansBitmap" />
     </artifacts-to-build>
   </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/TerrarumSansBitmap.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/TerrarumSansBitmap.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/lib.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/badlogicgames_gdx.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/badlogicgames_gdx_backend_lwjgl3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" beforeDir="false" afterPath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/META-INF/MANIFEST.MF" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/lib/TerrarumSansBitmap.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/GameFontBase.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testing.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/testing.PNG" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testtext.txt" beforeDir="false" afterPath="$PROJECT_DIR$/testtext.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/ascii_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/ascii_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/cyrilic_bulgarian_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/cyrilic_bulgarian_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/cyrilic_serbian_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/cyrilic_serbian_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/cyrilic_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/cyrilic_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/greek_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/greek_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/latinExtA_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/latinExtA_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/latinExtB_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/latinExtB_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/latinExtC_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/latinExtC_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/latinExtD_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/latinExtD_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/latinExt_additional_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/latinExt_additional_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/demo.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/demo.PNG" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/ascii_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/ascii_variable.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/cyrilic_bulgarian_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/cyrilic_bulgarian_variable.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/cyrilic_serbian_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/cyrilic_serbian_variable.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/cyrilic_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/cyrilic_variable.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/greek_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/greek_variable.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/latinExtA_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/latinExtA_variable.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/latinExtB_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/latinExtB_variable.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/latinExtC_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/latinExtC_variable.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/latinExtD_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/latinExtD_variable.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/latinExt_additional_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/latinExt_additional_variable.psd" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,21 +56,33 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
   <component name="ProjectId" id="1aVE5t6KObkWt36lb07GBy1GY1S" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="Downloaded.Files.Path.Enabled" value="false" />
+    <property name="Repository.Attach.Annotations" value="false" />
+    <property name="Repository.Attach.JavaDocs" value="false" />
+    <property name="Repository.Attach.Sources" value="false" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="SearchEverywhereHistoryKey" value="HashMap&#9;PSI&#9;JAVA://java.util.HashMap&#10;soft wr&#9;ACTION&#9;EditorToggleUseSoftWraps" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/lib" />
-    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.last.edited" value="Libraries" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.32068965" />
-    <property name="settings.editor.selected.configurable" value="preferences.language.Kotlin" />
+    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -90,14 +125,8 @@
       </method>
     </configuration>
     <configuration name="FontTestGDXKt" type="JetRunConfigurationType" temporary="true">
-      <module name="FontTestGDX" />
-      <option name="VM_PARAMETERS" value="" />
-      <option name="PROGRAM_PARAMETERS" value="" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
-      <option name="PASS_PARENT_ENVS" value="true" />
       <option name="MAIN_CLASS_NAME" value="FontTestGDXKt" />
-      <option name="WORKING_DIRECTORY" value="" />
+      <module name="FontTestGDX" />
       <method v="2">
         <option name="Make" enabled="true" />
         <option name="BuildArtifacts" enabled="true">
@@ -107,34 +136,6 @@
     </configuration>
     <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
       <option name="filePath" />
-      <option name="vmParameters" />
-      <option name="alternativeJrePath" />
-      <option name="programParameters" />
-      <option name="passParentEnvs" value="true" />
-      <option name="workingDirectory" />
-      <option name="isAlternativeJrePathEnabled" value="false" />
-      <option name="VM_PARAMETERS" />
-      <option name="PROGRAM_PARAMETERS" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
-      <option name="PASS_PARENT_ENVS" value="true" />
-      <option name="MAIN_CLASS_NAME" />
-      <option name="WORKING_DIRECTORY" />
-      <module name="" />
-      <option name="filePath" />
-      <option name="vmParameters" />
-      <option name="alternativeJrePath" />
-      <option name="programParameters" />
-      <option name="passParentEnvs" value="true" />
-      <option name="workingDirectory" />
-      <option name="isAlternativeJrePathEnabled" value="false" />
-      <option name="VM_PARAMETERS" />
-      <option name="PROGRAM_PARAMETERS" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
-      <option name="PASS_PARENT_ENVS" value="true" />
-      <option name="MAIN_CLASS_NAME" />
-      <option name="WORKING_DIRECTORY" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -198,43 +199,9 @@
     </option>
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
-  <component name="WindowStateProjectService">
-    <state x="86" y="97" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1601262877161">
-      <screen x="72" y="0" width="1848" height="1080" />
-    </state>
-    <state x="86" y="97" key="#com.intellij.execution.impl.EditConfigurationsDialog/72.0.1848.1080@72.0.1848.1080" timestamp="1601262877161" />
-    <state x="391" y="199" key="FileChooserDialogImpl" timestamp="1601263114996">
-      <screen x="72" y="0" width="1848" height="1080" />
-    </state>
-    <state x="391" y="199" key="FileChooserDialogImpl/72.0.1848.1080@72.0.1848.1080" timestamp="1601263114996" />
-    <state width="1802" height="288" key="GridCell.Tab.0.bottom" timestamp="1601263214814">
-      <screen x="72" y="0" width="1848" height="1080" />
-    </state>
-    <state width="1802" height="288" key="GridCell.Tab.0.bottom/72.0.1848.1080@72.0.1848.1080" timestamp="1601263214814" />
-    <state width="1802" height="288" key="GridCell.Tab.0.center" timestamp="1601263214814">
-      <screen x="72" y="0" width="1848" height="1080" />
-    </state>
-    <state width="1802" height="288" key="GridCell.Tab.0.center/72.0.1848.1080@72.0.1848.1080" timestamp="1601263214814" />
-    <state width="1802" height="288" key="GridCell.Tab.0.left" timestamp="1601263214814">
-      <screen x="72" y="0" width="1848" height="1080" />
-    </state>
-    <state width="1802" height="288" key="GridCell.Tab.0.left/72.0.1848.1080@72.0.1848.1080" timestamp="1601263214814" />
-    <state width="1802" height="288" key="GridCell.Tab.0.right" timestamp="1601263214814">
-      <screen x="72" y="0" width="1848" height="1080" />
-    </state>
-    <state width="1802" height="288" key="GridCell.Tab.0.right/72.0.1848.1080@72.0.1848.1080" timestamp="1601263214814" />
-    <state x="91" y="33" key="SettingsEditor" timestamp="1601263194258">
-      <screen x="72" y="0" width="1848" height="1080" />
-    </state>
-    <state x="91" y="33" key="SettingsEditor/72.0.1848.1080@72.0.1848.1080" timestamp="1601263194258" />
-    <state width="502" height="446" key="SwitcherDM" timestamp="1601260171295">
-      <screen x="72" y="0" width="1848" height="1080" />
-    </state>
-    <state width="502" height="446" key="SwitcherDM/72.0.1848.1080@72.0.1848.1080" timestamp="1601260171295" />
-    <state width="600" height="428" key="javadoc.popup" timestamp="1601255716058">
-      <screen x="72" y="0" width="1848" height="1080" />
-    </state>
-    <state width="600" height="428" key="javadoc.popup/72.0.1848.1080@72.0.1848.1080" timestamp="1601255716058" />
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
   <component name="antWorkspaceConfiguration">
     <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
