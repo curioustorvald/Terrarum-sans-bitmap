@@ -7,3 +7,8 @@ Terrarum-sans-bitmap*.zip
 TerrarumSansBitmap*.jar
 Font*.jar
 tmp_*
+*~
+.tmp*
+tmp_*
+*.bak
+*-autosave.kra

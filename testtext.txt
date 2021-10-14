@@ -14,3 +14,9 @@ o̸
 O̸
 when the line ends with a diacritics, whole letter wont render
 if the line starts with a letter-with-diacritic, it will error out
+
+Lyklaborð
+https://www.java.com/cov/en/download
+/a /c /d /e /g /i /j /m /n /o /p /q /r /s /u /v v/ /w /x /y /z
+germyndurinnkvikkalkul
+
