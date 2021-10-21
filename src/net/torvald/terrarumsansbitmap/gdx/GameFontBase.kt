@@ -365,8 +365,10 @@ class GameFontBase(
     private val pixmapOffsetY = 10
 
     fun draw(batch: Batch, charSeq: CharSequence, x: Int, y: Int) = draw(batch, charSeq, x.toFloat(), y.toFloat())
+    fun draw(batch: Batch, codepoints: CodepointSequence, x: Int, y: Int) = draw(batch, codepoints, x.toFloat(), y.toFloat())
+    override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float) = draw(batch, charSeq.toCodePoints(), x, y)
 
-    override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float): GlyphLayout? {
+    fun draw(batch: Batch, codepoints: CodepointSequence, x: Float, y: Float): GlyphLayout? {
         if (debug)
             println("[TerrarumSansBitmap] max age: $textCacheCap")
 
@@ -374,8 +376,11 @@ class GameFontBase(
         // When the line ends with a diacritics, the whole letter won't render
         // If the line starts with a letter-with-diacritic, it will error out
         // Some diacritics (e.g. COMBINING TILDE) do not obey lowercase letters
-        val charSeqNotBlank = charSeq.isNotBlank() // determine emptiness BEFORE you hack a null chars in
-        val charSeq = "\u0000" + charSeq + 0.toChar()
+        val charSeqNotBlank = codepoints.size > 0 // determine emptiness BEFORE you hack a null chars in
+        val newCodepoints = CodepointSequence()
+        newCodepoints.add(0)
+        newCodepoints.addAll(codepoints)
+        newCodepoints.add(0)
 
         fun Int.flipY() = this * if (flipY) 1 else -1
 
@@ -383,7 +388,7 @@ class GameFontBase(
         val x = Math.round(x)
         val y = Math.round(y)
 
-        val charSeqHash = charSeq.toCodePoints().getHash()
+        val charSeqHash = newCodepoints.getHash()
 
         var renderCol = -1 // subject to change with the colour code
 
@@ -392,7 +397,7 @@ class GameFontBase(
             val cacheObj = getCache(charSeqHash)
 
             if (cacheObj == null || flagFirstRun) {
-                textBuffer = charSeq.toCodePoints()
+                textBuffer = newCodepoints
 
                 val (posXbuffer, posYbuffer) = buildPosMap(textBuffer)
 
@@ -405,7 +410,7 @@ class GameFontBase(
                 //println()
 
 
-                resetHash(charSeq, x.toFloat(), y.toFloat())
+//                resetHash(charSeq, x.toFloat(), y.toFloat())
 
 
                 val _pw = posXbuffer.last()
@@ -800,6 +805,8 @@ class GameFontBase(
 
     fun getWidth(text: String) = getWidth(text.toCodePoints())
 
+    fun getWidth(codepoints: List<Int>) = buildPosMap(codepoints).first.last()
+
     fun getWidth(s: CodepointSequence): Int {
         val cacheObj = getCache(s.getHash())
 
@@ -816,7 +823,7 @@ class GameFontBase(
     /**
      * posXbuffer's size is greater than the string, last element marks the width of entire string.
      */
-    private fun buildPosMap(str: CodepointSequence): Pair<IntArray, IntArray> {
+    private fun buildPosMap(str: List<Int>): Pair<IntArray, IntArray> {
         val posXbuffer = IntArray(str.size + 1) { 0 }
         val posYbuffer = IntArray(str.size) { 0 }
 
