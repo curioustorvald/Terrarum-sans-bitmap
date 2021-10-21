@@ -364,6 +364,8 @@ class GameFontBase(
 
     private val pixmapOffsetY = 10
 
+    fun draw(batch: Batch, charSeq: CharSequence, x: Int, y: Int) = draw(batch, charSeq, x.toFloat(), y.toFloat())
+
     override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float): GlyphLayout? {
         if (debug)
             println("[TerrarumSansBitmap] max age: $textCacheCap")
@@ -1155,27 +1157,23 @@ class GameFontBase(
         )
 
         jobQueue.forEach {
-            for (y in 0 until pixmap.height) {
-                for (x in 0 until pixmap.width) {
+            for (y in (if (invertShadow) 1 else 0) until (if (invertShadow) pixmap.height else pixmap.height - 1)) {
+                for (x in (if (invertShadow) 1 else 0) until (if (invertShadow) pixmap.width else pixmap.width - 1)) {
                     val pixel = pixmap.getPixel(x, y) // RGBA8888
+                    val newPixel = pixmap.getPixel(x + it.first, y + it.second)
 
+                    val newColor = Color(pixel)
+                    newColor.a *= shadowAlpha
+                    /*if (shadowAlphaPremultiply) {
+                        newColor.r *= shadowAlpha
+                        newColor.g *= shadowAlpha
+                        newColor.b *= shadowAlpha
+                    }*/
 
                     // in the current version, all colour-coded glyphs are guaranteed
                     // to be opaque
-                    if (pixel and 0xFF == 0xFF) {
-                        val newPixel = pixmap.getPixel(x + it.first, y + it.second)
-                        val newColour = Color(); Color.rgba8888ToColor(newColour, pixel)
-                        newColour.a = shadowAlpha
-
-                        if (shadowAlphaPremultiply) {
-                            newColour.r *= shadowAlpha
-                            newColour.g *= shadowAlpha
-                            newColour.b *= shadowAlpha
-                        }
-
-                        if (newPixel and 0xFF == 0) {
-                            pixmap.drawPixel(x + it.first, y + it.second, newColour.toRGBA8888())
-                        }
+                    if (pixel and 0xFF == 0xFF && newPixel and 0xFF == 0) {
+                        pixmap.drawPixel(x + it.first, y + it.second, newColor.toRGBA8888())
                     }
                 }
             }
