@@ -33,11 +33,9 @@ import com.badlogic.gdx.utils.GdxRuntimeException
 import net.torvald.terrarumsansbitmap.GlyphProps
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
-import java.security.MessageDigest
 import java.util.*
 import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
-import kotlin.collections.HashMap
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
@@ -365,10 +363,11 @@ class GameFontBase(
     private val pixmapOffsetY = 10
 
     fun draw(batch: Batch, charSeq: CharSequence, x: Int, y: Int) = draw(batch, charSeq, x.toFloat(), y.toFloat())
-    fun draw(batch: Batch, codepoints: CodepointSequence, x: Int, y: Int) = draw(batch, codepoints, x.toFloat(), y.toFloat())
-    override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float) = draw(batch, charSeq.toCodePoints(), x, y)
+    override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float) = drawNormalised(batch, charSeq.toCodePoints(), x, y)
+    fun draw(batch: Batch, codepoints: CodepointSequence, x: Int, y: Int) = drawNormalised(batch, codepoints.normalise(), x.toFloat(), y.toFloat())
+    fun draw(batch: Batch, codepoints: CodepointSequence, x: Float, y: Float) = drawNormalised(batch, codepoints.normalise(), x, y)
 
-    fun draw(batch: Batch, codepoints: CodepointSequence, x: Float, y: Float): GlyphLayout? {
+    fun drawNormalised(batch: Batch, codepoints: CodepointSequence, x: Float, y: Float): GlyphLayout? {
         if (debug)
             println("[TerrarumSansBitmap] max age: $textCacheCap")
 
@@ -803,11 +802,10 @@ class GameFontBase(
 
     private val glyphLayout = GlyphLayout()
 
-    fun getWidth(text: String) = getWidth(text.toCodePoints())
+    fun getWidth(text: String) = getWidthNormalised(text.toCodePoints())
+    fun getWidth(s: CodepointSequence) = getWidthNormalised(s.normalise())
 
-    fun getWidth(codepoints: List<Int>) = buildPosMap(codepoints).first.last()
-
-    fun getWidth(s: CodepointSequence): Int {
+    fun getWidthNormalised(s: CodepointSequence): Int {
         val cacheObj = getCache(s.getHash())
 
         if (cacheObj != null) {
@@ -998,19 +996,11 @@ class GameFontBase(
         return posXbuffer to posYbuffer
     }
 
-
-    /** Takes input string, do normalisation, and returns sequence of codepoints (Int)
-     *
-     * UTF-16 to ArrayList of Int. UTF-16 is because of Java
-     * Note: CharSequence IS a String. java.lang.String implements CharSequence.
-     *
-     * Note to Programmer: DO NOT USE CHAR LITERALS, CODE EDITORS WILL CHANGE IT TO SOMETHING ELSE !!
-     */
-    private fun CharSequence.toCodePoints(): CodepointSequence {
-        val seq = ArrayList<Int>()
+    private fun CodepointSequence.normalise(): CodepointSequence {
+        val seq = CodepointSequence()
 
         var i = 0
-        while (i < this.length) {
+        while (i < this.size) {
             val c = this[i]
 
             // LET THE NORMALISATION BEGIN //
@@ -1027,14 +1017,14 @@ class GameFontBase(
                     val H = c
                     val L = cNext
 
-                    seq.add(Character.toCodePoint(H, L))
+                    seq.add(surrogatesToCodepoint(H, L))
 
                     i++ // skip next char (guaranteed to be Low Surrogate)
                 }
             }
             // disassemble Hangul Syllables into Initial-Peak-Final encoding
-            else if (c in 0xAC00.toChar()..0xD7A3.toChar()) {
-                val cInt = c.toInt() - 0xAC00
+            else if (c in 0xAC00..0xD7A3) {
+                val cInt = c - 0xAC00
                 val indexCho  = getWanseongHanChoseong(cInt)
                 val indexJung = getWanseongHanJungseong(cInt)
                 val indexJong = getWanseongHanJongseong(cInt) - 1 // no Jongseong will be -1
@@ -1046,27 +1036,27 @@ class GameFontBase(
                 if (indexJong >= 0) seq.add(0x11A8 + indexJong)
             }
             // normalise CJK Compatibility area because fuck them
-            else if (c in 0x3300.toChar()..0x33FF.toChar()) {
+            else if (c in 0x3300..0x33FF) {
                 seq.add(0x7F) // fuck them
             }
             // rearrange {letter, before-and-after diacritics} as {letter, before-diacritics, after-diacritics}
             // {letter, before-diacritics} part will be dealt with swapping code below
             // DOES NOT WORK if said diacritics has codepoint > 0xFFFF
-            else if (i < this.lastIndex && this[i + 1].toInt() <= 0xFFFF &&
-                    glyphProps[this[i + 1].toInt()]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
-                val diacriticsProp = glyphProps[this[i + 1].toInt()]!!
-                seq.add(c.toInt())
+            else if (i < this.lastIndex && this[i + 1] <= 0xFFFF &&
+                glyphProps[this[i + 1].toInt()]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
+                val diacriticsProp = glyphProps[this[i + 1]]!!
+                seq.add(c)
                 seq.add(diacriticsProp.extInfo!![0])
                 seq.add(diacriticsProp.extInfo!![1])
                 i++
             }
             // U+007F is DEL originally, but this font stores bitmap of Replacement Character (U+FFFD)
             // to this position. This line will replace U+FFFD into U+007F.
-            else if (c == 0xFFFD.toChar()) {
+            else if (c == 0xFFFD) {
                 seq.add(0x7F) // 0x7F in used internally to display <??> character
             }
             else {
-                seq.add(c.toInt())
+                seq.add(c)
             }
 
             i++
@@ -1086,6 +1076,23 @@ class GameFontBase(
         }
 
         return seq
+    }
+
+    /** Takes input string, do normalisation, and returns sequence of codepoints (Int)
+     *
+     * UTF-16 to ArrayList of Int. UTF-16 is because of Java
+     * Note: CharSequence IS a String. java.lang.String implements CharSequence.
+     *
+     * Note to Programmer: DO NOT USE CHAR LITERALS, CODE EDITORS WILL CHANGE IT TO SOMETHING ELSE !!
+     */
+    private fun CharSequence.toCodePoints(): CodepointSequence {
+        val seq = CodepointSequence()
+        this.forEach { seq.add(it.toInt()) }
+        return seq.normalise()
+    }
+
+    private fun surrogatesToCodepoint(var0: Int, var1: Int): Int {
+        return (var0.toInt() shl 10) + var1.toInt() + -56613888
     }
 
 
@@ -1236,8 +1243,10 @@ class GameFontBase(
 
     /** High surrogate comes before the low. */
     private fun Char.isHighSurrogate() = (this.toInt() in 0xD800..0xDBFF)
+    private fun Int.isHighSurrogate() = (this.toInt() in 0xD800..0xDBFF)
     /** CodePoint = 0x10000 + (H - 0xD800) * 0x400 + (L - 0xDC00) */
     private fun Char.isLowSurrogate() = (this.toInt() in 0xDC00..0xDFFF)
+    private fun Int.isLowSurrogate() = (this.toInt() in 0xDC00..0xDFFF)
 
 
     var interchar = 0
