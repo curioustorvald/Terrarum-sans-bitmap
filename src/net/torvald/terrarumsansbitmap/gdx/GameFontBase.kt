@@ -1002,6 +1002,7 @@ class GameFontBase(
         var i = 0
         while (i < this.size) {
             val c = this[i]
+            val cPrev = this.getOrElse(i-1) { -1 }
 
             // LET THE NORMALISATION BEGIN //
 
@@ -1039,11 +1040,49 @@ class GameFontBase(
             else if (c in 0x3300..0x33FF) {
                 seq.add(0x7F) // fuck them
             }
+            // add filler to malformed Hangul Initial-Peak-Final
+            else if (isHangul(c) && !isHangulCompat(c)) {
+                // possible cases
+
+                // IPF: hangul on the sequence
+                // i: HCF, p: HJF, x: non-hangul
+                // +cPrev
+                // v >$<: c
+                // I >I< -> I p I
+                // I >F< -> I p F
+                // I >x< -> I p x
+
+                // P >P< -> P i P
+
+                // F >P< -> F i P
+                // F >F< -> F ip F
+
+                // x >P< -> x i P
+                // x >F< -> x ip F
+
+                if (isHangulChoseong(cPrev) && (isHangulChoseong(c) || isHangulJongseong(c) || !isHangul(c))) {
+                    seq.add(HJF)
+                }
+                else if (isHangulJungseong(cPrev) && isHangulJungseong(c)) {
+                    seq.add(HCF)
+                }
+                else if (isHangulJongseong(cPrev)) {
+                    if (isHangulJungseong(c)) seq.add(HCF)
+                    else if (isHangulJongseong(c)) { seq.add(HCF); seq.add(HJF) }
+                }
+                else if (!isHangul(cPrev)) {
+                    if (isHangulJungseong(c)) seq.add(HCF)
+                    else if (isHangulJongseong(c)) { seq.add(HCF); seq.add(HJF) }
+                }
+
+                seq.add(c)
+
+            }
             // rearrange {letter, before-and-after diacritics} as {letter, before-diacritics, after-diacritics}
             // {letter, before-diacritics} part will be dealt with swapping code below
             // DOES NOT WORK if said diacritics has codepoint > 0xFFFF
             else if (i < this.lastIndex && this[i + 1] <= 0xFFFF &&
-                glyphProps[this[i + 1].toInt()]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
+                glyphProps[this[i + 1]]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
                 val diacriticsProp = glyphProps[this[i + 1]]!!
                 seq.add(c)
                 seq.add(diacriticsProp.extInfo!![0])
@@ -1311,6 +1350,9 @@ class GameFontBase(
     }
 
     companion object {
+        private val HCF = 0x115F
+        private val HJF = 0x1160
+
         internal val JUNG_COUNT = 21
         internal val JONG_COUNT = 28
 
@@ -1585,7 +1627,7 @@ class GameFontBase(
 
         // END Hangul //
 
-        private fun isHangul(c: CodePoint) = c in codeRange[SHEET_HANGUL] || c in 0x3130..0x318F
+        private fun isHangul(c: CodePoint) = c in codeRange[SHEET_HANGUL] || c in codeRangeHangulCompat
         private fun isAscii(c: CodePoint) = c in codeRange[SHEET_ASCII_VARW]
         private fun isRunic(c: CodePoint) = c in codeRange[SHEET_RUNIC]
         private fun isExtA(c: CodePoint) = c in codeRange[SHEET_EXTA_VARW]
