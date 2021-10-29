@@ -119,7 +119,7 @@ class GameFontBase(
 
     //private val textCache = HashMap<CharSequence, ShittyGlyphLayout>()
 
-    private data class TextCacheObj(var age: Int, val hash: Long, val glyphLayout: ShittyGlyphLayout?): Comparable<TextCacheObj> {
+    private data class TextCacheObj(val hash: Long, val glyphLayout: ShittyGlyphLayout?): Comparable<TextCacheObj> {
 //        var disposed = false; private set
 
         fun dispose() {
@@ -132,14 +132,13 @@ class GameFontBase(
         }
     }
     private var textCacheCap = 0
-
-    private val textCache = TreeMap<Long, TextCacheObj>()
+    private val textCache = HashMap<Long, TextCacheObj>(textCacheSize * 2)
 
     /**
      * Insertion sorts the last element fo the textCache
      */
     private fun addToCache(text: CodepointSequence, linotype: Texture, width: Int) {
-        val cacheObj = TextCacheObj(0, text.getHash(), ShittyGlyphLayout(text, linotype, width))
+        val cacheObj = TextCacheObj(text.getHash(), ShittyGlyphLayout(text, linotype, width))
 
         if (textCacheCap < textCacheSize) {
             textCache[cacheObj.hash] = cacheObj
@@ -155,19 +154,7 @@ class GameFontBase(
     }
 
     private fun getCache(hash: Long): TextCacheObj? {
-        val cache = textCache[hash]
-
-        if (cache == null)
-            return null
-//        else if (cache.disposed) {
-//            textCache.remove(hash)
-//            return null
-//        }
-        else {
-            // decrement age count (see: addToCache(CodepointSequence, Pixmap, Int))
-            if (cache.age > 0) cache.age -= 1
-            return cache
-        }
+        return textCache[hash]
     }
 
 
