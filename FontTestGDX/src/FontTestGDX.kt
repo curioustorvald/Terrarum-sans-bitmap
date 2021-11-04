@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.FrameBuffer
 import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.StreamUtils
-import net.torvald.terrarumsansbitmap.gdx.GameFontBase
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import java.io.IOException
 import java.io.OutputStream
 
@@ -16,7 +16,7 @@ import java.io.OutputStream
  */
 class FontTestGDX : Game() {
 
-    lateinit var font: GameFontBase
+    lateinit var font: TerrarumSansBitmap
 
     lateinit var inputText: List<String>
 
@@ -32,7 +32,7 @@ class FontTestGDX : Game() {
     private val outimageName = if (testing) "testing.PNG" else "demo.PNG"
 
     override fun create() {
-        font = GameFontBase("./assets", flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.796f) // must test for two flipY cases
+        font = TerrarumSansBitmap("./assets", flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.796f) // must test for two flipY cases
 
         val inTextFile = Gdx.files.internal("./$demotextName")
         val reader = inTextFile.reader("UTF-8")

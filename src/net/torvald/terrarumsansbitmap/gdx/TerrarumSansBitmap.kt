@@ -92,21 +92,29 @@ internal typealias Hash = Long
  *
  * Created by minjaesong on 2017-06-15.
  */
-class GameFontBase(
-        fontDir: String, 
-        val noShadow: Boolean = false, 
-        val flipY: Boolean = false, 
+class TerrarumSansBitmap(
+        fontDir: String,
+        val noShadow: Boolean = false,
+        val flipY: Boolean = false,
         val invertShadow: Boolean = false,
-        val minFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, 
-        val magFilter: Texture.TextureFilter = Texture.TextureFilter.Nearest, 
-        var errorOnUnknownChar: Boolean = false, 
-        val textCacheSize: Int = 256, 
+        var errorOnUnknownChar: Boolean = false,
+        val textCacheSize: Int = 256,
         val debug: Boolean = false,
         val shadowAlpha: Float = 0.5f,
         val shadowAlphaPremultiply: Boolean = false
 ) : BitmapFont() {
 
-    constructor(fontDir: String, noShadow: Boolean, flipY: Boolean, invertShadow: Boolean) : this(fontDir, noShadow, flipY, invertShadow, Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest, false, 256, false)
+    constructor(fontDir: String, noShadow: Boolean, flipY: Boolean, invertShadow: Boolean) : this(fontDir, noShadow, flipY, invertShadow, false, 256, false)
+
+    /* This font is a collection of various subsystems, and thus contains copious amount of quick-and-dirty codes.
+     *
+     * Notable subsystems:
+     * - Hangul Assembler with 19 sets
+     * - Cyrillic Bulgarian and Serbian Variant Selectors
+     * - Colour Codes
+     * - Insular, Kana (these are relatively trivial; they just attemps to merge various Unicode sections
+     *     into one sheet and gives custom internal indices)
+     */
 
     /**
      * lowercase AND the height is equal to x-height (e.g. lowercase B, D, F, H, K, L, ... does not count
@@ -320,12 +328,11 @@ class GameFontBase(
 
     override fun getLineHeight(): Float = H.toFloat()
 
-    override fun getXHeight() = lineHeight
-    override fun getCapHeight() = lineHeight
-    override fun getAscent() = 0f
-    override fun getDescent() = 0f
-
-    override fun isFlipped() = false
+    override fun getXHeight() = 8f
+    override fun getCapHeight() = 12f
+    override fun getAscent() = 3f
+    override fun getDescent() = 3f
+    override fun isFlipped() = flipY
 
     override fun setFixedWidthGlyphs(glyphs: CharSequence) {
         throw UnsupportedOperationException("Nope, no monospace, and figures are already fixed width, bruv.")
@@ -1204,11 +1211,11 @@ class GameFontBase(
 
                     val newColor = Color(pixel)
                     newColor.a *= shadowAlpha
-                    /*if (shadowAlphaPremultiply) {
+                    if (shadowAlphaPremultiply) {
                         newColor.r *= shadowAlpha
                         newColor.g *= shadowAlpha
                         newColor.b *= shadowAlpha
-                    }*/
+                    }
 
                     // in the current version, all colour-coded glyphs are guaranteed
                     // to be opaque
@@ -1282,8 +1289,8 @@ class GameFontBase(
             else throw IllegalArgumentException("Font scale cannot be zero or negative (input: $value)")
         }
 
-    fun toColorCode(argb4444: Int): String = GameFontBase.toColorCode(argb4444)
-    fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = GameFontBase.toColorCode(r, g, b, a)
+    fun toColorCode(argb4444: Int): String = TerrarumSansBitmap.toColorCode(argb4444)
+    fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = TerrarumSansBitmap.toColorCode(r, g, b, a)
     val noColorCode = toColorCode(0x0000)
 
     val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
