@@ -223,11 +223,13 @@ class TerrarumTypewriterBitmap(
                 }
             }
 
+            if (code and 127 == 67) width *= -1 // the backspace key
             if (debug) println("${code.charInfo()}: Width $width, tags $tags")
 
             /*val isDiacritics = pixmap.getPixel(codeStartX, codeStartY + H - 1).and(0xFF) != 0
             if (isDiacritics)
                 glyphWidth = -glyphWidth*/
+
 
             glyphProps[code] = GlyphProps(width, tags)
 

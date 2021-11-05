@@ -55,9 +55,6 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
         if (keycode == Input.Keys.ENTER) {
             textbuf.add(CodepointSequence())
         }
-        else if (keycode and 128 == Input.Keys.BACKSPACE) {
-
-        }
         else {
             textbuf.last().add(keycode + 0xF3000)
         }
