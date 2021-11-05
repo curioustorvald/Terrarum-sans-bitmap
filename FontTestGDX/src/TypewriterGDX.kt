@@ -1,0 +1,116 @@
+import com.badlogic.gdx.Game
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
+import com.badlogic.gdx.InputAdapter
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
+import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.graphics.Pixmap
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.glutils.FrameBuffer
+import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
+import net.torvald.terrarumtypewriterbitmap.gdx.TerrarumTypewriterBitmap
+import java.io.StringReader
+
+/**
+ * Created by minjaesong on 2021-11-05.
+ */
+class TypewriterGDX(val width: Int, val height: Int) : Game() {
+
+    lateinit var font: TerrarumTypewriterBitmap
+    lateinit var batch: SpriteBatch
+//    lateinit var frameBuffer: FrameBuffer
+    lateinit var camera: OrthographicCamera
+
+    override fun create() {
+        font = TerrarumTypewriterBitmap(
+            "./assets/typewriter",
+            StringReader("ko_kr_3set-390_typewriter,typewriter_ko_3set-390.tga,16"),
+            true, false, 256, true
+        )
+
+        batch = SpriteBatch()
+
+//        frameBuffer = FrameBuffer(Pixmap.Format.RGBA8888, TEXW, TEXH, true)
+
+        camera = OrthographicCamera(width.toFloat(), height.toFloat())
+        camera.translate(width.div(2f), 0f)
+        camera.setToOrtho(true, width.toFloat(), height.toFloat())
+        camera.update()
+
+
+        Gdx.input.inputProcessor = TypewriterInput(this)
+    }
+
+    // uvamr ibwk/f ;rxubnfs
+    private val textbuf: ArrayList<CodepointSequence> = arrayListOf(
+        CodepointSequence(listOf(49,50,29,49,34,29,41,46, 62 ,37,30,51,39,76,34).map { it + 0xF3000 })
+    )
+
+    fun acceptKey(keycode: Int) {
+        println("[TypewriterGDX] Accepting key: $keycode")
+
+        if (keycode == Input.Keys.ENTER) {
+            textbuf.add(CodepointSequence())
+        }
+        else if (keycode and 128 == Input.Keys.BACKSPACE) {
+
+        }
+        else {
+            textbuf.last().add(keycode + 0xF3000)
+        }
+    }
+
+
+    private val textCol = Color(0.1f,0.1f,0.1f,1f)
+    override fun render() {
+        Gdx.gl.glClearColor(0.97f,0.96f,0.95f,1f)
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+        Gdx.gl.glEnable(GL20.GL_TEXTURE_2D)
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFuncSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE)
+
+        batch.projectionMatrix = camera.combined
+        batch.begin()
+
+        batch.color = textCol
+        textbuf.forEachIndexed { index, s ->
+            font.draw(batch, s, 40f, 40f + 32*index)
+        }
+
+        batch.end()
+    }
+
+    override fun dispose() {
+        font.dispose()
+        batch.dispose()
+    }
+}
+
+class TypewriterInput(val main: TypewriterGDX) : InputAdapter() {
+
+    private var shiftIn = false
+
+    override fun keyDown(keycode: Int): Boolean {
+        // FIXME this shiftIn would not work at all...
+        shiftIn = (keycode == Input.Keys.SHIFT_LEFT || keycode == Input.Keys.SHIFT_RIGHT)
+        if (keycode < 128 && keycode != Input.Keys.SHIFT_LEFT && keycode != Input.Keys.SHIFT_RIGHT) {
+            main.acceptKey(shiftIn.toInt() * 128 + keycode)
+        }
+        return true
+    }
+
+    private fun Boolean.toInt() = if (this) 1 else 0
+}
+
+fun main(args: Array<String>) {
+    appConfig = Lwjgl3ApplicationConfiguration()
+    appConfig.useVsync(false)
+    appConfig.setResizable(false)
+    appConfig.setWindowedMode(600, 800)
+    appConfig.setTitle("Terrarum Sans Bitmap Test")
+
+    Lwjgl3Application(TypewriterGDX(600, 800), appConfig)
+}

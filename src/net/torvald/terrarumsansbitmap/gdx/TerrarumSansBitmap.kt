@@ -33,7 +33,6 @@ import com.badlogic.gdx.utils.GdxRuntimeException
 import net.torvald.terrarumsansbitmap.GlyphProps
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
-import java.util.*
 import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
 import kotlin.math.roundToInt
@@ -116,29 +115,6 @@ class TerrarumSansBitmap(
      *     into one sheet and gives custom internal indices)
      */
 
-    /**
-     * lowercase AND the height is equal to x-height (e.g. lowercase B, D, F, H, K, L, ... does not count
-     */
-    private fun CodePoint.isLowHeight() = this in lowHeightLetters
-
-
-    // TODO (val posXbuffer: IntArray, val posYbuffer: IntArray) -> (val linotype: Pixmap)
-    private data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val linotype: Texture, val width: Int)
-
-    //private val textCache = HashMap<CharSequence, ShittyGlyphLayout>()
-
-    private data class TextCacheObj(val hash: Long, val glyphLayout: ShittyGlyphLayout?): Comparable<TextCacheObj> {
-//        var disposed = false; private set
-
-        fun dispose() {
-            glyphLayout?.linotype?.dispose()
-//            disposed = true
-        }
-
-        override fun compareTo(other: TextCacheObj): Int {
-            return (this.hash - other.hash).sign
-        }
-    }
     private var textCacheCap = 0
     private val textCache = HashMap<Long, TextCacheObj>(textCacheSize * 2)
 
@@ -190,7 +166,7 @@ class TerrarumSansBitmap(
 
 
     /** Props of all printable Unicode points. */
-    private val glyphProps: HashMap<CodePoint, GlyphProps> = HashMap()
+    private val glyphProps = HashMap<CodePoint, GlyphProps>()
     private val sheets: Array<PixmapRegionPack>
 
     private var charsetOverride = 0
@@ -362,8 +338,6 @@ class TerrarumSansBitmap(
     fun draw(batch: Batch, codepoints: CodepointSequence, x: Float, y: Float) = drawNormalised(batch, codepoints.normalise(), x, y)
 
     fun drawNormalised(batch: Batch, codepoints: CodepointSequence, x: Float, y: Float): GlyphLayout? {
-        if (debug)
-            println("[TerrarumSansBitmap] max age: $textCacheCap")
 
         // Q&D fix for issue #12
         // When the line ends with a diacritics, the whole letter won't render
@@ -707,7 +681,7 @@ class TerrarumSansBitmap(
         return intArrayOf(sheetX, sheetY)
     }
 
-    fun buildWidthTable(pixmap: Pixmap, codeRange: Iterable<Int>, cols: Int = 16) {
+    private fun buildWidthTable(pixmap: Pixmap, codeRange: Iterable<Int>, cols: Int = 16) {
         val binaryCodeOffset = W_VAR_INIT
 
         val cellW = W_VAR_INIT + 1
@@ -966,7 +940,7 @@ class TerrarumSansBitmap(
         // fill the last of the posXbuffer
         if (str.isNotEmpty()) {
             val lastCharProp = glyphProps[str.last()]
-            val penultCharProp = glyphProps[nonDiacriticCounter]!!
+            val penultCharProp = glyphProps[str[nonDiacriticCounter]]!!
             posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
                     if (lastCharProp?.writeOnTop == true) {
                         val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
@@ -1344,6 +1318,26 @@ class TerrarumSansBitmap(
     }
 
     companion object {
+
+
+        /**
+         * lowercase AND the height is equal to x-height (e.g. lowercase B, D, F, H, K, L, ... does not count
+         */
+        fun CodePoint.isLowHeight() = this in lowHeightLetters
+
+        data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val linotype: Texture, val width: Int)
+        data class TextCacheObj(val hash: Long, val glyphLayout: ShittyGlyphLayout?): Comparable<TextCacheObj> {
+            fun dispose() {
+                glyphLayout?.linotype?.dispose()
+            }
+
+            override fun compareTo(other: TextCacheObj): Int {
+                return (this.hash - other.hash).sign
+            }
+        }
+
+
+
         private val HCF = 0x115F
         private val HJF = 0x1160
 
@@ -1643,7 +1637,7 @@ class TerrarumSansBitmap(
         private fun isIPA(c: CodePoint) = c in codeRange[SHEET_IPA_VARW]
         private fun isLatinExtAdd(c: CodePoint) = c in 0x1E00..0x1EFF
         private fun isBulgarian(c: CodePoint) = c in 0x400..0x45F
-        private fun isColourCode(c: CodePoint) = c == 0x100000 || c in 0x10F000..0x10FFFF
+        fun isColourCode(c: CodePoint) = c == 0x100000 || c in 0x10F000..0x10FFFF
         private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFFF
         private fun isCherokee(c: CodePoint) = c in codeRange[SHEET_TSALAGI_VARW]
         private fun isInsular(c: CodePoint) = c == 0x1D79
