@@ -89,7 +89,7 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
 
         try {
             textbuf.forEachIndexed { index, s ->
-                font.draw(batch, s, 40f, 40f + 32 * index)
+                font.draw(batch, s, 40f, 40f + 24 * index)
             }
         }
         catch (e: ConcurrentModificationException) {}
