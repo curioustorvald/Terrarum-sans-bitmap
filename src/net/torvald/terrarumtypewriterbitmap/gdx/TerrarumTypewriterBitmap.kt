@@ -255,6 +255,7 @@ class TerrarumTypewriterBitmap(
     }
 
     private val pixmapOffsetY = 10
+    private val linotypePad = 16
     private var flagFirstRun = true
     private var textBuffer = CodepointSequence(256)
     private lateinit var tempLinotype: Texture
@@ -303,7 +304,7 @@ class TerrarumTypewriterBitmap(
 //                resetHash(charSeq, x.toFloat(), y.toFloat())
 
 
-                val _pw = posXbuffer.last()
+                val _pw = posXbuffer.last() + 2*linotypePad
                 val _ph = TerrarumSansBitmap.H + (pixmapOffsetY * 2)
                 if (_pw < 0 || _ph < 0) throw RuntimeException("Illegal linotype dimension (w: $_pw, h: $_ph)")
                 val linotypePixmap = Pixmap(_pw, _ph, Pixmap.Format.RGBA8888)
@@ -333,7 +334,7 @@ class TerrarumTypewriterBitmap(
                             val texture = sheets[sheetID]?.get(sheetX, sheetY)
 
                             texture?.let {
-                                linotypePixmap.drawPixmap(it, posX, posY + pixmapOffsetY, renderCol)
+                                linotypePixmap.drawPixmap(it, posX + linotypePad, posY + pixmapOffsetY, renderCol)
                             }
 
                         }
@@ -360,11 +361,11 @@ class TerrarumTypewriterBitmap(
 
 
             if (!flipY) {
-                batch.draw(tempLinotype, x.toFloat(), (y - pixmapOffsetY).toFloat())
+                batch.draw(tempLinotype, (x - linotypePad).toFloat(), (y - pixmapOffsetY).toFloat())
             }
             else {
                 batch.draw(tempLinotype,
-                    x.toFloat(),
+                    (x - linotypePad).toFloat(),
                     (y - pixmapOffsetY + (tempLinotype.height)).toFloat(),
                     (tempLinotype.width.toFloat()),
                     -(tempLinotype.height.toFloat())

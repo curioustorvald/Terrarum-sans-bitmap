@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.FrameBuffer
+import net.torvald.terrarum.gamecontroller.InputStrober
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumtypewriterbitmap.gdx.TerrarumTypewriterBitmap
 import java.io.StringReader
@@ -23,6 +24,8 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
     lateinit var batch: SpriteBatch
 //    lateinit var frameBuffer: FrameBuffer
     lateinit var camera: OrthographicCamera
+
+    lateinit var inputStrober: InputStrober
 
     override fun create() {
         font = TerrarumTypewriterBitmap(
@@ -41,16 +44,26 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
         camera.update()
 
 
-        Gdx.input.inputProcessor = TypewriterInput(this)
+        inputStrober = InputStrober(this)
     }
 
-    // uvamr ibwk/f ;rxubnfs
     private val textbuf: ArrayList<CodepointSequence> = arrayListOf(
-        CodepointSequence(listOf(49,50,29,49,34,29,41,46, 62 ,37,30,51,39,76,34).map { it + 0xF3000 })
+        CodepointSequence(listOf(
+            39,50,29, // kva (HANG_GONG)
+            42,31, // nc (HANG_SE)
+            74,48,51, // ;tw (HANG_BEOL)
+            62, // space
+            184,69,171,170, // >-ON (ASC_3-90)
+            62, // space
+            75,34, // 'f (HANG_TA)
+            40,34, // lf (HANG_JA)
+            39,32  // kd (HANG_GI)
+        ).map { it + 0xF3000 }),
+        CodepointSequence(/* new line */)
     )
 
     fun acceptKey(keycode: Int) {
-        println("[TypewriterGDX] Accepting key: $keycode")
+//        println("[TypewriterGDX] Accepting key: $keycode")
 
         if (keycode == Input.Keys.ENTER) {
             textbuf.add(CodepointSequence())
@@ -73,9 +86,13 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
         batch.begin()
 
         batch.color = textCol
-        textbuf.forEachIndexed { index, s ->
-            font.draw(batch, s, 40f, 40f + 32*index)
+
+        try {
+            textbuf.forEachIndexed { index, s ->
+                font.draw(batch, s, 40f, 40f + 32 * index)
+            }
         }
+        catch (e: ConcurrentModificationException) {}
 
         batch.end()
     }
@@ -83,6 +100,7 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
     override fun dispose() {
         font.dispose()
         batch.dispose()
+        inputStrober.dispose()
     }
 }
 
