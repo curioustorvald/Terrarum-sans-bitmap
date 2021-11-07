@@ -30,7 +30,9 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
     override fun create() {
         font = TerrarumTypewriterBitmap(
             "./assets/typewriter",
-            StringReader("ko_kr_3set-390_typewriter,typewriter_ko_3set-390.tga,16"),
+            StringReader("""ko_kr_3set-390_typewriter,typewriter_ko_3set-390.tga,16
+                |en_intl_qwerty_typewriter,typewriter_intl_qwerty.tga,0
+            """.trimMargin()),
             true, false, 256, true
         )
 
@@ -53,7 +55,7 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
             42,31, // nc (HANG_SE)
             74,48,51, // ;tw (HANG_BEOL)
             62, // space
-            184,69,171,170, // >-ON (ASC_3-90)
+            184,164,171,170, // >HON (ASC_3-90)
             62, // space
             75,34, // 'f (HANG_TA)
             40,34, // lf (HANG_JA)
@@ -62,14 +64,16 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
         CodepointSequence(/* new line */)
     )
 
+    private val printableKeys = ((Input.Keys.NUM_0..Input.Keys.NUM_9) + (Input.Keys.A..Input.Keys.PERIOD) + 62 + (Input.Keys.BACKSPACE..Input.Keys.SLASH)).toHashSet()
+
     fun acceptKey(keycode: Int) {
 //        println("[TypewriterGDX] Accepting key: $keycode")
 
         if (keycode == Input.Keys.ENTER) {
             textbuf.add(CodepointSequence())
         }
-        else {
-            textbuf.last().add(keycode + 0xF3000)
+        else if (printableKeys.contains(keycode and 127)) {
+            textbuf.last().add(keycode + 0xF2000)
         }
     }
 
@@ -125,7 +129,7 @@ fun main(args: Array<String>) {
     appConfig.useVsync(false)
     appConfig.setResizable(false)
     appConfig.setWindowedMode(600, 800)
-    appConfig.setTitle("Terrarum Sans Bitmap Test")
+    appConfig.setTitle("Terrarum Typewriter Bitmap Test")
 
     Lwjgl3Application(TypewriterGDX(600, 800), appConfig)
 }
