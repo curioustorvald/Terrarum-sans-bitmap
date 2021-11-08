@@ -73,7 +73,7 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
             textbuf.add(CodepointSequence())
         }
         else if (printableKeys.contains(keycode and 127)) {
-            textbuf.last().add(keycode + 0xF2000)
+            textbuf.last().add(keycode + 0xF3000)
         }
     }
 
@@ -93,7 +93,7 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
 
         try {
             textbuf.forEachIndexed { index, s ->
-                font.draw(batch, s, 40f, 40f + 24 * index)
+                font.draw(batch, s, 40f, 40f + 20 * index)
             }
         }
         catch (e: ConcurrentModificationException) {}
