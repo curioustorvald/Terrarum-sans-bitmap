@@ -940,7 +940,9 @@ class TerrarumSansBitmap(
         // fill the last of the posXbuffer
         if (str.isNotEmpty()) {
             val lastCharProp = glyphProps[str.last()]
-            val penultCharProp = glyphProps[str[nonDiacriticCounter]]!!
+            val penultCharProp = glyphProps[str[nonDiacriticCounter]] ?:
+                    (if (errorOnUnknownChar) throw throw InternalError("No GlyphProps for char '${str[nonDiacriticCounter]}' " +
+                            "(${str[nonDiacriticCounter].charInfo()})") else nullProp)
             posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
                     if (lastCharProp?.writeOnTop == true) {
                         val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
