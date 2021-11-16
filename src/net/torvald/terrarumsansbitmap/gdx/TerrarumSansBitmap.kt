@@ -711,7 +711,7 @@ class TerrarumSansBitmap(
             var width = 0
             var tags = 0
 
-            for (y in 0..3) {
+            for (y in 0..4) {
                 // if ALPHA is not zero, assume it's 1
                 if (pixmap.getPixel(codeStartX, codeStartY + y).and(0xFF) != 0) {
                     width = width or (1 shl y)
