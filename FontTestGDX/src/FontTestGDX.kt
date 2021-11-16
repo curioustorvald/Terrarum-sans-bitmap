@@ -31,6 +31,8 @@ class FontTestGDX : Game() {
     private val demotextName = if (testing) "testtext.txt" else "demotext.txt"
     private val outimageName = if (testing) "testing.PNG" else "demo.PNG"
 
+    private lateinit var faketex: Texture
+
     override fun create() {
         font = TerrarumSansBitmap("./assets", flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.796f) // must test for two flipY cases
 
@@ -42,6 +44,11 @@ class FontTestGDX : Game() {
         batch = SpriteBatch()
 
 
+        // create faketex
+        val fakepix = Pixmap(1,1,Pixmap.Format.RGBA8888)
+        fakepix.drawPixel(0,0,-1)
+        faketex = Texture(fakepix)
+        fakepix.dispose()
 
 
         println(font.charsetOverrideDefault)
@@ -71,6 +78,8 @@ class FontTestGDX : Game() {
     var tex: Texture? = null
     var screenshotExported = false
 
+    private val backcol = Color(.141f, .141f, .141f, 1f)
+
     override fun render() {
 
         if (tex == null) {
@@ -88,7 +97,10 @@ class FontTestGDX : Game() {
             batch.projectionMatrix = camera.combined
             batch.begin()
 
-            batch.color = Color(-1)
+            batch.color = backcol
+            batch.draw(faketex, 0f, 0f, TEXW.toFloat(), TEXH.toFloat())
+
+            batch.color = Color.WHITE
             inputText.forEachIndexed { index, s ->
                 font.draw(batch, s, 10f, TEXH - 30f - index * font.lineHeight)
             }
@@ -142,6 +154,7 @@ class FontTestGDX : Game() {
 
     override fun dispose() {
         font.dispose()
+        faketex.dispose()
     }
 
     fun scrollAdd(x: Int = 1) {

@@ -563,6 +563,8 @@ class TerrarumSansBitmap(
             return SHEET_EXTC_VARW
         else if (isExtD(c))
             return SHEET_EXTD_VARW
+        else if (isCurrencies(c))
+            return SHEET_CURRENCIES_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -671,6 +673,10 @@ class TerrarumSansBitmap(
             SHEET_EXTD_VARW -> {
                 sheetX = extDIndexX(ch)
                 sheetY = extDIndexY(ch)
+            }
+            SHEET_CURRENCIES_VARW -> {
+                sheetX = currenciesIndexX(ch)
+                sheetY = currenciesIndexY(ch)
             }
             else -> {
                 sheetX = ch % 16
@@ -1393,6 +1399,7 @@ class TerrarumSansBitmap(
         internal val SHEET_GREEK_POLY_VARW   = 25
         internal val SHEET_EXTC_VARW =         26
         internal val SHEET_EXTD_VARW =         27
+        internal val SHEET_CURRENCIES_VARW =   28
 
         internal val SHEET_UNKNOWN = 254
 
@@ -1434,7 +1441,8 @@ class TerrarumSansBitmap(
                 SHEET_DIACRITICAL_MARKS_VARW,
                 SHEET_GREEK_POLY_VARW,
                 SHEET_EXTC_VARW,
-                SHEET_EXTD_VARW
+                SHEET_EXTD_VARW,
+                SHEET_CURRENCIES_VARW
         )
         private val autoShiftDownOnLowercase = arrayOf(
                 SHEET_DIACRITICAL_MARKS_VARW
@@ -1468,7 +1476,8 @@ class TerrarumSansBitmap(
                 "diacritical_marks_variable.tga",
                 "greek_polytonic_xyswap_variable.tga",
                 "latinExtC_variable.tga",
-                "latinExtD_variable.tga"
+                "latinExtD_variable.tga",
+                "currencies_variable.tga"
         )
         private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
                 0..0xFF, // SHEET_ASCII_VARW
@@ -1498,7 +1507,8 @@ class TerrarumSansBitmap(
                 0x300..0x36F, // SHEET_DIACRITICAL_MARKS_VARW
                 0x1F00..0x1FFF, // SHEET_GREEK_POLY_VARW
                 0x2C60..0x2C7F, // SHEET_EXTC_VARW
-                0xA720..0xA7FF // SHEET_EXTD_VARW
+                0xA720..0xA7FF, // SHEET_EXTD_VARW
+                0x20A0..0x20CF // SHEET_CURRENCIES_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -1650,6 +1660,7 @@ class TerrarumSansBitmap(
         private fun isExtC(c: CodePoint) = c in codeRange[SHEET_EXTC_VARW]
         private fun isExtD(c: CodePoint) = c in codeRange[SHEET_EXTD_VARW]
         private fun isHangulCompat(c: CodePoint) = c in codeRangeHangulCompat
+        private fun isCurrencies(c: CodePoint) = c in codeRange[SHEET_CURRENCIES_VARW]
 
         // underscored name: not a charset
         private fun _isCaps(c: CodePoint) = Character.isUpperCase(c) || isKartvelianCaps(c)
@@ -1732,6 +1743,8 @@ class TerrarumSansBitmap(
         private fun extDIndexX(c: CodePoint) = (c - 0xA720) % 16
         private fun extDIndexY(c: CodePoint) = (c - 0xA720) / 16
 
+        private fun currenciesIndexX(c: CodePoint) = (c - 0x20A0) % 16
+        private fun currenciesIndexY(c: CodePoint) = (c - 0x20A0) / 16
         /*
 #!/usr/bin/python3
 
