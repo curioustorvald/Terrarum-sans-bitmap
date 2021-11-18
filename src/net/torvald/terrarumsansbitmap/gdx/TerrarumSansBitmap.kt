@@ -83,7 +83,6 @@ internal typealias Hash = Long
  * Shiftdown only occurs when non-diacritic character before the mark is lowercase, and the mark itself would stack up.
  * Stack-up or down is defined using Tag system.
  *
- * If shifted glyphs does not appear correctly, try setting `diacriticStackingAlternative` to `true`
  *
  *
  *
@@ -102,8 +101,7 @@ class TerrarumSansBitmap(
         val textCacheSize: Int = 256,
         val debug: Boolean = false,
         val shadowAlpha: Float = 0.5f,
-        val shadowAlphaPremultiply: Boolean = false,
-        val diacriticStackingAlternative: Boolean = false
+        val shadowAlphaPremultiply: Boolean = false
 ) : BitmapFont() {
 
     constructor(fontDir: String, noShadow: Boolean, flipY: Boolean, invertShadow: Boolean) : this(fontDir, noShadow, flipY, invertShadow, false, 256, false)
@@ -932,9 +930,9 @@ class TerrarumSansBitmap(
                                     //println("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
                                     //println("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
                                     if (thisProp.alignXPos == GlyphProps.DIA_OVERLAY)
-                                        posYbuffer[charIndex] -= H_OVERLAY_LOWERCASE_SHIFTDOWN * (!diacriticStackingAlternative).toSign() // if minus-assign doesn't work, try plus-assign
+                                        posYbuffer[charIndex] -= H_OVERLAY_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
                                     else
-                                        posYbuffer[charIndex] -= H_STACKUP_LOWERCASE_SHIFTDOWN * (!diacriticStackingAlternative).toSign() // if minus-assign doesn't work, try plus-assign
+                                        posYbuffer[charIndex] -= H_STACKUP_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
                                 }
 
                                 stackUpwardCounter++
