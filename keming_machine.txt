@@ -5,11 +5,11 @@
 
 ### Legends
 #
-# ͞ A·B < unset for lowheight miniscules, as in e
+#  A·B < unset for lowheight miniscules, as in e
 #  |·| < space we don't care
-#――C·D < middle hole for majuscules, as in C
+#  C·D < middle hole for majuscules, as in C
 #  E·F < middle hole for miniscules, as in c
-# ͟ G·H
+#  G·H
 #  ――― < baseline
 #  |·|
 #  J·K
@@ -61,12 +61,14 @@
 #         ` must have a bit unset
 - ͟A͟B͟C͟D͟E͟F͟G͟H͟J͟K͟ ͟ ͟ ͟A͟B͟C͟D͟E͟F͟G͟H͟J͟K͟
 - _@_`___`__ — `_________ # Γe,TJ ; Ye,YJ,Ve,VJ,TA,ΓA,VA,Vʌ,YA,Yʌ,yA,yʌ,/a,/d
-- _@_@___`__ — `___`_@___ # Pɺ but NOT PJ
+- _@_@___`__ — `___`_@___ # Pɺ but NOT Po,PJ
+- _@_@___`__ — `___@_____ # Fo,PJ (always 1 px)
 - ___`_`____ — `___@_`___ # Cꟶ,Kꟶ,Lꟶ,Γꟶ
 - ___`_`____ — `_@___`___ # CꟵ,KꟵ,LꟵ,ΓꟵ
 -----------------------------------------------------
 - _`________ — @_`___`___ # eꞀ,LT ; eY,LY,eV,LV,AT,AꞀ,AY,Ay,λY,λy,a\,b\
-- _`___`_@__ — @_@___`___ # Lꟼ but NOT bꟼ
+- _`___`_@__ — @_@___`___ # Lꟼ but NOT oꟼ,bꟼ
+- _`___@____ — @_@___`___ # oꟼ,bꟼ (always 1 px)
 - _`___@_`__ — __`_`_____ # ⱶƆ,ⱶJ
 - _`_@___`__ — __`_`_____ # ⱵƆ,ⱵJ
 

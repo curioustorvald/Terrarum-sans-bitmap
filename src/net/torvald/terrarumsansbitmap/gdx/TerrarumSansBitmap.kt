@@ -1359,12 +1359,13 @@ class TerrarumSansBitmap(
         val maskL = glyphProps[prevChar]?.kerningMask
         val maskR = glyphProps[thisChar]?.kerningMask
         return if (glyphProps[prevChar]?.hasKernData == true && glyphProps[thisChar]?.hasKernData == true) {
-            val contraction = if (glyphProps[prevChar]?.isKernYtype == true || glyphProps[thisChar]?.isKernYtype == true) -1 else -2
             kerningRules.forEachIndexed { index, it ->
                 if (it.first.matches(maskL!!) && it.second.matches(maskR!!)) {
-                    println("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first} ${it.second}; Contraction: ${-contraction}")
+                    val contraction = if (glyphProps[prevChar]?.isKernYtype == true || glyphProps[thisChar]?.isKernYtype == true) it.yy else it.bb
 
-                    return contraction
+                    println("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first} ${it.second}; Contraction: $contraction")
+
+                    return -contraction
                 }
             }
             return 0
@@ -1951,6 +1952,8 @@ print(','.join(a))
             override fun toString() = "C:${careBits.toString(2).padStart(16,'0')}-R:${ruleBits.toString(2).padStart(16,'0')}"
         }
 
+        private data class Kern(val first: RuleMask, val second: RuleMask, val bb: Int = 2, val yy: Int = 1)
+
         /**
          * Legend: _ dont care
          *         @ must have a bit set
@@ -1967,15 +1970,17 @@ print(','.join(a))
          * J·K
          */
         private val kerningRules = arrayOf(
-            RuleMask("_@_`___`__") to RuleMask("`_________"),
-            RuleMask("_@_@___`__") to RuleMask("`___`_@___"),
-            RuleMask("___`_`____") to RuleMask("`___@_`___"),
-            RuleMask("___`_`____") to RuleMask("`_@___`___"),
+                Kern(RuleMask("_@_`___`__"),RuleMask("`_________")),
+                Kern(RuleMask("_@_@___`__"),RuleMask("`___`_@___")),
+                Kern(RuleMask("_@_@___`__"),RuleMask("`___@_____"),1,1),
+                Kern(RuleMask("___`_`____"),RuleMask("`___@_`___")),
+                Kern(RuleMask("___`_`____"),RuleMask("`_@___`___")),
 
-            RuleMask("_`________") to RuleMask("@_`___`___"),
-            RuleMask("_`___`_@__") to RuleMask("@_@___`___"),
-            RuleMask("_`___@_`__") to RuleMask("__`_`_____"),
-            RuleMask("_`_@___`__") to RuleMask("__`_`_____"),
+                Kern(RuleMask("_`________"),RuleMask("@_`___`___")),
+                Kern(RuleMask("_`___`_@__"),RuleMask("@_@___`___")),
+                Kern(RuleMask("_`___@____"),RuleMask("@_@___`___"),1,1),
+                Kern(RuleMask("_`___@_`__"),RuleMask("__`_`_____")),
+                Kern(RuleMask("_`_@___`__"),RuleMask("__`_`_____")),
         )
 
         // End of the Keming Machine
