@@ -1063,7 +1063,7 @@ class TerrarumSansBitmap(
 
             }
             // for lowercase i and j, if cNext is a diacritic that goes on top, remove the dots
-            else if (diacriticDotRemoval.containsKey(c) && glyphProps[cNext]?.stackWhere == GlyphProps.STACK_UP) {
+            else if (diacriticDotRemoval.containsKey(c) && glyphProps[cNext]?.writeOnTop == true && glyphProps[cNext]?.stackWhere == GlyphProps.STACK_UP) {
                 seq.add(diacriticDotRemoval[c]!!)
             }
             // rearrange {letter, before-and-after diacritics} as {letter, before-diacritics, after-diacritics}
@@ -1514,10 +1514,10 @@ class TerrarumSansBitmap(
                 0x16A0..0x16FF, // SHEET_RUNIC
                 0x1E00..0x1EFF, // SHEET_LATIN_EXT_ADD_VARW
                 0xE000..0xE0FF, // SHEET_CUSTOM_SYM
-                0xF00000..0xF0005F, // SHEET_BULGARIAN_VARW; assign them to PUA
-                0xF00060..0xF000BF, // SHEET_SERBIAN_VARW; assign them to PUA
+                0xF0000..0xF005F, // SHEET_BULGARIAN_VARW; assign them to PUA
+                0xF0060..0xF00BF, // SHEET_SERBIAN_VARW; assign them to PUA
                 0x13A0..0x13F5, // SHEET_TSALAGI_VARW
-                0xA770..0xA787, // SHEET_INSULAR_VARW; if it work, don't fix it (yet--wait until Latin Extended C)
+                0x1D79..0x1D79, // SHEET_INSULAR_VARW; todo: Phonetic Extensions et al, 1D00..1DFF
                 0x900..0x9FF, // SHEET_NAGARI_BENGALI_VARW
                 0x1C90..0x1CBF, // SHEET_KARTULI_CAPS_VARW
                 0x300..0x36F, // SHEET_DIACRITICAL_MARKS_VARW
@@ -1743,10 +1743,8 @@ class TerrarumSansBitmap(
         private fun cherokeeIndexX(c: CodePoint) = (c - 0x13A0) % 16
         private fun cherokeeIndexY(c: CodePoint) = (c - 0x13A0) / 16
 
-        private fun insularIndexX(c: CodePoint) =
-                if (c == 0x1D79) 0 else (c - 0xA770) % 16
-        private fun insularIndexY(c: CodePoint) =
-                if (c == 0x1D79) 0 else (c - 0xA770) / 16
+        private fun insularIndexX(c: CodePoint) = 0
+        private fun insularIndexY(c: CodePoint) = 0
 
         private fun nagariIndexX(c: CodePoint) = (c - 0x900) % 16
         private fun nagariIndexY(c: CodePoint) = (c - 0x900) / 16
