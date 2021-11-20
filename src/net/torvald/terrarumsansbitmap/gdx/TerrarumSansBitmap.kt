@@ -1928,7 +1928,7 @@ print(','.join(a))
 
         private val kemingBitMask: IntArray = intArrayOf(7,6,5,4,3,2,1,0,15,14).map { 1 shl it }.toIntArray()
 
-        private class RuleMask(s: String) {
+        private class ing(val s: String) {
 
             private var careBits = 0
             private var ruleBits = 0
@@ -1952,7 +1952,7 @@ print(','.join(a))
             override fun toString() = "C:${careBits.toString(2).padStart(16,'0')}-R:${ruleBits.toString(2).padStart(16,'0')}"
         }
 
-        private data class Kern(val first: RuleMask, val second: RuleMask, val bb: Int = 2, val yy: Int = 1)
+        private data class Kem(val first: ing, val second: ing, val bb: Int = 2, val yy: Int = 1)
 
         /**
          * Legend: _ dont care
@@ -1969,19 +1969,47 @@ print(','.join(a))
          * |·|
          * J·K
          */
-        private val kerningRules = arrayOf(
-                Kern(RuleMask("_@_`___`__"),RuleMask("`_________")),
-                Kern(RuleMask("_@_@___`__"),RuleMask("`___`_@___")),
-                Kern(RuleMask("_@_@___`__"),RuleMask("`___@_____"),1,1),
-                Kern(RuleMask("___`_`____"),RuleMask("`___@_`___")),
-                Kern(RuleMask("___`_`____"),RuleMask("`_@___`___")),
+        private val kerningRules = arrayListOf(
+                Kem(ing("_@_`___`__"),ing("`_________")),
+                Kem(ing("_@_@___`__"),ing("`___`_@___")),
+                Kem(ing("_@_@___`__"),ing("`___@_____"),1,1),
+                Kem(ing("___`_`____"),ing("`___@_`___")),
+                Kem(ing("___`_`____"),ing("`_@___`___")),
 
-                Kern(RuleMask("_`________"),RuleMask("@_`___`___")),
-                Kern(RuleMask("_`___`_@__"),RuleMask("@_@___`___")),
-                Kern(RuleMask("_`___@____"),RuleMask("@_@___`___"),1,1),
-                Kern(RuleMask("_`___@_`__"),RuleMask("__`_`_____")),
-                Kern(RuleMask("_`_@___`__"),RuleMask("__`_`_____")),
+//                Kem(ing("_`________"),ing("@_`___`___")),
+//                Kem(ing("_`___`_@__"),ing("@_@___`___")),
+//                Kem(ing("_`___@____"),ing("@_@___`___"),1,1),
+//                Kem(ing("_`___@_`__"),ing("__`_`_____")),
+//                Kem(ing("_`_@___`__"),ing("__`_`_____")),
         )
+
+        init {
+            // automatically create mirrored version of the kerningRules
+            val imax = kerningRules.size // to avoid concurrentmodificationshit
+            for (i in 0 until imax) {
+                val left = kerningRules[i].first.s
+                val right = kerningRules[i].second.s
+                val bb = kerningRules[i].bb
+                val yy = kerningRules[i].yy
+
+                val newleft = StringBuilder()
+                val newright = StringBuilder()
+
+                if (left.length != right.length && left.length % 2 != 0) throw IllegalArgumentException()
+
+                for (c in 0 until left.length step 2) {
+                    newleft.append(right[c+1],right[c])
+                    newright.append(left[c+1],left[c])
+                }
+
+                kerningRules.add(Kem(ing("$newleft"),ing("$newright"),bb,yy))
+            }
+
+
+            kerningRules.forEach {
+                println("Keming ${it.first.s} - ${it.second.s} ; ${it.bb}/${it.yy}")
+            }
+        }
 
         // End of the Keming Machine
     }
