@@ -10,7 +10,12 @@ data class GlyphProps(
         val alignXPos: Int,
         val rtl: Boolean = false,
         val stackWhere: Int = 0,
-        var extInfo: IntArray? = null
+        var extInfo: IntArray? = null,
+
+        val hasKernData: Boolean = false,
+        val isLowheight: Boolean = false,
+        val isKernYtype: Boolean = false,
+        val kerningMask: Int = 255
 ) {
     companion object {
         const val ALIGN_LEFT = 0
@@ -36,6 +41,21 @@ data class GlyphProps(
             tags.ushr(1).and(15),
             tags.and(1) == 1,
             tags.ushr(8).and(3)
+    )
+
+    constructor(width: Int, tags: Int, isLowheight: Boolean, isKernYtype: Boolean, kerningMask: Int) : this(
+        width,
+        tags.ushr(7).and(1) == 1,
+        tags.ushr(5).and(3),
+        tags.ushr(1).and(15),
+        tags.and(1) == 1,
+        tags.ushr(8).and(3),
+        null,
+
+        true,
+        isLowheight,
+        isKernYtype,
+        kerningMask
     )
 
     fun isOverlay() = writeOnTop && alignXPos == 1

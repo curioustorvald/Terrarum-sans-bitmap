@@ -6,14 +6,12 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.GdxRuntimeException
 import net.torvald.terrarumsansbitmap.GlyphProps
 import net.torvald.terrarumsansbitmap.gdx.*
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.TextCacheObj
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.ShittyGlyphLayout
-import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.isLowHeight
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
 import java.io.Reader

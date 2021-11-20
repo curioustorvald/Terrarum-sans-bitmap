@@ -5,7 +5,8 @@ There are many bitmap fonts on the internet. You care for the multilingual suppo
 most of them do not support your language, vector fonts take too much time to load, and even
 then their legibility suffers because screw built-in antialias.
 
-You somehow found a multilingual one, and it makes your game look like an old computer, and you say:
+You somehow found a multilingual one, and it makes your text as if they came straight from an old
+computer terminal, and you say:
 
 “Well, better than nothing… no, it’s ugly.”
 

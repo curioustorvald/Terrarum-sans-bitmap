@@ -726,13 +726,28 @@ class TerrarumSansBitmap(
                 }
             }
 
+
+            // lowheight bit
+            val isLowHeight = (pixmap.getPixel(codeStartX, codeStartY + 5).and(0xFF) != 0)
+
+            // Keming machine parameters
+            val kerningBit1 = pixmap.getPixel(codeStartX, codeStartY + 6)
+            val kerningBit2 = pixmap.getPixel(codeStartX, codeStartY + 7)
+            val kerningBit3 = pixmap.getPixel(codeStartX, codeStartY + 8)
+            val isKerningYtype = ((kerningBit1 and 0x80000000.toInt()) != 0)
+            val kerningMask = kerningBit1.ushr(8).and(0xFFFFFF)
+            val hasKerningBit = kerningBit1 and 255 != 0//(kerningBit1 and 255 != 0 && kerningMask != 0xFFFF)
+
+
             //println("$code: Width $width, tags $tags")
+            if (hasKerningBit)
+                println("$code: W $width, tags $tags, low? $isLowHeight, kern ${kerningMask.toString(16).padStart(6,'0')} (raw: ${kerningBit1.toLong().and(4294967295).toString(16).padStart(8,'0')})")
 
             /*val isDiacritics = pixmap.getPixel(codeStartX, codeStartY + H - 1).and(0xFF) != 0
             if (isDiacritics)
                 glyphWidth = -glyphWidth*/
 
-            glyphProps[code] = GlyphProps(width, tags)
+            glyphProps[code] = if (hasKerningBit) GlyphProps(width, tags, isLowHeight, isKerningYtype, kerningMask) else GlyphProps(width, tags)
 
             // extra info
             val extCount = glyphProps[code]?.requiredExtInfoCount() ?: 0
@@ -752,6 +767,7 @@ class TerrarumSansBitmap(
                     glyphProps[code]!!.extInfo!![x] = info
                 }
             }
+
         }
     }
 
@@ -1337,6 +1353,90 @@ class TerrarumSansBitmap(
         return crc.value.toInt()
     }
 
+    fun CodePoint.isLowHeight() = glyphProps[this]?.isLowheight == true || this in lowHeightLetters
+
+    private fun getKerning(prevChar: CodePoint, thisChar: CodePoint): Int {
+        val maskL = glyphProps[prevChar]?.kerningMask
+        val maskR = glyphProps[thisChar]?.kerningMask
+        return if (glyphProps[prevChar]?.hasKernData == true && glyphProps[thisChar]?.hasKernData == true) {
+            val contraction = if (glyphProps[prevChar]?.isKernYtype == true || glyphProps[thisChar]?.isKernYtype == true) -1 else -2
+            kerningRules.forEachIndexed { index, it ->
+                if (it.first.matches(maskL!!) && it.second.matches(maskR!!)) {
+                    println("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first} ${it.second}; Contraction: ${-contraction}")
+
+                    return contraction
+                }
+            }
+            return 0
+        }
+        else 0
+        /*else if (prevChar in lowHeightLetters) {
+            return if (thisChar in kernTees) kernTee // lh - T
+            else if (thisChar in kernYees) kernYee   // lh - Y
+            else 0
+        }
+        else if (prevChar in kernElls) {
+            return if (thisChar in kernTees) kernTee // L - T
+            else if (thisChar in kernVees) kernYee   // L - V
+            else if (thisChar in kernYees) kernYee   // L - Y
+            else 0
+        }
+        else if (prevChar in kernTees) {
+            return if (thisChar in lowHeightLetters) kernTee // T - lh
+            else if (thisChar in kernJays) kernTee           // T - J
+            else if (thisChar in kernAyes) kernYee           // T - A
+            else if (thisChar in kernDees) kernTee           // T - d
+            else 0
+        }
+        else if (prevChar in kernYees) {
+            return if (thisChar in lowHeightLetters) kernYee // Y - lh
+            else if (thisChar in kernAyes) kernYee           // Y - A
+            else if (thisChar in kernJays) kernYee           // Y - J
+            else if (thisChar in kernDees) kernYee           // Y - d
+            else 0
+        }
+        else if (prevChar in kernAyes) {
+            return if (thisChar in kernVees) kernAV  // A - V
+            else if (thisChar in kernTees) kernAV    // A - T
+            else if (thisChar in kernYees) kernYee   // A - Y
+            else 0
+        }
+        else if (prevChar in kernVees) {
+            return if (thisChar in kernAyes) kernAV  // V - A
+            else if (thisChar in kernJays) kernAV    // V - J
+            else if (thisChar in kernDees) kernAV    // V - d
+            else 0
+        }
+        else if (prevChar in kernGammas) {
+            return if (thisChar in kernAyes) kernYee       // Γ - Α
+            else if (thisChar in lowHeightLetters) kernTee // Γ - lh
+            else if (thisChar in kernJays) kernTee         // Γ - J
+            else if (thisChar in kernDees) kernTee         // Γ - d
+            else 0
+        }
+        else if (prevChar in kernBees) {
+            return if (thisChar in kernTees) kernTee // b - T
+            else if (thisChar in kernYees) kernYee   // b - Y
+            else 0
+        }
+        else if (prevChar in kernLowVees) {
+            return if (thisChar in kernTees) kernTee
+            else if (thisChar in kernLowLambdas) kernAVlow
+            else 0
+        }
+        else if (prevChar in kernLowLambdas) {
+            return if (thisChar in kernTees) kernTee
+            else if (thisChar in kernLowVees) kernAVlow
+            else 0
+        }
+        else if (prevChar in slashes) {
+            return if (thisChar in kernDees || thisChar in lowHeightLetters) kernSlash // / - d
+            else if (thisChar in slashes) kernDoubleSlash
+            else 0
+        }
+        else 0*/
+    }
+
     companion object {
 
         private fun Boolean.toSign() = if (this) 1 else -1
@@ -1344,7 +1444,6 @@ class TerrarumSansBitmap(
         /**
          * lowercase AND the height is equal to x-height (e.g. lowercase B, D, F, H, K, L, ... does not count
          */
-        fun CodePoint.isLowHeight() = this in lowHeightLetters
 
         data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val linotype: Texture, val width: Int)
         data class TextCacheObj(val hash: Long, val glyphLayout: ShittyGlyphLayout?): Comparable<TextCacheObj> {
@@ -1356,7 +1455,6 @@ class TerrarumSansBitmap(
                 return (this.hash - other.hash).sign
             }
         }
-
 
 
         private val HCF = 0x115F
@@ -1813,74 +1911,6 @@ print(','.join(a))
         private val kernSlash = -1
         private val kernDoubleSlash = -2
 
-        private fun getKerning(prevChar: CodePoint, thisChar: CodePoint): Int {
-            return if (prevChar in lowHeightLetters) {
-                return if (thisChar in kernTees) kernTee // lh - T
-                else if (thisChar in kernYees) kernYee   // lh - Y
-                else 0
-            }
-            else if (prevChar in kernElls) {
-                return if (thisChar in kernTees) kernTee // L - T
-                else if (thisChar in kernVees) kernYee   // L - V
-                else if (thisChar in kernYees) kernYee   // L - Y
-                else 0
-            }
-            else if (prevChar in kernTees) {
-                return if (thisChar in lowHeightLetters) kernTee // T - lh
-                else if (thisChar in kernJays) kernTee           // T - J
-                else if (thisChar in kernAyes) kernYee           // T - A
-                else if (thisChar in kernDees) kernTee           // T - d
-                else 0
-            }
-            else if (prevChar in kernYees) {
-                return if (thisChar in lowHeightLetters) kernYee // Y - lh
-                else if (thisChar in kernAyes) kernYee           // Y - A
-                else if (thisChar in kernJays) kernYee           // Y - J
-                else if (thisChar in kernDees) kernYee           // Y - d
-                else 0
-            }
-            else if (prevChar in kernAyes) {
-                return if (thisChar in kernVees) kernAV  // A - V
-                else if (thisChar in kernTees) kernAV    // A - T
-                else if (thisChar in kernYees) kernYee   // A - Y
-                else 0
-            }
-            else if (prevChar in kernVees) {
-                return if (thisChar in kernAyes) kernAV  // V - A
-                else if (thisChar in kernJays) kernAV    // V - J
-                else if (thisChar in kernDees) kernAV    // V - d
-                else 0
-            }
-            else if (prevChar in kernGammas) {
-                return if (thisChar in kernAyes) kernYee       // Γ - Α
-                else if (thisChar in lowHeightLetters) kernTee // Γ - lh
-                else if (thisChar in kernJays) kernTee         // Γ - J
-                else if (thisChar in kernDees) kernTee         // Γ - d
-                else 0
-            }
-            else if (prevChar in kernBees) {
-                return if (thisChar in kernTees) kernTee // b - T
-                else if (thisChar in kernYees) kernYee   // b - Y
-                else 0
-            }
-            else if (prevChar in kernLowVees) {
-                return if (thisChar in kernTees) kernTee
-                else if (thisChar in kernLowLambdas) kernAVlow
-                else 0
-            }
-            else if (prevChar in kernLowLambdas) {
-                return if (thisChar in kernTees) kernTee
-                else if (thisChar in kernLowVees) kernAVlow
-                else 0
-            }
-            else if (prevChar in slashes) {
-                return if (thisChar in kernDees || thisChar in lowHeightLetters) kernSlash // / - d
-                else if (thisChar in slashes) kernDoubleSlash
-                else 0
-            }
-            else 0
-        }
-
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
@@ -1890,6 +1920,65 @@ print(','.join(a))
         private fun CharArray.toSurrogatedString(): String = "${this[0]}${this[1]}"
 
         val noColorCode = toColorCode(0x0000)
+
+
+
+        // The "Keming" Machine //
+
+        private val kemingBitMask: IntArray = intArrayOf(7,6,5,4,3,2,1,0,15,14).map { 1 shl it }.toIntArray()
+
+        private class RuleMask(s: String) {
+
+            private var careBits = 0
+            private var ruleBits = 0
+
+            init {
+                s.forEachIndexed { index, char ->
+                    when (char) {
+                        '@' -> {
+                            careBits = careBits or kemingBitMask[index]
+                            ruleBits = ruleBits or kemingBitMask[index]
+                        }
+                        '`' -> {
+                            careBits = careBits or kemingBitMask[index]
+                        }
+                    }
+                }
+            }
+
+            fun matches(shapeBits: Int) = ((shapeBits and careBits) == ruleBits)
+
+            override fun toString() = "C:${careBits.toString(2).padStart(16,'0')}-R:${ruleBits.toString(2).padStart(16,'0')}"
+        }
+
+        /**
+         * Legend: _ dont care
+         *         @ must have a bit set
+         *         ` must have a bit unset
+         * Order: ABCDEFGHJK, where
+         *
+         * A·B < unset for lowheight miniscules, as in e
+         * |·| < space we don't care
+         * C·D < middle hole for majuscules, as in C
+         * E·F < middle hole for miniscules, as in c
+         * G·H
+         *――― < baseline
+         * |·|
+         * J·K
+         */
+        private val kerningRules = arrayOf(
+            RuleMask("_@_`___`__") to RuleMask("`_________"),
+            RuleMask("_@_@___`__") to RuleMask("`___`_@___"),
+            RuleMask("___`_`____") to RuleMask("`___@_`___"),
+            RuleMask("___`_`____") to RuleMask("`_@___`___"),
+
+            RuleMask("_`________") to RuleMask("@_`___`___"),
+            RuleMask("_`___`_@__") to RuleMask("@_@___`___"),
+            RuleMask("_`___@_`__") to RuleMask("__`_`_____"),
+            RuleMask("_`_@___`__") to RuleMask("__`_`_____"),
+        )
+
+        // End of the Keming Machine
     }
 
 }

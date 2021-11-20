@@ -38,19 +38,29 @@ Width is encoded in binary bits, on pixels. On the font spritesheet, every glyph
 
 ### Glyph Tags
 
-Green-tinted area (should be 10 px tall) contains the tags. Tags are defined as following:
+Rightmost vertical column (should be 20 px tall) contains the tags. Tags are defined as following:
 
 ```
-(LSB) 0 == Use Compiler Directive (Undefined right now, keep it as 0)
-      1 -, 1 = Align to this X pos of prev char,
-      1  | 2 = only valid if write-on-top is 1
-      1  | 4 = and is centre-aligned and non-zero
-      1 -' 8 = (if this is zero, floorOf(width/2) will be used instead)
-      0 -, 0 Align  1 Align  0 Align   1 Align before
-      1 -' 0 left   0 right  1 centre  1 the glyph
-      1 == write-on-top, usually it's diatritics but not always (e.g. devanagari vowel sign O)
-      1 -, 0 Stack  1 Stack  0 Before  1 Up &
-(MSB) 0 -' 0 up     0 down   1 &After  1 Down (e.g. U+0C48)
+(LSB) W -,
+      W  |
+      W  |= Width of the character
+      W  |
+      W -'
+      m --Is this character lowheight?
+      K -,
+      K  |= Tags used by the "Keming Machine"
+      K  |
+      K -' ,-Unused
+      · --'
+      X -,  Align to this X pos of prev char, only valid if write-on-top is 1
+      X  |= and is centre-aligned and non-zero
+      X  |  (if this is zero, floorOf(width/2) will be used instead)
+      X -'
+      A -,_ 0 Align  1 Align  0 Align   1 Align before
+      A -'  0 left   0 right  1 centre  1 the glyph
+      D --write-on-top, usually it's diatritics but not always (e.g. devanagari vowel sign O)
+      S -,_ 0 Stack  1 Stack  0 Before  1 Up &
+(MSB) S -'  0 up     0 down   1 &After  1 Down (e.g. U+0C48)
 ```
 
 #### Stack Up/Down

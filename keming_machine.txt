@@ -1,0 +1,115 @@
+--- Pixel 0
+- Lowheight bit
+- encoding: has pixel - it's low height
+- used by the diacritics system to quickly look up if the character is low height without parsing the Pixel 1
+
+### Legends
+#
+# ͞ A·B < unset for lowheight miniscules, as in e
+#  |·| < space we don't care
+#――C·D < middle hole for majuscules, as in C
+#  E·F < middle hole for miniscules, as in c
+# ͟ G·H
+#  ――― < baseline
+#  |·|
+#  J·K
+
+--- Pixel 1
+- A..K Occupied (1024)
+- Is ABGH are all Ys instead of Bars? (2)
+    - Say, A is Bar but E is wye (e.g. Ꮨ), this condition is false; this character must be encoded as ABDFGH(B).
+- encoding:
+    - <MSB> Y0000000 JK000000 ABCDEFGH <LSB>
+    - Y: Bar/Wye Mode
+    - A..K: arguments
+- B-type will contract the space by 2 pixels, while Y-type will do it by 1
+
+# Capital/lower itself is given using the pixel 0 due to the diacritics processing
+
+--- Examples
+- AB(B): T
+- ABCEGH(B): C
+- ABCEFGH(Y): K
+- ABCDEG: Ꮅ
+- ABCDEFGH: B,D,O
+- ABCDFH: Ч
+- ABCEG: Г
+- ABGH: Ꮖ
+- ACDEG: Ꮀ
+- ACDEFGH: h,Ƅ
+- ACDFH: ߆
+- ACEGH: L
+- AH(Y): \
+- BDEFGH: J
+- BDFGH: ɺ,ป
+- BG(Y): /
+- CD: Ⴕ
+- CDEF(Y): Φ
+- CDEFGH: a,c,e,i,o,φ,ϕ
+- CDEFGHJK: g
+- CDEFGHK: ƞ
+
+- AB(Y): Y
+- ABCD(Y): V
+- CDEF(Y): v
+- EFGH(Y): ʌ
+- CDGH(Y): A
+
+--- Rules
+# Legend: _ dont care
+#         @ must have a bit set
+#         ` must have a bit unset
+- ͟A͟B͟C͟D͟E͟F͟G͟H͟J͟K͟ ͟ ͟ ͟A͟B͟C͟D͟E͟F͟G͟H͟J͟K͟
+- _@_`___`__ — `_________ # Γe,TJ ; Ye,YJ,Ve,VJ,TA,ΓA,VA,Vʌ,YA,Yʌ,yA,yʌ,/a,/d
+- _@_@___`__ — `___`_@___ # Pɺ but NOT PJ
+- ___`_`____ — `___@_`___ # Cꟶ,Kꟶ,Lꟶ,Γꟶ
+- ___`_`____ — `_@___`___ # CꟵ,KꟵ,LꟵ,ΓꟵ
+-----------------------------------------------------
+- _`________ — @_`___`___ # eꞀ,LT ; eY,LY,eV,LV,AT,AꞀ,AY,Ay,λY,λy,a\,b\
+- _`___`_@__ — @_@___`___ # Lꟼ but NOT bꟼ
+- _`___@_`__ — __`_`_____ # ⱶƆ,ⱶJ
+- _`_@___`__ — __`_`_____ # ⱵƆ,ⱵJ
+
+
+--- Implementation
+code: |
+    val posTable = intArrayOf(7,6,5,4,3,2,1,0,9,8)
+
+    class RuleMask(s: String) {
+
+        private var careBits = 0
+        private var ruleBits = 0
+
+        init {
+            s.forEachIndexed { index, char ->
+                when (char) {
+                    '@' -> {
+                        careBits = careBits or (1 shl posTable[index])
+                        ruleBits = ruleBits or (1 shl posTable[index])
+                    }
+                    '`' -> {
+                        careBits = careBits or (1 shl posTable[index])
+                    }
+                }
+            }
+        }
+
+        fun matches(shapeBits: Int) = ((shapeBits and careBits) and ruleBits) == 0
+
+    }
+
+--- Pixel 2
+Glyph pos for up/down diacritics
+- U: X-position for stack-up diacritics
+- D: X-position for stack-down diacritics
+- encoding:
+    - <MSB> 00000000 100DDDDD 100UUUUU <LSB>
+- If either U/D is unused, centre position will be used.
+- Diacritics will be centred on the x-position this parameter points to
+
+--- Pixel 3
+dot removal for diacritics:
+- All 24 bits are used to put replacement character
+- encoding:
+    - <MSB> RRRRRRRR GGGGGGGG BBBBBBBB <LSB>
+
