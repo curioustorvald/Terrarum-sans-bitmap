@@ -104,6 +104,8 @@ class TerrarumSansBitmap(
         val shadowAlphaPremultiply: Boolean = false
 ) : BitmapFont() {
 
+    private fun dbgprn(i: Any) { if (debug) println("[${this.javaClass.simpleName}] $i") }
+    
     constructor(fontDir: String, noShadow: Boolean, flipY: Boolean, invertShadow: Boolean) : this(fontDir, noShadow, flipY, invertShadow, false, 256, false)
 
     /* This font is a collection of various subsystems, and thus contains copious amount of quick-and-dirty codes.
@@ -184,9 +186,9 @@ class TerrarumSansBitmap(
 
             // idiocity check
             if (isVariable1 && !isVariable2)
-                throw Error("[TerrarumSansBitmap] font is named as variable on the name but not enlisted as")
+                throw Error("font is named as variable on the name but not enlisted as")
             else if (!isVariable1 && isVariable2)
-                throw Error("[TerrarumSansBitmap] font is enlisted as variable on the name but not named as")
+                throw Error("font is enlisted as variable on the name but not named as")
 
 
             var pixmap: Pixmap
@@ -194,18 +196,18 @@ class TerrarumSansBitmap(
 
             if (isVariable) {
                 if (isXYSwapped) {
-                    println("[TerrarumSansBitmap] loading texture $it [VARIABLE, XYSWAP]")
+                    dbgprn("loading texture $it [VARIABLE, XYSWAP]")
                 }
                 else {
-                    println("[TerrarumSansBitmap] loading texture $it [VARIABLE]")
+                    dbgprn("loading texture $it [VARIABLE]")
                 }
             }
             else {
                 if (isXYSwapped) {
-                    println("[TerrarumSansBitmap] loading texture $it [XYSWAP]")
+                    dbgprn("loading texture $it [XYSWAP]")
                 }
                 else {
-                    println("[TerrarumSansBitmap] loading texture $it")
+                    dbgprn("loading texture $it")
                 }
             }
 
@@ -227,7 +229,7 @@ class TerrarumSansBitmap(
                 }
                 catch (e: GdxRuntimeException) {
                     //e.printStackTrace()
-                    System.err.println("[TerrarumSansBitmap] said texture not found, skipping...")
+                    dbgprn("said texture not found, skipping...")
 
                     pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
                 }
@@ -239,13 +241,13 @@ class TerrarumSansBitmap(
                 }
                 catch (e: GdxRuntimeException) {
                     //e.printStackTrace()
-                    System.err.println("[TerrarumSansBitmap] said texture not found, skipping...")
+                    dbgprn("said texture not found, skipping...")
 
                     // if non-ascii chart is missing, replace it with null sheet
                     pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
                     // else, notify by error
                     if (index == 0) {
-                        System.err.println("[TerrarumSansBitmap] The ASCII sheet is gone, something is wrong.")
+                        println("[${this.javaClass.simpleName}] The ASCII sheet is gone, something is wrong.")
                         System.exit(1)
                     }
                 }
@@ -286,7 +288,7 @@ class TerrarumSansBitmap(
             else if (index == SHEET_RUNIC) {
                 PixmapRegionPack(pixmap, W_LATIN_WIDE, H)
             }
-            else throw IllegalArgumentException("[TerrarumSansBitmap] Unknown sheet index: $index")
+            else throw IllegalArgumentException("Unknown sheet index: $index")
 
             //texRegPack.texture.setFilter(minFilter, magFilter)
 
@@ -371,11 +373,11 @@ class TerrarumSansBitmap(
 
                 flagFirstRun = false
 
-                //println("text not in buffer: $charSeq")
+                //dbgprn("text not in buffer: $charSeq")
 
 
                 //textBuffer.forEach { print("${it.toHex()} ") }
-                //println()
+                //dbgprn()
 
 
 //                resetHash(charSeq, x.toFloat(), y.toFloat())
@@ -739,9 +741,9 @@ class TerrarumSansBitmap(
             val hasKerningBit = kerningBit1 and 255 != 0//(kerningBit1 and 255 != 0 && kerningMask != 0xFFFF)
 
 
-            //println("$code: Width $width, tags $tags")
+            //dbgprn("$code: Width $width, tags $tags")
             if (hasKerningBit)
-                println("$code: W $width, tags $tags, low? $isLowHeight, kern ${kerningMask.toString(16).padStart(6,'0')} (raw: ${kerningBit1.toLong().and(4294967295).toString(16).padStart(8,'0')})")
+                dbgprn("$code: W $width, tags $tags, low? $isLowHeight, kern ${kerningMask.toString(16).padStart(6,'0')} (raw: ${kerningBit1.toLong().and(4294967295).toString(16).padStart(8,'0')})")
 
             /*val isDiacritics = pixmap.getPixel(codeStartX, codeStartY + H - 1).and(0xFF) != 0
             if (isDiacritics)
@@ -851,7 +853,7 @@ class TerrarumSansBitmap(
                 val kerning = getKerning(lastNonDiacriticChar, thisChar)
 
 
-                //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
+                //dbgprn("char: ${thisChar.charInfo()}\nproperties: $thisProp")
 
 
                 var alignmentOffset = when (thisProp.alignWhere) {
@@ -872,8 +874,8 @@ class TerrarumSansBitmap(
                                 nextHangulJungseong1 !in jungseongWide ||
                                 nextHangulJungseong2 !in jungseongWide
                         )) {
-                    //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
-                    //println("${thisChar.charInfo()}  ${str.getOrNull(charIndex + 2)?.charInfo()}  ${str.getOrNull(charIndex + 3)?.charInfo()}")
+                    //dbgprn("char: ${thisChar.charInfo()}\nproperties: $thisProp")
+                    //dbgprn("${thisChar.charInfo()}  ${str.getOrNull(charIndex + 2)?.charInfo()}  ${str.getOrNull(charIndex + 3)?.charInfo()}")
                     extraWidth += 1
                 }
 
@@ -942,9 +944,9 @@ class TerrarumSansBitmap(
                                 // shift down on lowercase if applicable
                                 if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
                                         lastNonDiacriticChar.isLowHeight()) {
-                                    //println("AAARRRRHHHH for character ${thisChar.toHex()}")
-                                    //println("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
-                                    //println("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
+                                    //dbgprn("AAARRRRHHHH for character ${thisChar.toHex()}")
+                                    //dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
+                                    //dbgprn("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
                                     if (thisProp.alignXPos == GlyphProps.DIA_OVERLAY)
                                         posYbuffer[charIndex] -= H_OVERLAY_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
                                     else
@@ -1363,7 +1365,7 @@ class TerrarumSansBitmap(
                 if (it.first.matches(maskL!!) && it.second.matches(maskR!!)) {
                     val contraction = if (glyphProps[prevChar]?.isKernYtype == true || glyphProps[thisChar]?.isKernYtype == true) it.yy else it.bb
 
-                    println("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first} ${it.second}; Contraction: $contraction")
+                    dbgprn("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first} ${it.second}; Contraction: $contraction")
 
                     return -contraction
                 }
@@ -2006,9 +2008,7 @@ print(','.join(a))
             }
 
 
-            kerningRules.forEach {
-                println("Keming ${it.first.s} - ${it.second.s} ; ${it.bb}/${it.yy}")
-            }
+//            kerningRules.forEach { println("Keming ${it.first.s} - ${it.second.s} ; ${it.bb}/${it.yy}") }
         }
 
         // End of the Keming Machine
