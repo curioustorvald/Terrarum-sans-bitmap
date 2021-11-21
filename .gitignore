@@ -12,3 +12,4 @@ tmp_*
 tmp_*
 *.bak
 *-autosave.kra
+.directory
