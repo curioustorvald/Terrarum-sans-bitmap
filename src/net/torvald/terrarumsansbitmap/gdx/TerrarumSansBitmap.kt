@@ -743,7 +743,7 @@ class TerrarumSansBitmap(
 
             //dbgprn("$code: Width $width, tags $tags")
             if (hasKerningBit)
-                dbgprn("$code: W $width, tags $tags, low? $isLowHeight, kern ${kerningMask.toString(16).padStart(6,'0')} (raw: ${kerningBit1.toLong().and(4294967295).toString(16).padStart(8,'0')})")
+                dbgprn("U+${code.toString(16).padStart(4, '0').toUpperCase()}: W $width, tags $tags, low? $isLowHeight, kern ${kerningMask.toString(16).padStart(6,'0')} (raw: ${kerningBit1.toLong().and(4294967295).toString(16).padStart(8,'0')})")
 
             /*val isDiacritics = pixmap.getPixel(codeStartX, codeStartY + H - 1).and(0xFF) != 0
             if (isDiacritics)
