@@ -34,7 +34,6 @@ class FontTestGDX : Game() {
     private lateinit var faketex: Texture
 
     override fun create() {
-        font = TerrarumSansBitmap("./assets", flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.796f) // must test for two flipY cases
         font = TerrarumSansBitmap("./assets", debug = true, flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.796f) // must test for two flipY cases
 
         val inTextFile = Gdx.files.internal("./$demotextName")

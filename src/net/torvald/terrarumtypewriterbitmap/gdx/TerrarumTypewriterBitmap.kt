@@ -585,9 +585,14 @@ class TerrarumTypewriterBitmap(
         val hashPrime = 1099511628211L
         var hashAccumulator = hashBasis
 
-        this.forEach {
-            hashAccumulator = hashAccumulator xor it.toLong()
-            hashAccumulator *= hashPrime
+        if (this != null) {
+            this.forEach {
+                hashAccumulator = hashAccumulator xor it.toLong()
+                hashAccumulator *= hashPrime
+            }
+        }
+        else {
+            System.err.println("CodepointSequence is null?!")
         }
 
         return hashAccumulator
