@@ -906,7 +906,7 @@ class TerrarumSansBitmap(
                     extraWidth = thisProp.nudgeX // NOTE: sign is flipped!
                 }
                 // FIXME HACK: using 0th diacritics' X-anchor pos as a type selector
-                else if (thisProp.writeOnTop && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
+                /*else if (thisProp.writeOnTop && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
                     posXbuffer[charIndex] = when (itsProp.alignWhere) {
                         GlyphProps.ALIGN_RIGHT ->
                             posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset
@@ -916,7 +916,7 @@ class TerrarumSansBitmap(
                             posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset
 
                     }
-                }
+                }*/
                 else {
                     // set X pos according to alignment information
                     posXbuffer[charIndex] = when (thisProp.alignWhere) {
@@ -1372,7 +1372,7 @@ class TerrarumSansBitmap(
                 if (it.first.matches(maskL!!) && it.second.matches(maskR!!)) {
                     val contraction = if (glyphProps[prevChar]?.isKernYtype == true || glyphProps[thisChar]?.isKernYtype == true) it.yy else it.bb
 
-                    dbgprn("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first.s} ${it.second.s}; Contraction: $contraction")
+//                    dbgprn("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first.s} ${it.second.s}; Contraction: $contraction")
 
                     return -contraction
                 }
@@ -1380,71 +1380,6 @@ class TerrarumSansBitmap(
             return 0
         }
         else 0
-        /*else if (prevChar in lowHeightLetters) {
-            return if (thisChar in kernTees) kernTee // lh - T
-            else if (thisChar in kernYees) kernYee   // lh - Y
-            else 0
-        }
-        else if (prevChar in kernElls) {
-            return if (thisChar in kernTees) kernTee // L - T
-            else if (thisChar in kernVees) kernYee   // L - V
-            else if (thisChar in kernYees) kernYee   // L - Y
-            else 0
-        }
-        else if (prevChar in kernTees) {
-            return if (thisChar in lowHeightLetters) kernTee // T - lh
-            else if (thisChar in kernJays) kernTee           // T - J
-            else if (thisChar in kernAyes) kernYee           // T - A
-            else if (thisChar in kernDees) kernTee           // T - d
-            else 0
-        }
-        else if (prevChar in kernYees) {
-            return if (thisChar in lowHeightLetters) kernYee // Y - lh
-            else if (thisChar in kernAyes) kernYee           // Y - A
-            else if (thisChar in kernJays) kernYee           // Y - J
-            else if (thisChar in kernDees) kernYee           // Y - d
-            else 0
-        }
-        else if (prevChar in kernAyes) {
-            return if (thisChar in kernVees) kernAV  // A - V
-            else if (thisChar in kernTees) kernAV    // A - T
-            else if (thisChar in kernYees) kernYee   // A - Y
-            else 0
-        }
-        else if (prevChar in kernVees) {
-            return if (thisChar in kernAyes) kernAV  // V - A
-            else if (thisChar in kernJays) kernAV    // V - J
-            else if (thisChar in kernDees) kernAV    // V - d
-            else 0
-        }
-        else if (prevChar in kernGammas) {
-            return if (thisChar in kernAyes) kernYee       // Γ - Α
-            else if (thisChar in lowHeightLetters) kernTee // Γ - lh
-            else if (thisChar in kernJays) kernTee         // Γ - J
-            else if (thisChar in kernDees) kernTee         // Γ - d
-            else 0
-        }
-        else if (prevChar in kernBees) {
-            return if (thisChar in kernTees) kernTee // b - T
-            else if (thisChar in kernYees) kernYee   // b - Y
-            else 0
-        }
-        else if (prevChar in kernLowVees) {
-            return if (thisChar in kernTees) kernTee
-            else if (thisChar in kernLowLambdas) kernAVlow
-            else 0
-        }
-        else if (prevChar in kernLowLambdas) {
-            return if (thisChar in kernTees) kernTee
-            else if (thisChar in kernLowVees) kernAVlow
-            else 0
-        }
-        else if (prevChar in slashes) {
-            return if (thisChar in kernDees || thisChar in lowHeightLetters) kernSlash // / - d
-            else if (thisChar in slashes) kernDoubleSlash
-            else 0
-        }
-        else 0*/
     }
 
     companion object {

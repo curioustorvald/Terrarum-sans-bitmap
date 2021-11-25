@@ -223,12 +223,12 @@ class TerrarumTypewriterBitmap(
             }
 
             val nudgingBits = pixmap.getPixel(codeStartX, codeStartY + 10).tagify()
-            val nudgeX = nudgingBits.ushr(16).toByte().toInt() // signed 8-bit int
-            val nudgeY = nudgingBits.ushr(8).toByte().toInt() // signed 8-bit int
+            val nudgeX = nudgingBits.ushr(24).toByte().toInt() // signed 8-bit int
+            val nudgeY = nudgingBits.ushr(16).toByte().toInt() // signed 8-bit int
 
             val diacriticsAnchors = (0..5).map {
-                val yPos = 11 + (it / 3)
-                val shift = (2 - (it % 3)) * 8
+                val yPos = 11 + (it / 3) * 2
+                val shift = (3 - (it % 3)) * 8
                 val yPixel = pixmap.getPixel(codeStartX, codeStartY + yPos).tagify()
                 val xPixel = pixmap.getPixel(codeStartX, codeStartY + yPos + 1).tagify()
                 val y = (yPixel ushr shift) and 127
@@ -239,14 +239,15 @@ class TerrarumTypewriterBitmap(
                 DiacriticsAnchor(it, x, y, xUsed, yUsed)
             }.toTypedArray()
 
-            val alignWhere = (11..12).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y).and(255) != 0).toInt() shl y) }
+            val alignWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 15).and(255) != 0).toInt() shl y) }
 
-            val writeOnTop = pixmap.getPixel(codeStartX, codeStartY + 13).and(255) != 0
+            val writeOnTop = pixmap.getPixel(codeStartX, codeStartY + 17).and(255) != 0
 
-            val stackWhere = (14..15).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y).and(255) != 0).toInt() shl y) }
+            val stackWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 18).and(255) != 0).toInt() shl y) }
 
             glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, GlyphProps.DEFAULT_EXTINFO, hasKernData, isKernYtype, kerningMask)
-//            if (code < 256) dbgprn("${code.charInfo()} width: $width, tags: ${glyphProps[code]}")
+
+//            if (nudgingBits != 0) println("${code.charInfo()} nudgeX=$nudgeX, nudgeY=$nudgeY, nudgingBits=0x${nudgingBits.toString(16)}")
 
             // extra info
             val extCount = glyphProps[code]?.requiredExtInfoCount() ?: 0
@@ -439,7 +440,7 @@ class TerrarumTypewriterBitmap(
 
 
                 if (!thisProp.writeOnTop) {
-                    posXbuffer[charIndex] = thisProp.nudgeX +
+                    posXbuffer[charIndex] = -thisProp.nudgeX +
                             when (itsProp.alignWhere) {
                                 GlyphProps.ALIGN_RIGHT ->
                                     posXbuffer[nonDiacriticCounter] + TerrarumSansBitmap.W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
@@ -453,7 +454,7 @@ class TerrarumTypewriterBitmap(
 
                     stackUpwardCounter = 0
                     stackDownwardCounter = 0
-                    extraWidth = -thisProp.nudgeX // NOTE: sign is flipped!
+                    extraWidth = thisProp.nudgeX // NOTE: sign is flipped!
                 }
                 else if (thisProp.writeOnTop && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
                     posXbuffer[charIndex] = when (itsProp.alignWhere) {

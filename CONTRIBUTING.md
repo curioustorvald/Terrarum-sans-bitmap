@@ -87,8 +87,9 @@ MSB for each word must be set to indicate the value is being used.
 
 -= NOTE =-
 
-This encoding involves one HACK: using 0th diacritics' X-anchor pos as a type selector
-This hack applies only when write-on-top bit is set.
+The code has remnants of one old HACK: using 0th diacritics' X-anchor pos as a type selector
+This hack applied only when write-on-top bit is set. Relevant codes are currently commented out instead of
+being completely removed for future debugging.
 Interpretation:
     DIA_OVERLAY = 1
     DIA_JOINER = 2
