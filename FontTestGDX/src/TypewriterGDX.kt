@@ -58,7 +58,7 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
             184,164,171,170, // >HON (ASC_3-90)
             62, // space
             74,48, // ;t (HANG_BEO)
-            43,12, // o5 (HANG_YU)
+            43,12, // o5 (HANG_CYU)
             38,48,51, // jtw (HANG_EOL)
             164, // H (ASC_-)
             75,34, // 'f (HANG_TA)

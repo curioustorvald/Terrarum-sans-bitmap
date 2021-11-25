@@ -1366,7 +1366,7 @@ class TerrarumSansBitmap(
                 if (it.first.matches(maskL!!) && it.second.matches(maskR!!)) {
                     val contraction = if (glyphProps[prevChar]?.isKernYtype == true || glyphProps[thisChar]?.isKernYtype == true) it.yy else it.bb
 
-                    dbgprn("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first} ${it.second}; Contraction: $contraction")
+                    dbgprn("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first.s} ${it.second.s}; Contraction: $contraction")
 
                     return -contraction
                 }
@@ -1974,16 +1974,10 @@ print(','.join(a))
          */
         private val kerningRules = arrayListOf(
                 Kem(ing("_@_`___`__"),ing("`_________")),
-                Kem(ing("_@_@___`__"),ing("`___`_@___")),
+                Kem(ing("_@_@_`_`__"),ing("`_____@___")),
                 Kem(ing("_@_@___`__"),ing("`___@_____"),1,1),
                 Kem(ing("___`_`____"),ing("`___@_`___")),
                 Kem(ing("___`_`____"),ing("`_@___`___")),
-
-//                Kem(ing("_`________"),ing("@_`___`___")),
-//                Kem(ing("_`___`_@__"),ing("@_@___`___")),
-//                Kem(ing("_`___@____"),ing("@_@___`___"),1,1),
-//                Kem(ing("_`___@_`__"),ing("__`_`_____")),
-//                Kem(ing("_`_@___`__"),ing("__`_`_____")),
         )
 
         init {
