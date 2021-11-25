@@ -57,6 +57,10 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
             62, // space
             184,164,171,170, // >HON (ASC_3-90)
             62, // space
+            74,48, // ;t (HANG_BEO)
+            43,12, // o5 (HANG_YU)
+            38,48,51, // jtw (HANG_EOL)
+            164, // H (ASC_-)
             75,34, // 'f (HANG_TA)
             40,34, // lf (HANG_JA)
             39,32  // kd (HANG_GI)
@@ -67,13 +71,15 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
     private val printableKeys = ((Input.Keys.NUM_0..Input.Keys.NUM_9) + (Input.Keys.A..Input.Keys.PERIOD) + 62 + (Input.Keys.BACKSPACE..Input.Keys.SLASH)).toHashSet()
 
     fun acceptKey(keycode: Int) {
-//        println("[TypewriterGDX] Accepting key: $keycode")
+        println("[TypewriterGDX] Accepting key: $keycode")
 
         if (keycode == Input.Keys.ENTER) {
             textbuf.add(CodepointSequence())
         }
         else if (printableKeys.contains(keycode and 127)) {
-            textbuf.last().add(keycode + 0xF3000)
+            val cp = keycode + 0xF3000
+            textbuf.last().add(cp)
+//            println("[TypewriterGDX] width: ${font.glyphProps[cp]}")
         }
     }
 
