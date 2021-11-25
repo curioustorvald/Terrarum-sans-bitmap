@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.utils.GdxRuntimeException
+import net.torvald.terrarumsansbitmap.DiacriticsAnchor
 import net.torvald.terrarumsansbitmap.GlyphProps
 import net.torvald.terrarumsansbitmap.gdx.*
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
@@ -178,7 +179,7 @@ class TerrarumTypewriterBitmap(
             pixmap.dispose() // you are terminated
         }
 
-        glyphProps[0] = GlyphProps(0, 0)
+        glyphProps[0] = GlyphProps(0)
 
     }
 
@@ -188,6 +189,8 @@ class TerrarumTypewriterBitmap(
         intArrayOf(coff % 16, coff / 16)
     }
 
+    private fun Boolean.toInt() = if (this) 1 else 0
+    private fun Int.tagify() = if (this and 255 == 0) 0 else this
 
     private fun buildWidthTable(pixmap: Pixmap, codeRange: Iterable<Int>, cols: Int = 16) {
         val binaryCodeOffset = TerrarumSansBitmap.W_VAR_INIT
@@ -202,53 +205,65 @@ class TerrarumTypewriterBitmap(
 
             val codeStartX = cellX + binaryCodeOffset
             val codeStartY = cellY
-            val tagStartY = codeStartY + 10
 
-            var width = 0
-            var tags = 0
+            val width = (0..4).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y).and(255) != 0).toInt() shl y) }
+            val isLowHeight = (pixmap.getPixel(codeStartX, codeStartY + 5).and(255) != 0)
 
-            for (y in 0..3) {
-                // if ALPHA is not zero, assume it's 1
-                if (pixmap.getPixel(codeStartX, codeStartY + y).and(0xFF) != 0) {
-                    width = width or (1 shl y)
-                }
+            // Keming machine parameters
+            val kerningBit1 = pixmap.getPixel(codeStartX, codeStartY + 6).tagify()
+            val kerningBit2 = pixmap.getPixel(codeStartX, codeStartY + 7).tagify()
+            val kerningBit3 = pixmap.getPixel(codeStartX, codeStartY + 8).tagify()
+            val kerningBit4 = pixmap.getPixel(codeStartX, codeStartY + 9).tagify()
+            var isKernYtype = ((kerningBit1 and 0x80000000.toInt()) != 0)
+            var kerningMask = kerningBit1.ushr(8).and(0xFFFFFF)
+            val hasKernData = kerningBit1 and 255 != 0//(kerningBit1 and 255 != 0 && kerningMask != 0xFFFF)
+            if (!hasKernData) {
+                isKernYtype = false
+                kerningMask = 255
             }
 
-            for (y in 0..9) {
-                // if ALPHA is not zero, assume it's 1
-                if (pixmap.getPixel(codeStartX, tagStartY + y).and(0xFF) != 0) {
-                    tags = tags or (1 shl y)
-                }
-            }
+            val nudgingBits = pixmap.getPixel(codeStartX, codeStartY + 10).tagify()
+            val nudgeX = nudgingBits.ushr(16).toByte().toInt() // signed 8-bit int
+            val nudgeY = nudgingBits.ushr(8).toByte().toInt() // signed 8-bit int
 
-            if (code and 127 == 67) width *= -1 // the backspace key
-            if (debug) println("${code.charInfo()}: Width $width, tags $tags")
+            val diacriticsAnchors = (0..5).map {
+                val yPos = 11 + (it / 3)
+                val shift = (2 - (it % 3)) * 8
+                val yPixel = pixmap.getPixel(codeStartX, codeStartY + yPos).tagify()
+                val xPixel = pixmap.getPixel(codeStartX, codeStartY + yPos + 1).tagify()
+                val y = (yPixel ushr shift) and 127
+                val x = (xPixel ushr shift) and 127
+                val yUsed = (yPixel ushr shift) >= 128
+                val xUsed = (yPixel ushr shift) >= 128
 
-            /*val isDiacritics = pixmap.getPixel(codeStartX, codeStartY + H - 1).and(0xFF) != 0
-            if (isDiacritics)
-                glyphWidth = -glyphWidth*/
+                DiacriticsAnchor(it, x, y, xUsed, yUsed)
+            }.toTypedArray()
 
+            val alignWhere = (11..12).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y).and(255) != 0).toInt() shl y) }
 
-            glyphProps[code] = GlyphProps(width, tags)
+            val writeOnTop = pixmap.getPixel(codeStartX, codeStartY + 13).and(255) != 0
+
+            val stackWhere = (14..15).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y).and(255) != 0).toInt() shl y) }
+
+            glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, GlyphProps.DEFAULT_EXTINFO, hasKernData, isKernYtype, kerningMask)
+//            if (code < 256) dbgprn("${code.charInfo()} width: $width, tags: ${glyphProps[code]}")
 
             // extra info
             val extCount = glyphProps[code]?.requiredExtInfoCount() ?: 0
             if (extCount > 0) {
-
-                glyphProps[code]?.extInfo = IntArray(extCount)
-
                 for (x in 0 until extCount) {
                     var info = 0
                     for (y in 0..18) {
                         // if ALPHA is not zero, assume it's 1
-                        if (pixmap.getPixel(cellX + x, cellY + y).and(0xFF) != 0) {
+                        if (pixmap.getPixel(cellX + x, cellY + y).and(255) != 0) {
                             info = info or (1 shl y)
                         }
                     }
 
-                    glyphProps[code]!!.extInfo!![x] = info
+                    glyphProps[code]!!.extInfo[x] = info
                 }
             }
+
         }
     }
 
@@ -257,7 +272,7 @@ class TerrarumTypewriterBitmap(
     private var flagFirstRun = true
     private var textBuffer = CodepointSequence(256)
     private lateinit var tempLinotype: Texture
-    private var nullProp = GlyphProps(15, 0)
+    private var nullProp = GlyphProps(15)
 
 
     fun draw(batch: Batch, codepoints: CodepointSequence, x: Float, y: Float): GlyphLayout? {
@@ -424,7 +439,7 @@ class TerrarumTypewriterBitmap(
 
 
                 if (!thisProp.writeOnTop) {
-                    posXbuffer[charIndex] = ((if (thisProp.nudgeRight) 1 else -1) * thisProp.alignXPos) +
+                    posXbuffer[charIndex] = thisProp.nudgeX +
                             when (itsProp.alignWhere) {
                                 GlyphProps.ALIGN_RIGHT ->
                                     posXbuffer[nonDiacriticCounter] + TerrarumSansBitmap.W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
@@ -438,9 +453,9 @@ class TerrarumTypewriterBitmap(
 
                     stackUpwardCounter = 0
                     stackDownwardCounter = 0
-                    extraWidth = (if (thisProp.nudgeRight) -1 else 1) * thisProp.alignXPos // NOTE: sign is flipped!
+                    extraWidth = -thisProp.nudgeX // NOTE: sign is flipped!
                 }
-                else if (thisProp.writeOnTop && thisProp.alignXPos == GlyphProps.DIA_JOINER) {
+                else if (thisProp.writeOnTop && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
                     posXbuffer[charIndex] = when (itsProp.alignWhere) {
                         GlyphProps.ALIGN_RIGHT ->
                             posXbuffer[nonDiacriticCounter] + TerrarumSansBitmap.W_VAR_INIT + alignmentOffset
@@ -459,7 +474,7 @@ class TerrarumTypewriterBitmap(
                             posXbuffer[nonDiacriticCounter] - (TerrarumSansBitmap.W_VAR_INIT - itsProp.width)
                         }
                         GlyphProps.ALIGN_CENTRE -> {
-                            val alignXPos = if (itsProp.alignXPos == 0) itsProp.width.div(2) else itsProp.alignXPos
+                            val alignXPos = if (itsProp.diacriticsAnchors[0].x == 0) itsProp.width.div(2) else itsProp.diacriticsAnchors[0].x
 
                             if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
                                 posXbuffer[nonDiacriticCounter] + alignXPos + (itsProp.width + 1).div(2)
@@ -516,10 +531,10 @@ class TerrarumTypewriterBitmap(
             posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
                     if (lastCharProp?.writeOnTop == true) {
                         val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
-                            (lastCharProp.width).div(2) + penultCharProp.alignXPos
+                            (lastCharProp.width).div(2) + penultCharProp.diacriticsAnchors[0].x
                         }
                         else if (lastCharProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
-                            (lastCharProp.width) + penultCharProp.alignXPos
+                            (lastCharProp.width) + penultCharProp.diacriticsAnchors[0].x
                         }
                         else 0
 

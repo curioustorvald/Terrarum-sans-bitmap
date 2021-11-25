@@ -30,6 +30,7 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.*
 import com.badlogic.gdx.utils.GdxRuntimeException
+import net.torvald.terrarumsansbitmap.DiacriticsAnchor
 import net.torvald.terrarumsansbitmap.GlyphProps
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
@@ -302,7 +303,7 @@ class TerrarumSansBitmap(
         // make sure null char is actually null (draws nothing and has zero width)
         sheets[SHEET_ASCII_VARW].regions[0].setColor(0)
         sheets[SHEET_ASCII_VARW].regions[0].fill()
-        glyphProps[0] = GlyphProps(0, 0)
+        glyphProps[0] = GlyphProps(0)
     }
 
     override fun getLineHeight(): Float = H.toFloat()
@@ -331,7 +332,7 @@ class TerrarumSansBitmap(
 
     private lateinit var tempLinotype: Texture
 
-    private var nullProp = GlyphProps(15, 0)
+    private var nullProp = GlyphProps(15)
 
     private val pixmapOffsetY = 10
 
@@ -341,6 +342,8 @@ class TerrarumSansBitmap(
     fun draw(batch: Batch, codepoints: CodepointSequence, x: Float, y: Float) = drawNormalised(batch, codepoints.normalise(), x, y)
 
     fun drawNormalised(batch: Batch, codepoints: CodepointSequence, x: Float, y: Float): GlyphLayout? {
+
+//        codepoints.forEach { dbgprn("${it.charInfo()} ${glyphProps[it]}") }
 
         // Q&D fix for issue #12
         // When the line ends with a diacritics, the whole letter won't render
@@ -696,6 +699,9 @@ class TerrarumSansBitmap(
         return intArrayOf(sheetX, sheetY)
     }
 
+    private fun Boolean.toInt() = if (this) 1 else 0
+    private fun Int.tagify() = if (this and 255 == 0) 0 else this
+
     private fun buildWidthTable(pixmap: Pixmap, codeRange: Iterable<Int>, cols: Int = 16) {
         val binaryCodeOffset = W_VAR_INIT
 
@@ -709,64 +715,63 @@ class TerrarumSansBitmap(
 
             val codeStartX = cellX + binaryCodeOffset
             val codeStartY = cellY
-            val tagStartY = codeStartY + 10
 
-            var width = 0
-            var tags = 0
-
-            for (y in 0..4) {
-                // if ALPHA is not zero, assume it's 1
-                if (pixmap.getPixel(codeStartX, codeStartY + y).and(0xFF) != 0) {
-                    width = width or (1 shl y)
-                }
-            }
-
-            for (y in 0..9) {
-                // if ALPHA is not zero, assume it's 1
-                if (pixmap.getPixel(codeStartX, tagStartY + y).and(0xFF) != 0) {
-                    tags = tags or (1 shl y)
-                }
-            }
-
-
-            // lowheight bit
-            val isLowHeight = (pixmap.getPixel(codeStartX, codeStartY + 5).and(0xFF) != 0)
+            val width = (0..4).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y).and(255) != 0).toInt() shl y) }
+            val isLowHeight = (pixmap.getPixel(codeStartX, codeStartY + 5).and(255) != 0)
 
             // Keming machine parameters
-            val kerningBit1 = pixmap.getPixel(codeStartX, codeStartY + 6)
-            val kerningBit2 = pixmap.getPixel(codeStartX, codeStartY + 7)
-            val kerningBit3 = pixmap.getPixel(codeStartX, codeStartY + 8)
-            val isKerningYtype = ((kerningBit1 and 0x80000000.toInt()) != 0)
-            val kerningMask = kerningBit1.ushr(8).and(0xFFFFFF)
-            val hasKerningBit = kerningBit1 and 255 != 0//(kerningBit1 and 255 != 0 && kerningMask != 0xFFFF)
+            val kerningBit1 = pixmap.getPixel(codeStartX, codeStartY + 6).tagify()
+            val kerningBit2 = pixmap.getPixel(codeStartX, codeStartY + 7).tagify()
+            val kerningBit3 = pixmap.getPixel(codeStartX, codeStartY + 8).tagify()
+            val kerningBit4 = pixmap.getPixel(codeStartX, codeStartY + 9).tagify()
+            var isKernYtype = ((kerningBit1 and 0x80000000.toInt()) != 0)
+            var kerningMask = kerningBit1.ushr(8).and(0xFFFFFF)
+            val hasKernData = kerningBit1 and 255 != 0//(kerningBit1 and 255 != 0 && kerningMask != 0xFFFF)
+            if (!hasKernData) {
+                isKernYtype = false
+                kerningMask = 255
+            }
 
+            val nudgingBits = pixmap.getPixel(codeStartX, codeStartY + 10).tagify()
+            val nudgeX = nudgingBits.ushr(24).toByte().toInt() // signed 8-bit int
+            val nudgeY = nudgingBits.ushr(16).toByte().toInt() // signed 8-bit int
 
-            //dbgprn("$code: Width $width, tags $tags")
-            if (hasKerningBit)
-                dbgprn("U+${code.toString(16).padStart(4, '0').toUpperCase()}: W $width, tags $tags, low? $isLowHeight, kern ${kerningMask.toString(16).padStart(6,'0')} (raw: ${kerningBit1.toLong().and(4294967295).toString(16).padStart(8,'0')})")
+            val diacriticsAnchors = (0..5).map {
+                val yPos = 11 + (it / 3) * 2
+                val shift = (3 - (it % 3)) * 8
+                val yPixel = pixmap.getPixel(codeStartX, codeStartY + yPos).tagify()
+                val xPixel = pixmap.getPixel(codeStartX, codeStartY + yPos + 1).tagify()
+                val y = (yPixel ushr shift) and 127
+                val x = (xPixel ushr shift) and 127
+                val yUsed = (yPixel ushr shift) >= 128
+                val xUsed = (yPixel ushr shift) >= 128
 
-            /*val isDiacritics = pixmap.getPixel(codeStartX, codeStartY + H - 1).and(0xFF) != 0
-            if (isDiacritics)
-                glyphWidth = -glyphWidth*/
+                DiacriticsAnchor(it, x, y, xUsed, yUsed)
+            }.toTypedArray()
 
-            glyphProps[code] = if (hasKerningBit) GlyphProps(width, tags, isLowHeight, isKerningYtype, kerningMask) else GlyphProps(width, tags)
+            val alignWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 15).and(255) != 0).toInt() shl y) }
+
+            val writeOnTop = pixmap.getPixel(codeStartX, codeStartY + 17).and(255) != 0
+
+            val stackWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 18).and(255) != 0).toInt() shl y) }
+
+            glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, GlyphProps.DEFAULT_EXTINFO, hasKernData, isKernYtype, kerningMask)
+
+//            if (nudgingBits != 0) dbgprn("${code.charInfo()} nudgeX=$nudgeX, nudgeY=$nudgeY, nudgingBits=0x${nudgingBits.toString(16)}")
 
             // extra info
             val extCount = glyphProps[code]?.requiredExtInfoCount() ?: 0
             if (extCount > 0) {
-
-                glyphProps[code]?.extInfo = IntArray(extCount)
-
                 for (x in 0 until extCount) {
                     var info = 0
                     for (y in 0..18) {
                         // if ALPHA is not zero, assume it's 1
-                        if (pixmap.getPixel(cellX + x, cellY + y).and(0xFF) != 0) {
+                        if (pixmap.getPixel(cellX + x, cellY + y).and(255) != 0) {
                             info = info or (1 shl y)
                         }
                     }
 
-                    glyphProps[code]!!.extInfo!![x] = info
+                    glyphProps[code]!!.extInfo[x] = info
                 }
             }
 
@@ -775,27 +780,27 @@ class TerrarumSansBitmap(
 
     private fun buildWidthTableFixed() {
         // fixed-width props
-        codeRange[SHEET_CJK_PUNCT].forEach { glyphProps[it] = GlyphProps(W_ASIAN_PUNCT, 0) }
-        codeRange[SHEET_CUSTOM_SYM].forEach { glyphProps[it] = GlyphProps(20, 0) }
-        codeRange[SHEET_FW_UNI].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
-        codeRange[SHEET_HANGUL].forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE, 0) }
-        codeRangeHangulCompat.forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE, 0) }
-        codeRange[SHEET_KANA].forEach { glyphProps[it] = GlyphProps(W_KANA, 0) }
-        codeRange[SHEET_RUNIC].forEach { glyphProps[it] = GlyphProps(9, 0) }
-        codeRange[SHEET_UNIHAN].forEach { glyphProps[it] = GlyphProps(W_UNIHAN, 0) }
-        (0xD800..0xDFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
-        (0x100000..0x10FFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
-        (0xFFFA0..0xFFFFF).forEach { glyphProps[it] = GlyphProps(0, 0) }
+        codeRange[SHEET_CJK_PUNCT].forEach { glyphProps[it] = GlyphProps(W_ASIAN_PUNCT) }
+        codeRange[SHEET_CUSTOM_SYM].forEach { glyphProps[it] = GlyphProps(20) }
+        codeRange[SHEET_FW_UNI].forEach { glyphProps[it] = GlyphProps(W_UNIHAN) }
+        codeRange[SHEET_HANGUL].forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE) }
+        codeRangeHangulCompat.forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE) }
+        codeRange[SHEET_KANA].forEach { glyphProps[it] = GlyphProps(W_KANA) }
+        codeRange[SHEET_RUNIC].forEach { glyphProps[it] = GlyphProps(9) }
+        codeRange[SHEET_UNIHAN].forEach { glyphProps[it] = GlyphProps(W_UNIHAN) }
+        (0xD800..0xDFFF).forEach { glyphProps[it] = GlyphProps(0) }
+        (0x100000..0x10FFFF).forEach { glyphProps[it] = GlyphProps(0) }
+        (0xFFFA0..0xFFFFF).forEach { glyphProps[it] = GlyphProps(0) }
 
 
         // manually add width of one orphan insular letter
         // WARNING: glyphs in 0xA770..0xA778 has invalid data, further care is required
-        glyphProps[0x1D79] = GlyphProps(9, 0)
+        glyphProps[0x1D79] = GlyphProps(9)
 
 
         // U+007F is DEL originally, but this font stores bitmap of Replacement Character (U+FFFD)
         // to this position. String replacer will replace U+FFFD into U+007F.
-        glyphProps[0x7F] = GlyphProps(15, 0)
+        glyphProps[0x7F] = GlyphProps(15)
 
     }
 
@@ -884,7 +889,7 @@ class TerrarumSansBitmap(
                     posXbuffer[charIndex] = posXbuffer[nonDiacriticCounter]
                 }
                 else if (!thisProp.writeOnTop) {
-                    posXbuffer[charIndex] = ((if (thisProp.nudgeRight) 1 else -1) * thisProp.alignXPos) +
+                    posXbuffer[charIndex] = -thisProp.nudgeX +
                             when (itsProp.alignWhere) {
                                 GlyphProps.ALIGN_RIGHT ->
                                 posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
@@ -898,9 +903,10 @@ class TerrarumSansBitmap(
 
                     stackUpwardCounter = 0
                     stackDownwardCounter = 0
-                    extraWidth = (if (thisProp.nudgeRight) -1 else 1) * thisProp.alignXPos // NOTE: sign is flipped!
+                    extraWidth = thisProp.nudgeX // NOTE: sign is flipped!
                 }
-                else if (thisProp.writeOnTop && thisProp.alignXPos == GlyphProps.DIA_JOINER) {
+                // FIXME HACK: using 0th diacritics' X-anchor pos as a type selector
+                else if (thisProp.writeOnTop && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
                     posXbuffer[charIndex] = when (itsProp.alignWhere) {
                         GlyphProps.ALIGN_RIGHT ->
                             posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset
@@ -919,7 +925,7 @@ class TerrarumSansBitmap(
                             posXbuffer[nonDiacriticCounter] - (W_VAR_INIT - itsProp.width)
                         }
                         GlyphProps.ALIGN_CENTRE -> {
-                            val alignXPos = if (itsProp.alignXPos == 0) itsProp.width.div(2) else itsProp.alignXPos
+                            val alignXPos = if (itsProp.diacriticsAnchors[0].x == 0) itsProp.width.div(2) else itsProp.diacriticsAnchors[0].x
 
                             if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
                                 posXbuffer[nonDiacriticCounter] + alignXPos + (itsProp.width + 1).div(2)
@@ -948,7 +954,7 @@ class TerrarumSansBitmap(
                                     //dbgprn("AAARRRRHHHH for character ${thisChar.toHex()}")
                                     //dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
                                     //dbgprn("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
-                                    if (thisProp.alignXPos == GlyphProps.DIA_OVERLAY)
+                                    if (thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_OVERLAY)
                                         posYbuffer[charIndex] -= H_OVERLAY_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
                                     else
                                         posYbuffer[charIndex] -= H_STACKUP_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
@@ -978,10 +984,10 @@ class TerrarumSansBitmap(
             posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
                     if (lastCharProp?.writeOnTop == true) {
                         val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
-                            (lastCharProp.width).div(2) + penultCharProp.alignXPos
+                            (lastCharProp.width).div(2) + penultCharProp.diacriticsAnchors[0].x
                         }
                         else if (lastCharProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
-                            (lastCharProp.width) + penultCharProp.alignXPos
+                            (lastCharProp.width) + penultCharProp.diacriticsAnchors[0].x
                         }
                         else 0
 

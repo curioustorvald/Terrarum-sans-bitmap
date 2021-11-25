@@ -50,17 +50,53 @@ Rightmost vertical column (should be 20 px tall) contains the tags. Tags are def
       K -,
       K  |= Tags used by the "Keming Machine"
       K  |
-      K -' ,-Nudging control bit (see below)
-      N --'
-      X -,  write-on-top and centre-aligned: Align to this X pos of prev char
-      X  |      (if this is zero, floorOf(width/2) will be used instead)
-      X  |  NOT write-on-top: nudge the texture by this pixels to the
-      X -'      left (if N is unset) or right (if N is set)
+      K -' ,- Nudging Bits (see below)
+      n --'
+      X -,
+      X  |= Diacritics Anchor Points (see below)
+      X  |
+      X -'  
       A -,_ 0 Align  1 Align  0 Align   1 Align before
       A -'  0 left   0 right  1 centre  1 the glyph
       D --write-on-top, usually it's diatritics but not always (e.g. devanagari vowel sign O)
       S -,_ 0 Stack  1 Stack  0 Before  1 Up &
 (MSB) S -'  0 up     0 down   1 &After  1 Down (e.g. U+0C48)
+
+TODO:
+c - Nudging
+Y - Anchor point Y for undefined, undefined, undefined
+X - Anchor point X for undefined, undefined, undefined
+Y - Anchor point Y for centre-aligned diacritics, undefined, undefined
+X - Anchor point X for centre-aligned diacritics, undefined, undefined
+
+* Nudging Bits encoding:
+
+    <MSB,Red> SXXXXXXX SYYYYYYY 00000000 <LSB,Blue>
+
+Each X and Y numbers are Signed 8-Bit Integer.
+X-positive: nudges towards left
+Y-positive: nudges towards up
+
+* Diacritics Anchor Point Encoding:
+
+    <MSB,Red> 1Y1Y1Y1Y 1Y2Y2Y2Y 1Y3Y3Y3Y <LSB,Blue>
+    <MSB,Red> 1X1X1X1X 1X2X2X2X 1X3X3X3X <LSB,Blue>
+
+where Red is first, Green is second, Blue is the third diacritics.
+MSB for each word must be set to indicate the value is being used.
+
+-= NOTE =-
+
+This encoding involves one HACK: using 0th diacritics' X-anchor pos as a type selector
+This hack applies only when write-on-top bit is set.
+Interpretation:
+    DIA_OVERLAY = 1
+    DIA_JOINER = 2
+    
+Right now, only the type-0 diacritics anchor point is used by the font.
+
+TODO: use D-bit to give each diacritic a type
+
 ```
 
 #### Stack Up/Down
