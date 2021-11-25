@@ -50,12 +50,12 @@ Rightmost vertical column (should be 20 px tall) contains the tags. Tags are def
       K -,
       K  |= Tags used by the "Keming Machine"
       K  |
-      K -' ,-Unused
-      · --'
-      X -,  Align to this X pos of prev char, only valid if write-on-top is 1
-      X  |= and is centre-aligned and non-zero
-      X  |  (if this is zero, floorOf(width/2) will be used instead)
-      X -'
+      K -' ,-Nudging control bit (see below)
+      N --'
+      X -,  write-on-top and centre-aligned: Align to this X pos of prev char
+      X  |      (if this is zero, floorOf(width/2) will be used instead)
+      X  |  NOT write-on-top: nudge the texture by this pixels to the
+      X -'      left (if N is unset) or right (if N is set)
       A -,_ 0 Align  1 Align  0 Align   1 Align before
       A -'  0 left   0 right  1 centre  1 the glyph
       D --write-on-top, usually it's diatritics but not always (e.g. devanagari vowel sign O)

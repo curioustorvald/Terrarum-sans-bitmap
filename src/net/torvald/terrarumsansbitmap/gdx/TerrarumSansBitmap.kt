@@ -884,20 +884,21 @@ class TerrarumSansBitmap(
                     posXbuffer[charIndex] = posXbuffer[nonDiacriticCounter]
                 }
                 else if (!thisProp.writeOnTop) {
-                    posXbuffer[charIndex] = when (itsProp.alignWhere) {
-                        GlyphProps.ALIGN_RIGHT ->
-                            posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
-                        GlyphProps.ALIGN_CENTRE ->
-                            posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
-                        else ->
-                            posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
-                    }
+                    posXbuffer[charIndex] = ((if (thisProp.nudgeRight) 1 else -1) * thisProp.alignXPos) +
+                            when (itsProp.alignWhere) {
+                                GlyphProps.ALIGN_RIGHT ->
+                                posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
+                            GlyphProps.ALIGN_CENTRE ->
+                                posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
+                            else ->
+                                posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
+                            }
 
                     nonDiacriticCounter = charIndex
 
                     stackUpwardCounter = 0
                     stackDownwardCounter = 0
-                    extraWidth = 0
+                    extraWidth = (if (thisProp.nudgeRight) -1 else 1) * thisProp.alignXPos // NOTE: sign is flipped!
                 }
                 else if (thisProp.writeOnTop && thisProp.alignXPos == GlyphProps.DIA_JOINER) {
                     posXbuffer[charIndex] = when (itsProp.alignWhere) {

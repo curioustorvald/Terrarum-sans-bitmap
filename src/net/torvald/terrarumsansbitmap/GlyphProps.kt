@@ -6,10 +6,11 @@ package net.torvald.terrarumsansbitmap
 data class GlyphProps(
         val width: Int,
         val writeOnTop: Boolean,
-        val alignWhere: Int,
-        val alignXPos: Int,
+        val alignWhere: Int, // ALIGN_LEFT..ALIGN_BEFORE
+        val alignXPos: Int, // 0..15 or DIA_OVERLAY/DIA_JOINER depends on the context
         val rtl: Boolean = false,
-        val stackWhere: Int = 0,
+        val stackWhere: Int = 0, // STACK_UP..STACK_UP_N_DOWN
+        var nudgeRight: Boolean = false,
         var extInfo: IntArray? = null,
 
         val hasKernData: Boolean = false,
@@ -35,12 +36,13 @@ data class GlyphProps(
     }
 
     constructor(width: Int, tags: Int) : this(
-            width,
-            tags.ushr(7).and(1) == 1,
-            tags.ushr(5).and(3),
-            tags.ushr(1).and(15),
-            tags.and(1) == 1,
-            tags.ushr(8).and(3)
+        width,
+        tags.ushr(7).and(1) == 1,
+        tags.ushr(5).and(3),
+        tags.ushr(1).and(15),
+        tags.and(1) == 1,
+        tags.ushr(8).and(3),
+        tags.and(1) == 1
     )
 
     constructor(width: Int, tags: Int, isLowheight: Boolean, isKernYtype: Boolean, kerningMask: Int) : this(
@@ -50,6 +52,7 @@ data class GlyphProps(
         tags.ushr(1).and(15),
         tags.and(1) == 1,
         tags.ushr(8).and(3),
+        tags.and(1) == 1,
         null,
 
         true,
