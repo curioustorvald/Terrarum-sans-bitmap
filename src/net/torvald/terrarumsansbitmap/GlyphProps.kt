@@ -19,7 +19,7 @@ data class GlyphProps(
 
         val alignWhere: Int = 0, // ALIGN_LEFT..ALIGN_BEFORE
 
-        val writeOnTop: Boolean = false,
+        val writeOnTop: Int = -1, // -1: false, 0: Type-0, 1: Type-1, etc;
 
         val stackWhere: Int = 0, // STACK_UP..STACK_UP_N_DOWN
 

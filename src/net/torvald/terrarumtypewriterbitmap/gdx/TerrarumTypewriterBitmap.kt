@@ -241,7 +241,9 @@ class TerrarumTypewriterBitmap(
 
             val alignWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 15).and(255) != 0).toInt() shl y) }
 
-            val writeOnTop = pixmap.getPixel(codeStartX, codeStartY + 17).and(255) != 0
+            var writeOnTop = pixmap.getPixel(codeStartX, codeStartY + 17).tagify()
+            if (writeOnTop == 0) writeOnTop = -1
+            else if (writeOnTop == 0xFFFFFF) writeOnTop = 0
 
             val stackWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 18).and(255) != 0).toInt() shl y) }
 
@@ -439,7 +441,7 @@ class TerrarumTypewriterBitmap(
                 }
 
 
-                if (!thisProp.writeOnTop) {
+                if (thisProp.writeOnTop < 0) {
                     posXbuffer[charIndex] = -thisProp.nudgeX +
                             when (itsProp.alignWhere) {
                                 GlyphProps.ALIGN_RIGHT ->
@@ -456,7 +458,7 @@ class TerrarumTypewriterBitmap(
                     stackDownwardCounter = 0
                     extraWidth = thisProp.nudgeX // NOTE: sign is flipped!
                 }
-                else if (thisProp.writeOnTop && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
+                /*else if (thisProp.writeOnTop >= 0 && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
                     posXbuffer[charIndex] = when (itsProp.alignWhere) {
                         GlyphProps.ALIGN_RIGHT ->
                             posXbuffer[nonDiacriticCounter] + TerrarumSansBitmap.W_VAR_INIT + alignmentOffset
@@ -466,7 +468,7 @@ class TerrarumTypewriterBitmap(
                             posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset
 
                     }
-                }
+                }*/
                 else {
                     // set X pos according to alignment information
                     posXbuffer[charIndex] = when (thisProp.alignWhere) {
@@ -530,7 +532,7 @@ class TerrarumTypewriterBitmap(
             val lastCharProp = glyphProps[str.last()]
             val penultCharProp = glyphProps[str[nonDiacriticCounter]]!!
             posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
-                    if (lastCharProp?.writeOnTop == true) {
+                    if (lastCharProp != null && lastCharProp.writeOnTop >= 0) {
                         val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
                             (lastCharProp.width).div(2) + penultCharProp.diacriticsAnchors[0].x
                         }

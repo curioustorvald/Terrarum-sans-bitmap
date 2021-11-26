@@ -751,13 +751,19 @@ class TerrarumSansBitmap(
 
             val alignWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 15).and(255) != 0).toInt() shl y) }
 
-            val writeOnTop = pixmap.getPixel(codeStartX, codeStartY + 17).and(255) != 0
+            var writeOnTop = pixmap.getPixel(codeStartX, codeStartY + 17) // NO .tagify()
+            if (writeOnTop and 255 == 0) writeOnTop = -1
+            else {
+                writeOnTop = writeOnTop.ushr(8)
+                if (writeOnTop == 0xFFFFFF) writeOnTop = 0
+            }
 
             val stackWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 18).and(255) != 0).toInt() shl y) }
 
             glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, GlyphProps.DEFAULT_EXTINFO, hasKernData, isKernYtype, kerningMask)
 
 //            if (nudgingBits != 0) dbgprn("${code.charInfo()} nudgeX=$nudgeX, nudgeY=$nudgeY, nudgingBits=0x${nudgingBits.toString(16)}")
+//            if (writeOnTop >= 0) dbgprn("WriteOnTop: ${code.charInfo()} (Type-${writeOnTop})")
 
             // extra info
             val extCount = glyphProps[code]?.requiredExtInfoCount() ?: 0
@@ -888,7 +894,7 @@ class TerrarumSansBitmap(
                 if (isHangul(thisChar) && !isHangulChoseong(thisChar) && !isHangulCompat(thisChar)) {
                     posXbuffer[charIndex] = posXbuffer[nonDiacriticCounter]
                 }
-                else if (!thisProp.writeOnTop) {
+                else if (thisProp.writeOnTop < 0) {
                     posXbuffer[charIndex] = -thisProp.nudgeX +
                             when (itsProp.alignWhere) {
                                 GlyphProps.ALIGN_RIGHT ->
@@ -982,7 +988,7 @@ class TerrarumSansBitmap(
                     (if (errorOnUnknownChar) throw throw InternalError("No GlyphProps for char '${str[nonDiacriticCounter]}' " +
                             "(${str[nonDiacriticCounter].charInfo()})") else nullProp)
             posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
-                    if (lastCharProp?.writeOnTop == true) {
+                    if (lastCharProp != null && lastCharProp.writeOnTop >= 0) {
                         val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
                             (lastCharProp.width).div(2) + penultCharProp.diacriticsAnchors[0].x
                         }
@@ -1088,7 +1094,7 @@ class TerrarumSansBitmap(
 
             }
             // for lowercase i and j, if cNext is a diacritic that goes on top, remove the dots
-            else if (diacriticDotRemoval.containsKey(c) && glyphProps[cNext]?.writeOnTop == true && glyphProps[cNext]?.stackWhere == GlyphProps.STACK_UP) {
+            else if (diacriticDotRemoval.containsKey(c) && (glyphProps[cNext]?.writeOnTop ?: -1) >= 0 && glyphProps[cNext]?.stackWhere == GlyphProps.STACK_UP) {
                 seq.add(diacriticDotRemoval[c]!!)
             }
             // rearrange {letter, before-and-after diacritics} as {letter, before-diacritics, after-diacritics}

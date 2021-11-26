@@ -58,7 +58,7 @@ Rightmost vertical column (should be 20 px tall) contains the tags. Tags are def
       X -'  
       A -,_ 0 Align  1 Align  0 Align   1 Align before
       A -'  0 left   0 right  1 centre  1 the glyph
-      D --write-on-top, usually it's diatritics but not always (e.g. devanagari vowel sign O)
+      D --Diacritics Type Bit (see below; not all diacritics are marked as one on the spritesheet)
       S -,_ 0 Stack  1 Stack  0 Before  1 Up &
 (MSB) S -'  0 up     0 down   1 &After  1 Down (e.g. U+0C48)
 
@@ -66,10 +66,10 @@ TODO:
 c - Nudging
 Y - Anchor point Y for undefined, undefined, undefined
 X - Anchor point X for undefined, undefined, undefined
-Y - Anchor point Y for centre-aligned diacritics, undefined, undefined
-X - Anchor point X for centre-aligned diacritics, undefined, undefined
+Y - Anchor point Y for (unused), undefined, undefined
+X - Anchor point X for Type-0 (centre-aligned) diacritics, undefined, undefined
 
-* Nudging Bits encoding:
+* Nudging Bits Encoding:
 
     <MSB,Red> SXXXXXXX SYYYYYYY 00000000 <LSB,Blue>
 
@@ -83,7 +83,15 @@ Y-positive: nudges towards up
     <MSB,Red> 1X1X1X1X 1X2X2X2X 1X3X3X3X <LSB,Blue>
 
 where Red is first, Green is second, Blue is the third diacritics.
-MSB for each word must be set to indicate the value is being used.
+MSB for each word must be set so that the pixel would appear brighter on the image editor.
+(the font program will only read low 7 bits for each RGB channel)
+
+* Diacritics Type Bit Encoding:
+
+    <MSB,Red> FFFFFFFF FFFFFFFF FFFFFFFF <LSB,Blue> (For Type-0)
+    <MSB,Red> TTTT0000 00000000 00000000 <LSB,Blue> (For Type-1 to Type-15)
+
+Right now, only the type-0 diacritics and its anchor point is used by the font.
 
 -= NOTE =-
 
@@ -94,9 +102,6 @@ Interpretation:
     DIA_OVERLAY = 1
     DIA_JOINER = 2
     
-Right now, only the type-0 diacritics anchor point is used by the font.
-
-TODO: use D-bit to give each diacritic a type
 
 ```
 
