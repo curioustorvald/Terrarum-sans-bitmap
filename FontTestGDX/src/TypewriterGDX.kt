@@ -78,56 +78,65 @@ class TypewriterGDX(val width: Int, val height: Int, val cols: Int) : Game() {
         }
     }
 
+    private val intro = listOf(
+        39,50,29, // kva (HANG_GONG)
+        42,31, // nc (HANG_SE)
+        74,48,51, // ;tw (HANG_BEOL)
+        62, // space
+        0x561F71, // shiftin
+        184,164,171,170, // >HON (ASC_3-90)
+        0x561F70, // shiftout
+        62, // space
+        74,48, // ;t (HANG_BEO)
+        43,12, // o5 (HANG_CYU)
+        38,48,51, // jtw (HANG_EOL)
+        0x561F71, // shiftin
+        164, // H (ASC_-)
+        0x561F70, // shiftout
+        75,34, // 'f (HANG_TA)
+        40,34, // lf (HANG_JA)
+        39,32,  // kd (HANG_GI)
+        Input.Keys.ENTER,Input.Keys.ENTER
+    )
+
     private val textbuf: ArrayList<CodepointSequence> = arrayListOf(
-        CodepointSequence(listOf(
-            39,50,29, // kva (HANG_GONG)
-            42,31, // nc (HANG_SE)
-            74,48,51, // ;tw (HANG_BEOL)
-            62, // space
-            184,164,171,170, // >HON (ASC_3-90)
-            62, // space
-            74,48, // ;t (HANG_BEO)
-            43,12, // o5 (HANG_CYU)
-            38,48,51, // jtw (HANG_EOL)
-            164, // H (ASC_-)
-            75,34, // 'f (HANG_TA)
-            40,34, // lf (HANG_JA)
-            39,32  // kd (HANG_GI)
-        ).map { it + 0xF3000 }),
-        CodepointSequence(/* new line */)
+        CodepointSequence()
     )
 
     var keylayoutbase = 0xF3000
     private val printableKeys = ((Input.Keys.NUM_0..Input.Keys.NUM_9) + (Input.Keys.A..Input.Keys.PERIOD) + 62 + (Input.Keys.BACKSPACE..Input.Keys.SLASH)).toHashSet()
 
-    fun acceptKey(keycode: Int) {
-        println("[TypewriterGDX] Accepting key: $keycode")
+    var initDone = false
+    var initTimer = 0f
+    var initTypingCursor = 0
+    var keystrokeDelay = 0.12f
 
-        if (keycode == Input.Keys.ENTER) {
-            val tbufsize = textbuf.last().size.div(cols.toFloat()).times(6f).coerceIn(0f,6f).roundToInt() // 0..6
-            textbuf.add(CodepointSequence())
-            if (tbufsize == 0) sndLF.play()
-            else sndCRs[tbufsize - 1].play()
-        }
-        else if (printableKeys.contains(keycode and 127)) {
-            val cp = keycode + keylayoutbase
-            textbuf.last().add(cp)
+    fun acceptKey(keycode: Int, force: Boolean = false) {
+        if (initDone || force) {
+//        println("[TypewriterGDX] Accepting key: $keycode")
+
+            if (keycode == Input.Keys.ENTER) {
+                val tbufsize = textbuf.last().size.div(cols.toFloat()).times(6f).coerceIn(0f, 6f).roundToInt() // 0..6
+                textbuf.add(CodepointSequence())
+                if (tbufsize == 0) sndLF.play()
+                else sndCRs[tbufsize - 1].play()
+            } else if (printableKeys.contains(keycode and 127)) {
+                val cp = keycode + keylayoutbase
+                textbuf.last().add(cp)
 //            println("[TypewriterGDX] width: ${font.glyphProps[cp]}")
 
-            // play audio
-            val isDeadkey = font.glyphProps[cp]?.width == 0
-            if (isDeadkey) {
-                sndDeadkey.play()
+                // play audio
+                val isDeadkey = font.glyphProps[cp]?.width == 0
+                if (isDeadkey) {
+                    sndDeadkey.play()
+                } else if (keycode == Input.Keys.SPACE || keycode == Input.Keys.BACKSPACE) {
+                    sndSpace.play()
+                } else {
+                    sndMovingkey.play()
+                }
+            } else if (keycode == 128 + Input.Keys.SHIFT_LEFT || keycode == 128 + Input.Keys.SHIFT_RIGHT) {
+                sndShiftin.play()
             }
-            else if (keycode == Input.Keys.SPACE || keycode == Input.Keys.BACKSPACE) {
-                sndSpace.play()
-            }
-            else {
-                sndMovingkey.play()
-            }
-        }
-        else if (keycode == 128+Input.Keys.SHIFT_LEFT || keycode == 128+Input.Keys.SHIFT_RIGHT) {
-            sndShiftin.play()
         }
     }
 
@@ -160,6 +169,39 @@ class TypewriterGDX(val width: Int, val height: Int, val cols: Int) : Game() {
         catch (e: ConcurrentModificationException) {}
 
         batch.end()
+
+        if (!initDone) {
+            while (initTimer > keystrokeDelay) {
+                val keyToType = intro[initTypingCursor]
+
+                if (keyToType < 256) {
+                    acceptKey(keyToType, true)
+                }
+                else if (keyToType == 0x561F71) {
+                    acceptKey(Input.Keys.SHIFT_LEFT + 128, true)
+                }
+                else if (keyToType == 0x561F70) {
+                    shiftOut()
+                }
+                initTypingCursor += 1
+                initTimer -= keystrokeDelay
+
+                if (keyToType == Input.Keys.ENTER)
+                    initTimer -= 0.4f
+                else if (keyToType == 0x561F71)
+                    initTimer -= 0.2f
+                else if (keyToType == 0x561F70)
+                    initTimer -= 0.15f
+                else
+                    initTimer -= Math.random().toFloat() * 0.08f
+            }
+
+            initTimer += Gdx.graphics.deltaTime
+
+            if (initTypingCursor >= intro.size) {
+                initDone = true
+            }
+        }
     }
 
     override fun dispose() {
