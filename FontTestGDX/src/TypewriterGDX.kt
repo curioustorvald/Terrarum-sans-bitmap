@@ -2,23 +2,25 @@ import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
+import com.badlogic.gdx.audio.AudioDevice
+import com.badlogic.gdx.audio.Sound
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
-import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import com.badlogic.gdx.graphics.glutils.FrameBuffer
+import com.badlogic.gdx.utils.GdxRuntimeException
 import net.torvald.terrarum.gamecontroller.InputStrober
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumtypewriterbitmap.gdx.TerrarumTypewriterBitmap
 import java.io.StringReader
+import kotlin.math.roundToInt
 
 /**
  * Created by minjaesong on 2021-11-05.
  */
-class TypewriterGDX(val width: Int, val height: Int) : Game() {
+class TypewriterGDX(val width: Int, val height: Int, val cols: Int) : Game() {
 
     lateinit var font: TerrarumTypewriterBitmap
     lateinit var batch: SpriteBatch
@@ -27,12 +29,22 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
 
     lateinit var inputStrober: InputStrober
 
+    lateinit var sndMovingkey: Sound
+    lateinit var sndDeadkey: Sound
+    lateinit var sndShiftin: Sound
+    lateinit var sndShiftout: Sound
+    lateinit var sndSpace: Sound
+    lateinit var sndCRs: Array<Sound>
+    lateinit var sndLF: Sound
+
     override fun create() {
         font = TerrarumTypewriterBitmap(
             "./assets/typewriter",
-            StringReader("""ko_kr_3set-390_typewriter,typewriter_ko_3set-390.tga,16
+            StringReader(
+                """ko_kr_3set-390_typewriter,typewriter_ko_3set-390.tga,16
                 |en_intl_qwerty_typewriter,typewriter_intl_qwerty.tga,0
-            """.trimMargin()),
+            """.trimMargin()
+            ),
             true, false, 256, true
         )
 
@@ -47,6 +59,23 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
 
 
         inputStrober = InputStrober(this)
+
+        try {
+            sndMovingkey = Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/movingkey.wav"))
+            sndDeadkey = Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/deadkey.wav"))
+            sndShiftin = Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/shiftin.wav"))
+            sndShiftout = Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/shiftout.wav"))
+            sndSpace = Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/space.wav"))
+
+            sndCRs = Array(6) {
+                Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/cr$it.wav"))
+            }
+
+            sndLF = Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/crlf.wav"))
+        }
+        catch (e: GdxRuntimeException) {
+            e.printStackTrace()
+        }
     }
 
     private val textbuf: ArrayList<CodepointSequence> = arrayListOf(
@@ -68,19 +97,45 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
         CodepointSequence(/* new line */)
     )
 
+    var keylayoutbase = 0xF3000
     private val printableKeys = ((Input.Keys.NUM_0..Input.Keys.NUM_9) + (Input.Keys.A..Input.Keys.PERIOD) + 62 + (Input.Keys.BACKSPACE..Input.Keys.SLASH)).toHashSet()
 
     fun acceptKey(keycode: Int) {
         println("[TypewriterGDX] Accepting key: $keycode")
 
         if (keycode == Input.Keys.ENTER) {
+            val tbufsize = textbuf.last().size.div(cols.toFloat()).times(6f).coerceIn(0f,6f).roundToInt() // 0..6
             textbuf.add(CodepointSequence())
+            if (tbufsize == 0) sndLF.play()
+            else sndCRs[tbufsize - 1].play()
         }
         else if (printableKeys.contains(keycode and 127)) {
-            val cp = keycode + 0xF3000
+            val cp = keycode + keylayoutbase
             textbuf.last().add(cp)
 //            println("[TypewriterGDX] width: ${font.glyphProps[cp]}")
+
+            // play audio
+            val isDeadkey = font.glyphProps[cp]?.width == 0
+            if (isDeadkey) {
+                sndDeadkey.play()
+            }
+            else if (keycode == Input.Keys.SPACE || keycode == Input.Keys.BACKSPACE) {
+                sndSpace.play()
+            }
+            else {
+                sndMovingkey.play()
+            }
         }
+        else if (keycode == 128+Input.Keys.SHIFT_LEFT || keycode == 128+Input.Keys.SHIFT_RIGHT) {
+            sndShiftin.play()
+        }
+    }
+
+    /**
+     * For Shift-out only
+     */
+    fun shiftOut() {
+        sndShiftout.play()
     }
 
 
@@ -111,6 +166,13 @@ class TypewriterGDX(val width: Int, val height: Int) : Game() {
         font.dispose()
         batch.dispose()
         inputStrober.dispose()
+        sndMovingkey.dispose()
+        sndDeadkey.dispose()
+        sndShiftin.dispose()
+        sndShiftout.dispose()
+        sndSpace.dispose()
+        sndCRs.forEach { it.dispose() }
+        sndLF.dispose()
     }
 }
 
@@ -137,5 +199,5 @@ fun main(args: Array<String>) {
     appConfig.setWindowedMode(600, 800)
     appConfig.setTitle("Terrarum Typewriter Bitmap Test")
 
-    Lwjgl3Application(TypewriterGDX(600, 800), appConfig)
+    Lwjgl3Application(TypewriterGDX(600, 800, 64), appConfig)
 }

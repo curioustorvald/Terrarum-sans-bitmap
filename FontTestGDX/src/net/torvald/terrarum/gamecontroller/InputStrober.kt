@@ -49,7 +49,7 @@ class InputStrober(val typewriter: TypewriterGDX) {
 
 //        println("Key strobed: ${keys.joinToString()}")
 
-        if (stroboStatus % 2 == 0 && keys[0] != 0) {
+        if (stroboStatus % 2 == 0 && (keys[0] != 0 || oldKeys[0] != 0)) {
             stroboStatus += 1
             stroboTime = System.nanoTime()
             repeatCount += 1
@@ -72,6 +72,13 @@ class InputStrober(val typewriter: TypewriterGDX) {
 //                    println("KEY_DOWC '$newKeysym' ($headKeyCode) $repeatCount; ${keys.joinToString()}")
 //                App.inputStrobed(TerrarumKeyboardEvent(KEY_DOWN, newKeysym, headKeyCode, repeatCount, keys))
                     typewriter.acceptKey(headKeyCode)
+                }
+
+
+//                println("shiftin=${shiftin} oldkeys=${oldKeys.joinToString()}")
+
+                if (!shiftin && (oldKeys.contains(Input.Keys.SHIFT_LEFT) || oldKeys.contains(Input.Keys.SHIFT_RIGHT))) {
+                    typewriter.shiftOut()
                 }
             }
 
