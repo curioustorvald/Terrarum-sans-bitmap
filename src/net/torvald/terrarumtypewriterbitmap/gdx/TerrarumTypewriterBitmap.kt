@@ -1,6 +1,7 @@
 package net.torvald.terrarumtypewriterbitmap.gdx
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
@@ -206,8 +207,12 @@ class TerrarumTypewriterBitmap(
             val codeStartX = cellX + binaryCodeOffset
             val codeStartY = cellY
 
-            val width = (0..4).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y).and(255) != 0).toInt() shl y) }
+            var width = (0..4).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y).and(255) != 0).toInt() shl y) }
             val isLowHeight = (pixmap.getPixel(codeStartX, codeStartY + 5).and(255) != 0)
+
+            if (code in 0xF2000..0xF3FFF && code and 127 == Input.Keys.BACKSPACE) {
+                width *= -1
+            }
 
             // Keming machine parameters
             val kerningBit1 = pixmap.getPixel(codeStartX, codeStartY + 6).tagify()

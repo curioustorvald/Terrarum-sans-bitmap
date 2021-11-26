@@ -109,7 +109,7 @@ class TypewriterGDX(val width: Int, val height: Int, val cols: Int) : Game() {
     var initDone = false
     var initTimer = 0f
     var initTypingCursor = 0
-    var keystrokeDelay = 0.12f
+    var keystrokeDelay = 0.08f
 
     fun acceptKey(keycode: Int, force: Boolean = false) {
         if (initDone || force) {
@@ -187,13 +187,13 @@ class TypewriterGDX(val width: Int, val height: Int, val cols: Int) : Game() {
                 initTimer -= keystrokeDelay
 
                 if (keyToType == Input.Keys.ENTER)
-                    initTimer -= 0.4f
+                    initTimer -= 0.35f
                 else if (keyToType == 0x561F71)
-                    initTimer -= 0.2f
-                else if (keyToType == 0x561F70)
                     initTimer -= 0.15f
+                else if (keyToType == 0x561F70)
+                    initTimer -= 0.1f
                 else
-                    initTimer -= Math.random().toFloat() * 0.08f
+                    initTimer -= Math.random().toFloat() * 0.04f
             }
 
             initTimer += Gdx.graphics.deltaTime
