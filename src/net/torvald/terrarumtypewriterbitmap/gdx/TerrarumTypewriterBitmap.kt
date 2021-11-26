@@ -278,8 +278,8 @@ class TerrarumTypewriterBitmap(
     private val pixmapOffsetY = 10
     private val linotypePad = 16
     private var flagFirstRun = true
-    private var textBuffer = CodepointSequence(256)
-    private lateinit var tempLinotype: Texture
+    private @Volatile var textBuffer = CodepointSequence(256)
+    private @Volatile lateinit var tempLinotype: Texture
     private var nullProp = GlyphProps(15)
 
 
@@ -333,38 +333,42 @@ class TerrarumTypewriterBitmap(
 
                 var index = 0
                 while (index <= textBuffer.lastIndex) {
-                    val c = textBuffer[index]
-                    val sheetID = getSheetType(c)
-                    val (sheetX, sheetY) =
-                        if (index == 0) getSheetwisePosition(0, c)
-                        else getSheetwisePosition(textBuffer[index - 1], c)
-                    val hash = getHash(c) // to be used to simulate printing irregularity
+                    try {
+                        val c = textBuffer[index]
+                        val sheetID = getSheetType(c)
+                        val (sheetX, sheetY) =
+                                if (index == 0) getSheetwisePosition(0, c)
+                                else getSheetwisePosition(textBuffer[index - 1], c)
+                        val hash = getHash(c) // to be used to simulate printing irregularity
 
-                    if (TerrarumSansBitmap.isColourCode(c)) {
-                        if (c == 0x100000) {
-                            renderCol = -1
-                        }
-                        else {
-                            renderCol = getColour(c)
-                        }
-                    }
-                    else {
-                        try {
-                            val posY = posYbuffer[index].flipY()
-                            val posX = posXbuffer[index]
-                            val texture = sheets[sheetID]?.get(sheetX, sheetY)
-
-                            texture?.let {
-                                linotypePixmap.drawPixmap(it, posX + linotypePad, posY + pixmapOffsetY, renderCol)
+                        if (TerrarumSansBitmap.isColourCode(c)) {
+                            if (c == 0x100000) {
+                                renderCol = -1
+                            } else {
+                                renderCol = getColour(c)
                             }
+                        } else {
+                            try {
+                                val posY = posYbuffer[index].flipY()
+                                val posX = posXbuffer[index]
+                                val texture = sheets[sheetID]?.get(sheetX, sheetY)
 
+                                texture?.let {
+                                    linotypePixmap.drawPixmap(it, posX + linotypePad, posY + pixmapOffsetY, renderCol)
+                                }
+
+                            } catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
+                            }
                         }
-                        catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
-                        }
+
+
+                        index++
                     }
-
-
-                    index++
+                    catch (e: NullPointerException) {
+                        System.err.println("Shit hit the multithreaded fan")
+                        e.printStackTrace()
+                        break
+                    }
                 }
 
                 tempLinotype = Texture(linotypePixmap)
@@ -417,144 +421,147 @@ class TerrarumTypewriterBitmap(
         // persisting value. the value is set a few characters before the actual usage
         var extraWidth = 0
 
-        for (charIndex in 0 until posXbuffer.size - 1) {
-            if (charIndex > 0) {
-                // nonDiacriticCounter allows multiple diacritics
+        try {
+            for (charIndex in 0 until posXbuffer.size - 1) {
+                if (charIndex > 0) {
+                    // nonDiacriticCounter allows multiple diacritics
 
-                val thisChar = str[charIndex]
-                if (glyphProps[thisChar] == null && errorOnUnknownChar) {
-                    val errorGlyphSB = StringBuilder()
-                    Character.toChars(thisChar).forEach { errorGlyphSB.append(it) }
+                    val thisChar = str[charIndex]
+                    if (glyphProps[thisChar] == null && errorOnUnknownChar) {
+                        val errorGlyphSB = StringBuilder()
+                        Character.toChars(thisChar).forEach { errorGlyphSB.append(it) }
 
-                    throw InternalError("No GlyphProps for char '$errorGlyphSB' " +
-                            "(${thisChar.charInfo()})")
-                }
-                val thisProp = glyphProps[thisChar] ?: nullProp
-                val lastNonDiacriticChar = str[nonDiacriticCounter]
-                val itsProp = glyphProps[lastNonDiacriticChar] ?: nullProp
-                val kerning = 0
-
-
-                //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
-
-
-                var alignmentOffset = when (thisProp.alignWhere) {
-                    GlyphProps.ALIGN_LEFT -> 0
-                    GlyphProps.ALIGN_RIGHT -> thisProp.width - TerrarumSansBitmap.W_VAR_INIT
-                    GlyphProps.ALIGN_CENTRE -> Math.ceil((thisProp.width - TerrarumSansBitmap.W_VAR_INIT) / 2.0).toInt()
-                    else -> 0 // implies "diacriticsBeforeGlyph = true"
-                }
-
-
-                if (thisProp.writeOnTop < 0) {
-                    posXbuffer[charIndex] = -thisProp.nudgeX +
-                            when (itsProp.alignWhere) {
-                                GlyphProps.ALIGN_RIGHT ->
-                                    posXbuffer[nonDiacriticCounter] + TerrarumSansBitmap.W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
-                                GlyphProps.ALIGN_CENTRE ->
-                                    posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
-                                else ->
-                                    posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
-                            }
-
-                    nonDiacriticCounter = charIndex
-
-                    stackUpwardCounter = 0
-                    stackDownwardCounter = 0
-                    extraWidth = thisProp.nudgeX // NOTE: sign is flipped!
-                }
-                /*else if (thisProp.writeOnTop >= 0 && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
-                    posXbuffer[charIndex] = when (itsProp.alignWhere) {
-                        GlyphProps.ALIGN_RIGHT ->
-                            posXbuffer[nonDiacriticCounter] + TerrarumSansBitmap.W_VAR_INIT + alignmentOffset
-                        //GlyphProps.ALIGN_CENTRE ->
-                        //    posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset
-                        else ->
-                            posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset
-
+                        throw InternalError("No GlyphProps for char '$errorGlyphSB' " +
+                                "(${thisChar.charInfo()})")
                     }
-                }*/
-                else {
-                    // set X pos according to alignment information
-                    posXbuffer[charIndex] = when (thisProp.alignWhere) {
-                        GlyphProps.ALIGN_LEFT, GlyphProps.ALIGN_BEFORE -> posXbuffer[nonDiacriticCounter]
-                        GlyphProps.ALIGN_RIGHT -> {
-                            posXbuffer[nonDiacriticCounter] - (TerrarumSansBitmap.W_VAR_INIT - itsProp.width)
-                        }
-                        GlyphProps.ALIGN_CENTRE -> {
-                            val alignXPos = if (itsProp.diacriticsAnchors[0].x == 0) itsProp.width.div(2) else itsProp.diacriticsAnchors[0].x
+                    val thisProp = glyphProps[thisChar] ?: nullProp
+                    val lastNonDiacriticChar = str[nonDiacriticCounter]
+                    val itsProp = glyphProps[lastNonDiacriticChar] ?: nullProp
+                    val kerning = 0
 
-                            if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
-                                posXbuffer[nonDiacriticCounter] + alignXPos + (itsProp.width + 1).div(2)
-                            }
-                            else {
-                                posXbuffer[nonDiacriticCounter] + alignXPos - HALF_VAR_INIT
-                            }
-                        }
-                        else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
+
+                    //println("char: ${thisChar.charInfo()}\nproperties: $thisProp")
+
+
+                    var alignmentOffset = when (thisProp.alignWhere) {
+                        GlyphProps.ALIGN_LEFT -> 0
+                        GlyphProps.ALIGN_RIGHT -> thisProp.width - TerrarumSansBitmap.W_VAR_INIT
+                        GlyphProps.ALIGN_CENTRE -> Math.ceil((thisProp.width - TerrarumSansBitmap.W_VAR_INIT) / 2.0).toInt()
+                        else -> 0 // implies "diacriticsBeforeGlyph = true"
                     }
 
 
-                    // set Y pos according to diacritics position
-                    if (thisProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
-                        when (thisProp.stackWhere) {
-                            GlyphProps.STACK_DOWN -> {
-                                posYbuffer[charIndex] = TerrarumSansBitmap.H_DIACRITICS * stackDownwardCounter
-                                stackDownwardCounter++
-                            }
-                            GlyphProps.STACK_UP -> {
-                                posYbuffer[charIndex] = -TerrarumSansBitmap.H_DIACRITICS * stackUpwardCounter
+                    if (thisProp.writeOnTop < 0) {
+                        posXbuffer[charIndex] = -thisProp.nudgeX +
+                                when (itsProp.alignWhere) {
+                                    GlyphProps.ALIGN_RIGHT ->
+                                        posXbuffer[nonDiacriticCounter] + TerrarumSansBitmap.W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
+                                    GlyphProps.ALIGN_CENTRE ->
+                                        posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
+                                    else ->
+                                        posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
+                                }
 
-                                // shift down on lowercase if applicable
-                                /*if (getSheetType(thisChar) in TerrarumSansBitmap.autoShiftDownOnLowercase &&
-                                    lastNonDiacriticChar.isLowHeight()) {
-                                    //println("AAARRRRHHHH for character ${thisChar.toHex()}")
-                                    //println("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
-                                    //println("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
-                                    if (thisProp.alignXPos == GlyphProps.DIA_OVERLAY)
-                                        posYbuffer[charIndex] -= TerrarumSansBitmap.H_OVERLAY_LOWERCASE_SHIFTDOWN // if minus-assign doesn't work, try plus-assign
-                                    else
-                                        posYbuffer[charIndex] -= TerrarumSansBitmap.H_STACKUP_LOWERCASE_SHIFTDOWN // if minus-assign doesn't work, try plus-assign
-                                }*/
+                        nonDiacriticCounter = charIndex
 
-                                stackUpwardCounter++
+                        stackUpwardCounter = 0
+                        stackDownwardCounter = 0
+                        extraWidth = thisProp.nudgeX // NOTE: sign is flipped!
+                    }
+                    /*else if (thisProp.writeOnTop >= 0 && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
+                        posXbuffer[charIndex] = when (itsProp.alignWhere) {
+                            GlyphProps.ALIGN_RIGHT ->
+                                posXbuffer[nonDiacriticCounter] + TerrarumSansBitmap.W_VAR_INIT + alignmentOffset
+                            //GlyphProps.ALIGN_CENTRE ->
+                            //    posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset
+                            else ->
+                                posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset
+
+                        }
+                    }*/
+                    else {
+                        // set X pos according to alignment information
+                        posXbuffer[charIndex] = when (thisProp.alignWhere) {
+                            GlyphProps.ALIGN_LEFT, GlyphProps.ALIGN_BEFORE -> posXbuffer[nonDiacriticCounter]
+                            GlyphProps.ALIGN_RIGHT -> {
+                                posXbuffer[nonDiacriticCounter] - (TerrarumSansBitmap.W_VAR_INIT - itsProp.width)
                             }
-                            GlyphProps.STACK_UP_N_DOWN -> {
-                                posYbuffer[charIndex] = TerrarumSansBitmap.H_DIACRITICS * stackDownwardCounter
-                                stackDownwardCounter++
-                                posYbuffer[charIndex] = -TerrarumSansBitmap.H_DIACRITICS * stackUpwardCounter
-                                stackUpwardCounter++
+                            GlyphProps.ALIGN_CENTRE -> {
+                                val alignXPos = if (itsProp.diacriticsAnchors[0].x == 0) itsProp.width.div(2) else itsProp.diacriticsAnchors[0].x
+
+                                if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
+                                    posXbuffer[nonDiacriticCounter] + alignXPos + (itsProp.width + 1).div(2)
+                                }
+                                else {
+                                    posXbuffer[nonDiacriticCounter] + alignXPos - HALF_VAR_INIT
+                                }
                             }
-                            // for BEFORE_N_AFTER, do nothing in here
+                            else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
+                        }
+
+
+                        // set Y pos according to diacritics position
+                        if (thisProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
+                            when (thisProp.stackWhere) {
+                                GlyphProps.STACK_DOWN -> {
+                                    posYbuffer[charIndex] = TerrarumSansBitmap.H_DIACRITICS * stackDownwardCounter
+                                    stackDownwardCounter++
+                                }
+                                GlyphProps.STACK_UP -> {
+                                    posYbuffer[charIndex] = -TerrarumSansBitmap.H_DIACRITICS * stackUpwardCounter
+
+                                    // shift down on lowercase if applicable
+                                    /*if (getSheetType(thisChar) in TerrarumSansBitmap.autoShiftDownOnLowercase &&
+                                        lastNonDiacriticChar.isLowHeight()) {
+                                        //println("AAARRRRHHHH for character ${thisChar.toHex()}")
+                                        //println("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
+                                        //println("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
+                                        if (thisProp.alignXPos == GlyphProps.DIA_OVERLAY)
+                                            posYbuffer[charIndex] -= TerrarumSansBitmap.H_OVERLAY_LOWERCASE_SHIFTDOWN // if minus-assign doesn't work, try plus-assign
+                                        else
+                                            posYbuffer[charIndex] -= TerrarumSansBitmap.H_STACKUP_LOWERCASE_SHIFTDOWN // if minus-assign doesn't work, try plus-assign
+                                    }*/
+
+                                    stackUpwardCounter++
+                                }
+                                GlyphProps.STACK_UP_N_DOWN -> {
+                                    posYbuffer[charIndex] = TerrarumSansBitmap.H_DIACRITICS * stackDownwardCounter
+                                    stackDownwardCounter++
+                                    posYbuffer[charIndex] = -TerrarumSansBitmap.H_DIACRITICS * stackUpwardCounter
+                                    stackUpwardCounter++
+                                }
+                                // for BEFORE_N_AFTER, do nothing in here
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // fill the last of the posXbuffer
-        if (str.isNotEmpty()) {
-            val lastCharProp = glyphProps[str.last()]
-            val penultCharProp = glyphProps[str[nonDiacriticCounter]]!!
-            posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
-                    if (lastCharProp != null && lastCharProp.writeOnTop >= 0) {
-                        val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
-                            (lastCharProp.width).div(2) + penultCharProp.diacriticsAnchors[0].x
-                        }
-                        else if (lastCharProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
-                            (lastCharProp.width) + penultCharProp.diacriticsAnchors[0].x
-                        }
-                        else 0
+            // fill the last of the posXbuffer
+            if (str.isNotEmpty()) {
+                val lastCharProp = glyphProps[str.last()]
+                val penultCharProp = glyphProps[str[nonDiacriticCounter]]!!
+                posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
+                        if (lastCharProp != null && lastCharProp.writeOnTop >= 0) {
+                            val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
+                                (lastCharProp.width).div(2) + penultCharProp.diacriticsAnchors[0].x
+                            }
+                            else if (lastCharProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
+                                (lastCharProp.width) + penultCharProp.diacriticsAnchors[0].x
+                            }
+                            else 0
 
-                        maxOf(penultCharProp.width, realDiacriticWidth)
-                    }
-                    else {
-                        (lastCharProp?.width ?: 0)
-                    }
+                            maxOf(penultCharProp.width, realDiacriticWidth)
+                        }
+                        else {
+                            (lastCharProp?.width ?: 0)
+                        }
+            }
+            else {
+                posXbuffer[0] = 0
+            }
         }
-        else {
-            posXbuffer[0] = 0
-        }
+        catch (e: NullPointerException) {}
 
         return posXbuffer to posYbuffer
     }
@@ -609,14 +616,15 @@ class TerrarumTypewriterBitmap(
         val hashPrime = 1099511628211L
         var hashAccumulator = hashBasis
 
-        if (this != null) {
+        try {
             this.forEach {
                 hashAccumulator = hashAccumulator xor it.toLong()
                 hashAccumulator *= hashPrime
             }
         }
-        else {
+        catch (e: NullPointerException) {
             System.err.println("CodepointSequence is null?!")
+            e.printStackTrace()
         }
 
         return hashAccumulator

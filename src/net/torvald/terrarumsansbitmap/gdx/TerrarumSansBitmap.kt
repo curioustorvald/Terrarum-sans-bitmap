@@ -394,79 +394,86 @@ class TerrarumSansBitmap(
 
                 var index = 0
                 while (index <= textBuffer.lastIndex) {
-                    val c = textBuffer[index]
-                    val sheetID = getSheetType(c)
-                    val (sheetX, sheetY) =
-                            if (index == 0) getSheetwisePosition(0, c)
-                            else getSheetwisePosition(textBuffer[index - 1], c)
-                    val hash = getHash(c) // to be used with Bad Transmission Modifier
+                    try {
+                        val c = textBuffer[index]
+                        val sheetID = getSheetType(c)
+                        val (sheetX, sheetY) =
+                                if (index == 0) getSheetwisePosition(0, c)
+                                else getSheetwisePosition(textBuffer[index - 1], c)
+                        val hash = getHash(c) // to be used with Bad Transmission Modifier
 
-                    if (isColourCode(c)) {
-                        if (c == 0x100000) {
-                            renderCol = -1
+                        if (isColourCode(c)) {
+                            if (c == 0x100000) {
+                                renderCol = -1
+                            }
+                            else {
+                                renderCol = getColour(c)
+                            }
+                        }
+                        else if (isCharsetOverride(c)) {
+                            charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
+                        }
+                        else if (sheetID == SHEET_HANGUL) {
+                            // Flookahead for {I, P, F}
+
+                            val cNext = if (index + 1 < textBuffer.size) textBuffer[index + 1] else 0
+                            val cNextNext = if (index + 2 < textBuffer.size) textBuffer[index + 2] else 0
+
+                            val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
+                                3
+                            else if (isHangulJungseong(cNext))
+                                2
+                            else
+                                1
+
+                            val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
+
+                            val (indexCho, indexJung, indexJong) = indices
+                            val (choRow, jungRow, jongRow) = rows
+                            val hangulSheet = sheets[SHEET_HANGUL]
+
+
+
+                            val choTex = hangulSheet.get(indexCho, choRow)
+                            val jungTex = hangulSheet.get(indexJung, jungRow)
+                            val jongTex = hangulSheet.get(indexJong, jongRow)
+
+                            linotypePixmap.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY, renderCol)
+                            linotypePixmap.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY, renderCol)
+                            linotypePixmap.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY, renderCol)
+
+
+                            index += hangulLength - 1
+
                         }
                         else {
-                            renderCol = getColour(c)
+                            try {
+                                val posY = posYbuffer[index].flipY() +
+                                        if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                            offsetUnihan
+                                        else if (sheetID == SHEET_CUSTOM_SYM)
+                                            offsetCustomSym
+                                        else 0
+
+                                val posX = posXbuffer[index]
+                                val texture = sheets[sheetID].get(sheetX, sheetY)
+
+                                linotypePixmap.drawPixmap(texture, posX, posY + pixmapOffsetY, renderCol)
+
+
+                            }
+                            catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
+                            }
                         }
+
+
+                        index++
                     }
-                    else if (isCharsetOverride(c)) {
-                        charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
+                    catch (e: NullPointerException) {
+                        System.err.println("Shit hit the multithreaded fan")
+                        e.printStackTrace()
+                        break
                     }
-                    else if (sheetID == SHEET_HANGUL) {
-                        // Flookahead for {I, P, F}
-
-                        val cNext = if (index + 1 < textBuffer.size) textBuffer[index + 1] else 0
-                        val cNextNext = if (index + 2 < textBuffer.size) textBuffer[index + 2] else 0
-
-                        val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
-                            3
-                        else if (isHangulJungseong(cNext))
-                            2
-                        else
-                            1
-
-                        val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
-
-                        val (indexCho, indexJung, indexJong) = indices
-                        val (choRow, jungRow, jongRow) = rows
-                        val hangulSheet = sheets[SHEET_HANGUL]
-
-
-
-                        val choTex = hangulSheet.get(indexCho, choRow)
-                        val jungTex = hangulSheet.get(indexJung, jungRow)
-                        val jongTex = hangulSheet.get(indexJong, jongRow)
-
-                        linotypePixmap.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY, renderCol)
-                        linotypePixmap.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY, renderCol)
-                        linotypePixmap.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY, renderCol)
-
-
-                        index += hangulLength - 1
-
-                    }
-                    else {
-                        try {
-                            val posY = posYbuffer[index].flipY() +
-                                    if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                        offsetUnihan
-                                    else if (sheetID == SHEET_CUSTOM_SYM)
-                                        offsetCustomSym
-                                    else 0
-
-                            val posX = posXbuffer[index]
-                            val texture = sheets[sheetID].get(sheetX, sheetY)
-
-                            linotypePixmap.drawPixmap(texture, posX, posY + pixmapOffsetY, renderCol)
-
-
-                        }
-                        catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
-                        }
-                    }
-
-
-                    index++
                 }
 
 
@@ -846,166 +853,169 @@ class TerrarumSansBitmap(
         // persisting value. the value is set a few characters before the actual usage
         var extraWidth = 0
 
-        for (charIndex in 0 until posXbuffer.size - 1) {
-            if (charIndex > 0) {
-                // nonDiacriticCounter allows multiple diacritics
+        try {
+            for (charIndex in 0 until posXbuffer.size - 1) {
+                if (charIndex > 0) {
+                    // nonDiacriticCounter allows multiple diacritics
 
-                val thisChar = str[charIndex]
-                if (glyphProps[thisChar] == null && errorOnUnknownChar) {
-                    val errorGlyphSB = StringBuilder()
-                    Character.toChars(thisChar).forEach { errorGlyphSB.append(it) }
+                    val thisChar = str[charIndex]
+                    if (glyphProps[thisChar] == null && errorOnUnknownChar) {
+                        val errorGlyphSB = StringBuilder()
+                        Character.toChars(thisChar).forEach { errorGlyphSB.append(it) }
 
-                    throw InternalError("No GlyphProps for char '$errorGlyphSB' " +
-                            "(${thisChar.charInfo()})")
-                }
-                val thisProp = glyphProps[thisChar] ?: nullProp
-                val lastNonDiacriticChar = str[nonDiacriticCounter]
-                val itsProp = glyphProps[lastNonDiacriticChar] ?: nullProp
-                val kerning = getKerning(lastNonDiacriticChar, thisChar)
-
-
-                //dbgprn("char: ${thisChar.charInfo()}\nproperties: $thisProp")
+                        throw InternalError("No GlyphProps for char '$errorGlyphSB' " +
+                                "(${thisChar.charInfo()})")
+                    }
+                    val thisProp = glyphProps[thisChar] ?: nullProp
+                    val lastNonDiacriticChar = str[nonDiacriticCounter]
+                    val itsProp = glyphProps[lastNonDiacriticChar] ?: nullProp
+                    val kerning = getKerning(lastNonDiacriticChar, thisChar)
 
 
-                var alignmentOffset = when (thisProp.alignWhere) {
-                    GlyphProps.ALIGN_LEFT -> 0
-                    GlyphProps.ALIGN_RIGHT -> thisProp.width - W_VAR_INIT
-                    GlyphProps.ALIGN_CENTRE -> Math.ceil((thisProp.width - W_VAR_INIT) / 2.0).toInt()
-                    else -> 0 // implies "diacriticsBeforeGlyph = true"
-                }
-
-
-                // shoehorn the wider-hangul-width thingamajig
-                // widen only when the next hangul char is not "jungseongWide"
-                // (애 in "애슬론" should not be widened)
-                val thisHangulJungseongIndex = toHangulJungseongIndex(thisChar)
-                val nextHangulJungseong1 = toHangulJungseongIndex(str.getOrNull(charIndex + 2) ?: 0) ?: -1
-                val nextHangulJungseong2 = toHangulJungseongIndex(str.getOrNull(charIndex + 3) ?: 0) ?: -1
-                if (isHangulJungseong(thisChar) && thisHangulJungseongIndex in hangulPeaksWithExtraWidth && (
-                                nextHangulJungseong1 !in jungseongWide ||
-                                nextHangulJungseong2 !in jungseongWide
-                        )) {
                     //dbgprn("char: ${thisChar.charInfo()}\nproperties: $thisProp")
-                    //dbgprn("${thisChar.charInfo()}  ${str.getOrNull(charIndex + 2)?.charInfo()}  ${str.getOrNull(charIndex + 3)?.charInfo()}")
-                    extraWidth += 1
-                }
 
 
-                if (isHangul(thisChar) && !isHangulChoseong(thisChar) && !isHangulCompat(thisChar)) {
-                    posXbuffer[charIndex] = posXbuffer[nonDiacriticCounter]
-                }
-                else if (thisProp.writeOnTop < 0) {
-                    posXbuffer[charIndex] = -thisProp.nudgeX +
-                            when (itsProp.alignWhere) {
-                                GlyphProps.ALIGN_RIGHT ->
-                                posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
-                            GlyphProps.ALIGN_CENTRE ->
-                                posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
-                            else ->
-                                posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
-                            }
-
-                    nonDiacriticCounter = charIndex
-
-                    stackUpwardCounter = 0
-                    stackDownwardCounter = 0
-                    extraWidth = thisProp.nudgeX // NOTE: sign is flipped!
-                }
-                // FIXME HACK: using 0th diacritics' X-anchor pos as a type selector
-                /*else if (thisProp.writeOnTop && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
-                    posXbuffer[charIndex] = when (itsProp.alignWhere) {
-                        GlyphProps.ALIGN_RIGHT ->
-                            posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset
-                        //GlyphProps.ALIGN_CENTRE ->
-                        //    posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset
-                        else ->
-                            posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset
-
-                    }
-                }*/
-                else {
-                    // set X pos according to alignment information
-                    posXbuffer[charIndex] = when (thisProp.alignWhere) {
-                        GlyphProps.ALIGN_LEFT, GlyphProps.ALIGN_BEFORE -> posXbuffer[nonDiacriticCounter]
-                        GlyphProps.ALIGN_RIGHT -> {
-                            posXbuffer[nonDiacriticCounter] - (W_VAR_INIT - itsProp.width)
-                        }
-                        GlyphProps.ALIGN_CENTRE -> {
-                            val alignXPos = if (itsProp.diacriticsAnchors[0].x == 0) itsProp.width.div(2) else itsProp.diacriticsAnchors[0].x
-
-                            if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
-                                posXbuffer[nonDiacriticCounter] + alignXPos + (itsProp.width + 1).div(2)
-                            }
-                            else {
-                                posXbuffer[nonDiacriticCounter] + alignXPos - HALF_VAR_INIT
-                            }
-                        }
-                        else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
+                    var alignmentOffset = when (thisProp.alignWhere) {
+                        GlyphProps.ALIGN_LEFT -> 0
+                        GlyphProps.ALIGN_RIGHT -> thisProp.width - W_VAR_INIT
+                        GlyphProps.ALIGN_CENTRE -> Math.ceil((thisProp.width - W_VAR_INIT) / 2.0).toInt()
+                        else -> 0 // implies "diacriticsBeforeGlyph = true"
                     }
 
 
-                    // set Y pos according to diacritics position
-                    if (thisProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
-                        when (thisProp.stackWhere) {
-                            GlyphProps.STACK_DOWN -> {
-                                posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
-                                stackDownwardCounter++
-                            }
-                            GlyphProps.STACK_UP -> {
-                                posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
+                    // shoehorn the wider-hangul-width thingamajig
+                    // widen only when the next hangul char is not "jungseongWide"
+                    // (애 in "애슬론" should not be widened)
+                    val thisHangulJungseongIndex = toHangulJungseongIndex(thisChar)
+                    val nextHangulJungseong1 = toHangulJungseongIndex(str.getOrNull(charIndex + 2) ?: 0) ?: -1
+                    val nextHangulJungseong2 = toHangulJungseongIndex(str.getOrNull(charIndex + 3) ?: 0) ?: -1
+                    if (isHangulJungseong(thisChar) && thisHangulJungseongIndex in hangulPeaksWithExtraWidth && (
+                                    nextHangulJungseong1 !in jungseongWide ||
+                                    nextHangulJungseong2 !in jungseongWide
+                            )) {
+                        //dbgprn("char: ${thisChar.charInfo()}\nproperties: $thisProp")
+                        //dbgprn("${thisChar.charInfo()}  ${str.getOrNull(charIndex + 2)?.charInfo()}  ${str.getOrNull(charIndex + 3)?.charInfo()}")
+                        extraWidth += 1
+                    }
 
-                                // shift down on lowercase if applicable
-                                if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
-                                        lastNonDiacriticChar.isLowHeight()) {
-                                    //dbgprn("AAARRRRHHHH for character ${thisChar.toHex()}")
-                                    //dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
-                                    //dbgprn("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
-                                    if (thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_OVERLAY)
-                                        posYbuffer[charIndex] -= H_OVERLAY_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
-                                    else
-                                        posYbuffer[charIndex] -= H_STACKUP_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
+
+                    if (isHangul(thisChar) && !isHangulChoseong(thisChar) && !isHangulCompat(thisChar)) {
+                        posXbuffer[charIndex] = posXbuffer[nonDiacriticCounter]
+                    }
+                    else if (thisProp.writeOnTop < 0) {
+                        posXbuffer[charIndex] = -thisProp.nudgeX +
+                                when (itsProp.alignWhere) {
+                                    GlyphProps.ALIGN_RIGHT ->
+                                    posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
+                                GlyphProps.ALIGN_CENTRE ->
+                                    posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
+                                else ->
+                                    posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
                                 }
 
-                                stackUpwardCounter++
+                        nonDiacriticCounter = charIndex
+
+                        stackUpwardCounter = 0
+                        stackDownwardCounter = 0
+                        extraWidth = thisProp.nudgeX // NOTE: sign is flipped!
+                    }
+                    // FIXME HACK: using 0th diacritics' X-anchor pos as a type selector
+                    /*else if (thisProp.writeOnTop && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
+                        posXbuffer[charIndex] = when (itsProp.alignWhere) {
+                            GlyphProps.ALIGN_RIGHT ->
+                                posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset
+                            //GlyphProps.ALIGN_CENTRE ->
+                            //    posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset
+                            else ->
+                                posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset
+
+                        }
+                    }*/
+                    else {
+                        // set X pos according to alignment information
+                        posXbuffer[charIndex] = when (thisProp.alignWhere) {
+                            GlyphProps.ALIGN_LEFT, GlyphProps.ALIGN_BEFORE -> posXbuffer[nonDiacriticCounter]
+                            GlyphProps.ALIGN_RIGHT -> {
+                                posXbuffer[nonDiacriticCounter] - (W_VAR_INIT - itsProp.width)
                             }
-                            GlyphProps.STACK_UP_N_DOWN -> {
-                                posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
-                                stackDownwardCounter++
-                                posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
-                                stackUpwardCounter++
+                            GlyphProps.ALIGN_CENTRE -> {
+                                val alignXPos = if (itsProp.diacriticsAnchors[0].x == 0) itsProp.width.div(2) else itsProp.diacriticsAnchors[0].x
+
+                                if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
+                                    posXbuffer[nonDiacriticCounter] + alignXPos + (itsProp.width + 1).div(2)
+                                }
+                                else {
+                                    posXbuffer[nonDiacriticCounter] + alignXPos - HALF_VAR_INIT
+                                }
                             }
-                        // for BEFORE_N_AFTER, do nothing in here
+                            else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
+                        }
+
+
+                        // set Y pos according to diacritics position
+                        if (thisProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
+                            when (thisProp.stackWhere) {
+                                GlyphProps.STACK_DOWN -> {
+                                    posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
+                                    stackDownwardCounter++
+                                }
+                                GlyphProps.STACK_UP -> {
+                                    posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
+
+                                    // shift down on lowercase if applicable
+                                    if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
+                                            lastNonDiacriticChar.isLowHeight()) {
+                                        //dbgprn("AAARRRRHHHH for character ${thisChar.toHex()}")
+                                        //dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
+                                        //dbgprn("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
+                                        if (thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_OVERLAY)
+                                            posYbuffer[charIndex] -= H_OVERLAY_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
+                                        else
+                                            posYbuffer[charIndex] -= H_STACKUP_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
+                                    }
+
+                                    stackUpwardCounter++
+                                }
+                                GlyphProps.STACK_UP_N_DOWN -> {
+                                    posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
+                                    stackDownwardCounter++
+                                    posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
+                                    stackUpwardCounter++
+                                }
+                            // for BEFORE_N_AFTER, do nothing in here
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // fill the last of the posXbuffer
-        if (str.isNotEmpty()) {
-            val lastCharProp = glyphProps[str.last()]
-            val penultCharProp = glyphProps[str[nonDiacriticCounter]] ?:
-                    (if (errorOnUnknownChar) throw throw InternalError("No GlyphProps for char '${str[nonDiacriticCounter]}' " +
-                            "(${str[nonDiacriticCounter].charInfo()})") else nullProp)
-            posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
-                    if (lastCharProp != null && lastCharProp.writeOnTop >= 0) {
-                        val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
-                            (lastCharProp.width).div(2) + penultCharProp.diacriticsAnchors[0].x
-                        }
-                        else if (lastCharProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
-                            (lastCharProp.width) + penultCharProp.diacriticsAnchors[0].x
-                        }
-                        else 0
+            // fill the last of the posXbuffer
+            if (str.isNotEmpty()) {
+                val lastCharProp = glyphProps[str.last()]
+                val penultCharProp = glyphProps[str[nonDiacriticCounter]] ?:
+                        (if (errorOnUnknownChar) throw throw InternalError("No GlyphProps for char '${str[nonDiacriticCounter]}' " +
+                                "(${str[nonDiacriticCounter].charInfo()})") else nullProp)
+                posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
+                        if (lastCharProp != null && lastCharProp.writeOnTop >= 0) {
+                            val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
+                                (lastCharProp.width).div(2) + penultCharProp.diacriticsAnchors[0].x
+                            }
+                            else if (lastCharProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
+                                (lastCharProp.width) + penultCharProp.diacriticsAnchors[0].x
+                            }
+                            else 0
 
-                        maxOf(penultCharProp.width, realDiacriticWidth)
-                    }
-                    else {
-                        (lastCharProp?.width ?: 0)
-                    }
+                            maxOf(penultCharProp.width, realDiacriticWidth)
+                        }
+                        else {
+                            (lastCharProp?.width ?: 0)
+                        }
+            }
+            else {
+                posXbuffer[0] = 0
+            }
         }
-        else {
-            posXbuffer[0] = 0
-        }
+        catch (e: NullPointerException) {}
 
         return posXbuffer to posYbuffer
     }
@@ -1345,9 +1355,15 @@ class TerrarumSansBitmap(
         val hashPrime = 1099511628211L
         var hashAccumulator = hashBasis
 
-        this.forEach {
-            hashAccumulator = hashAccumulator xor it.toLong()
-            hashAccumulator *= hashPrime
+        try {
+            this.forEach {
+                hashAccumulator = hashAccumulator xor it.toLong()
+                hashAccumulator *= hashPrime
+            }
+        }
+        catch (e: NullPointerException) {
+            System.err.println("CodepointSequence is null?!")
+            e.printStackTrace()
         }
 
         return hashAccumulator
