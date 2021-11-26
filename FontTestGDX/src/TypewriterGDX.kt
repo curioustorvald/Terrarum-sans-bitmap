@@ -115,12 +115,14 @@ class TypewriterGDX(val width: Int, val height: Int, val cols: Int) : Game() {
         if (initDone || force) {
 //        println("[TypewriterGDX] Accepting key: $keycode")
 
+            val lowkeycode = keycode and 127
+
             if (keycode == Input.Keys.ENTER) {
                 val tbufsize = textbuf.last().size.div(cols.toFloat()).times(6f).coerceIn(0f, 6f).roundToInt() // 0..6
                 textbuf.add(CodepointSequence())
                 if (tbufsize == 0) sndLF.play()
                 else sndCRs[tbufsize - 1].play()
-            } else if (printableKeys.contains(keycode and 127)) {
+            } else if (printableKeys.contains(lowkeycode)) {
                 val cp = keycode + keylayoutbase
                 textbuf.last().add(cp)
 //            println("[TypewriterGDX] width: ${font.glyphProps[cp]}")
@@ -129,12 +131,12 @@ class TypewriterGDX(val width: Int, val height: Int, val cols: Int) : Game() {
                 val isDeadkey = font.glyphProps[cp]?.width == 0
                 if (isDeadkey) {
                     sndDeadkey.play()
-                } else if (keycode == Input.Keys.SPACE || keycode == Input.Keys.BACKSPACE) {
+                } else if (lowkeycode == Input.Keys.SPACE || lowkeycode == Input.Keys.BACKSPACE) {
                     sndSpace.play()
                 } else {
                     sndMovingkey.play()
                 }
-            } else if (keycode == 128 + Input.Keys.SHIFT_LEFT || keycode == 128 + Input.Keys.SHIFT_RIGHT) {
+            } else if (lowkeycode == Input.Keys.SHIFT_LEFT || lowkeycode == Input.Keys.SHIFT_RIGHT) {
                 sndShiftin.play()
             }
         }
