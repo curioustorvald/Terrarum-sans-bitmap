@@ -50,11 +50,6 @@ class FontTestGDX : Game() {
         faketex = Texture(fakepix)
         fakepix.dispose()
 
-
-        println(font.charsetOverrideDefault)
-        println(font.charsetOverrideBulgarian)
-        println(font.charsetOverrideSerbian)
-
         frameBuffer = FrameBuffer(Pixmap.Format.RGBA8888, TEXW, TEXH, true)
 
         camera = OrthographicCamera(TEXW.toFloat(), TEXH.toFloat())

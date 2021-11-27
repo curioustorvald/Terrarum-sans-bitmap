@@ -337,7 +337,10 @@ class TerrarumSansBitmap(
     private val pixmapOffsetY = 10
 
     fun draw(batch: Batch, charSeq: CharSequence, x: Int, y: Int) = draw(batch, charSeq, x.toFloat(), y.toFloat())
-    override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float) = drawNormalised(batch, charSeq.toCodePoints(), x, y)
+    override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float): GlyphLayout? {
+//        charSeq.forEach { dbgprn("${it.toInt().charInfo()} ${glyphProps[it.toInt()]}") }
+        return drawNormalised(batch, charSeq.toCodePoints(), x, y)
+    }
     fun draw(batch: Batch, codepoints: CodepointSequence, x: Int, y: Int) = drawNormalised(batch, codepoints.normalise(), x.toFloat(), y.toFloat())
     fun draw(batch: Batch, codepoints: CodepointSequence, x: Float, y: Float) = drawNormalised(batch, codepoints.normalise(), x, y)
 
@@ -1112,6 +1115,7 @@ class TerrarumSansBitmap(
             // DOES NOT WORK if said diacritics has codepoint > 0xFFFF
             else if (i < this.lastIndex && this[i + 1] <= 0xFFFF &&
                 glyphProps[this[i + 1]]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
+
                 val diacriticsProp = glyphProps[this[i + 1]]!!
                 seq.add(c)
                 seq.add(diacriticsProp.extInfo!![0])
