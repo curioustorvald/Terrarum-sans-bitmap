@@ -384,19 +384,12 @@ class TerrarumTypewriterBitmap(
                 tempLinotype = cacheObj.glyphLayout!!.linotype
             }
 
-
-            if (!flipY) {
-                batch.draw(tempLinotype, (x - linotypePad).toFloat(), (y - pixmapOffsetY).toFloat())
-            }
-            else {
-                batch.draw(tempLinotype,
-                    (x - linotypePad).toFloat(),
-                    (y - pixmapOffsetY + (tempLinotype.height)).toFloat(),
-                    (tempLinotype.width.toFloat()),
-                    -(tempLinotype.height.toFloat())
-                )
-            }
-
+            batch.draw(tempLinotype,
+                (x - linotypePad).toFloat(),
+                (y - pixmapOffsetY).toFloat() + (if (flipY) (tempLinotype.height) else 0),
+                (tempLinotype.width.toFloat()),
+                (tempLinotype.height.toFloat()) * (if (flipY) -1 else 1)
+            )
         }
 
         return null

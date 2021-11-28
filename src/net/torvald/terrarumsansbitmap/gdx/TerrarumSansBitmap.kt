@@ -306,12 +306,11 @@ class TerrarumSansBitmap(
         glyphProps[0] = GlyphProps(0)
     }
 
-    override fun getLineHeight(): Float = H.toFloat()
-
-    override fun getXHeight() = 8f
-    override fun getCapHeight() = 12f
-    override fun getAscent() = 3f
-    override fun getDescent() = 3f
+    override fun getLineHeight(): Float = H.toFloat() * scale
+    override fun getXHeight() = 8f * scale
+    override fun getCapHeight() = 12f * scale
+    override fun getAscent() = 3f * scale
+    override fun getDescent() = 3f * scale
     override fun isFlipped() = flipY
 
     override fun setFixedWidthGlyphs(glyphs: CharSequence) {
@@ -495,19 +494,12 @@ class TerrarumSansBitmap(
                 tempLinotype = cacheObj.glyphLayout!!.linotype
             }
 
-
-            if (!flipY) {
-                batch.draw(tempLinotype, x.toFloat(), (y - pixmapOffsetY).toFloat())
-            }
-            else {
-                batch.draw(tempLinotype,
-                        x.toFloat(),
-                        (y - pixmapOffsetY + (tempLinotype.height)).toFloat(),
-                        (tempLinotype.width.toFloat()),
-                        -(tempLinotype.height.toFloat())
-                )
-            }
-
+            batch.draw(tempLinotype,
+                    x.toFloat(),
+                    (y - pixmapOffsetY).toFloat() + (if (flipY) (tempLinotype.height) else 0) * scale,
+                    tempLinotype.width.toFloat() * scale,
+                    (tempLinotype.height.toFloat()) * (if (flipY) -1 else 1) * scale
+            )
         }
 
         return null
