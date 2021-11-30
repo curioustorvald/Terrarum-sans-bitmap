@@ -101,15 +101,6 @@ code: |
     }
 
 --- Pixel 2
-Glyph pos for up/down diacritics
-- U: X-position for stack-up diacritics
-- D: X-position for stack-down diacritics
-- encoding:
-    - <MSB> 00000000 100DDDDD 100UUUUU <LSB>
-- If either U/D is unused, centre position will be used.
-- Diacritics will be centred on the x-position this parameter points to
-
---- Pixel 3
 dot removal for diacritics:
 - All 24 bits are used to put replacement character
 - encoding:
