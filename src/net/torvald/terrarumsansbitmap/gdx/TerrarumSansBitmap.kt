@@ -702,6 +702,7 @@ class TerrarumSansBitmap(
     }
 
     private fun Boolean.toInt() = if (this) 1 else 0
+    /** @return THIRTY-TWO bit number: this includes alpha channel value; or 0 if alpha is zero */
     private fun Int.tagify() = if (this and 255 == 0) 0 else this
 
     private fun buildWidthTable(pixmap: Pixmap, codeRange: Iterable<Int>, cols: Int = 16) {
@@ -725,7 +726,6 @@ class TerrarumSansBitmap(
             val kerningBit1 = pixmap.getPixel(codeStartX, codeStartY + 6).tagify()
             val kerningBit2 = pixmap.getPixel(codeStartX, codeStartY + 7).tagify()
             val kerningBit3 = pixmap.getPixel(codeStartX, codeStartY + 8).tagify()
-            val kerningBit4 = pixmap.getPixel(codeStartX, codeStartY + 9).tagify()
             var isKernYtype = ((kerningBit1 and 0x80000000.toInt()) != 0)
             var kerningMask = kerningBit1.ushr(8).and(0xFFFFFF)
             val hasKernData = kerningBit1 and 255 != 0//(kerningBit1 and 255 != 0 && kerningMask != 0xFFFF)
@@ -733,6 +733,12 @@ class TerrarumSansBitmap(
                 isKernYtype = false
                 kerningMask = 255
             }
+
+            val compilerDirectives = pixmap.getPixel(codeStartX, codeStartY + 9).tagify()
+            val directiveOpcode = compilerDirectives.ushr(24).and(255)
+            val directiveArg1 = compilerDirectives.ushr(16).and(255)
+            val directiveArg2 = compilerDirectives.ushr(8).and(255)
+
 
             val nudgingBits = pixmap.getPixel(codeStartX, codeStartY + 10).tagify()
             val nudgeX = nudgingBits.ushr(24).toByte().toInt() // signed 8-bit int
@@ -762,7 +768,7 @@ class TerrarumSansBitmap(
 
             val stackWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 18).and(255) != 0).toInt() shl y) }
 
-            glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, GlyphProps.DEFAULT_EXTINFO, hasKernData, isKernYtype, kerningMask)
+            glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, IntArray(15), hasKernData, isKernYtype, kerningMask, directiveOpcode, directiveArg1, directiveArg2)
 
 //            if (nudgingBits != 0) dbgprn("${code.charInfo()} nudgeX=$nudgeX, nudgeY=$nudgeY, nudgingBits=0x${nudgingBits.toString(16)}")
 //            if (writeOnTop >= 0) dbgprn("WriteOnTop: ${code.charInfo()} (Type-${writeOnTop})")
@@ -770,6 +776,7 @@ class TerrarumSansBitmap(
             // extra info
             val extCount = glyphProps[code]?.requiredExtInfoCount() ?: 0
             if (extCount > 0) {
+
                 for (x in 0 until extCount) {
                     var info = 0
                     for (y in 0..18) {
@@ -781,6 +788,9 @@ class TerrarumSansBitmap(
 
                     glyphProps[code]!!.extInfo[x] = info
                 }
+
+//                println("[TerrarumSansBitmap] char with $extCount extra info: ${code.charInfo()}; opcode: ${directiveOpcode.toString(16)}")
+//                println("contents: ${glyphProps[code]!!.extInfo.map { it.toString(16) }.joinToString()}")
             }
 
         }
@@ -1102,17 +1112,21 @@ class TerrarumSansBitmap(
             else if (diacriticDotRemoval.containsKey(c) && (glyphProps[cNext]?.writeOnTop ?: -1) >= 0 && glyphProps[cNext]?.stackWhere == GlyphProps.STACK_UP) {
                 seq.add(diacriticDotRemoval[c]!!)
             }
-            // rearrange {letter, before-and-after diacritics} as {letter, before-diacritics, after-diacritics}
-            // {letter, before-diacritics} part will be dealt with swapping code below
-            // DOES NOT WORK if said diacritics has codepoint > 0xFFFF
-            else if (i < this.lastIndex && this[i + 1] <= 0xFFFF &&
-                glyphProps[this[i + 1]]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
+            // rearrange {letter, before-and-after diacritics} as {before-diacritics, letter, after-diacritics}
+            else if (i < this.lastIndex && glyphProps[this[i + 1]]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
 
                 val diacriticsProp = glyphProps[this[i + 1]]!!
+                seq.add(diacriticsProp.extInfo[0])
                 seq.add(c)
-                seq.add(diacriticsProp.extInfo!![0])
-                seq.add(diacriticsProp.extInfo!![1])
+                seq.add(diacriticsProp.extInfo[1])
                 i++
+            }
+            else if (glyphProps[c]?.isPragma("replacewith") == true) {
+//                println("[TerrarumSansBitmap] replacing ${c.toString(16)} with:")
+                glyphProps[c]!!.forEachExtInfo {
+//                    println("${it.charInfo()}")
+                    seq.add(it)
+                }
             }
             // U+007F is DEL originally, but this font stores bitmap of Replacement Character (U+FFFD)
             // to this position. This line will replace U+FFFD into U+007F.
@@ -1390,7 +1404,7 @@ class TerrarumSansBitmap(
                 if (it.first.matches(maskL!!) && it.second.matches(maskR!!)) {
                     val contraction = if (glyphProps[prevChar]?.isKernYtype == true || glyphProps[thisChar]?.isKernYtype == true) it.yy else it.bb
 
-//                    dbgprn("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first.s} ${it.second.s}; Contraction: $contraction")
+                    dbgprn("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first.s} ${it.second.s}; Contraction: $contraction")
 
                     return -contraction
                 }

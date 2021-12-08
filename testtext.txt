@@ -1,22 +1,9 @@
-To
-uu
-Td
-mm
-Ye
-Yd
+ถูกตำรว
+ถูกตรว
+aำ
+แป้นพิมพ์เกษมณี แป้นพิมพ์ปัตตะโชติ
+คำเตือน-อนามัยและความปลอดภัย
 
-/œ̃/
-/ɛ̃/
-ẽ
-Ẽ
-/ẽ
-o̸
-O̸
-when the line ends with a diacritics, whole letter wont render
-if the line starts with a letter-with-diacritic, it will error out
+UĲTuĳt
 
-Lyklaborð
-https://www.java.com/cov/en/download
-/a /c /d /e /g /i /j /m /n /o /p /q /r /s /u /v v/ /w /x /y /z
-germyndurinnkvikkalkul
-
+দৌ ষৌ

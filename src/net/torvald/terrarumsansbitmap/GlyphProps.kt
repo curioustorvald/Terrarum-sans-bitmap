@@ -23,11 +23,15 @@ data class GlyphProps(
 
         val stackWhere: Int = 0, // STACK_UP..STACK_UP_N_DOWN
 
-        val extInfo: IntArray = DEFAULT_EXTINFO,
+        val extInfo: IntArray = IntArray(15),
 
         val hasKernData: Boolean = false,
         val isKernYtype: Boolean = false,
         val kerningMask: Int = 255,
+
+        val directiveOpcode: Int = 0, // 8-bits wide
+        val directiveArg1: Int = 0, // 8-bits wide
+        val directiveArg2: Int = 0, // 8-bits wide
 
         val rtl: Boolean = false,
 ) {
@@ -46,8 +50,6 @@ data class GlyphProps(
         const val DIA_JOINER = 2
 
         private fun Boolean.toInt() = if (this) 1 else 0
-
-        val DEFAULT_EXTINFO = IntArray(15)
     }
 
     /*constructor(width: Int, tags: Int) : this(
@@ -109,5 +111,18 @@ data class GlyphProps(
         return other is GlyphProps && this.hashCode() == other.hashCode()
     }
 
-    fun requiredExtInfoCount() = if (stackWhere == STACK_BEFORE_N_AFTER) 2 else 0
+    fun requiredExtInfoCount() =
+        if (stackWhere == STACK_BEFORE_N_AFTER)
+            2
+        else if (directiveOpcode in 0b10000_000..0b10000_111)
+            directiveOpcode and 7
+        else 0
+
+    fun isPragma(pragma: String) = when (pragma) {
+        "replacewith" -> directiveOpcode in 0b10000_000..0b10000_111
+        else -> false
+    }
+
+    fun forEachExtInfo(action: (Int) -> Unit) = extInfo.slice(0 until requiredExtInfoCount()).forEach(action)
+    fun forEachExtInfoIndexed(action: (Int, Int) -> Unit) = extInfo.slice(0 until requiredExtInfoCount()).forEachIndexed(action)
 }

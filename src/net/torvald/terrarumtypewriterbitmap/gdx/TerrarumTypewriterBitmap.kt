@@ -252,7 +252,7 @@ class TerrarumTypewriterBitmap(
 
             val stackWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 18).and(255) != 0).toInt() shl y) }
 
-            glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, GlyphProps.DEFAULT_EXTINFO, hasKernData, isKernYtype, kerningMask)
+            glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, IntArray(15), hasKernData, isKernYtype, kerningMask)
 
 //            if (nudgingBits != 0) println("${code.charInfo()} nudgeX=$nudgeX, nudgeY=$nudgeY, nudgingBits=0x${nudgingBits.toString(16)}")
 

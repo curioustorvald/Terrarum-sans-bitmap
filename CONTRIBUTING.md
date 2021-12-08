@@ -49,12 +49,12 @@ Rightmost vertical column (should be 20 px tall) contains the tags. Tags are def
       m --Is this character lowheight?
       K -,
       K  |= Tags used by the "Keming Machine"
-      K  |
-      K -' ,- Nudging Bits (see below)
-      n --'
-      X -,
-      X  |= Diacritics Anchor Points (see below)
+      K -'
+      Q ---Compiler Directive (see below)
+      n --,
+      X -, `-Nudging Bits (see below)
       X  |
+      X  |= Diacritics Anchor Points (see below)
       X -'  
       A -,_ 0 Align  1 Align  0 Align   1 Align before
       A -'  0 left   0 right  1 centre  1 the glyph
@@ -93,6 +93,20 @@ MSB for each word must be set so that the pixel would appear brighter on the ima
 
 Right now, only the type-0 diacritics and its anchor point is used by the font.
 
+* Compiler Directives:
+
+    <MSB,Red> [Opcode] [arg1] [arg2] <LSB,Blue>
+
+Currently supported opcodes:
+
+    - 00000000: No-operation; does not use the Compiler Directive system.
+    
+    - 10000xxx: Replace a character with xxx subchars (yes, number 0 can be used).
+      Replacement characters are encoded vertically from X-zero, bit by bit
+      (colour of the pixel doesn't matter) with LSB sitting on Y-zero.
+
+
+
 -= NOTE =-
 
 The code has remnants of one old HACK: using 0th diacritics' X-anchor pos as a type selector
@@ -102,7 +116,6 @@ Interpretation:
     DIA_OVERLAY = 1
     DIA_JOINER = 2
     
-
 ```
 
 #### Stack Up/Down
