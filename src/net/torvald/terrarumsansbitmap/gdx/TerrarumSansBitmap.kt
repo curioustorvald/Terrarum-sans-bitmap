@@ -180,16 +180,8 @@ class TerrarumSansBitmap(
 
         // first we create pixmap to read pixels, then make texture using pixmap
         fileList.forEachIndexed { index, it ->
-            val isVariable1 = it.endsWith("_variable.tga")
-            val isVariable2 = variableWidthSheets.contains(index)
-            val isVariable = isVariable1 && isVariable2
+            val isVariable = it.endsWith("_variable.tga")
             val isXYSwapped = it.contains("xyswap", true)
-
-            // idiocity check
-            if (isVariable1 && !isVariable2)
-                throw Error("font is named as variable on the name but not enlisted as")
-            else if (!isVariable1 && isVariable2)
-                throw Error("font is enlisted as variable on the name but not named as")
 
 
             var pixmap: Pixmap
@@ -264,31 +256,23 @@ class TerrarumSansBitmap(
 
 
             //val texture = Texture(pixmap)
-            val texRegPack = if (isVariable) {
+            val texRegPack = if (isVariable)
                 PixmapRegionPack(pixmap, W_VAR_INIT, H, HGAP_VAR, 0, xySwapped = isXYSwapped)
-            }
-            else if (index == SHEET_UNIHAN) {
+            else if (index == SHEET_UNIHAN)
                 PixmapRegionPack(pixmap, W_UNIHAN, H_UNIHAN) // the only exception that is height is 16
-            }
             // below they all have height of 20 'H'
-            else if (index == SHEET_FW_UNI) {
+            else if (index == SHEET_FW_UNI)
                 PixmapRegionPack(pixmap, W_UNIHAN, H)
-            }
-            else if (index == SHEET_CJK_PUNCT) {
+            else if (index == SHEET_CJK_PUNCT)
                 PixmapRegionPack(pixmap, W_ASIAN_PUNCT, H)
-            }
-            else if (index == SHEET_KANA) {
+            else if (index == SHEET_KANA)
                 PixmapRegionPack(pixmap, W_KANA, H)
-            }
-            else if (index == SHEET_HANGUL) {
+            else if (index == SHEET_HANGUL)
                 PixmapRegionPack(pixmap, W_HANGUL_BASE, H)
-            }
-            else if (index == SHEET_CUSTOM_SYM) {
+            else if (index == SHEET_CUSTOM_SYM)
                 PixmapRegionPack(pixmap, SIZE_CUSTOM_SYM, SIZE_CUSTOM_SYM) // TODO variable
-            }
-            else if (index == SHEET_RUNIC) {
+            else if (index == SHEET_RUNIC)
                 PixmapRegionPack(pixmap, W_LATIN_WIDE, H)
-            }
             else throw IllegalArgumentException("Unknown sheet index: $index")
 
             //texRegPack.texture.setFilter(minFilter, magFilter)
@@ -575,6 +559,10 @@ class TerrarumSansBitmap(
             return SHEET_CURRENCIES_VARW
         else if (isInternalSymbols(c))
             return SHEET_INTERNAL_VARW
+        else if (isLetterlike(c))
+            return SHEET_LETTERLIKE_MATHS_VARW
+        else if (isEnclosedAlphnumSupl(c))
+            return SHEET_ENCLOSED_ALPHNUM_SUPL_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -691,6 +679,14 @@ class TerrarumSansBitmap(
             SHEET_INTERNAL_VARW -> {
                 sheetX = internalIndexX(ch)
                 sheetY = internalIndexY(ch)
+            }
+            SHEET_LETTERLIKE_MATHS_VARW -> {
+                sheetX = letterlikeIndexX(ch)
+                sheetY = letterlikeIndexY(ch)
+            }
+            SHEET_ENCLOSED_ALPHNUM_SUPL_VARW -> {
+                sheetX = enclosedAlphnumSuplX(ch)
+                sheetY = enclosedAlphnumSuplY(ch)
             }
             else -> {
                 sheetX = ch % 16
@@ -1025,16 +1021,12 @@ class TerrarumSansBitmap(
         return posXbuffer to posYbuffer
     }
 
-    private fun CodepointSequence.normalise(): CodepointSequence {
+    private fun CodepointSequence.utf16to32(): CodepointSequence {
         val seq = CodepointSequence()
 
         var i = 0
         while (i < this.size) {
             val c = this[i]
-            val cPrev = this.getOrElse(i-1) { -1 }
-            val cNext = this.getOrElse(i+1) { -1 }
-
-            // LET THE NORMALISATION BEGIN //
 
             // check UTF-16 surrogates
             if (i < this.lastIndex && c.isHighSurrogate()) {
@@ -1053,8 +1045,30 @@ class TerrarumSansBitmap(
                     i++ // skip next char (guaranteed to be Low Surrogate)
                 }
             }
+            else {
+                seq.add(c)
+            }
+
+            i++
+        }
+
+        return seq
+    }
+
+    private fun CodepointSequence.normalise(): CodepointSequence {
+        val dis = this.utf16to32()
+        val seq = CodepointSequence()
+
+        var i = 0
+        while (i < dis.size) {
+            val c = dis[i]
+            val cPrev = dis.getOrElse(i-1) { -1 }
+            val cNext = dis.getOrElse(i+1) { -1 }
+
+            // LET THE NORMALISATION BEGIN //
+
             // disassemble Hangul Syllables into Initial-Peak-Final encoding
-            else if (c in 0xAC00..0xD7A3) {
+            if (c in 0xAC00..0xD7A3) {
                 val cInt = c - 0xAC00
                 val indexCho  = getWanseongHanChoseong(cInt)
                 val indexJung = getWanseongHanJungseong(cInt)
@@ -1113,9 +1127,9 @@ class TerrarumSansBitmap(
                 seq.add(diacriticDotRemoval[c]!!)
             }
             // rearrange {letter, before-and-after diacritics} as {before-diacritics, letter, after-diacritics}
-            else if (i < this.lastIndex && glyphProps[this[i + 1]]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
+            else if (i < dis.lastIndex && glyphProps[dis[i + 1]]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
 
-                val diacriticsProp = glyphProps[this[i + 1]]!!
+                val diacriticsProp = glyphProps[dis[i + 1]]!!
                 seq.add(diacriticsProp.extInfo[0])
                 seq.add(c)
                 seq.add(diacriticsProp.extInfo[1])
@@ -1128,8 +1142,8 @@ class TerrarumSansBitmap(
                     seq.add(it)
                 }
             }
-            // U+007F is DEL originally, but this font stores bitmap of Replacement Character (U+FFFD)
-            // to this position. This line will replace U+FFFD into U+007F.
+            // U+007F is DEL originally, but dis font stores bitmap of Replacement Character (U+FFFD)
+            // to dis position. dis line will replace U+FFFD into U+007F.
             else if (c == 0xFFFD) {
                 seq.add(0x7F) // 0x7F in used internally to display <??> character
             }
@@ -1394,7 +1408,7 @@ class TerrarumSansBitmap(
         return crc.value.toInt()
     }
 
-    fun CodePoint.isLowHeight() = glyphProps[this]?.isLowheight == true || this in lowHeightLetters
+    fun CodePoint.isLowHeight() = glyphProps[this]?.isLowheight == true
 
     private fun getKerning(prevChar: CodePoint, thisChar: CodePoint): Int {
         val maskL = glyphProps[prevChar]?.kerningMask
@@ -1404,7 +1418,7 @@ class TerrarumSansBitmap(
                 if (it.first.matches(maskL!!) && it.second.matches(maskR!!)) {
                     val contraction = if (glyphProps[prevChar]?.isKernYtype == true || glyphProps[thisChar]?.isKernYtype == true) it.yy else it.bb
 
-                    dbgprn("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first.s} ${it.second.s}; Contraction: $contraction")
+//                    dbgprn("Kerning rule match #${index+1}: ${prevChar.toChar()}${thisChar.toChar()}, Rule:${it.first.s} ${it.second.s}; Contraction: $contraction")
 
                     return -contraction
                 }
@@ -1489,6 +1503,8 @@ class TerrarumSansBitmap(
         internal val SHEET_EXTD_VARW =         27
         internal val SHEET_CURRENCIES_VARW =   28
         internal val SHEET_INTERNAL_VARW = 29
+        internal val SHEET_LETTERLIKE_MATHS_VARW = 30
+        internal val SHEET_ENCLOSED_ALPHNUM_SUPL_VARW = 31
 
         internal val SHEET_UNKNOWN = 254
 
@@ -1505,35 +1521,6 @@ class TerrarumSansBitmap(
         internal val CHARSET_OVERRIDE_SR_SR = 0xFFFC2
 
 
-        private val unihanWidthSheets = arrayOf(
-                SHEET_UNIHAN,
-                SHEET_FW_UNI
-        )
-        private val variableWidthSheets = arrayOf(
-                SHEET_ASCII_VARW,
-                SHEET_EXTA_VARW,
-                SHEET_EXTB_VARW,
-                SHEET_CYRILIC_VARW,
-                SHEET_UNI_PUNCT_VARW,
-                SHEET_GREEK_VARW,
-                SHEET_THAI_VARW,
-                SHEET_HAYEREN_VARW,
-                SHEET_KARTULI_VARW,
-                SHEET_IPA_VARW,
-                SHEET_LATIN_EXT_ADD_VARW,
-                SHEET_BULGARIAN_VARW,
-                SHEET_SERBIAN_VARW,
-                SHEET_TSALAGI_VARW,
-                SHEET_INSUAR_VARW,
-                SHEET_NAGARI_BENGALI_VARW,
-                SHEET_KARTULI_CAPS_VARW,
-                SHEET_DIACRITICAL_MARKS_VARW,
-                SHEET_GREEK_POLY_VARW,
-                SHEET_EXTC_VARW,
-                SHEET_EXTD_VARW,
-                SHEET_CURRENCIES_VARW,
-                SHEET_INTERNAL_VARW
-        )
         private val autoShiftDownOnLowercase = arrayOf(
                 SHEET_DIACRITICAL_MARKS_VARW
         )
@@ -1568,7 +1555,9 @@ class TerrarumSansBitmap(
                 "latinExtC_variable.tga",
                 "latinExtD_variable.tga",
                 "currencies_variable.tga",
-                "internal_variable.tga"
+                "internal_variable.tga",
+                "letterlike_symbols_variable.tga",
+                "enclosed_alphanumeric_supplement_variable.tga",
         )
         private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
                 0..0xFF, // SHEET_ASCII_VARW
@@ -1600,7 +1589,9 @@ class TerrarumSansBitmap(
                 0x2C60..0x2C7F, // SHEET_EXTC_VARW
                 0xA720..0xA7FF, // SHEET_EXTD_VARW
                 0x20A0..0x20CF, // SHEET_CURRENCIES_VARW
-                0xFFE00..0xFFF9F // SHEET_INTERNAL_VARW
+                0xFFE00..0xFFF9F, // SHEET_INTERNAL_VARW
+                0x2100..0x214F, // SHEET_LETTERLIKE_MATHS_VARW
+                0x1F100..0x1F1FF, // SHEET_ENCLOSED_ALPHNUM_SUPL_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -1759,9 +1750,8 @@ class TerrarumSansBitmap(
         private fun isHangulCompat(c: CodePoint) = c in codeRangeHangulCompat
         private fun isCurrencies(c: CodePoint) = c in codeRange[SHEET_CURRENCIES_VARW]
         private fun isInternalSymbols(c: CodePoint) = c in codeRange[SHEET_INTERNAL_VARW]
-
-        // underscored name: not a charset
-        private fun _isCaps(c: CodePoint) = Character.isUpperCase(c) || isKartvelianCaps(c)
+        private fun isLetterlike(c: CodePoint) = c in codeRange[SHEET_LETTERLIKE_MATHS_VARW]
+        private fun isEnclosedAlphnumSupl(c: CodePoint) = c in codeRange[SHEET_ENCLOSED_ALPHNUM_SUPL_VARW]
 
 
         private fun extAindexX(c: CodePoint) = (c - 0x100) % 16
@@ -1844,50 +1834,12 @@ class TerrarumSansBitmap(
 
         private fun internalIndexX(c: CodePoint) = (c - 0xFFE00) % 16
         private fun internalIndexY(c: CodePoint) = (c - 0xFFE00) / 16
-        /*
-#!/usr/bin/python3
 
-s = ""
-a = []
+        private fun letterlikeIndexX(c: CodePoint) = (c - 0x2100) % 16
+        private fun letterlikeIndexY(c: CodePoint) = (c - 0x2100) / 16
 
-for c in s:
-    a.append("0x{0:x}".format(ord(c)))
-
-print(','.join(a))
- */     // acegijmnopqrsuvwxyzɱɳʙɾɽʒʂʐʋɹɻɥɟɡɢʛȵɲŋɴʀɕʑçʝxɣχʁʜʍɰʟɨʉɯuʊøɘɵɤəɛœɜɞʌɔæɐɶɑɒɚɝɩɪʅʈʏʞⱥⱦⱱⱳⱴⱶⱷⱸⱺⱻꜥꜩꜫꜭꜯꜰꜱꜳꜵꜷꜹꜻꜽꜿꝋꝍꝏꝑꝓꝕꝗꝙꝛꝝꝟꝡꝫꝯꝳꝴꝵꝶꝷꝺꝼꝿꞁꞃꞅꞇꞑꞓꞔꞛꞝꞟꞡꞥꞧꞩꞮꞷꟺ\uA7AF\uA7B9\uA7C3\uA7CAƍƞơƣƨưƴƶƹƺƽƿıȷ
-        private val lowHeightLetters = intArrayOf(0x61,0x63,0x65,0x67,0x69,0x6a,0x6d,0x6e,0x6f,0x70,0x71,0x72,0x73,0x75,0x76,0x77,0x78,0x79,0x7a,0x271,0x273,0x299,0x27e,0x27d,0x292,0x282,0x290,0x28b,0x279,0x27b,0x265,0x25f,0x261,0x262,0x29b,0x235,0x272,0x14b,0x274,0x280,0x255,0x291,0xe7,0x29d,0x78,0x263,0x3c7,0x281,0x29c,0x28d,0x270,0x29f,0x268,0x289,0x26f,0x75,0x28a,0xf8,0x258,0x275,0x264,0x259,0x25b,0x153,0x25c,0x25e,0x28c,0x254,0xe6,0x250,0x276,0x251,0x252,0x25a,0x25d,0x269,0x26a,0x285,0x288,0x28f,0x29e,0x2c65,0x2c66,0x2c71,0x2c73,0x2c74,0x2c76,0x2c77,0x2c78,0x2c7a,0x2c7b,0xa725,0xa729,0xa72b,0xa72d,0xa72f,0xa730,0xa731,0xa733,0xa735,0xa737,0xa739,0xa73b,0xa73d,0xa73f,0xa74b,0xa74d,0xa74f,0xa751,0xa753,0xa755,0xa757,0xa759,0xa75b,0xa75d,0xa75f,0xa761,0xa76b,0xa76f,0xa773,0xa774,0xa775,0xa776,0xa777,0xa77a,0xa77c,0xa77f,0xa781,0xa783,0xa785,0xa787,0xa791,0xa793,0xa794,0xa79b,0xa79d,0xa79f,0xa7a1,0xa7a5,0xa7a7,0xa7a9,0xa7ae,0xa7b7,0xa7fa,0xa7af,0xa7b9,0xa7c3,0xa7ca,0x18d,0x19e,0x1a1,0x1a3,0x1a8,0x1b0,0x1b4,0x1b6,0x1b9,0x1ba,0x1bd,0x1bf,0x131,0x237,0xFFE01).toSortedSet()
-        // TŢŤƬƮȚͲΤТҬᛏṪṬṮṰⲦϮϯⴶꚌꚐᎢᛠꓔ
-        private val kernTees = intArrayOf(0x54,0x162,0x164,0x1ac,0x1ae,0x21a,0x372,0x3a4,0x422,0x4ac,0x16cf,0x1e6a,0x1e6c,0x1e6e,0x1e70,0x2ca6,0x3ee,0x3ef,0x2d36,0xa68c,0xa690,0x13a2,0x16e0,0xa4d4).toSortedSet()
-        // ŦȾYÝŶŸɎΎΫΥҮҰᛉᛘẎỲỴỶỸὙὛὝὟῪΎꓬȲ
-        private val kernYees = intArrayOf(0x166,0x23e,0x59,0xdd,0x176,0x178,0x24e,0x38e,0x3ab,0x3a5,0x4ae,0x4b0,0x16c9,0x16d8,0x1e8e,0x1ef2,0x1ef4,0x1ef6,0x1ef8,0x1f59,0x1f5b,0x1f5d,0x1f5f,0x1fea,0x1feb,0xa4ec,0x232).toSortedSet()
-        // VṼṾⱯⴸꓦꓯꝞ
-        private val kernVees = intArrayOf(0x56,0x1e7c,0x1e7e,0x2c6f,0x2d38,0xa4e6,0xa4ef,0xa75e).toSortedSet()
-        // AÀÁÂÃÄÅĀĂĄǍǞǠǺȀȂȦɅΆΑΛАДЛѦӅӐӒԮḀẠẢẤẦẨẪẬẮẰẲẴẶἈἉἊἋἌἍἎἏᾸᾹᾺΆꓥꓮꙞꙢꙤꚀꚈꜲ
-        private val kernAyes = intArrayOf(0x41,0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0x100,0x102,0x104,0x1cd,0x1de,0x1e0,0x1fa,0x200,0x202,0x226,0x245,0x386,0x391,0x39b,0x410,0x414,0x41b,0x466,0x4c5,0x4d0,0x4d2,0x52e,0x1e00,0x1ea0,0x1ea2,0x1ea4,0x1ea6,0x1ea8,0x1eaa,0x1eac,0x1eae,0x1eb0,0x1eb2,0x1eb4,0x1eb6,0x1f08,0x1f09,0x1f0a,0x1f0b,0x1f0c,0x1f0d,0x1f0e,0x1f0f,0x1fb8,0x1fb9,0x1fba,0x1fbb,0xa4e5,0xa4ee,0xa65e,0xa662,0xa664,0xa680,0xa688,0xa732).toSortedSet()
-        // LĹĻĽĿŁʟᏞᴌḶḸḺḼꓡꓕꝆꝈꞭꞱꮮւևⳐⳑԼⱢⱠ
-        private val kernElls = intArrayOf(0x4c,0x139,0x13b,0x13d,0x13f,0x141,0x29f,0x13de,0x1d0c,0x1e36,0x1e38,0x1e3a,0x1e3c,0xa4e1,0xa4d5,0xa746,0xa748,0xa7ad,0xa7b1,0xabae,0x582,0x587,0x2cd0,0x2cd1,0x53c,0x2c62,0x2c60).toSortedSet()
-        // ΓЃГҐҒӶӺᎱᚨᚩᚪᚫᚹᛇᛚᛛᛢᛮⲄꓩꞄ
-        private val kernGammas = intArrayOf(0x393,0x403,0x413,0x490,0x492,0x4f6,0x4fa,0x13b1,0x16a8,0x16a9,0x16aa,0x16ab,0x16b9,0x16c7,0x16da,0x16db,0x16e2,0x16ee,0x2c84,0xa4e9,0xa784).toSortedSet()
-        // JĴɹɺɻͿᛇᴊᎫᏗꓕꓙꞱꭻꮧ
-        private val kernJays = intArrayOf(0x4a,0x134,0x279,0x27a,0x27b,0x37f,0x16c7,0x1d0a,0x13ab,0x13d7,0xa4d5,0xa4d9,0xa7b1,0xab7b,0xaba7).toSortedSet()
-        // dďđƌɗʠḋԀԁԂԃԺժմվփᎴᏊᏯᲫᶁᶑḍḏḑḓⴓⴛⴣⴥꝱꟈ
-        private val kernDees = intArrayOf(0x64,0x10f,0x111,0x18c,0x257,0x2a0,0x1e0b,0x500,0x501,0x502,0x503,0x53a,0x56a,0x574,0x57e,0x583,0x13b4,0x13ca,0x13ef,0x1cab,0x1d81,0x1d91,0x1e0d,0x1e0f,0x1e11,0x1e13,0x2d13,0x2d1b,0x2d23,0x2d25,0xa771,0xa7c8)
-        // bhkƙþĥķƄƅƕƙƥǩǶȟɓɦɧʣʤʥʪʫЪЬҺһԂԃԈԊԠԢԦԧԽՒիխհնփևსხᏏᏓᏥᲮᵬᶀᶄḅḇḣḥḧḱḳḵᾈᾉᾊᾋᾌᾍᾎᾏᾘᾙᾚᾛᾜᾝᾞᾟᾨᾩᾪᾫᾬᾭᾮᾯῌⴐⴑⴙⴛᲆⱨⱪꙎꝃꝧꞗꞣ
-        private val kernBees = intArrayOf(0x62,0x68,0x6b,0x199,0xfe,0x125,0x137,0x184,0x185,0x195,0x199,0x1a5,0x1e9,0x1f6,0x21f,0x253,0x266,0x267,0x2a3,0x2a4,0x2a5,0x2aa,0x2ab,0x42a,0x42c,0x4ba,0x4bb,0x502,0x503,0x508,0x50a,0x520,0x522,0x526,0x527,0x53d,0x552,0x56b,0x56d,0x570,0x576,0x583,0x587,0x10e1,0x10ee,0x13cf,0x13d3,0x13e5,0x1cae,0x1d6c,0x1d80,0x1d84,0x1e05,0x1e07,0x1e23,0x1e25,0x1e27,0x1e31,0x1e33,0x1e35,0x1f88,0x1f89,0x1f8a,0x1f8b,0x1f8c,0x1f8d,0x1f8e,0x1f8f,0x1f98,0x1f99,0x1f9a,0x1f9b,0x1f9c,0x1f9d,0x1f9e,0x1f9f,0x1fa8,0x1fa9,0x1faa,0x1fab,0x1fac,0x1fad,0x1fae,0x1faf,0x1fcc,0x2d10,0x2d11,0x2d19,0x2d1b,0x1c86,0x2c68,0x2c6a,0xa64e,0xa743,0xa767,0xa797,0xa7a3)
-        // yÿŷƴɏɣɤʏγνуўѵѷүұӯӱӳ
-        private val kernLowVees = intArrayOf(0x79,0xff,0x177,0x1b4,0x24f,0x263,0x264,0x28f,0x3b3,0x3bd,0x443,0x45e,0x475,0x477,0x4af,0x4b1,0x4ef,0x4f1,0x4f3).toSortedSet()
-        // ƛʌλлљѧԉԓԡԯ
-        private val kernLowLambdas = intArrayOf(0x19b,0x28c,0x3bb,0x43b,0x459,0x467,0x509,0x513,0x521,0x52f).toSortedSet()
-
-        private val slashes = intArrayOf(0x2f)
-
-        private val kernTee = -2
-        private val kernYee = -1
-        private val kernAV = -1
-        private val kernAVlow = -1
-        private val kernSlash = -1
-        private val kernDoubleSlash = -2
-
+        private fun enclosedAlphnumSuplX(c: CodePoint) = (c - 0x1F100) % 16
+        private fun enclosedAlphnumSuplY(c: CodePoint) = (c - 0x1F100) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
