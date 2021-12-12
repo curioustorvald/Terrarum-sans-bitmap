@@ -1898,6 +1898,7 @@ class TerrarumSansBitmap(
          * J·K
          */
         private val kerningRules = arrayListOf(
+                Kem(ing("_`_@___`__"),ing("`_`___@___")), // ул
                 Kem(ing("_@_`___`__"),ing("`_________")),
                 Kem(ing("_@_@___`__"),ing("`___@_@___"),1,1),
                 Kem(ing("_@_@_`_`__"),ing("`_____@___")),
