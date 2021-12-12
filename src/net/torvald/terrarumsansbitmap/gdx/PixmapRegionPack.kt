@@ -110,8 +110,6 @@ class PixmapRegionPack(
 
 
 
-                // todo globalFlipY ?
-
                 /*return*/region
             }
         }
@@ -151,8 +149,6 @@ class PixmapRegionPack(
                 //println()
 
 
-
-                // todo globalFlipY ?
 
                 /*return*/region
             }

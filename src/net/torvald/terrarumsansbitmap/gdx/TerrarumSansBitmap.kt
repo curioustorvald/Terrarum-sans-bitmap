@@ -89,7 +89,7 @@ internal typealias Hash = Long
  *
  * @param noShadow Self-explanatory
  * @param flipY If you have Y-down coord system implemented on your GDX (e.g. legacy codebase), set this to ```true```
- * so that the shadow won't be upside-down. For glyph getting upside-down, set ```TextureRegionPack.globalFlipY = true```.
+ * so that the shadow won't be upside-down.
  *
  * Created by minjaesong on 2017-06-15.
  */

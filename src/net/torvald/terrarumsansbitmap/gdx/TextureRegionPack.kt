@@ -51,8 +51,7 @@ class TextureRegionPack(
             this(Texture(fileHandle), tileW, tileH, hGap, vGap, hFrame, vFrame, xySwapped, flipX, flipY)
 
     companion object {
-        /** Intented for Y-down coord system, typically fon Non-GDX codebase */
-        var globalFlipY = false
+
     }
 
     val regions: Array<TextureRegion>
@@ -72,7 +71,7 @@ class TextureRegionPack(
                 region.setRegion(texture)
                 region.setRegion(rx, ry, tileW, tileH)
 
-                region.flip(flipX, if (flipY) !globalFlipY else globalFlipY)
+                region.flip(flipX, flipY)
 
                 /*return*/region
             }
@@ -86,7 +85,7 @@ class TextureRegionPack(
                 region.setRegion(texture)
                 region.setRegion(rx, ry, tileW, tileH)
 
-                region.flip(flipX, if (flipY) !globalFlipY else globalFlipY)
+                region.flip(flipX, flipY)
 
                 /*return*/region
             }
