@@ -541,8 +541,8 @@ class TerrarumSansBitmap(
             return SHEET_LATIN_EXT_ADD_VARW
         else if (isCherokee(c))
             return SHEET_TSALAGI_VARW
-        else if (isInsular(c))
-            return SHEET_INSUAR_VARW
+        else if (isPhoneticExt(c))
+            return SHEET_PHONETIC_EXT_VARW
         else if (isNagariBengali(c))
             return SHEET_NAGARI_BENGALI_VARW
         else if (isKartvelianCaps(c))
@@ -644,9 +644,9 @@ class TerrarumSansBitmap(
                 sheetX = cherokeeIndexX(ch)
                 sheetY = cherokeeIndexY(ch)
             }
-            SHEET_INSUAR_VARW -> {
-                sheetX = insularIndexX(ch)
-                sheetY = insularIndexY(ch)
+            SHEET_PHONETIC_EXT_VARW -> {
+                sheetX = phoneticExtIndexX(ch)
+                sheetY = phoneticExtIndexY(ch)
             }
             SHEET_NAGARI_BENGALI_VARW -> {
                 sheetX = nagariIndexX(ch)
@@ -1494,7 +1494,7 @@ class TerrarumSansBitmap(
         internal val SHEET_BULGARIAN_VARW =    18
         internal val SHEET_SERBIAN_VARW =      19
         internal val SHEET_TSALAGI_VARW =      20
-        internal val SHEET_INSUAR_VARW =       21 // currently only for U+1D79
+        internal val SHEET_PHONETIC_EXT_VARW = 21
         internal val SHEET_NAGARI_BENGALI_VARW=22
         internal val SHEET_KARTULI_CAPS_VARW = 23
         internal val SHEET_DIACRITICAL_MARKS_VARW = 24
@@ -1547,7 +1547,7 @@ class TerrarumSansBitmap(
                 "cyrilic_bulgarian_variable.tga",
                 "cyrilic_serbian_variable.tga",
                 "tsalagi_variable.tga",
-                "insular_variable.tga",
+                "phonetic_extensions_variable.tga",
                 "devanagari_bengali_variable.tga",
                 "kartuli_allcaps_variable.tga",
                 "diacritical_marks_variable.tga",
@@ -1581,7 +1581,7 @@ class TerrarumSansBitmap(
                 0xF0000..0xF005F, // SHEET_BULGARIAN_VARW; assign them to PUA
                 0xF0060..0xF00BF, // SHEET_SERBIAN_VARW; assign them to PUA
                 0x13A0..0x13F5, // SHEET_TSALAGI_VARW
-                0x1D79..0x1D79, // SHEET_INSULAR_VARW; todo: Phonetic Extensions et al, 1D00..1DFF
+                0x1D00..0x1DBF, // SHEET_PHONETIC_EXT_VARW
                 0x900..0x9FF, // SHEET_NAGARI_BENGALI_VARW
                 0x1C90..0x1CBF, // SHEET_KARTULI_CAPS_VARW
                 0x300..0x36F, // SHEET_DIACRITICAL_MARKS_VARW
@@ -1740,7 +1740,7 @@ class TerrarumSansBitmap(
         fun isColourCode(c: CodePoint) = c == 0x100000 || c in 0x10F000..0x10FFFF
         private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFFF
         private fun isCherokee(c: CodePoint) = c in codeRange[SHEET_TSALAGI_VARW]
-        private fun isInsular(c: CodePoint) = c == 0x1D79
+        private fun isPhoneticExt(c: CodePoint) = c in codeRange[SHEET_PHONETIC_EXT_VARW]
         private fun isNagariBengali(c: CodePoint) = c in codeRange[SHEET_NAGARI_BENGALI_VARW]
         private fun isKartvelianCaps(c: CodePoint) = c in codeRange[SHEET_KARTULI_CAPS_VARW]
         private fun isDiacriticalMarks(c: CodePoint) = c in codeRange[SHEET_DIACRITICAL_MARKS_VARW]
@@ -1808,8 +1808,8 @@ class TerrarumSansBitmap(
         private fun cherokeeIndexX(c: CodePoint) = (c - 0x13A0) % 16
         private fun cherokeeIndexY(c: CodePoint) = (c - 0x13A0) / 16
 
-        private fun insularIndexX(c: CodePoint) = 0
-        private fun insularIndexY(c: CodePoint) = 0
+        private fun phoneticExtIndexX(c: CodePoint) = (c - 0x1D00) % 16
+        private fun phoneticExtIndexY(c: CodePoint) = (c - 0x1D00) / 16
 
         private fun nagariIndexX(c: CodePoint) = (c - 0x900) % 16
         private fun nagariIndexY(c: CodePoint) = (c - 0x900) / 16

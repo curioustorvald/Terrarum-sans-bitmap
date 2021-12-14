@@ -108,10 +108,11 @@ How multilingual? Real multilingual!
 
     Basic Latin   Latin-1 Supplement   Latin Extended-A   Latin Extended-B   IPA Extension   Greek   Cyrillic
     Cyrillic Supplement   Armenian   Devanagari   Bengali   Thai   Georgian   Hangul Jamo   Cherokee   Runic
-    Georgian Extended   Greek Extended   General Punctuations   Superscripts and Subscripts   Currency Symbols
-    CJK Symbols   Latin Extended-C   Kana   Hangul Compatibility Jamo   Kana Phonetic Extensions
-    CJK Unihan Extension A   CJK Unihan   Latin Extended-D   Hangul Jamo Extended-A   Hangul Syllables
-    Hangul Jamo Extended-B   Fullwidth Forms   Kana Supplement
+    Georgian Extended   Phonetic Extensions   Phonetic Extensions Supplement   Greek Extended
+    General Punctuations   Superscripts and Subscripts   Currency Symbols   Letterlike Symbols   CJK Symbols
+    Latin Extended-C   Kana   Hangul Compatibility Jamo   Kana Phonetic Extensions   CJK Unihan Extension A
+    CJK Unihan   Latin Extended-D   Hangul Jamo Extended-A   Hangul Syllables   Hangul Jamo Extended-B
+    Fullwidth Forms   Kana Supplement   Enclosed Alphanumeric Supplement
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀.
 You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make
