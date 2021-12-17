@@ -261,8 +261,6 @@ class TerrarumSansBitmap(
             else if (index == SHEET_UNIHAN)
                 PixmapRegionPack(pixmap, W_UNIHAN, H_UNIHAN) // the only exception that is height is 16
             // below they all have height of 20 'H'
-            else if (index == SHEET_FW_UNI)
-                PixmapRegionPack(pixmap, W_UNIHAN, H)
             else if (index == SHEET_CJK_PUNCT)
                 PixmapRegionPack(pixmap, W_ASIAN_PUNCT, H)
             else if (index == SHEET_KANA)
@@ -522,7 +520,7 @@ class TerrarumSansBitmap(
         else if (isCJKPunct(c))
             return SHEET_CJK_PUNCT
         else if (isFullwidthUni(c))
-            return SHEET_FW_UNI
+            return SHEET_HALFWIDTH_FULLWIDTH_VARW
         else if (isGreek(c))
             return SHEET_GREEK_VARW
         else if (isThai(c))
@@ -596,7 +594,7 @@ class TerrarumSansBitmap(
                 sheetX = cyrilicIndexX(ch)
                 sheetY = cyrilicIndexY(ch)
             }
-            SHEET_FW_UNI -> {
+            SHEET_HALFWIDTH_FULLWIDTH_VARW -> {
                 sheetX = fullwidthUniIndexX(ch)
                 sheetY = fullwidthUniIndexY(ch)
             }
@@ -796,7 +794,6 @@ class TerrarumSansBitmap(
         // fixed-width props
         codeRange[SHEET_CJK_PUNCT].forEach { glyphProps[it] = GlyphProps(W_ASIAN_PUNCT) }
         codeRange[SHEET_CUSTOM_SYM].forEach { glyphProps[it] = GlyphProps(20) }
-        codeRange[SHEET_FW_UNI].forEach { glyphProps[it] = GlyphProps(W_UNIHAN) }
         codeRange[SHEET_HANGUL].forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE) }
         codeRangeHangulCompat.forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE) }
         codeRange[SHEET_KANA].forEach { glyphProps[it] = GlyphProps(W_KANA) }
@@ -1481,7 +1478,7 @@ class TerrarumSansBitmap(
         internal val SHEET_CJK_PUNCT =         5
         internal val SHEET_UNIHAN =            6
         internal val SHEET_CYRILIC_VARW =      7
-        internal val SHEET_FW_UNI =            8
+        internal val SHEET_HALFWIDTH_FULLWIDTH_VARW = 8
         internal val SHEET_UNI_PUNCT_VARW =    9
         internal val SHEET_GREEK_VARW =        10
         internal val SHEET_THAI_VARW =         11
@@ -1534,7 +1531,7 @@ class TerrarumSansBitmap(
                 "cjkpunct.tga",
                 "wenquanyi.tga.gz",
                 "cyrilic_variable.tga",
-                "fullwidth_forms.tga",
+                "halfwidth_fullwidth_variable.tga",
                 "unipunct_variable.tga",
                 "greek_variable.tga",
                 "thai_variable.tga",
@@ -1568,7 +1565,7 @@ class TerrarumSansBitmap(
                 0x3000..0x303F, // SHEET_CJK_PUNCT
                 0x3400..0x9FFF, // SHEET_UNIHAN
                 0x400..0x52F, // SHEET_CYRILIC_VARW
-                0xFF00..0xFF1F, // SHEET_FW_UNI
+                0xFF00..0xFFFF, // SHEET_HALFWIDTH_FULLWIDTH_VARW
                 0x2000..0x209F, // SHEET_UNI_PUNCT_VARW
                 0x370..0x3CE, // SHEET_GREEK_VARW
                 0xE00..0xE5F, // SHEET_THAI_VARW
@@ -1724,7 +1721,7 @@ class TerrarumSansBitmap(
         private fun isCJKPunct(c: CodePoint) = c in codeRange[SHEET_CJK_PUNCT]
         private fun isUniHan(c: CodePoint) = c in codeRange[SHEET_UNIHAN]
         private fun isCyrilic(c: CodePoint) = c in codeRange[SHEET_CYRILIC_VARW]
-        private fun isFullwidthUni(c: CodePoint) = c in codeRange[SHEET_FW_UNI]
+        private fun isFullwidthUni(c: CodePoint) = c in codeRange[SHEET_HALFWIDTH_FULLWIDTH_VARW]
         private fun isUniPunct(c: CodePoint) = c in codeRange[SHEET_UNI_PUNCT_VARW]
         private fun isGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_VARW]
         private fun isThai(c: CodePoint) = c in codeRange[SHEET_THAI_VARW]
