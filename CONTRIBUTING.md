@@ -52,9 +52,9 @@ Rightmost vertical column (should be 20 px tall) contains the tags. Tags are def
       K -'
       Q ---Compiler Directive (see below)
       n --,
-      X -, `-Nudging Bits (see below)
+      Y -, `-Nudging Bits (see below)
       X  |
-      X  |= Diacritics Anchor Points (see below)
+      Y  |= Diacritics Anchor Points (see below)
       X -'  
       A -,_ 0 Align  1 Align  0 Align   1 Align before
       A -'  0 left   0 right  1 centre  1 the glyph
@@ -62,12 +62,6 @@ Rightmost vertical column (should be 20 px tall) contains the tags. Tags are def
       S -,_ 0 Stack  1 Stack  0 Before  1 Up &
 (MSB) S -'  0 up     0 down   1 &After  1 Down (e.g. U+0C48)
 
-TODO:
-c - Nudging
-Y - Anchor point Y for undefined, undefined, undefined
-X - Anchor point X for undefined, undefined, undefined
-Y - Anchor point Y for (unused), undefined, undefined
-X - Anchor point X for Type-0 (centre-aligned) diacritics, undefined, undefined
 
 * Nudging Bits Encoding:
 
@@ -78,6 +72,15 @@ X-positive: nudges towards left
 Y-positive: nudges towards up
 
 * Diacritics Anchor Point Encoding:
+
+4 Pixels are further divided as follows:
+
+(LSB)
+Y - Anchor point Y for undefined, undefined, undefined
+X - Anchor point X for undefined, undefined, undefined
+Y - Anchor point Y for (unused), undefined, undefined
+X - Anchor point X for Type-0 (centre-aligned) diacritics, undefined, undefined
+(MSB)
 
     <MSB,Red> 1Y1Y1Y1Y 1Y2Y2Y2Y 1Y3Y3Y3Y <LSB,Blue>
     <MSB,Red> 1X1X1X1X 1X2X2X2X 1X3X3X3X <LSB,Blue>
