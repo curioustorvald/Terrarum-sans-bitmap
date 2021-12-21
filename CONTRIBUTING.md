@@ -7,7 +7,7 @@ Font Spritesheets are stored in ```assets/graphics/fonts``` directory. Image for
 
 #### Before getting started, you did read our design goals, right? Good. Now you may continue your awesome work.
 
-### Ascenders, descenders, width informations (aka Glyph Tags)
+## Ascenders, descenders, width informations (aka Glyph Tags)
 
 ![Alas, use more modern browser or get better internet connexion!](glyph_height_pos_annotation.png)
 
@@ -26,11 +26,11 @@ Each cell is 16 px wide, and any glyph you draw **must be contained within lefts
 
 
 
-### Font Metrics
+## Font Metrics for variable-width font sheets
 
 Although the font is basically a Spritesheet, some of the sheet expects variable widths to be supported. Any sheets with ```_variable``` means it expects variable widths. Anything else expects fixed width (regular Spritesheet behaviour). ```cjkpunct``` has width of 10, ```kana``` and ```hangul_johab``` has width of 12, ```wenquanyi``` has width of 16.
 
-### Parsing glyph widths for variable font sheets
+### Parsing Glyph Tags
 
 ![Sample of Font Spritesheet with annotation](width_bit_encoding_annotated.png)
 
@@ -61,26 +61,28 @@ Rightmost vertical column (should be 20 px tall) contains the tags. Tags are def
       D --Diacritics Type Bit (see below; not all diacritics are marked as one on the spritesheet)
       S -,_ 0 Stack  1 Stack  0 Before  1 Up &
 (MSB) S -'  0 up     0 down   1 &After  1 Down (e.g. U+0C48)
+```
 
-
-* Nudging Bits Encoding:
+#### Nudging Bits Encoding
 
     <MSB,Red> SXXXXXXX SYYYYYYY 00000000 <LSB,Blue>
 
 Each X and Y numbers are Signed 8-Bit Integer.
-X-positive: nudges towards left
-Y-positive: nudges towards up
 
-* Diacritics Anchor Point Encoding:
+X-positive: nudges towards left  
+Y-positive: nudges towards up  
+
+#### Diacritics Anchor Point Encoding
 
 4 Pixels are further divided as follows:
 
-(LSB)
-Y - Anchor point Y for undefined, undefined, undefined
-X - Anchor point X for undefined, undefined, undefined
-Y - Anchor point Y for (unused), undefined, undefined
-X - Anchor point X for Type-0 (centre-aligned) diacritics, undefined, undefined
-(MSB)
+| LSB |   |   |   |   |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| Y | Anchor point Y for: | undefined | undefined | undefined |
+| X | Anchor point X for: | undefined | undefined | undefined |
+| Y | Anchor point Y for: | (unused) | (unused) | (unused) |
+| X | Anchor point X for: | Type-0 | Type-1 | Type-2 |
+| MSB |   |   |   |   |
 
     <MSB,Red> 1Y1Y1Y1Y 1Y2Y2Y2Y 1Y3Y3Y3Y <LSB,Blue>
     <MSB,Red> 1X1X1X1X 1X2X2X2X 1X3X3X3X <LSB,Blue>
@@ -89,37 +91,30 @@ where Red is first, Green is second, Blue is the third diacritics.
 MSB for each word must be set so that the pixel would appear brighter on the image editor.
 (the font program will only read low 7 bits for each RGB channel)
 
-* Diacritics Type Bit Encoding:
+#### Diacritics Type Bit Encoding
 
     <MSB,Red> FFFFFFFF FFFFFFFF FFFFFFFF <LSB,Blue> (For Type-0)
     <MSB,Red> TTTT0000 00000000 00000000 <LSB,Blue> (For Type-1 to Type-15)
 
-Right now, only the type-0 diacritics and its anchor point is used by the font.
+Certain types of diacritics have predefined meanings:
 
-* Compiler Directives:
+* Type-0: Above
+* Type-1: Below (when it should be separated from being above)
+* Type-2: Overlaid (will shift down 2 pixels for lowheight glyphs instead of the default of 4 pixels)
+
+
+#### Compiler Directives
 
     <MSB,Red> [Opcode] [arg1] [arg2] <LSB,Blue>
 
 Currently supported opcodes:
 
-    - 00000000: No-operation; does not use the Compiler Directive system.
+*00000000: No-operation; does not use the Compiler Directive system.
     
-    - 10000xxx: Replace a character with xxx subchars (yes, number 0 can be used).
-      Replacement characters are encoded vertically from X-zero, bit by bit
-      (colour of the pixel doesn't matter) with LSB sitting on Y-zero.
+*10000xxx: Replace a character with xxx subchars (yes, number 0 can be used).
+  Replacement characters are encoded vertically from X-zero, bit by bit
+  (colour of the pixel doesn't matter) with LSB sitting on Y-zero.
 
-
-
--= NOTE =-
-
-The code has remnants of one old HACK: using 0th diacritics' X-anchor pos as a type selector
-This hack applied only when write-on-top bit is set. Relevant codes are currently commented out instead of
-being completely removed for future debugging.
-Interpretation:
-    DIA_OVERLAY = 1
-    DIA_JOINER = 2
-    
-```
 
 #### Stack Up/Down
 
@@ -157,13 +152,13 @@ Also note that the font compiler will not "stack" these diacritics.
 
 (fun fact: it was drawn on Rhodia memopad with Lamy 2000, then photographed and edited on my iPhone. Letter used is a Cherokee WE Ꮺ)
 
-### Technical Limitations
+## Technical Limitations
 
 - Each spritesheet is 4096x4096 maximum, which is a size of 4K Texture. However it is recommended to be smaller or equal to 1024x1024.
 - Glyphs exceeding 15px of width needs to be broken down with 2 or more characters. Wider sheets WILL NOT BE IMPLEMENTED, can't waste much pixels just for few superwide glyphs.
 - Due to how the compiler is coded, actual glyph must have alpha value of 255, the tags must have alpha values LESS THAN 255 (and obviously greater than zero). RGB plane of the TGA image doesn't do anything, keep it as #FFFFFF white.
 
-### Implementing the Korean writing system
+## Implementation of the Korean writing system
 
 On this font, Hangul letters are printed by assemblying two or three letter pieces. There are 10 sets of Hangul letter pieces on the font. Top 6 are initials, middle 2 are medials, and bottom 2 are finals. On the rightmost side, there's eight assembled glyphs to help you with (assuming you have basic knowledge on the writing system). Top 6 tells you how to use 6 initials, and bottom 2 tells you how to use 2 finals.
 

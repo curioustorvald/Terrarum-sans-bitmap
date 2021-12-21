@@ -739,14 +739,14 @@ class TerrarumSansBitmap(
             val nudgeY = nudgingBits.ushr(16).toByte().toInt() // signed 8-bit int
 
             val diacriticsAnchors = (0..5).map {
-                val yPos = 11 + (it / 3) * 2
+                val yPos = 13 - (it / 3) * 2
                 val shift = (3 - (it % 3)) * 8
                 val yPixel = pixmap.getPixel(codeStartX, codeStartY + yPos).tagify()
                 val xPixel = pixmap.getPixel(codeStartX, codeStartY + yPos + 1).tagify()
-                val y = (yPixel ushr shift) and 127
-                val x = (xPixel ushr shift) and 127
-                val yUsed = (yPixel ushr shift) >= 128
-                val xUsed = (yPixel ushr shift) >= 128
+                val yUsed = (yPixel ushr shift) and 128 != 0
+                val xUsed = (xPixel ushr shift) and 128 != 0
+                val y = if (yUsed) (yPixel ushr shift) and 127 else 0
+                val x = if (xUsed) (xPixel ushr shift) and 127 else 0
 
                 DiacriticsAnchor(it, x, y, xUsed, yUsed)
             }.toTypedArray()
@@ -754,18 +754,22 @@ class TerrarumSansBitmap(
             val alignWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 15).and(255) != 0).toInt() shl y) }
 
             var writeOnTop = pixmap.getPixel(codeStartX, codeStartY + 17) // NO .tagify()
-            if (writeOnTop and 255 == 0) writeOnTop = -1
+            if (writeOnTop and 255 == 0) writeOnTop = -1 // look for the alpha channel
             else {
-                writeOnTop = writeOnTop.ushr(8)
-                if (writeOnTop == 0xFFFFFF) writeOnTop = 0
+                if (writeOnTop.ushr(8) == 0xFFFFFF) writeOnTop = 0
+                else writeOnTop = writeOnTop.ushr(28) and 15
             }
 
             val stackWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 18).and(255) != 0).toInt() shl y) }
 
             glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, IntArray(15), hasKernData, isKernYtype, kerningMask, directiveOpcode, directiveArg1, directiveArg2)
 
+
+            // Debug prints //
 //            if (nudgingBits != 0) dbgprn("${code.charInfo()} nudgeX=$nudgeX, nudgeY=$nudgeY, nudgingBits=0x${nudgingBits.toString(16)}")
 //            if (writeOnTop >= 0) dbgprn("WriteOnTop: ${code.charInfo()} (Type-${writeOnTop})")
+//            if (diacriticsAnchors.any { it.xUsed || it.yUsed }) dbgprn("${code.charInfo()} ${diacriticsAnchors.filter { it.xUsed || it.yUsed }.joinToString()}")
+
 
             // extra info
             val extCount = glyphProps[code]?.requiredExtInfoCount() ?: 0
@@ -834,7 +838,10 @@ class TerrarumSansBitmap(
 
 
     /**
-     * posXbuffer's size is greater than the string, last element marks the width of entire string.
+     * THE function to typeset all the letters and their diacritics
+     *
+     * @return Pair of X-positions and Y-positions, of which the X-position's size is greater than the string
+     * and the last element marks the width of entire string.
      */
     private fun buildPosMap(str: List<Int>): Pair<IntArray, IntArray> {
         val posXbuffer = IntArray(str.size + 1) { 0 }
@@ -900,6 +907,7 @@ class TerrarumSansBitmap(
                     if (isHangul(thisChar) && !isHangulChoseong(thisChar) && !isHangulCompat(thisChar)) {
                         posXbuffer[charIndex] = posXbuffer[nonDiacriticCounter]
                     }
+                    // is this glyph NOT a diacritic?
                     else if (thisProp.writeOnTop < 0) {
                         posXbuffer[charIndex] = -thisProp.nudgeX +
                                 when (itsProp.alignWhere) {
@@ -929,15 +937,19 @@ class TerrarumSansBitmap(
 
                         }
                     }*/
+                    // is this glyph a diacritic?
                     else {
+                        val diacriticsType = thisProp.writeOnTop
                         // set X pos according to alignment information
                         posXbuffer[charIndex] = when (thisProp.alignWhere) {
                             GlyphProps.ALIGN_LEFT, GlyphProps.ALIGN_BEFORE -> posXbuffer[nonDiacriticCounter]
                             GlyphProps.ALIGN_RIGHT -> {
-                                posXbuffer[nonDiacriticCounter] - (W_VAR_INIT - itsProp.width)
+                                val alignXPos = if (!itsProp.diacriticsAnchors[diacriticsType].xUsed) itsProp.width else itsProp.diacriticsAnchors[diacriticsType].x
+
+                                posXbuffer[nonDiacriticCounter] - W_VAR_INIT + alignXPos
                             }
                             GlyphProps.ALIGN_CENTRE -> {
-                                val alignXPos = if (itsProp.diacriticsAnchors[0].x == 0) itsProp.width.div(2) else itsProp.diacriticsAnchors[0].x
+                                val alignXPos = if (!itsProp.diacriticsAnchors[diacriticsType].xUsed) itsProp.width.div(2) else itsProp.diacriticsAnchors[diacriticsType].x
 
                                 if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
                                     posXbuffer[nonDiacriticCounter] + alignXPos + (itsProp.width + 1).div(2)
@@ -966,7 +978,7 @@ class TerrarumSansBitmap(
                                         //dbgprn("AAARRRRHHHH for character ${thisChar.toHex()}")
                                         //dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
                                         //dbgprn("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
-                                        if (thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_OVERLAY)
+                                        if (diacriticsType == GlyphProps.DIA_OVERLAY)
                                             posYbuffer[charIndex] -= H_OVERLAY_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
                                         else
                                             posYbuffer[charIndex] -= H_STACKUP_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
