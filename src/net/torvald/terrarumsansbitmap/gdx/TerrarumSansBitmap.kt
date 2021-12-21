@@ -849,7 +849,7 @@ class TerrarumSansBitmap(
 
 
         var nonDiacriticCounter = 0 // index of last instance of non-diacritic char
-        var stackUpwardCounter = 0
+        var stackUpwardCounter = 0 // TODO separate stack counter for centre- and right aligned
         var stackDownwardCounter = 0
 
         val HALF_VAR_INIT = W_VAR_INIT.minus(1).div(2)
@@ -963,15 +963,14 @@ class TerrarumSansBitmap(
 
 
                         // set Y pos according to diacritics position
-                        if (thisProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
+//                        if (thisProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
                             when (thisProp.stackWhere) {
                                 GlyphProps.STACK_DOWN -> {
-                                    posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
+                                    posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter * flipY.toSign()
                                     stackDownwardCounter++
                                 }
                                 GlyphProps.STACK_UP -> {
-                                    posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
-
+                                    posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter * flipY.toSign()
                                     // shift down on lowercase if applicable
                                     if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
                                             lastNonDiacriticChar.isLowHeight()) {
@@ -979,22 +978,35 @@ class TerrarumSansBitmap(
                                         //dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
                                         //dbgprn("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
                                         if (diacriticsType == GlyphProps.DIA_OVERLAY)
-                                            posYbuffer[charIndex] -= H_OVERLAY_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
+                                            posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
                                         else
-                                            posYbuffer[charIndex] -= H_STACKUP_LOWERCASE_SHIFTDOWN * (!flipY).toSign() // if minus-assign doesn't work, try plus-assign
+                                            posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
+                                    }
+
+                                    stackUpwardCounter++
+
+                                    dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.charInfo()}; stack counter: $stackUpwardCounter")
+                                }
+                                GlyphProps.STACK_UP_N_DOWN -> {
+                                    posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter * flipY.toSign()
+                                    stackDownwardCounter++
+
+
+                                    posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter * flipY.toSign()
+                                    // shift down on lowercase if applicable
+                                    if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
+                                        lastNonDiacriticChar.isLowHeight()) {
+                                        if (diacriticsType == GlyphProps.DIA_OVERLAY)
+                                            posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
+                                        else
+                                            posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
                                     }
 
                                     stackUpwardCounter++
                                 }
-                                GlyphProps.STACK_UP_N_DOWN -> {
-                                    posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter
-                                    stackDownwardCounter++
-                                    posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter
-                                    stackUpwardCounter++
-                                }
                             // for BEFORE_N_AFTER, do nothing in here
                             }
-                        }
+//                        }
                     }
                 }
             }
