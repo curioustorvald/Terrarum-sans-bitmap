@@ -108,18 +108,16 @@ How multilingual? Real multilingual!
 
     Basic Latin   Latin-1 Supplement   Latin Extended-A   Latin Extended-B   IPA Extensions
     Spacing Modifier Letters   Combining Diacritical Marks   Greek and Coptic􏿆ᴱ􀀀   Cyrillic􏿆ᴭ􀀀   Cyrillic Supplement􏿆ᴭ􀀀
-    Armenian   Devanagari   Bengali   Thai   Georgian   Hangul Jamo   Cherokee   Runic   Georgian Extended
+    Armenian   Devanagari   Bengali   Thai   Georgian􏿆ჼ􀀀   Hangul Jamo   Cherokee􏿆⁷􀀀   Runic   Georgian Extended
     Phonetic Extensions   Phonetic Extensions Supplement   Latin Extended Additional   Greek Extended
     General Punctuations   Superscripts and Subscripts   Currency Symbols   Letterlike Symbols
     CJK Symbols and Punctuation   Latin Extended-C   Hiragana   Katakana   Hangul Compatibility Jamo
     Katakana Phonetic Extensions   CJK Unified Ideographs Extension A􏿆¹²·¹􀀀   CJK Unified Ideographs􏿆⁶􀀀
     Latin Extended-D   Hangul Jamo Extended-A   Hangul Syllables   Hangul Jamo Extended-B
-    Halfwidth and Fullwidth Forms   Kana Supplement􏿆⁶􀀀   Enclosed Alphanumeric Supplement
+    Halfwidth and Fullwidth Forms   Kana Supplement􏿆⁹􀀀   Enclosed Alphanumeric Supplement
 
-    􏿆ᴭ􀀀  No support for archæic letters
-    􏿆ᴱ􀀀  No support for Coptic
-    􏿆⁶􀀀  Up to Unicode 6.0
-    􏿆¹²·¹􀀀  Up to Unicode 12.1
+    􏿆ᴭ􀀀  No support for archæic letters    􏿆ᴱ􀀀  No support for Coptic    􏿆ჼ􀀀  Mkhedruli only
+    􏿆⁶􀀀  􏿆⁷􀀀  􏿆⁹􀀀  􏿆¹²·¹􀀀  Up to the specified Unicode version
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀.
 You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make
