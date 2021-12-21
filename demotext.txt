@@ -10,7 +10,7 @@ computer terminal, and you say:
 
 “Well, better than nothing… no, it’s ugly.”
 
-You speak japanese and you wish to support it, but then このクソなfont only good for displaying
+You speak Japanese and wish to support it, but then このクソなfont only good for displaying
 Japanese, it’s not even truly multilingual, and their English look uncanny and inconsistent.
 
 Eventually you just mix different fonts together, and the results were always mildly infuriating.
@@ -106,13 +106,20 @@ How multilingual? Real multilingual!
 
 􏃯Supported Unicode Blocks:􀀀
 
-    Basic Latin   Latin-1 Supplement   Latin Extended-A   Latin Extended-B   IPA Extension   Greek   Cyrillic
-    Cyrillic Supplement   Armenian   Devanagari   Bengali   Thai   Georgian   Hangul Jamo   Cherokee   Runic
-    Georgian Extended   Phonetic Extensions   Phonetic Extensions Supplement   Greek Extended
-    General Punctuations   Superscripts and Subscripts   Currency Symbols   Letterlike Symbols   CJK Symbols
-    Latin Extended-C   Kana   Hangul Compatibility Jamo   Kana Phonetic Extensions   CJK Unihan Extension A
-    CJK Unihan   Latin Extended-D   Hangul Jamo Extended-A   Hangul Syllables   Hangul Jamo Extended-B
-    Halfwidth and Fullwidth Forms   Kana Supplement   Enclosed Alphanumeric Supplement
+    Basic Latin   Latin-1 Supplement   Latin Extended-A   Latin Extended-B   IPA Extensions
+    Spacing Modifier Letters   Combining Diacritical Marks   Greek and Coptic􏿆ᴱ􀀀   Cyrillic􏿆ᴭ􀀀   Cyrillic Supplement􏿆ᴭ􀀀
+    Armenian   Devanagari   Bengali   Thai   Georgian   Hangul Jamo   Cherokee   Runic   Georgian Extended
+    Phonetic Extensions   Phonetic Extensions Supplement   Latin Extended Additional   Greek Extended
+    General Punctuations   Superscripts and Subscripts   Currency Symbols   Letterlike Symbols
+    CJK Symbols and Punctuation   Latin Extended-C   Hiragana   Katakana   Hangul Compatibility Jamo
+    Katakana Phonetic Extensions   CJK Unified Ideographs Extension A􏿆¹²·¹􀀀   CJK Unified Ideographs􏿆⁶􀀀
+    Latin Extended-D   Hangul Jamo Extended-A   Hangul Syllables   Hangul Jamo Extended-B
+    Halfwidth and Fullwidth Forms   Kana Supplement􏿆⁶􀀀   Enclosed Alphanumeric Supplement
+
+    􏿆ᴭ􀀀  No support for archæic letters
+    􏿆ᴱ􀀀  No support for Coptic
+    􏿆⁶􀀀  Up to Unicode 6.0
+    􏿆¹²·¹􀀀  Up to Unicode 12.1
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀.
 You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make

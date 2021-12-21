@@ -26,7 +26,7 @@ class FontTestGDX : Game() {
 
     lateinit var camera: OrthographicCamera
 
-    private val testing = true
+    private val testing = false
 
     private val demotextName = if (testing) "testtext.txt" else "demotext.txt"
     private val outimageName = if (testing) "testing.PNG" else "demo.PNG"
@@ -268,7 +268,7 @@ class FontTestGDX : Game() {
 
 lateinit var appConfig: Lwjgl3ApplicationConfiguration
 const val TEXW = 874
-const val TEXH = 2400
+const val TEXH = 128 * 20
 
 const val WIDTH = TEXW
 const val HEIGHT = 768

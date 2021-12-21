@@ -985,7 +985,7 @@ class TerrarumSansBitmap(
 
                                     stackUpwardCounter++
 
-                                    dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.charInfo()}; stack counter: $stackUpwardCounter")
+//                                    dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.charInfo()}; stack counter: $stackUpwardCounter")
                                 }
                                 GlyphProps.STACK_UP_N_DOWN -> {
                                     posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter * flipY.toSign()
