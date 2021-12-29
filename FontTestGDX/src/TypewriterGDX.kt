@@ -103,7 +103,7 @@ class TypewriterGDX(val width: Int, val height: Int, val cols: Int) : Game() {
         CodepointSequence()
     )
 
-    var keylayoutbase = 0xF3000
+    var keylayoutbase = 0xF9000
     private val printableKeys = ((Input.Keys.NUM_0..Input.Keys.NUM_9) + (Input.Keys.A..Input.Keys.PERIOD) + 62 + (Input.Keys.BACKSPACE..Input.Keys.SLASH)).toHashSet()
 
     var initDone = false

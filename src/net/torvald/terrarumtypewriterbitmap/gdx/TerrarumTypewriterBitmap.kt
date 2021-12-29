@@ -116,7 +116,7 @@ class TerrarumTypewriterBitmap(
                 if (csv.size != 3) throw IllegalArgumentException("Malformed CSV line: '$it'")
                 val key = csv[0]
                 val sheetname = csv[1]
-                val cpstart = csv[2].toInt() * 256 + 0xF2000
+                val cpstart = csv[2].toInt() * 256 + 0xF9000
 
                 spriteSheetNames[key] = sheetname
                 codepointStart[key] = cpstart
