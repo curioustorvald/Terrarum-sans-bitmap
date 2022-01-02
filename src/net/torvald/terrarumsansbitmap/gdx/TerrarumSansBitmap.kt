@@ -561,6 +561,8 @@ class TerrarumSansBitmap(
             return SHEET_LETTERLIKE_MATHS_VARW
         else if (isEnclosedAlphnumSupl(c))
             return SHEET_ENCLOSED_ALPHNUM_SUPL_VARW
+        else if (isTamil(c))
+            return SHEET_TAMIL_VARW
         else
             return SHEET_UNKNOWN
         // fixed width
@@ -686,6 +688,10 @@ class TerrarumSansBitmap(
                 sheetX = enclosedAlphnumSuplX(ch)
                 sheetY = enclosedAlphnumSuplY(ch)
             }
+            SHEET_TAMIL_VARW -> {
+                sheetX = tamilIndexX(ch)
+                sheetY = tamilIndexY(ch)
+            }
             else -> {
                 sheetX = ch % 16
                 sheetY = ch / 16
@@ -705,10 +711,10 @@ class TerrarumSansBitmap(
         val cellW = W_VAR_INIT + 1
         val cellH = H
 
-        for (code in codeRange) {
+        codeRange.forEachIndexed { index, code ->
 
-            val cellX = ((code - codeRange.first()) % cols) * cellW
-            val cellY = ((code - codeRange.first()) / cols) * cellH
+            val cellX = (index % cols) * cellW
+            val cellY = (index / cols) * cellH
 
             val codeStartX = cellX + binaryCodeOffset
             val codeStartY = cellY
@@ -764,20 +770,13 @@ class TerrarumSansBitmap(
 
             glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, IntArray(15), hasKernData, isKernYtype, kerningMask, directiveOpcode, directiveArg1, directiveArg2)
 
-
-            // Debug prints //
-//            if (nudgingBits != 0) dbgprn("${code.charInfo()} nudgeX=$nudgeX, nudgeY=$nudgeY, nudgingBits=0x${nudgingBits.toString(16)}")
-//            if (writeOnTop >= 0) dbgprn("WriteOnTop: ${code.charInfo()} (Type-${writeOnTop})")
-//            if (diacriticsAnchors.any { it.xUsed || it.yUsed }) dbgprn("${code.charInfo()} ${diacriticsAnchors.filter { it.xUsed || it.yUsed }.joinToString()}")
-
-
             // extra info
             val extCount = glyphProps[code]?.requiredExtInfoCount() ?: 0
             if (extCount > 0) {
 
                 for (x in 0 until extCount) {
                     var info = 0
-                    for (y in 0..18) {
+                    for (y in 0..19) {
                         // if ALPHA is not zero, assume it's 1
                         if (pixmap.getPixel(cellX + x, cellY + y).and(255) != 0) {
                             info = info or (1 shl y)
@@ -790,6 +789,15 @@ class TerrarumSansBitmap(
 //                println("[TerrarumSansBitmap] char with $extCount extra info: ${code.charInfo()}; opcode: ${directiveOpcode.toString(16)}")
 //                println("contents: ${glyphProps[code]!!.extInfo.map { it.toString(16) }.joinToString()}")
             }
+
+
+            // Debug prints //
+//            dbgprn(">>  ${code.charInfo()}  <<  ")
+//            if (nudgingBits != 0) dbgprn("${code.charInfo()} nudgeX=$nudgeX, nudgeY=$nudgeY, nudgingBits=0x${nudgingBits.toString(16)}")
+//            if (writeOnTop >= 0) dbgprn("WriteOnTop: ${code.charInfo()} (Type-${writeOnTop})")
+//            if (diacriticsAnchors.any { it.xUsed || it.yUsed }) dbgprn("${code.charInfo()} ${diacriticsAnchors.filter { it.xUsed || it.yUsed }.joinToString()}")
+//            if (directiveOpcode != 0) dbgprn("Directive opcode ${directiveOpcode.toString(2)}: ${code.charInfo()}")
+//            if (glyphProps[code]?.isPragma("replacewith") == true) dbgprn("Replacer: ${code.charInfo()} into ${glyphProps[code]!!.extInfo.map { it.toString(16) }.joinToString()}")
 
         }
     }
@@ -1076,9 +1084,11 @@ class TerrarumSansBitmap(
         return seq
     }
 
+    // basically an Unicode NFD with some additional flavours
     private fun CodepointSequence.normalise(): CodepointSequence {
         val dis = this.utf16to32()
         val seq = CodepointSequence()
+        val seq2 = CodepointSequence()
 
         var i = 0
         while (i < dis.size) {
@@ -1105,6 +1115,26 @@ class TerrarumSansBitmap(
             else if (c in 0x3300..0x33FF) {
                 seq.add(0x7F) // fuck them
             }
+            // BEGIN of tamil subsystem implementation
+            else if (c == 0xB9F && cNext == 0xBBF) {
+                seq.add(0xF00C0); i++
+            }
+            else if (c == 0xB9F && cNext == 0xBC0) {
+                seq.add(0xF00C1); i++
+            }
+            else if (tamilLigatingConsonants.contains(c) && (cNext == 0xBC1 || cNext == 0xBC2)) {
+                val it = tamilLigatingConsonants.indexOf(c)
+
+                if (cNext == 0xBC1)
+                    seq.add(0xF00C2 + it)
+//                    dbgprn("${c.toString(16)} + ${cNext.toString(16)} replaced with ${(0xF00C2 + it).toString(16)}")
+                else
+                    seq.add(0xF00D4 + it)
+//                    dbgprn("${c.toString(16)} + ${cNext.toString(16)} replaced with ${(0xF00D4 + it).toString(16)}")
+
+                i += 1
+            }
+            // END of tamil subsystem implementation
             // add filler to malformed Hangul Initial-Peak-Final
             else if (isHangul(c) && !isHangulCompat(c)) {
                 // possible cases
@@ -1148,20 +1178,16 @@ class TerrarumSansBitmap(
                 seq.add(diacriticDotRemoval[c]!!)
             }
             // rearrange {letter, before-and-after diacritics} as {before-diacritics, letter, after-diacritics}
-            else if (i < dis.lastIndex && glyphProps[dis[i + 1]]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
+            else if (i < dis.lastIndex && glyphProps[cNext]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
+                val diacriticsProp = glyphProps[cNext]!!
+                seq.add(c) // base char
+                seq.add(diacriticsProp.extInfo[0]) // align before
+                seq.add(diacriticsProp.extInfo[1]) // align after
+                // The order may seem "wrong" but trust me it'll be corrected by the swapping code below
 
-                val diacriticsProp = glyphProps[dis[i + 1]]!!
-                seq.add(diacriticsProp.extInfo[0])
-                seq.add(c)
-                seq.add(diacriticsProp.extInfo[1])
+//                dbgprn("B&A: ${cNext.charInfo()} replaced with ${diacriticsProp.extInfo[0].toString(16)} ${c.toString(16)} ${diacriticsProp.extInfo[1].toString(16)}")
+
                 i++
-            }
-            else if (glyphProps[c]?.isPragma("replacewith") == true) {
-//                println("[TerrarumSansBitmap] replacing ${c.toString(16)} with:")
-                glyphProps[c]!!.forEachExtInfo {
-//                    println("${it.charInfo()}")
-                    seq.add(it)
-                }
             }
             // U+007F is DEL originally, but dis font stores bitmap of Replacement Character (U+FFFD)
             // to dis position. dis line will replace U+FFFD into U+007F.
@@ -1188,7 +1214,20 @@ class TerrarumSansBitmap(
             i++
         }
 
-        return seq
+        // unpack replacewith
+        seq.forEach {
+            if (glyphProps[it]?.isPragma("replacewith") == true) {
+//                dbgprn("Replacing ${it.charInfo()} into: ${glyphProps[it]!!.extInfo.map { it.toString(16) }.joinToString()}")
+                glyphProps[it]!!.forEachExtInfo {
+                    seq2.add(it)
+                }
+            }
+            else {
+                seq2.add(it)
+            }
+        }
+
+        return seq2
     }
 
     /** Takes input string, do normalisation, and returns sequence of codepoints (Int)
@@ -1526,6 +1565,7 @@ class TerrarumSansBitmap(
         internal val SHEET_INTERNAL_VARW = 29
         internal val SHEET_LETTERLIKE_MATHS_VARW = 30
         internal val SHEET_ENCLOSED_ALPHNUM_SUPL_VARW = 31
+        internal val SHEET_TAMIL_VARW = 32
 
         internal val SHEET_UNKNOWN = 254
 
@@ -1547,72 +1587,74 @@ class TerrarumSansBitmap(
         )
 
         private val fileList = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
-                "ascii_variable.tga",
-                "hangul_johab.tga",
-                "latinExtA_variable.tga",
-                "latinExtB_variable.tga",
-                "kana.tga",
-                "cjkpunct.tga",
-                "wenquanyi.tga.gz",
-                "cyrilic_variable.tga",
-                "halfwidth_fullwidth_variable.tga",
-                "unipunct_variable.tga",
-                "greek_variable.tga",
-                "thai_variable.tga",
-                "hayeren_variable.tga",
-                "kartuli_variable.tga",
-                "ipa_ext_variable.tga",
-                "futhark.tga",
-                "latinExt_additional_variable.tga",
-                "puae000-e0ff.tga",
-                "cyrilic_bulgarian_variable.tga",
-                "cyrilic_serbian_variable.tga",
-                "tsalagi_variable.tga",
-                "phonetic_extensions_variable.tga",
-                "devanagari_bengali_variable.tga",
-                "kartuli_allcaps_variable.tga",
-                "diacritical_marks_variable.tga",
-                "greek_polytonic_xyswap_variable.tga",
-                "latinExtC_variable.tga",
-                "latinExtD_variable.tga",
-                "currencies_variable.tga",
-                "internal_variable.tga",
-                "letterlike_symbols_variable.tga",
-                "enclosed_alphanumeric_supplement_variable.tga",
+            "ascii_variable.tga",
+            "hangul_johab.tga",
+            "latinExtA_variable.tga",
+            "latinExtB_variable.tga",
+            "kana.tga",
+            "cjkpunct.tga",
+            "wenquanyi.tga.gz",
+            "cyrilic_variable.tga",
+            "halfwidth_fullwidth_variable.tga",
+            "unipunct_variable.tga",
+            "greek_variable.tga",
+            "thai_variable.tga",
+            "hayeren_variable.tga",
+            "kartuli_variable.tga",
+            "ipa_ext_variable.tga",
+            "futhark.tga",
+            "latinExt_additional_variable.tga",
+            "puae000-e0ff.tga",
+            "cyrilic_bulgarian_variable.tga",
+            "cyrilic_serbian_variable.tga",
+            "tsalagi_variable.tga",
+            "phonetic_extensions_variable.tga",
+            "devanagari_bengali_variable.tga",
+            "kartuli_allcaps_variable.tga",
+            "diacritical_marks_variable.tga",
+            "greek_polytonic_xyswap_variable.tga",
+            "latinExtC_variable.tga",
+            "latinExtD_variable.tga",
+            "currencies_variable.tga",
+            "internal_variable.tga",
+            "letterlike_symbols_variable.tga",
+            "enclosed_alphanumeric_supplement_variable.tga",
+            "tamil_variable.tga",
         )
         private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
-                0..0xFF, // SHEET_ASCII_VARW
-                (0x1100..0x11FF) + (0xA960..0xA97F) + (0xD7B0..0xD7FF), // SHEET_HANGUL, because Hangul Syllables are disassembled prior to the render
-                0x100..0x17F, // SHEET_EXTA_VARW
-                0x180..0x24F, // SHEET_EXTB_VARW
-                (0x3040..0x30FF) + (0x31F0..0x31FF) + (0x1B000..0x1B001), // SHEET_KANA
-                0x3000..0x303F, // SHEET_CJK_PUNCT
-                0x3400..0x9FFF, // SHEET_UNIHAN
-                0x400..0x52F, // SHEET_CYRILIC_VARW
-                0xFF00..0xFFFF, // SHEET_HALFWIDTH_FULLWIDTH_VARW
-                0x2000..0x209F, // SHEET_UNI_PUNCT_VARW
-                0x370..0x3CE, // SHEET_GREEK_VARW
-                0xE00..0xE5F, // SHEET_THAI_VARW
-                0x530..0x58F, // SHEET_HAYEREN_VARW
-                0x10D0..0x10FF, // SHEET_KARTULI_VARW
-                0x250..0x2FF, // SHEET_IPA_VARW
-                0x16A0..0x16FF, // SHEET_RUNIC
-                0x1E00..0x1EFF, // SHEET_LATIN_EXT_ADD_VARW
-                0xE000..0xE0FF, // SHEET_CUSTOM_SYM
-                0xF0000..0xF005F, // SHEET_BULGARIAN_VARW; assign them to PUA
-                0xF0060..0xF00BF, // SHEET_SERBIAN_VARW; assign them to PUA
-                0x13A0..0x13F5, // SHEET_TSALAGI_VARW
-                0x1D00..0x1DBF, // SHEET_PHONETIC_EXT_VARW
-                0x900..0x9FF, // SHEET_NAGARI_BENGALI_VARW
-                0x1C90..0x1CBF, // SHEET_KARTULI_CAPS_VARW
-                0x300..0x36F, // SHEET_DIACRITICAL_MARKS_VARW
-                0x1F00..0x1FFF, // SHEET_GREEK_POLY_VARW
-                0x2C60..0x2C7F, // SHEET_EXTC_VARW
-                0xA720..0xA7FF, // SHEET_EXTD_VARW
-                0x20A0..0x20CF, // SHEET_CURRENCIES_VARW
-                0xFFE00..0xFFF9F, // SHEET_INTERNAL_VARW
-                0x2100..0x214F, // SHEET_LETTERLIKE_MATHS_VARW
-                0x1F100..0x1F1FF, // SHEET_ENCLOSED_ALPHNUM_SUPL_VARW
+            0..0xFF, // SHEET_ASCII_VARW
+            (0x1100..0x11FF) + (0xA960..0xA97F) + (0xD7B0..0xD7FF), // SHEET_HANGUL, because Hangul Syllables are disassembled prior to the render
+            0x100..0x17F, // SHEET_EXTA_VARW
+            0x180..0x24F, // SHEET_EXTB_VARW
+            (0x3040..0x30FF) + (0x31F0..0x31FF) + (0x1B000..0x1B001), // SHEET_KANA
+            0x3000..0x303F, // SHEET_CJK_PUNCT
+            0x3400..0x9FFF, // SHEET_UNIHAN
+            0x400..0x52F, // SHEET_CYRILIC_VARW
+            0xFF00..0xFFFF, // SHEET_HALFWIDTH_FULLWIDTH_VARW
+            0x2000..0x209F, // SHEET_UNI_PUNCT_VARW
+            0x370..0x3CE, // SHEET_GREEK_VARW
+            0xE00..0xE5F, // SHEET_THAI_VARW
+            0x530..0x58F, // SHEET_HAYEREN_VARW
+            0x10D0..0x10FF, // SHEET_KARTULI_VARW
+            0x250..0x2FF, // SHEET_IPA_VARW
+            0x16A0..0x16FF, // SHEET_RUNIC
+            0x1E00..0x1EFF, // SHEET_LATIN_EXT_ADD_VARW
+            0xE000..0xE0FF, // SHEET_CUSTOM_SYM
+            0xF0000..0xF005F, // SHEET_BULGARIAN_VARW; assign them to PUA
+            0xF0060..0xF00BF, // SHEET_SERBIAN_VARW; assign them to PUA
+            0x13A0..0x13F5, // SHEET_TSALAGI_VARW
+            0x1D00..0x1DBF, // SHEET_PHONETIC_EXT_VARW
+            0x900..0x9FF, // SHEET_NAGARI_BENGALI_VARW
+            0x1C90..0x1CBF, // SHEET_KARTULI_CAPS_VARW
+            0x300..0x36F, // SHEET_DIACRITICAL_MARKS_VARW
+            0x1F00..0x1FFF, // SHEET_GREEK_POLY_VARW
+            0x2C60..0x2C7F, // SHEET_EXTC_VARW
+            0xA720..0xA7FF, // SHEET_EXTD_VARW
+            0x20A0..0x20CF, // SHEET_CURRENCIES_VARW
+            0xFFE00..0xFFF9F, // SHEET_INTERNAL_VARW
+            0x2100..0x214F, // SHEET_LETTERLIKE_MATHS_VARW
+            0x1F100..0x1F1FF, // SHEET_ENCLOSED_ALPHNUM_SUPL_VARW
+            (0x0B80..0x0BFF) + (0xF00C0..0xF00EF), // SHEET_TAMIL_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -1620,6 +1662,13 @@ class TerrarumSansBitmap(
             'i'.toInt() to 0x131,
             'j'.toInt() to 0x237
         )
+
+        private val tamilLigatingConsonants = listOf('க','ங','ச','ஞ','ட','ண','த','ந','ன','ப','ம','ய','ர','ற','ல','ள','ழ','வ').map { it.toInt() }.toIntArray()
+
+        private val TAMIL_KSSA = 0xF00ED
+        private val TAMIL_SHRII = 0xF00EE
+
+
 
         private fun Int.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
 
@@ -1773,95 +1822,99 @@ class TerrarumSansBitmap(
         private fun isInternalSymbols(c: CodePoint) = c in codeRange[SHEET_INTERNAL_VARW]
         private fun isLetterlike(c: CodePoint) = c in codeRange[SHEET_LETTERLIKE_MATHS_VARW]
         private fun isEnclosedAlphnumSupl(c: CodePoint) = c in codeRange[SHEET_ENCLOSED_ALPHNUM_SUPL_VARW]
+        private fun isTamil(c: CodePoint) = c in codeRange[SHEET_TAMIL_VARW]
+        
 
-
-        private fun extAindexX(c: CodePoint) = (c - 0x100) % 16
+        private fun extAindexX(c: CodePoint) = c % 16
         private fun extAindexY(c: CodePoint) = (c - 0x100) / 16
 
-        private fun extBindexX(c: CodePoint) = (c - 0x180) % 16
+        private fun extBindexX(c: CodePoint) = c % 16
         private fun extBindexY(c: CodePoint) = (c - 0x180) / 16
 
-        private fun runicIndexX(c: CodePoint) = (c - 0x16A0) % 16
+        private fun runicIndexX(c: CodePoint) = c % 16
         private fun runicIndexY(c: CodePoint) = (c - 0x16A0) / 16
 
-        private fun kanaIndexX(c: CodePoint) = (c - 0x3040) % 16
+        private fun kanaIndexX(c: CodePoint) = c % 16
         private fun kanaIndexY(c: CodePoint) =
                 if (c in 0x31F0..0x31FF) 12
                 else if (c in 0x1B000..0x1B00F) 13
                 else (c - 0x3040) / 16
 
-        private fun cjkPunctIndexX(c: CodePoint) = (c - 0x3000) % 16
+        private fun cjkPunctIndexX(c: CodePoint) = c % 16
         private fun cjkPunctIndexY(c: CodePoint) = (c - 0x3000) / 16
 
-        private fun cyrilicIndexX(c: CodePoint) = (c - 0x400) % 16
+        private fun cyrilicIndexX(c: CodePoint) = c % 16
         private fun cyrilicIndexY(c: CodePoint) = (c - 0x400) / 16
 
-        private fun fullwidthUniIndexX(c: CodePoint) = (c - 0xFF00) % 16
+        private fun fullwidthUniIndexX(c: CodePoint) = c % 16
         private fun fullwidthUniIndexY(c: CodePoint) = (c - 0xFF00) / 16
 
-        private fun uniPunctIndexX(c: CodePoint) = (c - 0x2000) % 16
+        private fun uniPunctIndexX(c: CodePoint) = c % 16
         private fun uniPunctIndexY(c: CodePoint) = (c - 0x2000) / 16
 
         private fun unihanIndexX(c: CodePoint) = (c - 0x3400) % 256
         private fun unihanIndexY(c: CodePoint) = (c - 0x3400) / 256
 
-        private fun greekIndexX(c: CodePoint) = (c - 0x370) % 16
+        private fun greekIndexX(c: CodePoint) = c % 16
         private fun greekIndexY(c: CodePoint) = (c - 0x370) / 16
 
-        private fun thaiIndexX(c: CodePoint) = (c - 0xE00) % 16
+        private fun thaiIndexX(c: CodePoint) = c % 16
         private fun thaiIndexY(c: CodePoint) = (c - 0xE00) / 16
 
-        private fun symbolIndexX(c: CodePoint) = (c - 0xE000) % 16
+        private fun symbolIndexX(c: CodePoint) = c % 16
         private fun symbolIndexY(c: CodePoint) = (c - 0xE000) / 16
 
-        private fun armenianIndexX(c: CodePoint) = (c - 0x530) % 16
+        private fun armenianIndexX(c: CodePoint) = c % 16
         private fun armenianIndexY(c: CodePoint) = (c - 0x530) / 16
 
-        private fun kartvelianIndexX(c: CodePoint) = (c - 0x10D0) % 16
+        private fun kartvelianIndexX(c: CodePoint) = c % 16
         private fun kartvelianIndexY(c: CodePoint) = (c - 0x10D0) / 16
 
-        private fun ipaIndexX(c: CodePoint) = (c - 0x250) % 16
+        private fun ipaIndexX(c: CodePoint) = c % 16
         private fun ipaIndexY(c: CodePoint) = (c - 0x250) / 16
 
-        private fun latinExtAddX(c: CodePoint) = (c - 0x1E00) % 16
+        private fun latinExtAddX(c: CodePoint) = c % 16
         private fun latinExtAddY(c: CodePoint) = (c - 0x1E00) / 16
 
-        private fun cherokeeIndexX(c: CodePoint) = (c - 0x13A0) % 16
+        private fun cherokeeIndexX(c: CodePoint) = c % 16
         private fun cherokeeIndexY(c: CodePoint) = (c - 0x13A0) / 16
 
-        private fun phoneticExtIndexX(c: CodePoint) = (c - 0x1D00) % 16
+        private fun phoneticExtIndexX(c: CodePoint) = c % 16
         private fun phoneticExtIndexY(c: CodePoint) = (c - 0x1D00) / 16
 
-        private fun nagariIndexX(c: CodePoint) = (c - 0x900) % 16
+        private fun nagariIndexX(c: CodePoint) = c % 16
         private fun nagariIndexY(c: CodePoint) = (c - 0x900) / 16
 
-        private fun kartvelianCapsIndexX(c: CodePoint) = (c - 0x1C90) % 16
+        private fun kartvelianCapsIndexX(c: CodePoint) = c % 16
         private fun kartvelianCapsIndexY(c: CodePoint) = (c - 0x1C90) / 16
 
-        private fun diacriticalMarksIndexX(c: CodePoint) = (c - 0x300) % 16
+        private fun diacriticalMarksIndexX(c: CodePoint) = c % 16
         private fun diacriticalMarksIndexY(c: CodePoint) = (c - 0x300) / 16
 
-        private fun polytonicGreekIndexX(c: CodePoint) = (c - 0x1F00) % 16
+        private fun polytonicGreekIndexX(c: CodePoint) = c % 16
         private fun polytonicGreekIndexY(c: CodePoint) = (c - 0x1F00) / 16
 
-        private fun extCIndexX(c: CodePoint) = (c - 0x2C60) % 16
+        private fun extCIndexX(c: CodePoint) = c % 16
         private fun extCIndexY(c: CodePoint) = (c - 0x2C60) / 16
 
-        private fun extDIndexX(c: CodePoint) = (c - 0xA720) % 16
+        private fun extDIndexX(c: CodePoint) = c % 16
         private fun extDIndexY(c: CodePoint) = (c - 0xA720) / 16
 
-        private fun currenciesIndexX(c: CodePoint) = (c - 0x20A0) % 16
+        private fun currenciesIndexX(c: CodePoint) = c % 16
         private fun currenciesIndexY(c: CodePoint) = (c - 0x20A0) / 16
 
-        private fun internalIndexX(c: CodePoint) = (c - 0xFFE00) % 16
+        private fun internalIndexX(c: CodePoint) = c % 16
         private fun internalIndexY(c: CodePoint) = (c - 0xFFE00) / 16
 
-        private fun letterlikeIndexX(c: CodePoint) = (c - 0x2100) % 16
+        private fun letterlikeIndexX(c: CodePoint) = c % 16
         private fun letterlikeIndexY(c: CodePoint) = (c - 0x2100) / 16
 
-        private fun enclosedAlphnumSuplX(c: CodePoint) = (c - 0x1F100) % 16
+        private fun enclosedAlphnumSuplX(c: CodePoint) = c % 16
         private fun enclosedAlphnumSuplY(c: CodePoint) = (c - 0x1F100) / 16
 
+        private fun tamilIndexX(c: CodePoint) = c % 16
+        private fun tamilIndexY(c: CodePoint) = (if (c < 0xF0000) (c - 0x0B80) else (c - 0xF0040)) / 16
+        
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
         val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR).toSurrogatedString()
