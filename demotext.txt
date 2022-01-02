@@ -57,6 +57,7 @@ How multilingual? Real multilingual!
     􏻬Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства􀀀
     􏻬󿿂Ајшо, лепото и чежњо, за љубав срца мога дођи у Хаџиће на кафу󿿀􀀀
     􏻬Jovencillo emponzoñado de whisky: ¡qué figurota exhibe!􀀀
+    􏻬எழுத்து வடிவங்களுக்கு வார்த்தைகள் மற்றும் வாக்கியங்கள் போலவே தொனி, ஒலி பண்பு, தன்மை உண்டு􀀀
     􏻬นายสังฆภัณฑ์ เฮงพิทักษ์ฝั่ง ผู้เฒ่าซึ่งมีอาชีพเป็นฅนขายฃวด ถูกตำรวจปฏิบัติการจับฟ้องศาล ฐานลักนาฬิกาคุณหญิงฉัตรชฎา ฌานสมาธิ􀀀
     􏻬Pijamalı hasta yağız şoföre çabucak güvendi􀀀
     􏻬Жебракують філософи при ґанку церкви в Гадячі, ще й шатро їхнє п’яне знаємо􀀀
@@ -108,9 +109,9 @@ How multilingual? Real multilingual!
 
     Basic Latin   Latin-1 Supplement   Latin Extended-A   Latin Extended-B   IPA Extensions
     Spacing Modifier Letters   Combining Diacritical Marks   Greek and Coptic􏿆ᴱ􀀀   Cyrillic􏿆ᴭ􀀀   Cyrillic Supplement􏿆ᴭ􀀀
-    Armenian   Devanagari􏿆ᶠⁱ􀀀   Bengali􏿆ᶠⁱ􀀀   Thai   Georgian􏿆ჼ􀀀   Hangul Jamo   Cherokee􏿆⁷􀀀   Runic   Georgian Extended
-    Phonetic Extensions   Phonetic Extensions Supplement   Latin Extended Additional   Greek Extended
-    General Punctuations   Superscripts and Subscripts   Currency Symbols   Letterlike Symbols
+    Armenian   Devanagari􏿆ᶠⁱ􀀀   Bengali􏿆ᶠⁱ􀀀   Tamil   Thai   Georgian􏿆ჼ􀀀   Hangul Jamo   Cherokee􏿆⁷􀀀   Runic
+    Georgian Extended   Phonetic Extensions   Phonetic Extensions Supplement   Latin Extended Additional
+    Greek Extended   General Punctuations   Superscripts and Subscripts   Currency Symbols   Letterlike Symbols
     CJK Symbols and Punctuation   Latin Extended-C   Hiragana   Katakana   Hangul Compatibility Jamo
     Katakana Phonetic Extensions   CJK Unified Ideographs Extension A􏿆¹²·¹􀀀   CJK Unified Ideographs􏿆⁶􀀀
     Latin Extended-D   Hangul Jamo Extended-A   Hangul Syllables   Hangul Jamo Extended-B
