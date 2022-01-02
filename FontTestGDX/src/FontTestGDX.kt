@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer
 import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.StreamUtils
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
+import java.io.File
 import java.io.IOException
 import java.io.OutputStream
 
@@ -150,6 +151,7 @@ class FontTestGDX : Game() {
     override fun dispose() {
         font.dispose()
         faketex.dispose()
+        File("./tmp_wenquanyi.tga").delete()
     }
 
     fun scrollAdd(x: Int = 1) {
