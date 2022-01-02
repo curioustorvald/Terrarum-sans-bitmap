@@ -1116,6 +1116,12 @@ class TerrarumSansBitmap(
                 seq.add(0x7F) // fuck them
             }
             // BEGIN of tamil subsystem implementation
+            else if (c == 0xB95 && cNext == 0xBCD && dis.getOrElse(i+2){-1} == 0xBB7) {
+                seq.add(TAMIL_KSSA); i += 2
+            }
+            else if (c == 0xBB6 && cNext == 0xBCD && dis.getOrElse(i+2){-1} == 0xBB0 && dis.getOrElse(i+3){-1} == 0xBC0) {
+                seq.add(TAMIL_SHRII); i += 3
+            }
             else if (c == 0xB9F && cNext == 0xBBF) {
                 seq.add(0xF00C0); i++
             }
@@ -1178,9 +1184,9 @@ class TerrarumSansBitmap(
                 seq.add(diacriticDotRemoval[c]!!)
             }
             // rearrange {letter, before-and-after diacritics} as {before-diacritics, letter, after-diacritics}
-            else if (i < dis.lastIndex && glyphProps[cNext]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
-                val diacriticsProp = glyphProps[cNext]!!
-                seq.add(c) // base char
+            else if (glyphProps[c]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
+                val diacriticsProp = glyphProps[c]!!
+                // seq.add(c) // base char is added by previous iteration, AS WE'RE LOOKING AT 'c' not 'cNext'
                 seq.add(diacriticsProp.extInfo[0]) // align before
                 seq.add(diacriticsProp.extInfo[1]) // align after
                 // The order may seem "wrong" but trust me it'll be corrected by the swapping code below
