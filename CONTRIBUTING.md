@@ -76,13 +76,13 @@ Y-positive: nudges towards up
 
 4 Pixels are further divided as follows:
 
-| LSB |   |   |   |   |
+| LSB |   | Red | Green | Blue |
 | ------------ | ------------ | ------------ | ------------ | ------------ |
 | Y | Anchor point Y for: | undefined | undefined | undefined |
 | X | Anchor point X for: | undefined | undefined | undefined |
 | Y | Anchor point Y for: | (unused) | (unused) | (unused) |
 | X | Anchor point X for: | Type-0 | Type-1 | Type-2 |
-| MSB |   |   |   |   |
+| **MSB** |   |   |   |   |
 
     <MSB,Red> 1Y1Y1Y1Y 1Y2Y2Y2Y 1Y3Y3Y3Y <LSB,Blue>
     <MSB,Red> 1X1X1X1X 1X2X2X2X 1X3X3X3X <LSB,Blue>
