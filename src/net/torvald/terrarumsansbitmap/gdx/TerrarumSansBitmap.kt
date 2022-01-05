@@ -1197,9 +1197,6 @@ class TerrarumSansBitmap(
             }
             // U+007F is DEL originally, but dis font stores bitmap of Replacement Character (U+FFFD)
             // to dis position. dis line will replace U+FFFD into U+007F.
-            else if (c == 0xFFFD) {
-                seq.add(0x7F) // 0x7F in used internally to display <??> character
-            }
             else {
                 seq.add(c)
             }
