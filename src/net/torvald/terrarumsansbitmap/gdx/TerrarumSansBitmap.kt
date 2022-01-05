@@ -1696,12 +1696,25 @@ class TerrarumSansBitmap(
         private val jungseongEU = arrayOf(19,62,66).toSortedSet()
         // ㅢ
         private val jungseongYI = arrayOf(20,60,65).toSortedSet()
+        // ㅜ ㅝ ㅞ ㅟ ㅠ
+        private val jungseongUU = arrayOf(14,15,16,17,18,27,30,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,59,67,68,77,78,79,80,81,82,83,84,91).toSortedSet()
 
         private val jungseongWide = (jungseongOU.toList() + jungseongEU.toList()).toSortedSet()
+
+        private val choseongGiyeoks = arrayOf(0,1,15,23,30,34,45,51,56,65,82,90,100,101,110,111,115).toSortedSet()
 
         // index of the peak, 0 being blank, 1 being ㅏ
         // indices of peaks that number of lit pixels (vertically counted) on x=11 is greater than 7
         private val hangulPeaksWithExtraWidth = arrayOf(2,4,6,8,11,16,32,33,37,42,44,48,50,71,75,78,79,83,86,87,88,94).toSortedSet()
+
+        private val giyeokRemapping = hashMapOf(
+            5 to 19,
+            6 to 20,
+            7 to 21,
+            8 to 22,
+            11 to 23,
+            12 to 24,
+        )
 
         /**
          * @param i Initial (Choseong)
@@ -1709,7 +1722,7 @@ class TerrarumSansBitmap(
          * @param f Final (Jongseong)
          */
         private fun getHanInitialRow(i: Int, p: Int, f: Int): Int {
-            val ret =
+            var ret =
                     if (p in jungseongI) 3
                     else if (p in jungseongOUComplex) 7
                     else if (p in jungseongOEWI) 11
@@ -1718,7 +1731,9 @@ class TerrarumSansBitmap(
                     else if (p in jungseongYI) 13
                     else 1
 
-            return if (f == 0) ret else ret + 1
+            if (f != 0) ret += 1
+
+            return if (p in jungseongUU && i in choseongGiyeoks) giyeokRemapping[ret] ?: throw NullPointerException("i=$i p=$p f=$f ret=$ret") else ret
         }
 
         private fun getHanMedialRow(i: Int, p: Int, f: Int) = if (f == 0) 15 else 16
