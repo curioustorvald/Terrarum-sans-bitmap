@@ -1192,8 +1192,6 @@ class TerrarumSansBitmap(
                 // The order may seem "wrong" but trust me it'll be corrected by the swapping code below
 
 //                dbgprn("B&A: ${cNext.charInfo()} replaced with ${diacriticsProp.extInfo[0].toString(16)} ${c.toString(16)} ${diacriticsProp.extInfo[1].toString(16)}")
-
-                i++
             }
             // U+007F is DEL originally, but dis font stores bitmap of Replacement Character (U+FFFD)
             // to dis position. dis line will replace U+FFFD into U+007F.
