@@ -20,7 +20,7 @@ import kotlin.math.roundToInt
 /**
  * Created by minjaesong on 2021-11-05.
  */
-class TypewriterGDX(val width: Int, val height: Int, val cols: Int) : Game() {
+class TypewriterGDX(val width: Int, val height: Int, val cols: Int, val hmargin: Int, val vmargin: Int) : Game() {
 
     lateinit var font: TerrarumTypewriterBitmap
     lateinit var batch: SpriteBatch
@@ -103,7 +103,7 @@ class TypewriterGDX(val width: Int, val height: Int, val cols: Int) : Game() {
         CodepointSequence()
     )
 
-    var keylayoutbase = 0xF9000
+    var keylayoutbase = 0xFA000
     private val printableKeys = ((Input.Keys.NUM_0..Input.Keys.NUM_9) + (Input.Keys.A..Input.Keys.PERIOD) + 62 + (Input.Keys.BACKSPACE..Input.Keys.SLASH)).toHashSet()
 
     var initDone = false
@@ -165,7 +165,7 @@ class TypewriterGDX(val width: Int, val height: Int, val cols: Int) : Game() {
 
         try {
             textbuf.forEachIndexed { index, s ->
-                font.draw(batch, s, 40f, 40f + 20 * index)
+                font.draw(batch, s, hmargin.toFloat(), vmargin.toFloat() + 20 * index)
             }
         }
         catch (e: ConcurrentModificationException) {}
@@ -240,8 +240,8 @@ fun main(args: Array<String>) {
     appConfig = Lwjgl3ApplicationConfiguration()
     appConfig.useVsync(false)
     appConfig.setResizable(false)
-    appConfig.setWindowedMode(600, 800)
+    appConfig.setWindowedMode(534, 668)
     appConfig.setTitle("Terrarum Typewriter Bitmap Test")
 
-    Lwjgl3Application(TypewriterGDX(600, 800, 64), appConfig)
+    Lwjgl3Application(TypewriterGDX(534, 668, 64, 32, 24), appConfig)
 }
