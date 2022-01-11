@@ -503,70 +503,12 @@ class TerrarumSansBitmap(
             return SHEET_SERBIAN_VARW
         else if (isHangul(c))
             return SHEET_HANGUL
-        else if (isKana(c))
-            return SHEET_KANA
-        else if (isUniHan(c))
-            return SHEET_UNIHAN
-        else if (isAscii(c))
-            return SHEET_ASCII_VARW
-        else if (isExtA(c))
-            return SHEET_EXTA_VARW
-        else if (isExtB(c))
-            return SHEET_EXTB_VARW
-        else if (isCyrilic(c))
-            return SHEET_CYRILIC_VARW
-        else if (isUniPunct(c))
-            return SHEET_UNI_PUNCT_VARW
-        else if (isCJKPunct(c))
-            return SHEET_CJK_PUNCT
-        else if (isFullwidthUni(c))
-            return SHEET_HALFWIDTH_FULLWIDTH_VARW
-        else if (isGreek(c))
-            return SHEET_GREEK_VARW
-        else if (isThai(c))
-            return SHEET_THAI_VARW
-        else if (isCustomSym(c))
-            return SHEET_CUSTOM_SYM
-        else if (isArmenian(c))
-            return SHEET_HAYEREN_VARW
-        else if (isKartvelian(c))
-            return SHEET_KARTULI_VARW
-        else if (isIPA(c))
-            return SHEET_IPA_VARW
-        else if (isRunic(c))
-            return SHEET_RUNIC
-        else if (isLatinExtAdd(c))
-            return SHEET_LATIN_EXT_ADD_VARW
-        else if (isCherokee(c))
-            return SHEET_TSALAGI_VARW
-        else if (isPhoneticExt(c))
-            return SHEET_PHONETIC_EXT_VARW
-        else if (isNagariBengali(c))
-            return SHEET_NAGARI_BENGALI_VARW
-        else if (isKartvelianCaps(c))
-            return SHEET_KARTULI_CAPS_VARW
-        else if (isDiacriticalMarks(c))
-            return SHEET_DIACRITICAL_MARKS_VARW
-        else if (isPolytonicGreek(c))
-            return SHEET_GREEK_POLY_VARW
-        else if (isExtC(c))
-            return SHEET_EXTC_VARW
-        else if (isExtD(c))
-            return SHEET_EXTD_VARW
-        else if (isCurrencies(c))
-            return SHEET_CURRENCIES_VARW
-        else if (isInternalSymbols(c))
-            return SHEET_INTERNAL_VARW
-        else if (isLetterlike(c))
-            return SHEET_LETTERLIKE_MATHS_VARW
-        else if (isEnclosedAlphnumSupl(c))
-            return SHEET_ENCLOSED_ALPHNUM_SUPL_VARW
-        else if (isTamil(c))
-            return SHEET_TAMIL_VARW
-        else
+        else {
+            for (i in codeRange.indices) {
+                if (c in codeRange[i]) return i
+            }
             return SHEET_UNKNOWN
-        // fixed width
-        // fallback
+        }
     }
 
     private fun getSheetwisePosition(cPrev: Int, ch: Int): IntArray {
@@ -648,9 +590,9 @@ class TerrarumSansBitmap(
                 sheetX = phoneticExtIndexX(ch)
                 sheetY = phoneticExtIndexY(ch)
             }
-            SHEET_NAGARI_BENGALI_VARW -> {
-                sheetX = nagariIndexX(ch)
-                sheetY = nagariIndexY(ch)
+            SHEET_DEVANAGARI_VARW -> {
+                sheetX = devanagariIndexX(ch)
+                sheetY = devanagariIndexY(ch)
             }
             SHEET_KARTULI_CAPS_VARW -> {
                 sheetX = kartvelianCapsIndexX(ch)
@@ -691,6 +633,10 @@ class TerrarumSansBitmap(
             SHEET_TAMIL_VARW -> {
                 sheetX = tamilIndexX(ch)
                 sheetY = tamilIndexY(ch)
+            }
+            SHEET_BENGALI_VARW -> {
+                sheetX = bengaliIndexX(ch)
+                sheetY = bengaliIndexY(ch)
             }
             else -> {
                 sheetX = ch % 16
@@ -1556,7 +1502,7 @@ class TerrarumSansBitmap(
         internal val SHEET_SERBIAN_VARW =      19
         internal val SHEET_TSALAGI_VARW =      20
         internal val SHEET_PHONETIC_EXT_VARW = 21
-        internal val SHEET_NAGARI_BENGALI_VARW=22
+        internal val SHEET_DEVANAGARI_VARW=22
         internal val SHEET_KARTULI_CAPS_VARW = 23
         internal val SHEET_DIACRITICAL_MARKS_VARW = 24
         internal val SHEET_GREEK_POLY_VARW   = 25
@@ -1567,6 +1513,7 @@ class TerrarumSansBitmap(
         internal val SHEET_LETTERLIKE_MATHS_VARW = 30
         internal val SHEET_ENCLOSED_ALPHNUM_SUPL_VARW = 31
         internal val SHEET_TAMIL_VARW = 32
+        internal val SHEET_BENGALI_VARW = 33
 
         internal val SHEET_UNKNOWN = 254
 
@@ -1610,7 +1557,7 @@ class TerrarumSansBitmap(
             "cyrilic_serbian_variable.tga",
             "tsalagi_variable.tga",
             "phonetic_extensions_variable.tga",
-            "devanagari_bengali_variable.tga",
+            "devanagari_variable.tga",
             "kartuli_allcaps_variable.tga",
             "diacritical_marks_variable.tga",
             "greek_polytonic_xyswap_variable.tga",
@@ -1621,6 +1568,7 @@ class TerrarumSansBitmap(
             "letterlike_symbols_variable.tga",
             "enclosed_alphanumeric_supplement_variable.tga",
             "tamil_variable.tga",
+            "bengali_variable.tga",
         )
         private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -1645,7 +1593,7 @@ class TerrarumSansBitmap(
             0xF0060..0xF00BF, // SHEET_SERBIAN_VARW; assign them to PUA
             0x13A0..0x13F5, // SHEET_TSALAGI_VARW
             0x1D00..0x1DBF, // SHEET_PHONETIC_EXT_VARW
-            0x900..0x9FF, // SHEET_NAGARI_BENGALI_VARW
+            (0x900..0x97F) + (0xF0100..0xF01FF), // SHEET_DEVANAGARI_VARW
             0x1C90..0x1CBF, // SHEET_KARTULI_CAPS_VARW
             0x300..0x36F, // SHEET_DIACRITICAL_MARKS_VARW
             0x1F00..0x1FFF, // SHEET_GREEK_POLY_VARW
@@ -1656,6 +1604,7 @@ class TerrarumSansBitmap(
             0x2100..0x214F, // SHEET_LETTERLIKE_MATHS_VARW
             0x1F100..0x1F1FF, // SHEET_ENCLOSED_ALPHNUM_SUPL_VARW
             (0x0B80..0x0BFF) + (0xF00C0..0xF00EF), // SHEET_TAMIL_VARW
+            0x980..0x9FF, // SHEET_BENGALI_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -1827,7 +1776,7 @@ class TerrarumSansBitmap(
         private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFFF
         private fun isCherokee(c: CodePoint) = c in codeRange[SHEET_TSALAGI_VARW]
         private fun isPhoneticExt(c: CodePoint) = c in codeRange[SHEET_PHONETIC_EXT_VARW]
-        private fun isNagariBengali(c: CodePoint) = c in codeRange[SHEET_NAGARI_BENGALI_VARW]
+        private fun isDevanagari(c: CodePoint) = c in codeRange[SHEET_DEVANAGARI_VARW]
         private fun isKartvelianCaps(c: CodePoint) = c in codeRange[SHEET_KARTULI_CAPS_VARW]
         private fun isDiacriticalMarks(c: CodePoint) = c in codeRange[SHEET_DIACRITICAL_MARKS_VARW]
         private fun isPolytonicGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_POLY_VARW]
@@ -1839,7 +1788,8 @@ class TerrarumSansBitmap(
         private fun isLetterlike(c: CodePoint) = c in codeRange[SHEET_LETTERLIKE_MATHS_VARW]
         private fun isEnclosedAlphnumSupl(c: CodePoint) = c in codeRange[SHEET_ENCLOSED_ALPHNUM_SUPL_VARW]
         private fun isTamil(c: CodePoint) = c in codeRange[SHEET_TAMIL_VARW]
-        
+        private fun isBengali(c: CodePoint) = c in codeRange[SHEET_BENGALI_VARW]
+
 
         private fun extAindexX(c: CodePoint) = c % 16
         private fun extAindexY(c: CodePoint) = (c - 0x100) / 16
@@ -1898,8 +1848,11 @@ class TerrarumSansBitmap(
         private fun phoneticExtIndexX(c: CodePoint) = c % 16
         private fun phoneticExtIndexY(c: CodePoint) = (c - 0x1D00) / 16
 
-        private fun nagariIndexX(c: CodePoint) = c % 16
-        private fun nagariIndexY(c: CodePoint) = (c - 0x900) / 16
+        private fun devanagariIndexX(c: CodePoint) = c % 16
+        private fun devanagariIndexY(c: CodePoint) = (if (c < 0xF0000) (c - 0x0900) else (c - 0xF0080)) / 16
+
+        private fun bengaliIndexX(c: CodePoint) = c % 16
+        private fun bengaliIndexY(c: CodePoint) = (c - 0x980) / 16
 
         private fun kartvelianCapsIndexX(c: CodePoint) = c % 16
         private fun kartvelianCapsIndexY(c: CodePoint) = (c - 0x1C90) / 16
