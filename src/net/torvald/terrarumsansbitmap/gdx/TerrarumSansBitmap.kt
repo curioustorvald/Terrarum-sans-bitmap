@@ -34,8 +34,11 @@ import net.torvald.terrarumsansbitmap.DiacriticsAnchor
 import net.torvald.terrarumsansbitmap.GlyphProps
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
+import java.util.*
 import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
@@ -1036,6 +1039,8 @@ class TerrarumSansBitmap(
         val seq = CodepointSequence()
         val seq2 = CodepointSequence()
 
+        val yankedCharacters  = Stack<Pair<Int, CodePoint>>() // Stack of <Position, CodePoint>; codepoint use -1 if not applicable
+
         var i = 0
         while (i < dis.size) {
             val c = dis[i]
@@ -1061,32 +1066,6 @@ class TerrarumSansBitmap(
             else if (c in 0x3300..0x33FF) {
                 seq.add(0x7F) // fuck them
             }
-            // BEGIN of tamil subsystem implementation
-            else if (c == 0xB95 && cNext == 0xBCD && dis.getOrElse(i+2){-1} == 0xBB7) {
-                seq.add(TAMIL_KSSA); i += 2
-            }
-            else if (c == 0xBB6 && cNext == 0xBCD && dis.getOrElse(i+2){-1} == 0xBB0 && dis.getOrElse(i+3){-1} == 0xBC0) {
-                seq.add(TAMIL_SHRII); i += 3
-            }
-            else if (c == 0xB9F && cNext == 0xBBF) {
-                seq.add(0xF00C0); i++
-            }
-            else if (c == 0xB9F && cNext == 0xBC0) {
-                seq.add(0xF00C1); i++
-            }
-            else if (tamilLigatingConsonants.contains(c) && (cNext == 0xBC1 || cNext == 0xBC2)) {
-                val it = tamilLigatingConsonants.indexOf(c)
-
-                if (cNext == 0xBC1)
-                    seq.add(0xF00C2 + it)
-//                    dbgprn("${c.toString(16)} + ${cNext.toString(16)} replaced with ${(0xF00C2 + it).toString(16)}")
-                else
-                    seq.add(0xF00D4 + it)
-//                    dbgprn("${c.toString(16)} + ${cNext.toString(16)} replaced with ${(0xF00D4 + it).toString(16)}")
-
-                i += 1
-            }
-            // END of tamil subsystem implementation
             // add filler to malformed Hangul Initial-Peak-Final
             else if (isHangul(c) && !isHangulCompat(c)) {
                 // possible cases
@@ -1129,6 +1108,44 @@ class TerrarumSansBitmap(
             else if (diacriticDotRemoval.containsKey(c) && (glyphProps[cNext]?.writeOnTop ?: -1) >= 0 && glyphProps[cNext]?.stackWhere == GlyphProps.STACK_UP) {
                 seq.add(diacriticDotRemoval[c]!!)
             }
+
+            // BEGIN of tamil subsystem implementation
+            else if (c == 0xB95 && cNext == 0xBCD && dis.getOrElse(i+2){-1} == 0xBB7) {
+                seq.add(TAMIL_KSSA); i += 2
+            }
+            else if (c == 0xBB6 && cNext == 0xBCD && dis.getOrElse(i+2){-1} == 0xBB0 && dis.getOrElse(i+3){-1} == 0xBC0) {
+                seq.add(TAMIL_SHRII); i += 3
+            }
+            else if (c == 0xB9F && cNext == 0xBBF) {
+                seq.add(0xF00C0); i++
+            }
+            else if (c == 0xB9F && cNext == 0xBC0) {
+                seq.add(0xF00C1); i++
+            }
+            else if (tamilLigatingConsonants.contains(c) && (cNext == 0xBC1 || cNext == 0xBC2)) {
+                val it = tamilLigatingConsonants.indexOf(c)
+
+                if (cNext == 0xBC1)
+                    seq.add(0xF00C2 + it)
+//                    dbgprn("${c.toString(16)} + ${cNext.toString(16)} replaced with ${(0xF00C2 + it).toString(16)}")
+                else
+                    seq.add(0xF00D4 + it)
+//                    dbgprn("${c.toString(16)} + ${cNext.toString(16)} replaced with ${(0xF00D4 + it).toString(16)}")
+
+                i += 1
+            }
+            // END of tamil subsystem implementation
+
+            // BEGIN of devanagari string replacer
+            else if (c == DEVANAGARI_VIRAMA) {
+                yankedCharacters.push(i-1 to cPrev)
+            }
+            else if (c == DEVANAGARI_RA) {
+                yankedCharacters.push(i to c)
+            }
+                // WIP
+            // END of devanagari string replacer
+
             // rearrange {letter, before-and-after diacritics} as {before-diacritics, letter, after-diacritics}
             else if (glyphProps[c]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
                 val diacriticsProp = glyphProps[c]!!
@@ -1618,6 +1635,8 @@ class TerrarumSansBitmap(
         private val TAMIL_KSSA = 0xF00ED
         private val TAMIL_SHRII = 0xF00EE
 
+        private val DEVANAGARI_VIRAMA = 0x94D
+        private val DEVANAGARI_RA = 0x930
 
 
         private fun Int.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
