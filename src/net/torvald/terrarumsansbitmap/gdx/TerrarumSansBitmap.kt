@@ -97,19 +97,19 @@ internal typealias Hash = Long
  * Created by minjaesong on 2017-06-15.
  */
 class TerrarumSansBitmap(
-        fontDir: String,
-        val noShadow: Boolean = false,
-        val flipY: Boolean = false,
-        val invertShadow: Boolean = false,
-        var errorOnUnknownChar: Boolean = false,
-        val textCacheSize: Int = 256,
-        val debug: Boolean = false,
-        val shadowAlpha: Float = 0.5f,
-        val shadowAlphaPremultiply: Boolean = false
+    fontDir: String,
+    val noShadow: Boolean = false,
+    val flipY: Boolean = false,
+    val invertShadow: Boolean = false,
+    var errorOnUnknownChar: Boolean = false,
+    val textCacheSize: Int = 256,
+    val debug: Boolean = false,
+    val shadowAlpha: Float = 0.5f,
+    val shadowAlphaPremultiply: Boolean = false
 ) : BitmapFont() {
 
     private fun dbgprn(i: Any) { if (debug) println("[${this.javaClass.simpleName}] $i") }
-    
+
     constructor(fontDir: String, noShadow: Boolean, flipY: Boolean, invertShadow: Boolean) : this(fontDir, noShadow, flipY, invertShadow, false, 256, false)
 
     /* This font is a collection of various subsystems, and thus contains copious amount of quick-and-dirty codes.
@@ -158,9 +158,9 @@ class TerrarumSansBitmap(
         val b = codePoint.and(0x000F)
 
         val col = r.shl(28) or r.shl(24) or
-                  g.shl(20) or g.shl(16) or
-                  b.shl(12) or b.shl(8) or
-                  0xFF
+                g.shl(20) or g.shl(16) or
+                b.shl(12) or b.shl(8) or
+                0xFF
 
 
         colourBuffer[codePoint] = col
@@ -385,8 +385,8 @@ class TerrarumSansBitmap(
                         val c = textBuffer[index]
                         val sheetID = getSheetType(c)
                         val (sheetX, sheetY) =
-                                if (index == 0) getSheetwisePosition(0, c)
-                                else getSheetwisePosition(textBuffer[index - 1], c)
+                            if (index == 0) getSheetwisePosition(0, c)
+                            else getSheetwisePosition(textBuffer[index - 1], c)
                         val hash = getHash(c) // to be used with Bad Transmission Modifier
 
                         if (isColourCode(c)) {
@@ -480,10 +480,10 @@ class TerrarumSansBitmap(
             }
 
             batch.draw(tempLinotype,
-                    x.toFloat(),
-                    (y - pixmapOffsetY).toFloat() + (if (flipY) (tempLinotype.height) else 0) * scale,
-                    tempLinotype.width.toFloat() * scale,
-                    (tempLinotype.height.toFloat()) * (if (flipY) -1 else 1) * scale
+                x.toFloat(),
+                (y - pixmapOffsetY).toFloat() + (if (flipY) (tempLinotype.height) else 0) * scale,
+                tempLinotype.width.toFloat() * scale,
+                (tempLinotype.height.toFloat()) * (if (flipY) -1 else 1) * scale
             )
         }
 
@@ -852,9 +852,9 @@ class TerrarumSansBitmap(
                     val nextHangulJungseong1 = toHangulJungseongIndex(str.getOrNull(charIndex + 2) ?: 0) ?: -1
                     val nextHangulJungseong2 = toHangulJungseongIndex(str.getOrNull(charIndex + 3) ?: 0) ?: -1
                     if (isHangulJungseong(thisChar) && thisHangulJungseongIndex in hangulPeaksWithExtraWidth && (
-                                    nextHangulJungseong1 !in jungseongWide ||
-                                    nextHangulJungseong2 !in jungseongWide
-                            )) {
+                                nextHangulJungseong1 !in jungseongWide ||
+                                        nextHangulJungseong2 !in jungseongWide
+                                )) {
                         //dbgprn("char: ${thisChar.charInfo()}\nproperties: $thisProp")
                         //dbgprn("${thisChar.charInfo()}  ${str.getOrNull(charIndex + 2)?.charInfo()}  ${str.getOrNull(charIndex + 3)?.charInfo()}")
                         extraWidth += 1
@@ -869,11 +869,11 @@ class TerrarumSansBitmap(
                         posXbuffer[charIndex] = -thisProp.nudgeX +
                                 when (itsProp.alignWhere) {
                                     GlyphProps.ALIGN_RIGHT ->
-                                    posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
-                                GlyphProps.ALIGN_CENTRE ->
-                                    posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
-                                else ->
-                                    posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
+                                        posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
+                                    GlyphProps.ALIGN_CENTRE ->
+                                        posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
+                                    else ->
+                                        posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
                                 }
 
                         nonDiacriticCounter = charIndex
@@ -921,48 +921,48 @@ class TerrarumSansBitmap(
 
                         // set Y pos according to diacritics position
 //                        if (thisProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
-                            when (thisProp.stackWhere) {
-                                GlyphProps.STACK_DOWN -> {
-                                    posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter * flipY.toSign()
-                                    stackDownwardCounter++
+                        when (thisProp.stackWhere) {
+                            GlyphProps.STACK_DOWN -> {
+                                posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter * flipY.toSign()
+                                stackDownwardCounter++
+                            }
+                            GlyphProps.STACK_UP -> {
+                                posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter * flipY.toSign()
+                                // shift down on lowercase if applicable
+                                if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
+                                    lastNonDiacriticChar.isLowHeight()) {
+                                    //dbgprn("AAARRRRHHHH for character ${thisChar.toHex()}")
+                                    //dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
+                                    //dbgprn("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
+                                    if (diacriticsType == GlyphProps.DIA_OVERLAY)
+                                        posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
+                                    else
+                                        posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
                                 }
-                                GlyphProps.STACK_UP -> {
-                                    posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter * flipY.toSign()
-                                    // shift down on lowercase if applicable
-                                    if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
-                                            lastNonDiacriticChar.isLowHeight()) {
-                                        //dbgprn("AAARRRRHHHH for character ${thisChar.toHex()}")
-                                        //dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
-                                        //dbgprn("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
-                                        if (diacriticsType == GlyphProps.DIA_OVERLAY)
-                                            posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
-                                        else
-                                            posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
-                                    }
 
-                                    stackUpwardCounter++
+                                stackUpwardCounter++
 
 //                                    dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.charInfo()}; stack counter: $stackUpwardCounter")
-                                }
-                                GlyphProps.STACK_UP_N_DOWN -> {
-                                    posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter * flipY.toSign()
-                                    stackDownwardCounter++
-
-
-                                    posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter * flipY.toSign()
-                                    // shift down on lowercase if applicable
-                                    if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
-                                        lastNonDiacriticChar.isLowHeight()) {
-                                        if (diacriticsType == GlyphProps.DIA_OVERLAY)
-                                            posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
-                                        else
-                                            posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
-                                    }
-
-                                    stackUpwardCounter++
-                                }
-                            // for BEFORE_N_AFTER, do nothing in here
                             }
+                            GlyphProps.STACK_UP_N_DOWN -> {
+                                posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter * flipY.toSign()
+                                stackDownwardCounter++
+
+
+                                posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter * flipY.toSign()
+                                // shift down on lowercase if applicable
+                                if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
+                                    lastNonDiacriticChar.isLowHeight()) {
+                                    if (diacriticsType == GlyphProps.DIA_OVERLAY)
+                                        posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
+                                    else
+                                        posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
+                                }
+
+                                stackUpwardCounter++
+                            }
+                            // for BEFORE_N_AFTER, do nothing in here
+                        }
 //                        }
                     }
                 }
@@ -972,8 +972,8 @@ class TerrarumSansBitmap(
             if (str.isNotEmpty()) {
                 val lastCharProp = glyphProps[str.last()]
                 val penultCharProp = glyphProps[str[nonDiacriticCounter]] ?:
-                        (if (errorOnUnknownChar) throw throw InternalError("No GlyphProps for char '${str[nonDiacriticCounter]}' " +
-                                "(${str[nonDiacriticCounter].charInfo()})") else nullProp)
+                (if (errorOnUnknownChar) throw throw InternalError("No GlyphProps for char '${str[nonDiacriticCounter]}' " +
+                        "(${str[nonDiacriticCounter].charInfo()})") else nullProp)
                 posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
                         if (lastCharProp != null && lastCharProp.writeOnTop >= 0) {
                             val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
@@ -1035,17 +1035,30 @@ class TerrarumSansBitmap(
 
     // basically an Unicode NFD with some additional flavours
     private fun CodepointSequence.normalise(): CodepointSequence {
-        val dis = this.utf16to32()
         val seq = CodepointSequence()
         val seq2 = CodepointSequence()
 
         val yankedCharacters  = Stack<Pair<Int, CodePoint>>() // Stack of <Position, CodePoint>; codepoint use -1 if not applicable
 
+        fun emptyOutYanked() {
+            while (!yankedCharacters.empty()) {
+                val poppedChar = yankedCharacters.pop()
+                if (poppedChar.second == DEVANAGARI_RA)
+                    seq.add(DEVANAGARI_RA_SUPER)
+                else
+                    seq.add(yankedCharacters.pop().second)
+            }
+        }
+
         var i = 0
+        this.utf16to32().let { dis ->
         while (i < dis.size) {
-            val c = dis[i]
+            val cPrev2 = dis.getOrElse(i-2) { -1 }
             val cPrev = dis.getOrElse(i-1) { -1 }
+            val c = dis[i]
             val cNext = dis.getOrElse(i+1) { -1 }
+            val cNext2 = dis.getOrElse(i+2) { -1 }
+            // can't use regular sliding window as the 'i' value is changed way too often
 
             // LET THE NORMALISATION BEGIN //
 
@@ -1137,13 +1150,28 @@ class TerrarumSansBitmap(
             // END of tamil subsystem implementation
 
             // BEGIN of devanagari string replacer
-            else if (c == DEVANAGARI_VIRAMA) {
-                yankedCharacters.push(i-1 to cPrev)
+            // Unicode Devanagari Rendering Rule R6-R8
+            // (this must precede the ligaturing-machine coded on the 2nd pass, otherwise the rules below will cause undesirable effects)
+            else if (devanagariConsonants.contains(c) && cNext == DEVANAGARI_VIRAMA && cNext2 == DEVANAGARI_RA) {
+                seq.addAll(toRaAppended(c))
+                i += 2
             }
-            else if (c == DEVANAGARI_RA) {
+            // Unicode Devanagari Rendering Rule R5
+            else if (c == DEVANAGARI_RRA && cNext == DEVANAGARI_VIRAMA || c == DEVANAGARI_RA && cNext == DEVANAGARI_VIRAMA && cNext2 == ZWJ) {
+                seq.add(DEVANAGARI_EYELASH_RA)
+                i += 1
+            }
+            // Unicode Devanagari Rendering Rule R2-R4
+            else if (c == DEVANAGARI_RA && cNext == DEVANAGARI_VIRAMA && cNext2 != DEVANAGARI_RA) {
                 yankedCharacters.push(i to c)
+                i += 1
             }
-                // WIP
+            // Unicode Devanagari Rendering Rule R2-R4
+            else if (!isDevanagari(c) && !yankedCharacters.empty()) {
+                emptyOutYanked()
+                seq.add(c)
+            }
+            // WIP
             // END of devanagari string replacer
 
             // rearrange {letter, before-and-after diacritics} as {before-diacritics, letter, after-diacritics}
@@ -1164,7 +1192,11 @@ class TerrarumSansBitmap(
 
             i++
         }
+        emptyOutYanked()
+        }
 
+
+        // second scan
         // swap position of {letter, diacritics that comes before the letter}
         i = 1
         while (i <= seq.lastIndex) {
@@ -1174,6 +1206,27 @@ class TerrarumSansBitmap(
                 seq[i - 1] = seq[i]
                 seq[i] = t
             }
+
+            val cPrev2 = seq.getOrElse(i-2) { -1 }
+            val cPrev = seq.getOrElse(i-1) { -1 }
+            val c = seq[i]
+
+            // BEGIN of Devanagari String Replacer 2 (lookbehind type)
+            // Devanagari Ligations (Lookbehind)
+            if (devanagariConsonants.contains(cPrev2) && cPrev == DEVANAGARI_VIRAMA && devanagariConsonants.contains(c)) {
+                i -= 2
+
+                repeat(3) { seq.removeAt(i) }
+
+                val ligature = ligateIndicConsonants(cPrev2, c)
+                ligature.forEachIndexed { index, char ->
+                    seq.add(i + index, char)
+                }
+
+                i += ligature.size
+            }
+            // END of Devanagari String Replacer 2
+
 
             i++
         }
@@ -1238,8 +1291,8 @@ class TerrarumSansBitmap(
                         opCue.forEach {
                             if (pixmap.getPixel(it.first, it.second) and 0xFF == 0) {
                                 pixmap.drawPixel(it.first, it.second,
-                                        // the shadow has the same colour, but alpha halved
-                                        pxNow.and(0xFFFFFF00.toInt()).or(0x7F)
+                                    // the shadow has the same colour, but alpha halved
+                                    pxNow.and(0xFFFFFF00.toInt()).or(0x7F)
                                 )
                             }
                         }
@@ -1277,13 +1330,13 @@ class TerrarumSansBitmap(
         // for now, no semitransparency (in colourcode && spritesheet)
 
         val jobQueue = if (!invertShadow) arrayOf(
-                1 to 0,
-                0 to 1,
-                1 to 1
+            1 to 0,
+            0 to 1,
+            1 to 1
         ) else arrayOf(
-                -1 to  0,
-                 0 to -1,
-                -1 to -1
+            -1 to  0,
+            0 to -1,
+            -1 to -1
         )
 
         jobQueue.forEach {
@@ -1328,10 +1381,10 @@ class TerrarumSansBitmap(
     }
 
     private fun Color.toRGBA8888() =
-            (this.r * 255f).toInt().shl(24) or
-                    (this.g * 255f).toInt().shl(16) or
-                    (this.b * 255f).toInt().shl(8) or
-                    (this.a * 255f).toInt()
+        (this.r * 255f).toInt().shl(24) or
+                (this.g * 255f).toInt().shl(16) or
+                (this.b * 255f).toInt().shl(8) or
+                (this.a * 255f).toInt()
 
     /**
      * RGBA8888 representation
@@ -1343,9 +1396,9 @@ class TerrarumSansBitmap(
         val otherBytes = IntArray(4) { other.ushr(it * 8).and(255) }
 
         return (thisBytes[0] times256 otherBytes[0]) or
-               (thisBytes[1] times256 otherBytes[1]).shl(8) or
-               (thisBytes[2] times256 otherBytes[2]).shl(16) or
-               (thisBytes[3] times256 otherBytes[3]).shl(24)
+                (thisBytes[1] times256 otherBytes[1]).shl(8) or
+                (thisBytes[2] times256 otherBytes[2]).shl(16) or
+                (thisBytes[3] times256 otherBytes[3]).shl(24)
     }
 
     private infix fun Int.times256(other: Int) = multTable255[this][other]
@@ -1548,7 +1601,7 @@ class TerrarumSansBitmap(
 
 
         private val autoShiftDownOnLowercase = arrayOf(
-                SHEET_DIACRITICAL_MARKS_VARW
+            SHEET_DIACRITICAL_MARKS_VARW
         )
 
         private val fileList = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
@@ -1630,13 +1683,130 @@ class TerrarumSansBitmap(
             'j'.toInt() to 0x237
         )
 
-        private val tamilLigatingConsonants = listOf('க','ங','ச','ஞ','ட','ண','த','ந','ன','ப','ம','ய','ர','ற','ல','ள','ழ','வ').map { it.toInt() }.toIntArray()
+        private val ZWJ = 0x200D
 
+        private val tamilLigatingConsonants = listOf('க','ங','ச','ஞ','ட','ண','த','ந','ன','ப','ம','ய','ர','ற','ல','ள','ழ','வ').map { it.toInt() }.toIntArray()
         private val TAMIL_KSSA = 0xF00ED
         private val TAMIL_SHRII = 0xF00EE
 
+        private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) + (0xF0140..0xF01FF)).toIntArray()
+
+        private val devanagariBaseConsonants = 0x0915..0x0939
+        private val devanagariBaseConsonantsWithNukta = 0x0958..0x095F
+        private val devanagariBaseConsonantsExtended = 0x0978..0x097F
+        private val devanagariPresentationFormsConsonants = 0xF0140..0xF01FF
+
         private val DEVANAGARI_VIRAMA = 0x94D
         private val DEVANAGARI_RA = 0x930
+        private val DEVANAGARI_RRA = 0x931
+        private val DEVANAGARI_RA_SUPER = 0xF0104
+        private val DEVANAGARI_EYELASH_RA = 0xF012A
+
+        private val DEVANAGARI_LIG_K_SS = 0xF0181
+        private val DEVANAGARI_LIG_J_NY = 0xF0184
+        private val DEVANAGARI_LIG_T_T = 0xF018B
+        private val DEVANAGARI_LIG_T_R = 0xF0154
+        private val DEVANAGARI_LIG_SH_R = 0xF0166
+        private val DEVANAGARI_HALFLIG_K_SS = 0xF012B
+        private val DEVANAGARI_HALFLIG_J_NY = 0xF012C
+        private val DEVANAGARI_HALFLIG_T_T = 0xF012D
+        private val DEVANAGARI_HALFLIG_T_R = 0xF012E
+        private val DEVANAGARI_HALFLIG_SH_R = 0xF012F
+
+        private val DEVANAGARI_SYLL_RU = 0xF0100
+        private val DEVANAGARI_SYLL_RUU = 0xF0101
+
+        private val DEVANAGARI_HALF_FORMS = 0xF0100 // starting point for Devanagari half forms
+        private val DEVANAGARI_LIG_X_R = 0xF0140 // starting point for Devanagari ligature CONSONANT+RA
+
+        private fun CodePoint.toHalfFormOrNull(): CodePoint? {
+            if (this in devanagariBaseConsonants) return (this - 0x0910 + DEVANAGARI_HALF_FORMS)
+            if (this in devanagariBaseConsonantsWithNukta) return (this - 0x0920 + DEVANAGARI_HALF_FORMS)
+            else if (this == DEVANAGARI_LIG_K_SS) return DEVANAGARI_HALFLIG_K_SS
+            else if (this == DEVANAGARI_LIG_J_NY) return DEVANAGARI_HALFLIG_J_NY
+            else if (this == DEVANAGARI_LIG_T_T) return  DEVANAGARI_HALFLIG_T_T
+            else if (this == DEVANAGARI_LIG_T_R) return  DEVANAGARI_HALFLIG_T_R
+            else if (this == DEVANAGARI_LIG_SH_R) return DEVANAGARI_HALFLIG_SH_R
+            // TODO half forms of X_R-ligatures
+            else return null
+        }
+
+        // TODO use proper version of Virama for respective scripts
+        private fun CodePoint.toHalfFormOrVirama(): List<CodePoint> = this.toHalfFormOrNull().let {
+                if (it == null) listOf(this, DEVANAGARI_VIRAMA) else listOf(it)
+            }
+
+        // TODO use proper version of Virama for respective scripts
+        private fun toRaAppended(c: CodePoint): List<CodePoint> {
+            if (c in devanagariBaseConsonants) return listOf(c - 0x0910 + DEVANAGARI_LIG_X_R)
+            else return listOf(c, DEVANAGARI_VIRAMA, DEVANAGARI_RA)
+        }
+
+        private fun ligateIndicConsonants(c1: CodePoint, c2: CodePoint): List<CodePoint> {
+            if (c2 == DEVANAGARI_RA) return toRaAppended(c1) // Devanagari @.RA
+            when (c1) {
+                0x0915 -> /* Devanagari KA */ when (c2) {
+                    0x0924 -> return listOf(0xF0180) // K.TA
+                    0x0937 -> return listOf(DEVANAGARI_LIG_K_SS) // K.SSA
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                0x0919 -> /* Devanagari NGA */ when (c2) {
+                    0x0917 -> return listOf(0xF0182) // NG.G
+                    0x092E -> return listOf(0xF0183) // NG.M
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                0x091C -> /* Devanagari JA */ when (c2) {
+                    0x091E -> return listOf(DEVANAGARI_LIG_J_NY) // J.NY
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                0x091F -> /* Devanagari TTA */ when (c2) {
+                    0x091F -> return listOf(0xF0185) // TT.TT
+                    0x0920 -> return listOf(0xF0186) // TT.TTH
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                0x0920 -> /* Devanagari TTHA */ when (c2) {
+                    0x0920 -> return listOf(0xF0187) // TTH.TTH
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                0x0921 -> /* Devanagari DDA */ when (c2) {
+                    0x0921 -> return listOf(0xF0188) // DD.DD
+                    0x0922 -> return listOf(0xF0189) // DD.DDH
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                0x0922 -> /* Devanagari DDHA */ when (c2) {
+                    0x0922 -> return listOf(0xF018A) // DDH.DDH
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                0x0924 -> /* Devanagari TA */ when (c2) {
+                    0x0924 -> return listOf(DEVANAGARI_LIG_T_T) // T.T
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                0x0926 -> /* Devanagari DA */ when (c2) {
+                    0x0926 -> return listOf(0xF018C) // D.D
+                    0x0927 -> return listOf(0xF018D) // D.DH
+                    0x092C -> return listOf(0xF018E) // D.B
+                    0x092D -> return listOf(0xF018F) // D.BH
+                    0x092E -> return listOf(0xF0190) // D.M
+                    0x092F -> return listOf(0xF0191) // D.Y
+                    0x0935 -> return listOf(0xF0192) // D.V
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                0x0928 -> /* Devanagari NA */ when (c2) {
+                    0x0928 -> return listOf(0xF0193) // N.N
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                0x0939 -> /* Devanagari HA */ when (c2) {
+                    0x0923 -> return listOf(0xF0194) // H.NN
+                    0x0928 -> return listOf(0xF0195) // H.N
+                    0x092E -> return listOf(0xF0196) // H.M
+                    0x092F -> return listOf(0xF0197) // H.Y
+                    0x0932 -> return listOf(0xF0198) // H.L
+                    0x0935 -> return listOf(0xF0199) // H.v
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                else -> return c1.toHalfFormOrVirama() + c2 // TODO use proper version of Virama for respective scripts
+            }
+        }
 
 
         private fun Int.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
@@ -1689,13 +1859,13 @@ class TerrarumSansBitmap(
          */
         private fun getHanInitialRow(i: Int, p: Int, f: Int): Int {
             var ret =
-                    if (p in jungseongI) 3
-                    else if (p in jungseongOUComplex) 7
-                    else if (p in jungseongOEWI) 11
-                    else if (p in jungseongOU) 5
-                    else if (p in jungseongEU) 9
-                    else if (p in jungseongYI) 13
-                    else 1
+                if (p in jungseongI) 3
+                else if (p in jungseongOUComplex) 7
+                else if (p in jungseongOEWI) 11
+                else if (p in jungseongOU) 5
+                else if (p in jungseongEU) 9
+                else if (p in jungseongYI) 13
+                else 1
 
             if (f != 0) ret += 1
 
@@ -1717,17 +1887,17 @@ class TerrarumSansBitmap(
         private fun isHangulJongseong(c: CodePoint) = c in (0x11A8..0x11FF) || c in (0xD7CB..0xD7FB)
 
         private fun toHangulChoseongIndex(c: CodePoint) =
-                if (!isHangulChoseong(c)) throw IllegalArgumentException("This Hangul sequence does not begin with Choseong (${c.toHex()})")
-                else if (c in 0x1100..0x115F) c - 0x1100
-                else c - 0xA960 + 96
+            if (!isHangulChoseong(c)) throw IllegalArgumentException("This Hangul sequence does not begin with Choseong (${c.toHex()})")
+            else if (c in 0x1100..0x115F) c - 0x1100
+            else c - 0xA960 + 96
         private fun toHangulJungseongIndex(c: CodePoint) =
-                if (!isHangulJungseong(c)) null
-                else if (c in 0x1160..0x11A7) c - 0x1160
-                else c - 0xD7B0 + 72
+            if (!isHangulJungseong(c)) null
+            else if (c in 0x1160..0x11A7) c - 0x1160
+            else c - 0xD7B0 + 72
         private fun toHangulJongseongIndex(c: CodePoint) =
-                if (!isHangulJongseong(c)) null
-                else if (c in 0x11A8..0x11FF) c - 0x11A8 + 1
-                else c - 0xD7CB + 88 + 1
+            if (!isHangulJongseong(c)) null
+            else if (c in 0x11A8..0x11FF) c - 0x11A8 + 1
+            else c - 0xD7CB + 88 + 1
 
         /**
          * X-position in the spritesheet
@@ -1821,9 +1991,9 @@ class TerrarumSansBitmap(
 
         private fun kanaIndexX(c: CodePoint) = c % 16
         private fun kanaIndexY(c: CodePoint) =
-                if (c in 0x31F0..0x31FF) 12
-                else if (c in 0x1B000..0x1B00F) 13
-                else (c - 0x3040) / 16
+            if (c in 0x31F0..0x31FF) 12
+            else if (c in 0x1B000..0x1B00F) 13
+            else (c - 0x3040) / 16
 
         private fun cjkPunctIndexX(c: CodePoint) = c % 16
         private fun cjkPunctIndexY(c: CodePoint) = (c - 0x3000) / 16
@@ -1902,7 +2072,7 @@ class TerrarumSansBitmap(
 
         private fun tamilIndexX(c: CodePoint) = c % 16
         private fun tamilIndexY(c: CodePoint) = (if (c < 0xF0000) (c - 0x0B80) else (c - 0xF0040)) / 16
-        
+
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
         val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR).toSurrogatedString()
@@ -1960,12 +2130,12 @@ class TerrarumSansBitmap(
          * J·K
          */
         private val kerningRules = arrayListOf(
-                Kem(ing("_`_@___`__"),ing("`_`___@___")), // ул
-                Kem(ing("_@_`___`__"),ing("`_________")),
-                Kem(ing("_@_@___`__"),ing("`___@_@___"),1,1),
-                Kem(ing("_@_@_`_`__"),ing("`_____@___")),
-                Kem(ing("___`_`____"),ing("`___@_`___")),
-                Kem(ing("___`_`____"),ing("`_@___`___")),
+            Kem(ing("_`_@___`__"),ing("`_`___@___")), // ул
+            Kem(ing("_@_`___`__"),ing("`_________")),
+            Kem(ing("_@_@___`__"),ing("`___@_@___"),1,1),
+            Kem(ing("_@_@_`_`__"),ing("`_____@___")),
+            Kem(ing("___`_`____"),ing("`___@_`___")),
+            Kem(ing("___`_`____"),ing("`_@___`___")),
         )
 
         init {
