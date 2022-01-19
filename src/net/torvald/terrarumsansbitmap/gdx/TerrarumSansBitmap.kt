@@ -490,8 +490,6 @@ class TerrarumSansBitmap(
         return null
     }
 
-    private fun Int.charInfo() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}: ${Character.getName(this)}"
-
 
     override fun dispose() {
         super.dispose()
@@ -1683,6 +1681,9 @@ class TerrarumSansBitmap(
             'j'.toInt() to 0x237
         )
 
+        internal fun Int.charInfo() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}: ${Character.getName(this)}"
+
+        private val ZWNJ = 0x200C
         private val ZWJ = 0x200D
 
         private val tamilLigatingConsonants = listOf('க','ங','ச','ஞ','ட','ண','த','ந','ன','ப','ம','ய','ர','ற','ல','ள','ழ','வ').map { it.toInt() }.toIntArray()
@@ -1699,6 +1700,10 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_VIRAMA = 0x94D
         private val DEVANAGARI_RA = 0x930
         private val DEVANAGARI_RRA = 0x931
+
+        private val DEVANAGARI_SYLL_RU = 0xF0100
+        private val DEVANAGARI_SYLL_RUU = 0xF0101
+        private val DEVANAGARI_OPEN_YA = 0xF0103
         private val DEVANAGARI_RA_SUPER = 0xF0104
         private val DEVANAGARI_EYELASH_RA = 0xF012A
 
@@ -1707,14 +1712,16 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_LIG_T_T = 0xF018B
         private val DEVANAGARI_LIG_T_R = 0xF0154
         private val DEVANAGARI_LIG_SH_R = 0xF0166
+
+        private val DEVANAGARI_LIG_K_SS_R = 0xF016B
+        private val DEVANAGARI_LIG_J_NY_R = 0xF016C
+        private val DEVANAGARI_LIG_T_T_R = 0xF016D
+
         private val DEVANAGARI_HALFLIG_K_SS = 0xF012B
         private val DEVANAGARI_HALFLIG_J_NY = 0xF012C
         private val DEVANAGARI_HALFLIG_T_T = 0xF012D
         private val DEVANAGARI_HALFLIG_T_R = 0xF012E
         private val DEVANAGARI_HALFLIG_SH_R = 0xF012F
-
-        private val DEVANAGARI_SYLL_RU = 0xF0100
-        private val DEVANAGARI_SYLL_RUU = 0xF0101
 
         private val DEVANAGARI_HALF_FORMS = 0xF0100 // starting point for Devanagari half forms
         private val DEVANAGARI_LIG_X_R = 0xF0140 // starting point for Devanagari ligature CONSONANT+RA
@@ -1739,15 +1746,20 @@ class TerrarumSansBitmap(
         // TODO use proper version of Virama for respective scripts
         private fun toRaAppended(c: CodePoint): List<CodePoint> {
             if (c in devanagariBaseConsonants) return listOf(c - 0x0910 + DEVANAGARI_LIG_X_R)
+            else if (c == DEVANAGARI_LIG_K_SS) return listOf(DEVANAGARI_LIG_K_SS_R)
+            else if (c == DEVANAGARI_LIG_J_NY) return listOf(DEVANAGARI_LIG_J_NY_R)
+            else if (c == DEVANAGARI_LIG_T_T) return listOf(DEVANAGARI_LIG_T_T_R)
             else return listOf(c, DEVANAGARI_VIRAMA, DEVANAGARI_RA)
         }
 
         private fun ligateIndicConsonants(c1: CodePoint, c2: CodePoint): List<CodePoint> {
+            println("[TerrarumSansBitmap] Indic ligation ${c1.charInfo()} - ${c2.charInfo()}")
             if (c2 == DEVANAGARI_RA) return toRaAppended(c1) // Devanagari @.RA
             when (c1) {
                 0x0915 -> /* Devanagari KA */ when (c2) {
-                    0x0924 -> return listOf(0xF0180) // K.TA
-                    0x0937 -> return listOf(DEVANAGARI_LIG_K_SS) // K.SSA
+                    0x0924 -> return listOf(0xF0180) // K.T
+                    0x0937 -> return listOf(DEVANAGARI_LIG_K_SS) // K.SS
+                    0xF0167 -> return listOf(DEVANAGARI_LIG_K_SS_R) // K.SS.R
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0919 -> /* Devanagari NGA */ when (c2) {
@@ -1757,6 +1769,7 @@ class TerrarumSansBitmap(
                 }
                 0x091C -> /* Devanagari JA */ when (c2) {
                     0x091E -> return listOf(DEVANAGARI_LIG_J_NY) // J.NY
+                    0xF014E -> return listOf(DEVANAGARI_LIG_J_NY_R) // J.NY.R
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x091F -> /* Devanagari TTA */ when (c2) {
@@ -1779,6 +1792,7 @@ class TerrarumSansBitmap(
                 }
                 0x0924 -> /* Devanagari TA */ when (c2) {
                     0x0924 -> return listOf(DEVANAGARI_LIG_T_T) // T.T
+                    DEVANAGARI_LIG_T_R -> return listOf(DEVANAGARI_LIG_T_T_R) // T.T.R
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0926 -> /* Devanagari DA */ when (c2) {
@@ -1801,7 +1815,7 @@ class TerrarumSansBitmap(
                     0x092E -> return listOf(0xF0196) // H.M
                     0x092F -> return listOf(0xF0197) // H.Y
                     0x0932 -> return listOf(0xF0198) // H.L
-                    0x0935 -> return listOf(0xF0199) // H.v
+                    0x0935 -> return listOf(0xF0199) // H.V
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 else -> return c1.toHalfFormOrVirama() + c2 // TODO use proper version of Virama for respective scripts
