@@ -1700,6 +1700,7 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_VIRAMA = 0x94D
         private val DEVANAGARI_RA = 0x930
         private val DEVANAGARI_RRA = 0x931
+        private val DEVANAGARI_YA = 0x92F
 
         private val DEVANAGARI_SYLL_RU = 0xF0100
         private val DEVANAGARI_SYLL_RUU = 0xF0101
@@ -1765,29 +1766,39 @@ class TerrarumSansBitmap(
                 0x0919 -> /* Devanagari NGA */ when (c2) {
                     0x0917 -> return listOf(0xF0182) // NG.G
                     0x092E -> return listOf(0xF0183) // NG.M
+                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // NG.Y
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                0x091B -> /* Devanagari CHA */ when (c2) {
+                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // CH.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x091C -> /* Devanagari JA */ when (c2) {
                     0x091E -> return listOf(DEVANAGARI_LIG_J_NY) // J.NY
+                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // J.Y
                     0xF014E -> return listOf(DEVANAGARI_LIG_J_NY_R) // J.NY.R
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x091F -> /* Devanagari TTA */ when (c2) {
                     0x091F -> return listOf(0xF0185) // TT.TT
                     0x0920 -> return listOf(0xF0186) // TT.TTH
+                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // TT.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0920 -> /* Devanagari TTHA */ when (c2) {
                     0x0920 -> return listOf(0xF0187) // TTH.TTH
+                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // TTH.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0921 -> /* Devanagari DDA */ when (c2) {
                     0x0921 -> return listOf(0xF0188) // DD.DD
                     0x0922 -> return listOf(0xF0189) // DD.DDH
+                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // DD.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0922 -> /* Devanagari DDHA */ when (c2) {
                     0x0922 -> return listOf(0xF018A) // DDH.DDH
+                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // DDH.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0924 -> /* Devanagari TA */ when (c2) {
