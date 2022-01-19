@@ -1148,6 +1148,19 @@ class TerrarumSansBitmap(
             // END of tamil subsystem implementation
 
             // BEGIN of devanagari string replacer
+            // Unicode Devanagari Rendering Rule R14
+            else if (c == DEVANAGARI_RA && cNext == DEVANAGARI_U) {
+                seq.add(DEVANAGARI_SYLL_RU); i += 1
+            }
+            else if (c == DEVANAGARI_RA && cNext == DEVANAGARI_UU) {
+                seq.add(DEVANAGARI_SYLL_RUU); i += 1
+            }
+            else if (c == DEVANAGARI_RRA && cNext == DEVANAGARI_U) {
+                seq.add(DEVANAGARI_SYLL_RRU); i += 1
+            }
+            else if (c == DEVANAGARI_RRA && cNext == DEVANAGARI_UU) {
+                seq.add(DEVANAGARI_SYLL_RRUU); i += 1
+            }
             // Unicode Devanagari Rendering Rule R6-R8
             // (this must precede the ligaturing-machine coded on the 2nd pass, otherwise the rules below will cause undesirable effects)
             else if (devanagariConsonants.contains(c) && cNext == DEVANAGARI_VIRAMA && cNext2 == DEVANAGARI_RA) {
@@ -1701,9 +1714,14 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_RA = 0x930
         private val DEVANAGARI_RRA = 0x931
         private val DEVANAGARI_YA = 0x92F
+        private val DEVANAGARI_U = 0x941
+        private val DEVANAGARI_UU = 0x942
 
         private val DEVANAGARI_SYLL_RU = 0xF0100
         private val DEVANAGARI_SYLL_RUU = 0xF0101
+        private val DEVANAGARI_SYLL_RRU = 0xF0140
+        private val DEVANAGARI_SYLL_RRUU = 0xF0141
+
         private val DEVANAGARI_OPEN_YA = 0xF0103
         private val DEVANAGARI_RA_SUPER = 0xF0104
         private val DEVANAGARI_EYELASH_RA = 0xF012A
