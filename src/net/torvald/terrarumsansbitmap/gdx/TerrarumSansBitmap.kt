@@ -1161,6 +1161,12 @@ class TerrarumSansBitmap(
             else if (c == DEVANAGARI_RRA && cNext == DEVANAGARI_UU) {
                 seq.add(DEVANAGARI_SYLL_RRUU); i += 1
             }
+            else if (c == DEVANAGARI_HA && cNext == DEVANAGARI_U) {
+                seq.add(DEVANAGARI_SYLL_HU); i += 1
+            }
+            else if (c == DEVANAGARI_HA && cNext == DEVANAGARI_UU) {
+                seq.add(DEVANAGARI_SYLL_HUU); i += 1
+            }
             // Unicode Devanagari Rendering Rule R6-R8
             // (this must precede the ligaturing-machine coded on the 2nd pass, otherwise the rules below will cause undesirable effects)
             else if (devanagariConsonants.contains(c) && cNext == DEVANAGARI_VIRAMA && cNext2 == DEVANAGARI_RA) {
@@ -1712,17 +1718,21 @@ class TerrarumSansBitmap(
 
         private val DEVANAGARI_VIRAMA = 0x94D
         private val DEVANAGARI_RA = 0x930
-        private val DEVANAGARI_RRA = 0x931
         private val DEVANAGARI_YA = 0x92F
+        private val DEVANAGARI_RRA = 0x931
+        private val DEVANAGARI_VA = 0x0935
+        private val DEVANAGARI_HA = 0x939
         private val DEVANAGARI_U = 0x941
         private val DEVANAGARI_UU = 0x942
 
         private val DEVANAGARI_SYLL_RU = 0xF0100
         private val DEVANAGARI_SYLL_RUU = 0xF0101
-        private val DEVANAGARI_SYLL_RRU = 0xF0140
-        private val DEVANAGARI_SYLL_RRUU = 0xF0141
+        private val DEVANAGARI_SYLL_RRU = 0xF0102
+        private val DEVANAGARI_SYLL_RRUU = 0xF0103
+        private val DEVANAGARI_SYLL_HU = 0xF0130
+        private val DEVANAGARI_SYLL_HUU = 0xF0131
 
-        private val DEVANAGARI_OPEN_YA = 0xF0103
+        private val DEVANAGARI_OPEN_YA = 0xF0137
         private val DEVANAGARI_RA_SUPER = 0xF0104
         private val DEVANAGARI_EYELASH_RA = 0xF012A
 
@@ -1784,10 +1794,12 @@ class TerrarumSansBitmap(
                 0x0919 -> /* Devanagari NGA */ when (c2) {
                     0x0917 -> return listOf(0xF0182) // NG.G
                     0x092E -> return listOf(0xF0183) // NG.M
+                    DEVANAGARI_VA -> return listOf(0xF019C) // NG.V
                     DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // NG.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x091B -> /* Devanagari CHA */ when (c2) {
+                    DEVANAGARI_VA -> return listOf(0xF019D) // CH.V
                     DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // CH.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
@@ -1800,22 +1812,26 @@ class TerrarumSansBitmap(
                 0x091F -> /* Devanagari TTA */ when (c2) {
                     0x091F -> return listOf(0xF0185) // TT.TT
                     0x0920 -> return listOf(0xF0186) // TT.TTH
+                    DEVANAGARI_VA -> return listOf(0xF019E) // TT.V
                     DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // TT.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0920 -> /* Devanagari TTHA */ when (c2) {
                     0x0920 -> return listOf(0xF0187) // TTH.TTH
+                    DEVANAGARI_VA -> return listOf(0xF019F) // TTH.V
                     DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // TTH.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0921 -> /* Devanagari DDA */ when (c2) {
                     0x0921 -> return listOf(0xF0188) // DD.DD
                     0x0922 -> return listOf(0xF0189) // DD.DDH
+                    DEVANAGARI_VA -> return listOf(0xF01A0) // DD.V
                     DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // DD.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0922 -> /* Devanagari DDHA */ when (c2) {
                     0x0922 -> return listOf(0xF018A) // DDH.DDH
+                    DEVANAGARI_VA -> return listOf(0xF01A1) // DDH.V
                     DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // DDH.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
@@ -1825,6 +1841,8 @@ class TerrarumSansBitmap(
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0926 -> /* Devanagari DA */ when (c2) {
+                    0x0917 -> return listOf(0xF019A) // D.G
+                    0x0918 -> return listOf(0xF019B) // D.GH
                     0x0926 -> return listOf(0xF018C) // D.D
                     0x0927 -> return listOf(0xF018D) // D.DH
                     0x092C -> return listOf(0xF018E) // D.B
