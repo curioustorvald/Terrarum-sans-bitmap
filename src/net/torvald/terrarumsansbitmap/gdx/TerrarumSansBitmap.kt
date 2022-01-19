@@ -1714,7 +1714,8 @@ class TerrarumSansBitmap(
         private val devanagariBaseConsonants = 0x0915..0x0939
         private val devanagariBaseConsonantsWithNukta = 0x0958..0x095F
         private val devanagariBaseConsonantsExtended = 0x0978..0x097F
-        private val devanagariPresentationFormsConsonants = 0xF0140..0xF01FF
+        private val devanagariPresentationConsonants = 0xF0140..0xF01FF
+        private val devanagariPresentationConsonantsWithRa = 0xF0140..0xF017F
 
         private val DEVANAGARI_VIRAMA = 0x94D
         private val DEVANAGARI_RA = 0x930
@@ -1739,6 +1740,7 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_LIG_K_SS = 0xF0181
         private val DEVANAGARI_LIG_J_NY = 0xF0184
         private val DEVANAGARI_LIG_T_T = 0xF018B
+
         private val DEVANAGARI_LIG_T_R = 0xF0154
         private val DEVANAGARI_LIG_SH_R = 0xF0166
 
@@ -1749,8 +1751,9 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_HALFLIG_K_SS = 0xF012B
         private val DEVANAGARI_HALFLIG_J_NY = 0xF012C
         private val DEVANAGARI_HALFLIG_T_T = 0xF012D
-        private val DEVANAGARI_HALFLIG_T_R = 0xF012E
-        private val DEVANAGARI_HALFLIG_SH_R = 0xF012F
+
+//        private val DEVANAGARI_HALFLIG_T_R = 0xF012E
+//        private val DEVANAGARI_HALFLIG_SH_R = 0xF012F
 
         private val DEVANAGARI_HALF_FORMS = 0xF0100 // starting point for Devanagari half forms
         private val DEVANAGARI_LIG_X_R = 0xF0140 // starting point for Devanagari ligature CONSONANT+RA
@@ -1758,19 +1761,18 @@ class TerrarumSansBitmap(
         private fun CodePoint.toHalfFormOrNull(): CodePoint? {
             if (this in devanagariBaseConsonants) return (this - 0x0910 + DEVANAGARI_HALF_FORMS)
             if (this in devanagariBaseConsonantsWithNukta) return (this - 0x0920 + DEVANAGARI_HALF_FORMS)
-            else if (this == DEVANAGARI_LIG_K_SS) return DEVANAGARI_HALFLIG_K_SS
-            else if (this == DEVANAGARI_LIG_J_NY) return DEVANAGARI_HALFLIG_J_NY
-            else if (this == DEVANAGARI_LIG_T_T) return  DEVANAGARI_HALFLIG_T_T
-            else if (this == DEVANAGARI_LIG_T_R) return  DEVANAGARI_HALFLIG_T_R
-            else if (this == DEVANAGARI_LIG_SH_R) return DEVANAGARI_HALFLIG_SH_R
-            // TODO half forms of X_R-ligatures
-            else return null
+            if (this in devanagariPresentationConsonantsWithRa) return this + 0x80
+            if (this == DEVANAGARI_LIG_K_SS) return DEVANAGARI_HALFLIG_K_SS
+            if (this == DEVANAGARI_LIG_J_NY) return DEVANAGARI_HALFLIG_J_NY
+            if (this == DEVANAGARI_LIG_T_T) return  DEVANAGARI_HALFLIG_T_T
+            return null
         }
 
         // TODO use proper version of Virama for respective scripts
         private fun CodePoint.toHalfFormOrVirama(): List<CodePoint> = this.toHalfFormOrNull().let {
-                if (it == null) listOf(this, DEVANAGARI_VIRAMA) else listOf(it)
-            }
+//            println("[TerrarumSansBitmap] toHalfForm ${this.charInfo()} = ${it?.charInfo()}")
+            if (it == null) listOf(this, DEVANAGARI_VIRAMA) else listOf(it)
+        }
 
         // TODO use proper version of Virama for respective scripts
         private fun toRaAppended(c: CodePoint): List<CodePoint> {
@@ -1782,7 +1784,7 @@ class TerrarumSansBitmap(
         }
 
         private fun ligateIndicConsonants(c1: CodePoint, c2: CodePoint): List<CodePoint> {
-            println("[TerrarumSansBitmap] Indic ligation ${c1.charInfo()} - ${c2.charInfo()}")
+//            println("[TerrarumSansBitmap] Indic ligation ${c1.charInfo()} - ${c2.charInfo()}")
             if (c2 == DEVANAGARI_RA) return toRaAppended(c1) // Devanagari @.RA
             when (c1) {
                 0x0915 -> /* Devanagari KA */ when (c2) {
