@@ -1709,13 +1709,13 @@ class TerrarumSansBitmap(
         private val TAMIL_KSSA = 0xF00ED
         private val TAMIL_SHRII = 0xF00EE
 
-        private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) + (0xF0140..0xF01FF)).toIntArray()
+        private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) + (0xF0105..0xF01FF)).toIntArray()
 
         private val devanagariBaseConsonants = 0x0915..0x0939
         private val devanagariBaseConsonantsWithNukta = 0x0958..0x095F
         private val devanagariBaseConsonantsExtended = 0x0978..0x097F
         private val devanagariPresentationConsonants = 0xF0140..0xF01FF
-        private val devanagariPresentationConsonantsWithRa = 0xF0140..0xF017F
+        private val devanagariPresentationConsonantsWithRa = 0xF0145..0xF017F
 
         private val DEVANAGARI_VIRAMA = 0x94D
         private val DEVANAGARI_RA = 0x930
@@ -1733,7 +1733,8 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_SYLL_HU = 0xF0130
         private val DEVANAGARI_SYLL_HUU = 0xF0131
 
-        private val DEVANAGARI_OPEN_YA = 0xF0137
+        private val DEVANAGARI_OPEN_YA = 0xF0136
+        private val DEVANAGARI_OPEN_HALF_YA = 0xF0137
         private val DEVANAGARI_RA_SUPER = 0xF0104
         private val DEVANAGARI_EYELASH_RA = 0xF012A
 
@@ -1759,12 +1760,13 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_LIG_X_R = 0xF0140 // starting point for Devanagari ligature CONSONANT+RA
 
         private fun CodePoint.toHalfFormOrNull(): CodePoint? {
-            if (this in devanagariBaseConsonants) return (this - 0x0910 + DEVANAGARI_HALF_FORMS)
-            if (this in devanagariBaseConsonantsWithNukta) return (this - 0x0920 + DEVANAGARI_HALF_FORMS)
-            if (this in devanagariPresentationConsonantsWithRa) return this + 0x80
             if (this == DEVANAGARI_LIG_K_SS) return DEVANAGARI_HALFLIG_K_SS
             if (this == DEVANAGARI_LIG_J_NY) return DEVANAGARI_HALFLIG_J_NY
             if (this == DEVANAGARI_LIG_T_T) return  DEVANAGARI_HALFLIG_T_T
+            if (this == DEVANAGARI_OPEN_YA) return DEVANAGARI_OPEN_HALF_YA
+            if (this in devanagariBaseConsonants) return (this - 0x0910 + DEVANAGARI_HALF_FORMS)
+            if (this in devanagariBaseConsonantsWithNukta) return (this - 0x0920 + DEVANAGARI_HALF_FORMS)
+            if (this in devanagariPresentationConsonantsWithRa) return this + 0x80
             return null
         }
 
