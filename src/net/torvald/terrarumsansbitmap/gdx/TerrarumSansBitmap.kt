@@ -1793,6 +1793,7 @@ class TerrarumSansBitmap(
                     0x0924 -> return listOf(0xF0180) // K.T
                     0x0937 -> return listOf(DEVANAGARI_LIG_K_SS) // K.SS
                     0xF0167 -> return listOf(DEVANAGARI_LIG_K_SS_R) // K.SS.R
+                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // K.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0918 -> /* Devanagari GHA */ when (c2) {
