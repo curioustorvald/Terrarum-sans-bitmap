@@ -45,6 +45,7 @@ data class GlyphProps(
         const val STACK_DOWN = 1
         const val STACK_BEFORE_N_AFTER = 2
         const val STACK_UP_N_DOWN = 3
+        const val STACK_DONT = 4
 
         const val DIA_OVERLAY = 2
 //        const val DIA_JOINER = 2

@@ -713,7 +713,12 @@ class TerrarumSansBitmap(
                 else writeOnTop = writeOnTop.ushr(28) and 15
             }
 
-            val stackWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 18).and(255) != 0).toInt() shl y) }
+            val stackWhere0 = pixmap.getPixel(codeStartX, codeStartY + 18).tagify()
+            val stackWhere1 = pixmap.getPixel(codeStartX, codeStartY + 19).tagify()
+
+            val stackWhere = if (stackWhere0 == 0x00FF00FF && stackWhere1 == 0x00FF00FF)
+                GlyphProps.STACK_DONT
+            else (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 18).and(255) != 0).toInt() shl y) }
 
             glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, IntArray(15), hasKernData, isKernYtype, kerningMask, directiveOpcode, directiveArg1, directiveArg2)
 
@@ -745,7 +750,7 @@ class TerrarumSansBitmap(
 //            if (diacriticsAnchors.any { it.xUsed || it.yUsed }) dbgprn("${code.charInfo()} ${diacriticsAnchors.filter { it.xUsed || it.yUsed }.joinToString()}")
 //            if (directiveOpcode != 0) dbgprn("Directive opcode ${directiveOpcode.toString(2)}: ${code.charInfo()}")
 //            if (glyphProps[code]?.isPragma("replacewith") == true) dbgprn("Replacer: ${code.charInfo()} into ${glyphProps[code]!!.extInfo.map { it.toString(16) }.joinToString()}")
-
+//            if (stackWhere == GlyphProps.STACK_DONT) dbgprn("Diacritics Don't stack: ${code.charInfo()}")
         }
     }
 
@@ -1037,6 +1042,16 @@ class TerrarumSansBitmap(
         val seq2 = CodepointSequence()
 
         val yankedCharacters  = Stack<Pair<Int, CodePoint>>() // Stack of <Position, CodePoint>; codepoint use -1 if not applicable
+        var yankedDevanagariRaStatus = intArrayOf(0,0) // 0: none, 1: consonants, 2: virama, 3: vowel for this syllable
+
+        fun changeRaStatus(n: Int) {
+            yankedDevanagariRaStatus[0] = yankedDevanagariRaStatus[1]
+            yankedDevanagariRaStatus[1] = n
+        }
+        fun resetRaStatus() {
+            yankedDevanagariRaStatus[0] = 0
+            yankedDevanagariRaStatus[1] = 0
+        }
 
         fun emptyOutYanked() {
             while (!yankedCharacters.empty()) {
@@ -1170,7 +1185,7 @@ class TerrarumSansBitmap(
             // Unicode Devanagari Rendering Rule R6-R8
             // (this must precede the ligaturing-machine coded on the 2nd pass, otherwise the rules below will cause undesirable effects)
             else if (devanagariConsonants.contains(c) && cNext == DEVANAGARI_VIRAMA && cNext2 == DEVANAGARI_RA) {
-                seq.addAll(toRaAppended(c))
+                seq.addAll(ligateIndicConsonants(c, cNext2))
                 i += 2
             }
             // Unicode Devanagari Rendering Rule R5
@@ -1179,18 +1194,38 @@ class TerrarumSansBitmap(
                 i += 1
             }
             // Unicode Devanagari Rendering Rule R2-R4
-            else if (c == DEVANAGARI_RA && cNext == DEVANAGARI_VIRAMA && cNext2 != DEVANAGARI_RA) {
-                yankedCharacters.push(i to c)
-                i += 1
+            // in Regex: RA (vir C)+ V* ᴿ [not V && not vir]
+            else if (yankedDevanagariRaStatus[1] == 1 && c == DEVANAGARI_VIRAMA) {
+                if (yankedDevanagariRaStatus[0] != 0)
+                    seq.add(c)
+                changeRaStatus(2)
             }
-            // Unicode Devanagari Rendering Rule R2-R4
+            else if (yankedDevanagariRaStatus[1] == 2 && devanagariConsonants.contains(c)) {
+                seq.add(c)
+                changeRaStatus(1)
+            }
+            else if ((yankedDevanagariRaStatus[1] == 1 || yankedDevanagariRaStatus[1] == 3) && devanagariVerbs.contains(c)) {
+                seq.add(c)
+                changeRaStatus(3)
+            }
+//            else if (yankedDevanagariRaStatus == 3 && !devanagariVerbs.contains(c)) {
+            else if (yankedDevanagariRaStatus[1] > 0 && yankedCharacters.peek().second == DEVANAGARI_RA) { // termination or illegal state for Devanagari RA
+                yankedCharacters.pop()
+                seq.add(DEVANAGARI_RA_SUPER)
+                resetRaStatus()
+                i-- // scan this character again next time
+            }
+            else if (c == DEVANAGARI_RA && cNext == DEVANAGARI_VIRAMA && devanagariConsonants.contains(c)) {
+                yankedCharacters.push(i to c)
+                changeRaStatus(1)
+            }
             else if (!isDevanagari(c) && !yankedCharacters.empty()) {
                 emptyOutYanked()
                 seq.add(c)
+                resetRaStatus()
             }
             // WIP
             // END of devanagari string replacer
-
             // rearrange {letter, before-and-after diacritics} as {before-diacritics, letter, after-diacritics}
             else if (glyphProps[c]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
                 val diacriticsProp = glyphProps[c]!!
@@ -1710,6 +1745,7 @@ class TerrarumSansBitmap(
         private val TAMIL_SHRII = 0xF00EE
 
         private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) + (0xF0105..0xF01FF)).toIntArray()
+        private val devanagariVerbs = ((0x093A..0x093C) + (0x093E..0x094C) + (0x094E..0x094F)).toIntArray()
 
         private val devanagariBaseConsonants = 0x0915..0x0939
         private val devanagariBaseConsonantsWithNukta = 0x0958..0x095F
