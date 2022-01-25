@@ -60,7 +60,12 @@ Rightmost vertical column (should be 20 px tall) contains the tags. Tags are def
       A -'  0 left   0 right  1 centre  1 the glyph
       D --Diacritics Type Bit (see below; not all diacritics are marked as one on the spritesheet)
       S -,_ 0 Stack  1 Stack  0 Before  1 Up &
-(MSB) S -'  0 up     0 down   1 &After  1 Down (e.g. U+0C48)
+(MSB) S -'  0 up     0 down   1 &After   1 Down* (e.g. U+0C48)
+
+Up&Down:
+1. when two pixels are both #00FF00 it's "don't stack"
+2. otherwise, it's actually up&down
+
 ```
 
 #### Nudging Bits Encoding

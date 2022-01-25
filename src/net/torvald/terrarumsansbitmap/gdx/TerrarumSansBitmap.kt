@@ -1823,25 +1823,25 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_LIG_K_SS = 0xF0181
         private val DEVANAGARI_LIG_J_NY = 0xF0184
         private val DEVANAGARI_LIG_T_T = 0xF018B
+        private val DEVANAGARI_LIG_N_T = 0xF01B0
         private val MARWARI_LIG_DD_DD = 0xF01AB
         private val MARWARI_LIG_DD_DDH = 0xF01AC
         private val MARWARI_LIG_DD_Y = 0xF01AD
 
         private val DEVANAGARI_LIG_T_R = 0xF0154
-        private val DEVANAGARI_LIG_SH_R = 0xF0166
         private val MARWARI_LIG_DD_R = 0xF016A
 
         private val DEVANAGARI_LIG_K_SS_R = 0xF016B
         private val DEVANAGARI_LIG_J_NY_R = 0xF016C
         private val DEVANAGARI_LIG_T_T_R = 0xF016D
+        private val DEVANAGARI_LIG_N_T_R = 0xF016E
 
         private val DEVANAGARI_HALFLIG_K_SS = 0xF012B
         private val DEVANAGARI_HALFLIG_J_NY = 0xF012C
         private val DEVANAGARI_HALFLIG_T_T = 0xF012D
+        private val DEVANAGARI_HALFLIG_N_T = 0xF01C4
         private val MARWARI_HALFLIG_DD_Y = 0xF01AE
 
-//        private val DEVANAGARI_HALFLIG_T_R = 0xF012E
-//        private val DEVANAGARI_HALFLIG_SH_R = 0xF012F
 
         private val DEVANAGARI_HALF_FORMS = 0xF0100 // starting point for Devanagari half forms
         private val DEVANAGARI_LIG_X_R = 0xF0140 // starting point for Devanagari ligature CONSONANT+RA
@@ -1852,6 +1852,7 @@ class TerrarumSansBitmap(
             if (this == DEVANAGARI_LIG_K_SS) return DEVANAGARI_HALFLIG_K_SS
             if (this == DEVANAGARI_LIG_J_NY) return DEVANAGARI_HALFLIG_J_NY
             if (this == DEVANAGARI_LIG_T_T) return  DEVANAGARI_HALFLIG_T_T
+            if (this == DEVANAGARI_LIG_N_T) return  DEVANAGARI_HALFLIG_N_T
             if (this == DEVANAGARI_OPEN_YA) return DEVANAGARI_OPEN_HALF_YA
             if (this == MARWARI_LIG_DD_Y) return MARWARI_HALFLIG_DD_Y
             if (this in devanagariBaseConsonants) return (this - 0x0910 + DEVANAGARI_HALF_FORMS)
@@ -1958,7 +1959,9 @@ class TerrarumSansBitmap(
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0928 -> /* Devanagari NA */ when (c2) {
+                    0x0924 -> return listOf(DEVANAGARI_LIG_N_T) // N.T
                     0x0928 -> return listOf(0xF0193) // N.N
+                    DEVANAGARI_LIG_T_R -> return listOf(DEVANAGARI_LIG_N_T_R) // N.T.R
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x092A -> /* Devanagari PA */ when (c2) {
