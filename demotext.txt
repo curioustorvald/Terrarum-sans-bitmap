@@ -109,7 +109,7 @@ How multilingual? Real multilingual!
 
     Basic Latin   Latin-1 Supplement   Latin Extended-A   Latin Extended-B   IPA Extensions
     Spacing Modifier Letters   Combining Diacritical Marks   Greek and Coptic􏿆ᴱ􀀀   Cyrillic􏿆ᴭ􀀀   Cyrillic Supplement􏿆ᴭ􀀀
-    Armenian   Devanagari􏿆ᶠⁱ􀀀   Bengali􏿆ᶠⁱ􀀀   Tamil   Thai   Georgian􏿆ჼ􀀀   Hangul Jamo   Cherokee􏿆⁷􀀀   Runic
+    Armenian   Devanagari   Bengali􏿆ᶠⁱ􀀀   Tamil   Thai   Georgian􏿆ჼ􀀀   Hangul Jamo   Cherokee􏿆⁷􀀀   Runic
     Georgian Extended   Phonetic Extensions   Phonetic Extensions Supplement   Latin Extended Additional
     Greek Extended   General Punctuations   Superscripts and Subscripts   Currency Symbols   Letterlike Symbols
     CJK Symbols and Punctuation   Latin Extended-C   Hiragana   Katakana   Hangul Compatibility Jamo

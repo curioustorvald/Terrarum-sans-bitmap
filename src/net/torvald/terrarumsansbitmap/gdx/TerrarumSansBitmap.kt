@@ -32,6 +32,7 @@ import com.badlogic.gdx.graphics.g2d.*
 import com.badlogic.gdx.utils.GdxRuntimeException
 import net.torvald.terrarumsansbitmap.DiacriticsAnchor
 import net.torvald.terrarumsansbitmap.GlyphProps
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.charInfo
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
 import java.util.*
@@ -1071,6 +1072,7 @@ class TerrarumSansBitmap(
             val c = dis[i]
             val cNext = dis.getOrElse(i+1) { -1 }
             val cNext2 = dis.getOrElse(i+2) { -1 }
+            val cNext3 = dis.getOrElse(i+3) { -1 }
             // can't use regular sliding window as the 'i' value is changed way too often
 
             // LET THE NORMALISATION BEGIN //
@@ -1163,6 +1165,13 @@ class TerrarumSansBitmap(
             // END of tamil subsystem implementation
 
             // BEGIN of devanagari string replacer
+            // Alternative Forms of Cluster-initial RA
+            else if (c == DEVANAGARI_RA && cNext == ZWJ && cNext2 == DEVANAGARI_VIRAMA && cNext3 == DEVANAGARI_YA) {
+                seq.add(DEVANAGARI_RYA); i += 3
+            }
+            else if (c == DEVANAGARI_RA && cNext == ZWJ && cNext2 == DEVANAGARI_VIRAMA) {
+                seq.add(DEVANAGARI_RA); i += 2
+            }
             // Unicode Devanagari Rendering Rule R14
             else if (c == DEVANAGARI_RA && cNext == DEVANAGARI_U) {
                 seq.add(DEVANAGARI_SYLL_RU); i += 1
@@ -1247,23 +1256,14 @@ class TerrarumSansBitmap(
         }
 
 
-        // second scan
-        // swap position of {letter, diacritics that comes before the letter}
-        i = 1
+        // BEGIN of Devanagari String Replacer 2 (lookbehind type)
+        i = 0
         while (i <= seq.lastIndex) {
-
-            // reposition [cluster, align-before, align-after] into [align-before, cluster, align-after]
-            if ((glyphProps[seq[i]] ?: nullProp).alignWhere == GlyphProps.ALIGN_BEFORE) {
-                val t = seq[i - 1]
-                seq[i - 1] = seq[i]
-                seq[i] = t
-            }
 
             val cPrev2 = seq.getOrElse(i-2) { -1 }
             val cPrev = seq.getOrElse(i-1) { -1 }
             val c = seq[i]
 
-            // BEGIN of Devanagari String Replacer 2 (lookbehind type)
             // Devanagari Ligations (Lookbehind)
             if (devanagariConsonants.contains(cPrev2) && cPrev == DEVANAGARI_VIRAMA && devanagariConsonants.contains(c)) {
                 i -= 2
@@ -1277,11 +1277,47 @@ class TerrarumSansBitmap(
 
                 i += ligature.size
             }
-            // END of Devanagari String Replacer 2
-
 
             i++
         }
+        // END of Devanagari String Replacer 2
+
+
+        // second scan
+        // swap position of {letter, diacritics that comes before the letter}
+        // reposition [cluster, align-before, align-after] into [align-before, cluster, align-after]
+        i = 0
+        while (i <= seq.lastIndex) {
+            if (i > 0 && (glyphProps[seq[i]] ?: nullProp).alignWhere == GlyphProps.ALIGN_BEFORE) {
+                val verb = seq[i]
+//                dbgprn("Verb realign: index $i, ${verb.charInfo()}")
+                if (isDevanagari(verb)) {
+                    // scan for the consonant cluster backwards
+                    // [not ligature glyphs] h h h h h c l r
+                    var scanCounter = 1
+                    while (true) {
+                        val cAtCurs = seq.getOrElse(i - scanCounter) { -1 }
+//                        dbgprn("    scan back $scanCounter, char: ${cAtCurs.charInfo()}")
+                        if (scanCounter == 1 && devanagariConsonantsNonLig.contains(cAtCurs) ||
+                            scanCounter > 1 && devanariConsonantsHalfs.contains(cAtCurs))
+                            scanCounter += 1
+                        else
+                            break
+                    } // scanCounter points at the terminator. the left-verb must be placed at (i - scanCounter + 1)
+
+                    seq.removeAt(i)
+                    seq.add(i - scanCounter + 1, verb)
+                }
+                else {
+                    val t = seq[i - 1]
+                    seq[i - 1] = seq[i]
+                    seq[i] = t
+                }
+            }
+
+            i++
+        }
+
 
         // unpack replacewith
         seq.forEach {
@@ -1740,18 +1776,26 @@ class TerrarumSansBitmap(
         private val ZWNJ = 0x200C
         private val ZWJ = 0x200D
 
-        private val tamilLigatingConsonants = listOf('க','ங','ச','ஞ','ட','ண','த','ந','ன','ப','ம','ய','ர','ற','ல','ள','ழ','வ').map { it.toInt() }.toIntArray()
+        private val tamilLigatingConsonants = listOf('க','ங','ச','ஞ','ட','ண','த','ந','ன','ப','ம','ய','ர','ற','ல','ள','ழ','வ').map { it.toInt() }.toIntArray() // this is the only thing that .indexOf() is called against, so NO HASHSET
         private val TAMIL_KSSA = 0xF00ED
         private val TAMIL_SHRII = 0xF00EE
 
-        private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) + (0xF0105..0xF01FF)).toIntArray()
-        private val devanagariVerbs = ((0x093A..0x093C) + (0x093E..0x094C) + (0x094E..0x094F)).toIntArray()
+        private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) + (0xF0105..0xF01FF)).toHashSet()
+        private val devanagariVerbs = ((0x093A..0x093C) + (0x093E..0x094C) + (0x094E..0x094F)).toHashSet()
 
         private val devanagariBaseConsonants = 0x0915..0x0939
         private val devanagariBaseConsonantsWithNukta = 0x0958..0x095F
         private val devanagariBaseConsonantsExtended = 0x0978..0x097F
         private val devanagariPresentationConsonants = 0xF0140..0xF01FF
         private val devanagariPresentationConsonantsWithRa = 0xF0145..0xF017F
+        private val devanagariPresentationIrregularConsonants = 0xF0180..0xF01BF
+
+
+        private val devanagariConsonantsNonLig = (devanagariBaseConsonants +
+                devanagariBaseConsonantsWithNukta + devanagariBaseConsonantsExtended +
+                devanagariPresentationConsonantsWithRa + devanagariPresentationIrregularConsonants).toHashSet()
+
+        private val devanariConsonantsHalfs = ((0xF0105..0xF012F) + (0xF0137..0xF013F) + (0xF01C0..0xF01FF)).toHashSet()
 
         private val DEVANAGARI_VIRAMA = 0x94D
         private val DEVANAGARI_RA = 0x930
@@ -1761,6 +1805,8 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_HA = 0x939
         private val DEVANAGARI_U = 0x941
         private val DEVANAGARI_UU = 0x942
+        private val DEVANAGARI_RYA = 0xF0140
+        private val DEVANAGARI_HALF_RYA = 0xF0141
 
         private val DEVANAGARI_SYLL_RU = 0xF0100
         private val DEVANAGARI_SYLL_RUU = 0xF0101
@@ -1801,6 +1847,8 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_LIG_X_R = 0xF0140 // starting point for Devanagari ligature CONSONANT+RA
 
         private fun CodePoint.toHalfFormOrNull(): CodePoint? {
+            if (this == DEVANAGARI_RYA) return DEVANAGARI_HALF_RYA
+            if (this in 0xF018C..0xF018F) return this + 0x34
             if (this == DEVANAGARI_LIG_K_SS) return DEVANAGARI_HALFLIG_K_SS
             if (this == DEVANAGARI_LIG_J_NY) return DEVANAGARI_HALFLIG_J_NY
             if (this == DEVANAGARI_LIG_T_T) return  DEVANAGARI_HALFLIG_T_T
@@ -1814,7 +1862,7 @@ class TerrarumSansBitmap(
 
         // TODO use proper version of Virama for respective scripts
         private fun CodePoint.toHalfFormOrVirama(): List<CodePoint> = this.toHalfFormOrNull().let {
-            println("[TerrarumSansBitmap] toHalfForm ${this.charInfo()} = ${it?.charInfo()}")
+//            println("[TerrarumSansBitmap] toHalfForm ${this.charInfo()} = ${it?.charInfo()}")
             if (it == null) listOf(this, DEVANAGARI_VIRAMA) else listOf(it)
         }
 
@@ -1829,7 +1877,7 @@ class TerrarumSansBitmap(
         }
 
         private fun ligateIndicConsonants(c1: CodePoint, c2: CodePoint): List<CodePoint> {
-            println("[TerrarumSansBitmap] Indic ligation ${c1.charInfo()} - ${c2.charInfo()}")
+//            println("[TerrarumSansBitmap] Indic ligation ${c1.charInfo()} - ${c2.charInfo()}")
             if (c2 == DEVANAGARI_RA) return toRaAppended(c1) // Devanagari @.RA
             when (c1) {
                 0x0915 -> /* Devanagari KA */ when (c2) {
@@ -1944,6 +1992,10 @@ class TerrarumSansBitmap(
                     0x0978 -> return listOf(MARWARI_LIG_DD_DD) // DD.DD
                     0x0922 -> return listOf(MARWARI_LIG_DD_DDH) // DD.DDH
                     DEVANAGARI_YA -> return listOf(MARWARI_LIG_DD_Y) // DD.Y
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                in 0xF018C..0xF018F -> /* Devanagari D.@A */ when (c2) {
+                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 else -> return c1.toHalfFormOrVirama() + c2 // TODO use proper version of Virama for respective scripts
