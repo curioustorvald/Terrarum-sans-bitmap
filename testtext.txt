@@ -14,5 +14,4 @@
 स्वतन्त्र << N.T.RA ligature
 सर्वप्रथम << RAsup must be above VA, not P.RA
 
-म्पम्भ
-म
+भारतीय अक्षर जटिल हैं क्ष्फ क्षफ
