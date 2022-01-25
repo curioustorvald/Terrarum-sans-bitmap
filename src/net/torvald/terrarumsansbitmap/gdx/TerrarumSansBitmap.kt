@@ -1808,7 +1808,7 @@ class TerrarumSansBitmap(
 
         // TODO use proper version of Virama for respective scripts
         private fun CodePoint.toHalfFormOrVirama(): List<CodePoint> = this.toHalfFormOrNull().let {
-//            println("[TerrarumSansBitmap] toHalfForm ${this.charInfo()} = ${it?.charInfo()}")
+            println("[TerrarumSansBitmap] toHalfForm ${this.charInfo()} = ${it?.charInfo()}")
             if (it == null) listOf(this, DEVANAGARI_VIRAMA) else listOf(it)
         }
 
@@ -1822,7 +1822,7 @@ class TerrarumSansBitmap(
         }
 
         private fun ligateIndicConsonants(c1: CodePoint, c2: CodePoint): List<CodePoint> {
-//            println("[TerrarumSansBitmap] Indic ligation ${c1.charInfo()} - ${c2.charInfo()}")
+            println("[TerrarumSansBitmap] Indic ligation ${c1.charInfo()} - ${c2.charInfo()}")
             if (c2 == DEVANAGARI_RA) return toRaAppended(c1) // Devanagari @.RA
             when (c1) {
                 0x0915 -> /* Devanagari KA */ when (c2) {
@@ -1836,6 +1836,9 @@ class TerrarumSansBitmap(
                     0x091F -> return listOf(0xF01A2) // GH.TT
                     0x0920 -> return listOf(0xF01A3) // GH.TTH
                     0x0922 -> return listOf(0xF01A4) // GH.DDH
+                    0xF014F -> return listOf(0xF0172) // GH.TTR
+                    0xF0150 -> return listOf(0xF0173) // GH.TTHR
+                    0xF0152 -> return listOf(0xF0174) // GH.DDHR
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0919 -> /* Devanagari NGA */ when (c2) {
@@ -1907,12 +1910,18 @@ class TerrarumSansBitmap(
                     0x091F -> return listOf(0xF01A5) // P.TT
                     0x0920 -> return listOf(0xF01A6) // P.TTH
                     0x0922 -> return listOf(0xF01A7) // P.DDH
+                    0xF014F -> return listOf(0xF0175) // P.TTR
+                    0xF0150 -> return listOf(0xF0176) // P.TTHR
+                    0xF0152 -> return listOf(0xF0177) // P.DDHR
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0937 -> /* Devanagari SSA */ when (c2) {
                     0x091F -> return listOf(0xF01A8) // SS.TT
-                    0x0920 -> return listOf(0xF01AA) // SS.TTH
-                    0x0922 -> return listOf(0xF01AB) // SS.DDH
+                    0x0920 -> return listOf(0xF01A9) // SS.TTH
+                    0x0922 -> return listOf(0xF01AA) // SS.DDH
+                    0xF014F -> return listOf(0xF0178) // SS.TTR
+                    0xF0150 -> return listOf(0xF0179) // SS.TTHR
+                    0xF0152 -> return listOf(0xF017A) // SS.DDHR
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 0x0939 -> /* Devanagari HA */ when (c2) {
