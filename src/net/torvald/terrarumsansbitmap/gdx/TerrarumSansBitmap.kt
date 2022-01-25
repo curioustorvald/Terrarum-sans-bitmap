@@ -1224,7 +1224,6 @@ class TerrarumSansBitmap(
                 seq.add(c)
                 resetRaStatus()
             }
-            // WIP
             // END of devanagari string replacer
             // rearrange {letter, before-and-after diacritics} as {before-diacritics, letter, after-diacritics}
             else if (glyphProps[c]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
@@ -1253,6 +1252,7 @@ class TerrarumSansBitmap(
         i = 1
         while (i <= seq.lastIndex) {
 
+            // reposition [cluster, align-before, align-after] into [align-before, cluster, align-after]
             if ((glyphProps[seq[i]] ?: nullProp).alignWhere == GlyphProps.ALIGN_BEFORE) {
                 val t = seq[i - 1]
                 seq[i - 1] = seq[i]
@@ -1777,9 +1777,13 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_LIG_K_SS = 0xF0181
         private val DEVANAGARI_LIG_J_NY = 0xF0184
         private val DEVANAGARI_LIG_T_T = 0xF018B
+        private val MARWARI_LIG_DD_DD = 0xF01AB
+        private val MARWARI_LIG_DD_DDH = 0xF01AC
+        private val MARWARI_LIG_DD_Y = 0xF01AD
 
         private val DEVANAGARI_LIG_T_R = 0xF0154
         private val DEVANAGARI_LIG_SH_R = 0xF0166
+        private val MARWARI_LIG_DD_R = 0xF016A
 
         private val DEVANAGARI_LIG_K_SS_R = 0xF016B
         private val DEVANAGARI_LIG_J_NY_R = 0xF016C
@@ -1788,6 +1792,7 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_HALFLIG_K_SS = 0xF012B
         private val DEVANAGARI_HALFLIG_J_NY = 0xF012C
         private val DEVANAGARI_HALFLIG_T_T = 0xF012D
+        private val MARWARI_HALFLIG_DD_Y = 0xF01AE
 
 //        private val DEVANAGARI_HALFLIG_T_R = 0xF012E
 //        private val DEVANAGARI_HALFLIG_SH_R = 0xF012F
@@ -1800,6 +1805,7 @@ class TerrarumSansBitmap(
             if (this == DEVANAGARI_LIG_J_NY) return DEVANAGARI_HALFLIG_J_NY
             if (this == DEVANAGARI_LIG_T_T) return  DEVANAGARI_HALFLIG_T_T
             if (this == DEVANAGARI_OPEN_YA) return DEVANAGARI_OPEN_HALF_YA
+            if (this == MARWARI_LIG_DD_Y) return MARWARI_HALFLIG_DD_Y
             if (this in devanagariBaseConsonants) return (this - 0x0910 + DEVANAGARI_HALF_FORMS)
             if (this in devanagariBaseConsonantsWithNukta) return (this - 0x0920 + DEVANAGARI_HALF_FORMS)
             if (this in devanagariPresentationConsonantsWithRa) return this + 0x80
@@ -1818,6 +1824,7 @@ class TerrarumSansBitmap(
             else if (c == DEVANAGARI_LIG_K_SS) return listOf(DEVANAGARI_LIG_K_SS_R)
             else if (c == DEVANAGARI_LIG_J_NY) return listOf(DEVANAGARI_LIG_J_NY_R)
             else if (c == DEVANAGARI_LIG_T_T) return listOf(DEVANAGARI_LIG_T_T_R)
+            else if (c == 0x0978) return listOf(MARWARI_LIG_DD_R)
             else return listOf(c, DEVANAGARI_VIRAMA, DEVANAGARI_RA)
         }
 
@@ -1931,6 +1938,12 @@ class TerrarumSansBitmap(
                     0x092F -> return listOf(0xF0197) // H.Y
                     0x0932 -> return listOf(0xF0198) // H.L
                     0x0935 -> return listOf(0xF0199) // H.V
+                    else -> return c1.toHalfFormOrVirama() + c2
+                }
+                0x0978 -> /* Marwari DDA */ when (c2) {
+                    0x0978 -> return listOf(MARWARI_LIG_DD_DD) // DD.DD
+                    0x0922 -> return listOf(MARWARI_LIG_DD_DDH) // DD.DDH
+                    DEVANAGARI_YA -> return listOf(MARWARI_LIG_DD_Y) // DD.Y
                     else -> return c1.toHalfFormOrVirama() + c2
                 }
                 else -> return c1.toHalfFormOrVirama() + c2 // TODO use proper version of Virama for respective scripts
