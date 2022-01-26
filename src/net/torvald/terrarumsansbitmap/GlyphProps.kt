@@ -116,7 +116,7 @@ data class GlyphProps(
         if (stackWhere == STACK_BEFORE_N_AFTER)
             2
         else if (directiveOpcode in 0b10000_000..0b10000_111)
-            directiveOpcode and 7
+            7
         else 0
 
     fun isPragma(pragma: String) = when (pragma) {

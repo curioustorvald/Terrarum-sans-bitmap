@@ -1213,11 +1213,11 @@ class TerrarumSansBitmap(
                 seq.add(c)
                 changeRaStatus(1)
             }
-            else if ((yankedDevanagariRaStatus[1] == 1 || yankedDevanagariRaStatus[1] == 3) && devanagariVerbs.contains(c)) {
+            else if ((yankedDevanagariRaStatus[1] == 1 || yankedDevanagariRaStatus[1] == 3) && devanagariVowels.contains(c)) {
                 seq.add(c)
                 changeRaStatus(3)
             }
-//            else if (yankedDevanagariRaStatus == 3 && !devanagariVerbs.contains(c)) {
+//            else if (yankedDevanagariRaStatus == 3 && !devanagariVowels.contains(c)) {
             else if (yankedDevanagariRaStatus[1] > 0 && yankedCharacters.peek().second == DEVANAGARI_RA) { // termination or illegal state for Devanagari RA
                 yankedCharacters.pop()
                 seq.add(DEVANAGARI_RA_SUPER)
@@ -1289,9 +1289,9 @@ class TerrarumSansBitmap(
         i = 0
         while (i <= seq.lastIndex) {
             if (i > 0 && (glyphProps[seq[i]] ?: nullProp).alignWhere == GlyphProps.ALIGN_BEFORE) {
-                val verb = seq[i]
-//                dbgprn("Verb realign: index $i, ${verb.charInfo()}")
-                if (isDevanagari(verb)) {
+                val vowel = seq[i]
+//                dbgprn("Vowel realign: index $i, ${vowel.charInfo()}")
+                if (isDevanagari(vowel)) {
                     // scan for the consonant cluster backwards
                     // [not ligature glyphs] h h h h h c l r
                     var scanCounter = 1
@@ -1303,10 +1303,10 @@ class TerrarumSansBitmap(
                             scanCounter += 1
                         else
                             break
-                    } // scanCounter points at the terminator. the left-verb must be placed at (i - scanCounter + 1)
+                    } // scanCounter points at the terminator. the left-vowel must be placed at (i - scanCounter + 1)
 
                     seq.removeAt(i)
-                    seq.add(i - scanCounter + 1, verb)
+                    seq.add(i - scanCounter + 1, vowel)
                 }
                 else {
                     val t = seq[i - 1]
@@ -1781,7 +1781,7 @@ class TerrarumSansBitmap(
         private val TAMIL_SHRII = 0xF00EE
 
         private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) + (0xF0105..0xF01FF)).toHashSet()
-        private val devanagariVerbs = ((0x093A..0x093C) + (0x093E..0x094C) + (0x094E..0x094F)).toHashSet()
+        private val devanagariVowels = ((0x093A..0x093C) + (0x093E..0x094C) + (0x094E..0x094F)).toHashSet()
 
         private val devanagariBaseConsonants = 0x0915..0x0939
         private val devanagariBaseConsonantsWithNukta = 0x0958..0x095F
