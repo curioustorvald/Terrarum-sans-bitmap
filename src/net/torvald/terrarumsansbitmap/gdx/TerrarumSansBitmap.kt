@@ -186,27 +186,19 @@ class TerrarumSansBitmap(
         fileList.forEachIndexed { index, it ->
             val isVariable = it.endsWith("_variable.tga")
             val isXYSwapped = it.contains("xyswap", true)
-
+            val isExtraWide = it.contains("extrawide", true)
 
             var pixmap: Pixmap
 
+            val status = ArrayList<String>()
+            if (isVariable) status.add("VARIABLE")
+            if (isXYSwapped) status.add("XYSWAP")
+            if (isExtraWide) status.add("EXTRAWIDE")
 
-            if (isVariable) {
-                if (isXYSwapped) {
-                    dbgprn("loading texture $it [VARIABLE, XYSWAP]")
-                }
-                else {
-                    dbgprn("loading texture $it [VARIABLE]")
-                }
-            }
-            else {
-                if (isXYSwapped) {
-                    dbgprn("loading texture $it [XYSWAP]")
-                }
-                else {
-                    dbgprn("loading texture $it")
-                }
-            }
+            if (status.size > 0)
+                dbgprn("loading texture [${status.joinToString()}] $it")
+            else
+                dbgprn("loading texture [STATIC] $it")
 
 
             // unpack gz if applicable
@@ -250,7 +242,7 @@ class TerrarumSansBitmap(
                 }
             }
 
-            if (isVariable) buildWidthTable(pixmap, codeRange[index], 16)
+            if (isVariable) buildWidthTable(pixmap, codeRange[index], if (isExtraWide) 32 else 16)
             buildWidthTableFixed()
 
 
@@ -260,7 +252,9 @@ class TerrarumSansBitmap(
 
 
             //val texture = Texture(pixmap)
-            val texRegPack = if (isVariable)
+            val texRegPack = if (isExtraWide)
+                PixmapRegionPack(pixmap, W_WIDEVAR_INIT, H, HGAP_VAR, 0, xySwapped = isXYSwapped)
+            else if (isVariable)
                 PixmapRegionPack(pixmap, W_VAR_INIT, H, HGAP_VAR, 0, xySwapped = isXYSwapped)
             else if (index == SHEET_UNIHAN)
                 PixmapRegionPack(pixmap, W_UNIHAN, H_UNIHAN) // the only exception that is height is 16
@@ -514,134 +508,104 @@ class TerrarumSansBitmap(
     }
 
     private fun getSheetwisePosition(cPrev: Int, ch: Int): IntArray {
-        val sheetX: Int; val sheetY: Int
+        var sheetX: Int; val sheetY: Int
+        sheetX = indexX(ch)
         when (getSheetType(ch)) {
             SHEET_UNIHAN -> {
                 sheetX = unihanIndexX(ch)
                 sheetY = unihanIndexY(ch)
             }
             SHEET_EXTA_VARW -> {
-                sheetX = extAindexX(ch)
                 sheetY = extAindexY(ch)
             }
             SHEET_EXTB_VARW -> {
-                sheetX = extBindexX(ch)
                 sheetY = extBindexY(ch)
             }
             SHEET_KANA -> {
-                sheetX = kanaIndexX(ch)
                 sheetY = kanaIndexY(ch)
             }
             SHEET_CJK_PUNCT -> {
-                sheetX = cjkPunctIndexX(ch)
                 sheetY = cjkPunctIndexY(ch)
             }
             SHEET_CYRILIC_VARW -> {
-                sheetX = cyrilicIndexX(ch)
                 sheetY = cyrilicIndexY(ch)
             }
             SHEET_HALFWIDTH_FULLWIDTH_VARW -> {
-                sheetX = fullwidthUniIndexX(ch)
                 sheetY = fullwidthUniIndexY(ch)
             }
             SHEET_UNI_PUNCT_VARW -> {
-                sheetX = uniPunctIndexX(ch)
                 sheetY = uniPunctIndexY(ch)
             }
             SHEET_GREEK_VARW -> {
-                sheetX = greekIndexX(ch)
                 sheetY = greekIndexY(ch)
             }
             SHEET_THAI_VARW -> {
-                sheetX = thaiIndexX(ch)
                 sheetY = thaiIndexY(ch)
             }
             SHEET_CUSTOM_SYM -> {
-                sheetX = symbolIndexX(ch)
                 sheetY = symbolIndexY(ch)
             }
             SHEET_HAYEREN_VARW -> {
-                sheetX = armenianIndexX(ch)
                 sheetY = armenianIndexY(ch)
             }
             SHEET_KARTULI_VARW -> {
-                sheetX = kartvelianIndexX(ch)
                 sheetY = kartvelianIndexY(ch)
             }
             SHEET_IPA_VARW -> {
-                sheetX = ipaIndexX(ch)
                 sheetY = ipaIndexY(ch)
             }
             SHEET_RUNIC -> {
-                sheetX = runicIndexX(ch)
                 sheetY = runicIndexY(ch)
             }
             SHEET_LATIN_EXT_ADD_VARW -> {
-                sheetX = latinExtAddX(ch)
                 sheetY = latinExtAddY(ch)
             }
             SHEET_BULGARIAN_VARW, SHEET_SERBIAN_VARW -> { // expects Unicode charpoint, NOT an internal one
-                sheetX = cyrilicIndexX(ch)
                 sheetY = cyrilicIndexY(ch)
             }
             SHEET_TSALAGI_VARW -> {
-                sheetX = cherokeeIndexX(ch)
                 sheetY = cherokeeIndexY(ch)
             }
             SHEET_PHONETIC_EXT_VARW -> {
-                sheetX = phoneticExtIndexX(ch)
                 sheetY = phoneticExtIndexY(ch)
             }
             SHEET_DEVANAGARI_VARW -> {
-                sheetX = devanagariIndexX(ch)
                 sheetY = devanagariIndexY(ch)
             }
             SHEET_KARTULI_CAPS_VARW -> {
-                sheetX = kartvelianCapsIndexX(ch)
                 sheetY = kartvelianCapsIndexY(ch)
             }
             SHEET_DIACRITICAL_MARKS_VARW -> {
-                sheetX = diacriticalMarksIndexX(ch)
                 sheetY = diacriticalMarksIndexY(ch)
             }
             SHEET_GREEK_POLY_VARW -> {
-                sheetX = polytonicGreekIndexX(ch)
                 sheetY = polytonicGreekIndexY(ch)
             }
             SHEET_EXTC_VARW -> {
-                sheetX = extCIndexX(ch)
                 sheetY = extCIndexY(ch)
             }
             SHEET_EXTD_VARW -> {
-                sheetX = extDIndexX(ch)
                 sheetY = extDIndexY(ch)
             }
             SHEET_CURRENCIES_VARW -> {
-                sheetX = currenciesIndexX(ch)
                 sheetY = currenciesIndexY(ch)
             }
             SHEET_INTERNAL_VARW -> {
-                sheetX = internalIndexX(ch)
                 sheetY = internalIndexY(ch)
             }
             SHEET_LETTERLIKE_MATHS_VARW -> {
-                sheetX = letterlikeIndexX(ch)
                 sheetY = letterlikeIndexY(ch)
             }
             SHEET_ENCLOSED_ALPHNUM_SUPL_VARW -> {
-                sheetX = enclosedAlphnumSuplX(ch)
                 sheetY = enclosedAlphnumSuplY(ch)
             }
             SHEET_TAMIL_VARW -> {
-                sheetX = tamilIndexX(ch)
                 sheetY = tamilIndexY(ch)
             }
             SHEET_BENGALI_VARW -> {
-                sheetX = bengaliIndexX(ch)
                 sheetY = bengaliIndexY(ch)
             }
             else -> {
-                sheetX = ch % 16
                 sheetY = ch / 16
             }
         }
@@ -653,10 +617,9 @@ class TerrarumSansBitmap(
     /** @return THIRTY-TWO bit number: this includes alpha channel value; or 0 if alpha is zero */
     private fun Int.tagify() = if (this and 255 == 0) 0 else this
 
-    private fun buildWidthTable(pixmap: Pixmap, codeRange: Iterable<Int>, cols: Int = 16) {
-        val binaryCodeOffset = W_VAR_INIT
+    private fun buildWidthTable(pixmap: Pixmap, codeRange: Iterable<Int>, cellW: Int = 16, cols: Int = 16) {
+        val binaryCodeOffset = cellW - 1
 
-        val cellW = W_VAR_INIT + 1
         val cellH = H
 
         codeRange.forEachIndexed { index, code ->
@@ -1669,6 +1632,7 @@ class TerrarumSansBitmap(
         internal val W_UNIHAN = 16
         internal val W_LATIN_WIDE = 9 // width of regular letters
         internal val W_VAR_INIT = 15 // it assumes width of 15 regardless of the tagged width
+        internal val W_WIDEVAR_INIT = 31 // it assumes width of 31 regardless of the tagged width
 
         internal val HGAP_VAR = 1
 
@@ -1769,7 +1733,7 @@ class TerrarumSansBitmap(
             "internal_variable.tga",
             "letterlike_symbols_variable.tga",
             "enclosed_alphanumeric_supplement_variable.tga",
-            "tamil_variable.tga",
+            "tamil_extrawide_variable.tga",
             "bengali_variable.tga",
         )
         private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
@@ -2228,97 +2192,41 @@ class TerrarumSansBitmap(
         private fun isBengali(c: CodePoint) = c in codeRange[SHEET_BENGALI_VARW]
 
 
-        private fun extAindexX(c: CodePoint) = c % 16
+        private fun indexX(c: CodePoint) = c % 16
+        private fun unihanIndexX(c: CodePoint) = (c - 0x3400) % 256
+
         private fun extAindexY(c: CodePoint) = (c - 0x100) / 16
-
-        private fun extBindexX(c: CodePoint) = c % 16
         private fun extBindexY(c: CodePoint) = (c - 0x180) / 16
-
-        private fun runicIndexX(c: CodePoint) = c % 16
         private fun runicIndexY(c: CodePoint) = (c - 0x16A0) / 16
-
-        private fun kanaIndexX(c: CodePoint) = c % 16
         private fun kanaIndexY(c: CodePoint) =
             if (c in 0x31F0..0x31FF) 12
             else if (c in 0x1B000..0x1B00F) 13
             else (c - 0x3040) / 16
-
-        private fun cjkPunctIndexX(c: CodePoint) = c % 16
         private fun cjkPunctIndexY(c: CodePoint) = (c - 0x3000) / 16
-
-        private fun cyrilicIndexX(c: CodePoint) = c % 16
         private fun cyrilicIndexY(c: CodePoint) = (c - 0x400) / 16
-
-        private fun fullwidthUniIndexX(c: CodePoint) = c % 16
         private fun fullwidthUniIndexY(c: CodePoint) = (c - 0xFF00) / 16
-
-        private fun uniPunctIndexX(c: CodePoint) = c % 16
         private fun uniPunctIndexY(c: CodePoint) = (c - 0x2000) / 16
-
-        private fun unihanIndexX(c: CodePoint) = (c - 0x3400) % 256
         private fun unihanIndexY(c: CodePoint) = (c - 0x3400) / 256
-
-        private fun greekIndexX(c: CodePoint) = c % 16
         private fun greekIndexY(c: CodePoint) = (c - 0x370) / 16
-
-        private fun thaiIndexX(c: CodePoint) = c % 16
         private fun thaiIndexY(c: CodePoint) = (c - 0xE00) / 16
-
-        private fun symbolIndexX(c: CodePoint) = c % 16
         private fun symbolIndexY(c: CodePoint) = (c - 0xE000) / 16
-
-        private fun armenianIndexX(c: CodePoint) = c % 16
         private fun armenianIndexY(c: CodePoint) = (c - 0x530) / 16
-
-        private fun kartvelianIndexX(c: CodePoint) = c % 16
         private fun kartvelianIndexY(c: CodePoint) = (c - 0x10D0) / 16
-
-        private fun ipaIndexX(c: CodePoint) = c % 16
         private fun ipaIndexY(c: CodePoint) = (c - 0x250) / 16
-
-        private fun latinExtAddX(c: CodePoint) = c % 16
         private fun latinExtAddY(c: CodePoint) = (c - 0x1E00) / 16
-
-        private fun cherokeeIndexX(c: CodePoint) = c % 16
         private fun cherokeeIndexY(c: CodePoint) = (c - 0x13A0) / 16
-
-        private fun phoneticExtIndexX(c: CodePoint) = c % 16
         private fun phoneticExtIndexY(c: CodePoint) = (c - 0x1D00) / 16
-
-        private fun devanagariIndexX(c: CodePoint) = c % 16
         private fun devanagariIndexY(c: CodePoint) = (if (c < 0xF0000) (c - 0x0900) else (c - 0xF0080)) / 16
-
-        private fun bengaliIndexX(c: CodePoint) = c % 16
         private fun bengaliIndexY(c: CodePoint) = (c - 0x980) / 16
-
-        private fun kartvelianCapsIndexX(c: CodePoint) = c % 16
         private fun kartvelianCapsIndexY(c: CodePoint) = (c - 0x1C90) / 16
-
-        private fun diacriticalMarksIndexX(c: CodePoint) = c % 16
         private fun diacriticalMarksIndexY(c: CodePoint) = (c - 0x300) / 16
-
-        private fun polytonicGreekIndexX(c: CodePoint) = c % 16
         private fun polytonicGreekIndexY(c: CodePoint) = (c - 0x1F00) / 16
-
-        private fun extCIndexX(c: CodePoint) = c % 16
         private fun extCIndexY(c: CodePoint) = (c - 0x2C60) / 16
-
-        private fun extDIndexX(c: CodePoint) = c % 16
         private fun extDIndexY(c: CodePoint) = (c - 0xA720) / 16
-
-        private fun currenciesIndexX(c: CodePoint) = c % 16
         private fun currenciesIndexY(c: CodePoint) = (c - 0x20A0) / 16
-
-        private fun internalIndexX(c: CodePoint) = c % 16
         private fun internalIndexY(c: CodePoint) = (c - 0xFFE00) / 16
-
-        private fun letterlikeIndexX(c: CodePoint) = c % 16
         private fun letterlikeIndexY(c: CodePoint) = (c - 0x2100) / 16
-
-        private fun enclosedAlphnumSuplX(c: CodePoint) = c % 16
         private fun enclosedAlphnumSuplY(c: CodePoint) = (c - 0x1F100) / 16
-
-        private fun tamilIndexX(c: CodePoint) = c % 16
         private fun tamilIndexY(c: CodePoint) = (if (c < 0xF0000) (c - 0x0B80) else (c - 0xF0040)) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
