@@ -12,7 +12,9 @@
 
 सभी << open BHA (not a ligature)
 स्वतन्त्र << N.T.RA ligature
-सर्वप्रथम << RAsup must be above VA, not P.RA
+सर्वप्रथम << RAsup must be above VA
 
-भारतीय अक्षर जटिल हैं क्ष्फ क्षफ अऺ
+भारतीय अक्षर जटिल हैं क्ष्फ क्षफ अऺ कृकॄ
 ऄअआऑऒओऔ ॲॳॴॵॶॷ
+
+˥˦˧˨˩˥˧˦˨˨˩˧˩˦˥˦˩˧˩˨˩˩˩

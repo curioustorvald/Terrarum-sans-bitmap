@@ -116,7 +116,7 @@ Currently supported opcodes:
 
 *00000000: No-operation; does not use the Compiler Directive system.
     
-*10000xxx: Replace a character with xxx subchars (yes, number 0 can be used).
+*10000111: Replace a character with maximum 7 subchars.
   Replacement characters are encoded vertically from X-zero, bit by bit
   (colour of the pixel doesn't matter) with LSB sitting on Y-zero.
 

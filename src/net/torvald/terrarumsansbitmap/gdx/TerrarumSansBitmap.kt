@@ -879,6 +879,7 @@ class TerrarumSansBitmap(
                                     else ->
                                         posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
                                 }
+                        posYbuffer[charIndex] = -thisProp.nudgeY
 
                         nonDiacriticCounter = charIndex
 
@@ -927,11 +928,11 @@ class TerrarumSansBitmap(
 //                        if (thisProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
                         when (thisProp.stackWhere) {
                             GlyphProps.STACK_DOWN -> {
-                                posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter * flipY.toSign()
+                                posYbuffer[charIndex] = (H_DIACRITICS * stackDownwardCounter + -thisProp.nudgeY) * flipY.toSign()
                                 stackDownwardCounter++
                             }
                             GlyphProps.STACK_UP -> {
-                                posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter * flipY.toSign()
+                                posYbuffer[charIndex] = (-H_DIACRITICS * stackUpwardCounter + -thisProp.nudgeY) * flipY.toSign()
                                 // shift down on lowercase if applicable
                                 if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
                                     lastNonDiacriticChar.isLowHeight()) {
@@ -949,11 +950,11 @@ class TerrarumSansBitmap(
 //                                    dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.charInfo()}; stack counter: $stackUpwardCounter")
                             }
                             GlyphProps.STACK_UP_N_DOWN -> {
-                                posYbuffer[charIndex] = H_DIACRITICS * stackDownwardCounter * flipY.toSign()
+                                posYbuffer[charIndex] = (H_DIACRITICS * stackDownwardCounter + -thisProp.nudgeY) * flipY.toSign()
                                 stackDownwardCounter++
 
 
-                                posYbuffer[charIndex] = -H_DIACRITICS * stackUpwardCounter * flipY.toSign()
+                                posYbuffer[charIndex] = (-H_DIACRITICS * stackUpwardCounter + -thisProp.nudgeY) * flipY.toSign()
                                 // shift down on lowercase if applicable
                                 if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
                                     lastNonDiacriticChar.isLowHeight()) {
@@ -1066,6 +1067,9 @@ class TerrarumSansBitmap(
 
         var i = 0
         this.utf16to32().let { dis ->
+
+//        dbgprn("Charsequence: ${dis.map { "${it.toChar()}${ZWNJ.toChar()}" }.joinToString(" ")}")
+
         while (i < dis.size) {
             val cPrev2 = dis.getOrElse(i-2) { -1 }
             val cPrev = dis.getOrElse(i-1) { -1 }
@@ -1076,6 +1080,7 @@ class TerrarumSansBitmap(
             // can't use regular sliding window as the 'i' value is changed way too often
 
             // LET THE NORMALISATION BEGIN //
+//            dbgprn("Ra: ${yankedDevanagariRaStatus[1]}; Chars: ${cPrev2.toChar()}${ZWNJ.toChar()} ${cPrev.toChar()}${ZWNJ.toChar()} [ ${c.toChar()}${ZWNJ.toChar()} ] ${cNext.toChar()}${ZWNJ.toChar()} ${cNext2.toChar()}${ZWNJ.toChar()}")
 
             // disassemble Hangul Syllables into Initial-Peak-Final encoding
             if (c in 0xAC00..0xD7A3) {
@@ -1191,6 +1196,43 @@ class TerrarumSansBitmap(
             else if (c == DEVANAGARI_HA && cNext == DEVANAGARI_UU) {
                 seq.add(DEVANAGARI_SYLL_HUU); i += 1
             }
+            // Unicode Devanagari Rendering Rule R2-R4
+            // in Regex: RA (vir C)+ V* ᴿ [not V && not vir]
+            else if (yankedDevanagariRaStatus[1] == 0 && c == DEVANAGARI_RA && cNext == DEVANAGARI_VIRAMA) {
+//                dbgprn("  Yanking RA (0 -> 1)")
+
+                yankedCharacters.push(i to c)
+                changeRaStatus(1)
+            }
+            else if (yankedDevanagariRaStatus[1] == 1 && c == DEVANAGARI_VIRAMA) {
+//                dbgprn("  Virama (1 -> 2)")
+
+                if (yankedDevanagariRaStatus[0] != 0)
+                    seq.add(c)
+                changeRaStatus(2)
+            }
+            else if (yankedDevanagariRaStatus[1] == 2 && devanagariConsonants.contains(c)) {
+//                dbgprn("  Consonants after Virama (2 -> 1)")
+
+                seq.add(c)
+                changeRaStatus(1)
+            }
+            else if ((yankedDevanagariRaStatus[1] == 1 || yankedDevanagariRaStatus[1] == 3) && devanagariVowels.contains(c)) {
+//                dbgprn("  Vowels (${yankedDevanagariRaStatus[1]} -> 3)")
+
+                seq.add(c)
+                changeRaStatus(3)
+            }
+            // -- termination or illegal state for Devanagari RA
+            else if (yankedDevanagariRaStatus[1] > 0) {
+//                dbgprn("  Popping out RAsup")
+
+                yankedCharacters.pop()
+                seq.add(DEVANAGARI_RA_SUPER)
+//                dbgprn("  -> Seq: ${seq[seq.lastIndex - 2].toHex()} ${seq[seq.lastIndex - 1].toHex()} [ ${seq[seq.lastIndex].toHex()} ]")
+                resetRaStatus()
+                i-- // scan this character again next time
+            }
             // Unicode Devanagari Rendering Rule R6-R8
             // (this must precede the ligaturing-machine coded on the 2nd pass, otherwise the rules below will cause undesirable effects)
             else if (devanagariConsonants.contains(c) && cNext == DEVANAGARI_VIRAMA && cNext2 == DEVANAGARI_RA) {
@@ -1201,32 +1243,6 @@ class TerrarumSansBitmap(
             else if (c == DEVANAGARI_RRA && cNext == DEVANAGARI_VIRAMA || c == DEVANAGARI_RA && cNext == DEVANAGARI_VIRAMA && cNext2 == ZWJ) {
                 seq.add(DEVANAGARI_EYELASH_RA)
                 i += 1
-            }
-            // Unicode Devanagari Rendering Rule R2-R4
-            // in Regex: RA (vir C)+ V* ᴿ [not V && not vir]
-            else if (yankedDevanagariRaStatus[1] == 1 && c == DEVANAGARI_VIRAMA) {
-                if (yankedDevanagariRaStatus[0] != 0)
-                    seq.add(c)
-                changeRaStatus(2)
-            }
-            else if (yankedDevanagariRaStatus[1] == 2 && devanagariConsonants.contains(c)) {
-                seq.add(c)
-                changeRaStatus(1)
-            }
-            else if ((yankedDevanagariRaStatus[1] == 1 || yankedDevanagariRaStatus[1] == 3) && devanagariVowels.contains(c)) {
-                seq.add(c)
-                changeRaStatus(3)
-            }
-//            else if (yankedDevanagariRaStatus == 3 && !devanagariVowels.contains(c)) {
-            else if (yankedDevanagariRaStatus[1] > 0 && yankedCharacters.peek().second == DEVANAGARI_RA) { // termination or illegal state for Devanagari RA
-                yankedCharacters.pop()
-                seq.add(DEVANAGARI_RA_SUPER)
-                resetRaStatus()
-                i-- // scan this character again next time
-            }
-            else if (c == DEVANAGARI_RA && cNext == DEVANAGARI_VIRAMA && devanagariConsonants.contains(c)) {
-                yankedCharacters.push(i to c)
-                changeRaStatus(1)
             }
             else if (!isDevanagari(c) && !yankedCharacters.empty()) {
                 emptyOutYanked()
@@ -1247,6 +1263,8 @@ class TerrarumSansBitmap(
             // U+007F is DEL originally, but dis font stores bitmap of Replacement Character (U+FFFD)
             // to dis position. dis line will replace U+FFFD into U+007F.
             else {
+//                dbgprn("  nop")
+
                 seq.add(c)
             }
 
