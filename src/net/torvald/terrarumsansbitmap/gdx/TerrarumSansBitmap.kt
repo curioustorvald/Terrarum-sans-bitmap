@@ -1042,6 +1042,7 @@ class TerrarumSansBitmap(
     private fun CodepointSequence.normalise(): CodepointSequence {
         val seq = CodepointSequence()
         val seq2 = CodepointSequence()
+        val seq3 = CodepointSequence()
 
         val yankedCharacters  = Stack<Pair<Int, CodePoint>>() // Stack of <Position, CodePoint>; codepoint use -1 if not applicable
         var yankedDevanagariRaStatus = intArrayOf(0,0) // 0: none, 1: consonants, 2: virama, 3: vowel for this syllable
@@ -1302,10 +1303,10 @@ class TerrarumSansBitmap(
 
 
         // second scan
-        // swap position of {letter, diacritics that comes before the letter}
-        // reposition [cluster, align-before, align-after] into [align-before, cluster, align-after]
         i = 0
         while (i <= seq.lastIndex) {
+            // swap position of {letter, diacritics that comes before the letter}
+            // reposition [cluster, align-before, align-after] into [align-before, cluster, align-after]
             if (i > 0 && (glyphProps[seq[i]] ?: nullProp).alignWhere == GlyphProps.ALIGN_BEFORE) {
                 val vowel = seq[i]
 //                dbgprn("Vowel realign: index $i, ${vowel.charInfo()}")
@@ -1337,20 +1338,45 @@ class TerrarumSansBitmap(
         }
 
 
+        // continuous ligation
+        i = 0
+        while (i < seq.size) {
+
+            val cPrev = seq.getOrElse(i-1) { -1 }
+            val c = seq[i]
+            val cNext = seq.getOrElse(i+1) { -1 }
+
+            // ligate IPA intonation graph
+            if (c in 0x2E5..0x2E9 && cNext in 0x2E5..0x2E9) {
+                seq2.add(0x200A)
+                seq2.add(getIntonationGraph(c-0x2E5, cNext-0x2E5))
+            }
+            else if (cPrev in 0x2E5..0x2E9 && c in 0x2E5..0x2E9 && cNext !in 0x2E5..0x2E9) {
+                seq2.add(0xFFE39)
+            }
+            else {
+                seq2.add(c)
+            }
+
+            i++
+        }
+
+
         // unpack replacewith
-        seq.forEach {
+        // also ligate IPA intonation graph
+        seq2.forEach {
             if (glyphProps[it]?.isPragma("replacewith") == true) {
 //                dbgprn("Replacing ${it.charInfo()} into: ${glyphProps[it]!!.extInfo.map { it.toString(16) }.joinToString()}")
                 glyphProps[it]!!.forEachExtInfo {
-                    seq2.add(it)
+                    seq3.add(it)
                 }
             }
             else {
-                seq2.add(it)
+                seq3.add(it)
             }
         }
 
-        return seq2
+        return seq3
     }
 
     /** Takes input string, do normalisation, and returns sequence of codepoints (Int)
@@ -2021,6 +2047,13 @@ class TerrarumSansBitmap(
                 }
                 else -> return c1.toHalfFormOrVirama() + c2 // TODO use proper version of Virama for respective scripts
             }
+        }
+
+        /**
+         * @param tone1 0..4 where 0 is extra-high
+         */
+        private fun getIntonationGraph(tone1: Int, tone2: Int): CodePoint {
+            return 0xFFE20 + tone1 * 5 + tone2
         }
 
 
