@@ -58,7 +58,7 @@ Rightmost vertical column (should be 20 px tall) contains the tags. Tags are def
       X -'  
       A -,_ 0 Align  1 Align  0 Align   1 Align before
       A -'  0 left   0 right  1 centre  1 the glyph
-      D --Diacritics Type Bit (see below; not all diacritics are marked as one on the spritesheet)
+      D --Diacritics Type Bit (see below; not all diacritics are actually marked as a diacritics on the spritesheet)
       S -,_ 0 Stack  1 Stack  0 Before  1 Up &
 (MSB) S -'  0 up     0 down   1 &After   1 Down* (e.g. U+0C48)
 
@@ -101,7 +101,7 @@ MSB for each word must be set so that the pixel would appear brighter on the ima
     <MSB,Red> FFFFFFFF FFFFFFFF FFFFFFFF <LSB,Blue> (For Type-0)
     <MSB,Red> TTTT0000 00000000 00000000 <LSB,Blue> (For Type-1 to Type-15)
 
-Certain types of diacritics have predefined meanings:
+Certain types of diacritics have predefined meanings (but some writing systems define their own meaning e.g. Devanagari):
 
 * Type-0: Above
 * Type-1: Below (when it should be separated from being above)
