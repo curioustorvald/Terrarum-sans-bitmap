@@ -1107,6 +1107,25 @@ class TerrarumSansBitmap(
             }
 
             // BEGIN of tamil subsystem implementation
+            // tamil vowel I lig
+            else if (c == 0xB99 && cNext == TAMIL_I) {
+                seq.add(0xF00F0); i++
+            }
+            else if (c == 0xBAA && cNext == TAMIL_I) {
+                seq.add(0xF00F1); i++
+            }
+            else if (c == 0xBAF && cNext == TAMIL_I) {
+                seq.add(0xF00F2); i++
+            }
+            else if (c == 0xBB2 && cNext == TAMIL_I) {
+                seq.add(0xF00F3); i++
+            }
+            else if (c == 0xBB5 && cNext == TAMIL_I) {
+                seq.add(0xF00F4); i++
+            }
+            else if (c == 0xBB8 && cNext == TAMIL_I) {
+                seq.add(0xF00F5); i++
+            }
             else if (c == 0xB95 && cNext == 0xBCD && dis.getOrElse(i+2){-1} == 0xBB7) {
                 seq.add(TAMIL_KSSA); i += 2
             }
@@ -1769,7 +1788,7 @@ class TerrarumSansBitmap(
             0xFFE00..0xFFF9F, // SHEET_INTERNAL_VARW
             0x2100..0x214F, // SHEET_LETTERLIKE_MATHS_VARW
             0x1F100..0x1F1FF, // SHEET_ENCLOSED_ALPHNUM_SUPL_VARW
-            (0x0B80..0x0BFF) + (0xF00C0..0xF00EF), // SHEET_TAMIL_VARW
+            (0x0B80..0x0BFF) + (0xF00C0..0xF00FF), // SHEET_TAMIL_VARW
             0x980..0x9FF, // SHEET_BENGALI_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
@@ -1787,6 +1806,7 @@ class TerrarumSansBitmap(
         private val tamilLigatingConsonants = listOf('க','ங','ச','ஞ','ட','ண','த','ந','ன','ப','ம','ய','ர','ற','ல','ள','ழ','வ').map { it.toInt() }.toIntArray() // this is the only thing that .indexOf() is called against, so NO HASHSET
         private val TAMIL_KSSA = 0xF00ED
         private val TAMIL_SHRII = 0xF00EE
+        private val TAMIL_I = 0xBBF
 
         private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) + (0xF0105..0xF01FF)).toHashSet()
         private val devanagariVowels = ((0x093A..0x093C) + (0x093E..0x094C) + (0x094E..0x094F)).toHashSet()
