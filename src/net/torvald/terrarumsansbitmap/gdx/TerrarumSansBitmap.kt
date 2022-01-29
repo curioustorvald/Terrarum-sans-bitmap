@@ -1006,28 +1006,7 @@ class TerrarumSansBitmap(
         val seq = CodepointSequence()
         val seq2 = CodepointSequence()
         val seq3 = CodepointSequence()
-
-        val yankedCharacters  = Stack<Pair<Int, CodePoint>>() // Stack of <Position, CodePoint>; codepoint use -1 if not applicable
-        var yankedDevanagariRaStatus = intArrayOf(0,0) // 0: none, 1: consonants, 2: virama, 3: vowel for this syllable
-
-        fun changeRaStatus(n: Int) {
-            yankedDevanagariRaStatus[0] = yankedDevanagariRaStatus[1]
-            yankedDevanagariRaStatus[1] = n
-        }
-        fun resetRaStatus() {
-            yankedDevanagariRaStatus[0] = 0
-            yankedDevanagariRaStatus[1] = 0
-        }
-
-        fun emptyOutYanked() {
-            while (!yankedCharacters.empty()) {
-                val poppedChar = yankedCharacters.pop()
-                if (poppedChar.second == DEVANAGARI_RA)
-                    seq.add(DEVANAGARI_RA_SUPER)
-                else
-                    seq.add(yankedCharacters.pop().second)
-            }
-        }
+        val seq4 = CodepointSequence()
 
         var i = 0
         this.utf16to32().let { dis ->
@@ -1044,7 +1023,6 @@ class TerrarumSansBitmap(
             // can't use regular sliding window as the 'i' value is changed way too often
 
             // LET THE NORMALISATION BEGIN //
-//            dbgprn("Ra: ${yankedDevanagariRaStatus[1]}; Chars: ${cPrev2.toChar()}${ZWNJ.toChar()} ${cPrev.toChar()}${ZWNJ.toChar()} [ ${c.toChar()}${ZWNJ.toChar()} ] ${cNext.toChar()}${ZWNJ.toChar()} ${cNext2.toChar()}${ZWNJ.toChar()}")
 
             // disassemble Hangul Syllables into Initial-Peak-Final encoding
             if (c in 0xAC00..0xD7A3) {
@@ -1180,42 +1158,6 @@ class TerrarumSansBitmap(
                 seq.add(DEVANAGARI_SYLL_HUU); i += 1
             }
             // Unicode Devanagari Rendering Rule R2-R4
-            // in Regex: RA (vir C)+ V* ᴿ [not V && not vir]
-            else if (yankedDevanagariRaStatus[1] == 0 && c == DEVANAGARI_RA && cNext == DEVANAGARI_VIRAMA) {
-//                dbgprn("  Yanking RA (0 -> 1)")
-
-                yankedCharacters.push(i to c)
-                changeRaStatus(1)
-            }
-            else if (yankedDevanagariRaStatus[1] == 1 && c == DEVANAGARI_VIRAMA) {
-//                dbgprn("  Virama (1 -> 2)")
-
-                if (yankedDevanagariRaStatus[0] != 0)
-                    seq.add(c)
-                changeRaStatus(2)
-            }
-            else if (yankedDevanagariRaStatus[1] == 2 && devanagariConsonants.contains(c)) {
-//                dbgprn("  Consonants after Virama (2 -> 1)")
-
-                seq.add(c)
-                changeRaStatus(1)
-            }
-            else if ((yankedDevanagariRaStatus[1] == 1 || yankedDevanagariRaStatus[1] == 3) && devanagariVowels.contains(c)) {
-//                dbgprn("  Vowels (${yankedDevanagariRaStatus[1]} -> 3)")
-
-                seq.add(c)
-                changeRaStatus(3)
-            }
-            // -- termination or illegal state for Devanagari RA
-            else if (yankedDevanagariRaStatus[1] > 0) {
-//                dbgprn("  Popping out RAsup")
-
-                yankedCharacters.pop()
-                seq.add(DEVANAGARI_RA_SUPER)
-//                dbgprn("  -> Seq: ${seq[seq.lastIndex - 2].toHex()} ${seq[seq.lastIndex - 1].toHex()} [ ${seq[seq.lastIndex].toHex()} ]")
-                resetRaStatus()
-                i-- // scan this character again next time
-            }
             // Unicode Devanagari Rendering Rule R6-R8
             // (this must precede the ligaturing-machine coded on the 2nd pass, otherwise the rules below will cause undesirable effects)
             else if (devanagariConsonants.contains(c) && cNext == DEVANAGARI_VIRAMA && cNext2 == DEVANAGARI_RA) {
@@ -1226,11 +1168,6 @@ class TerrarumSansBitmap(
             else if (c == DEVANAGARI_RRA && cNext == DEVANAGARI_VIRAMA || c == DEVANAGARI_RA && cNext == DEVANAGARI_VIRAMA && cNext2 == ZWJ) {
                 seq.add(DEVANAGARI_EYELASH_RA)
                 i += 1
-            }
-            else if (!isDevanagari(c) && !yankedCharacters.empty()) {
-                emptyOutYanked()
-                seq.add(c)
-                resetRaStatus()
             }
             // END of devanagari string replacer
             // rearrange {letter, before-and-after diacritics} as {before-diacritics, letter, after-diacritics}
@@ -1253,7 +1190,6 @@ class TerrarumSansBitmap(
 
             i++
         }
-        emptyOutYanked()
         }
 
 
@@ -1350,7 +1286,7 @@ class TerrarumSansBitmap(
             if (glyphProps[it]?.isPragma("replacewith") == true) {
 //                dbgprn("Replacing ${it.charInfo()} into: ${glyphProps[it]!!.extInfo.map { it.toString(16) }.joinToString()}")
                 glyphProps[it]!!.forEachExtInfo {
-                    seq3.add(it)
+                    if (it != 0) seq3.add(it)
                 }
             }
             else {
@@ -1358,7 +1294,108 @@ class TerrarumSansBitmap(
             }
         }
 
-        return seq3
+        // reposition devanagari RA-initials into RAsup
+        i = 0
+//        dbgprn("seq3 = ${seq3.map { "${it.toCh()}${ZWNJ.toChar()}" }.joinToString(" ")}")
+
+        val yankedCharacters  = Stack<Pair<Int, CodePoint>>() // Stack of <Position, CodePoint>; codepoint use -1 if not applicable
+        var yankedDevanagariRaStatus = intArrayOf(0,0) // 0: none, 1: consonants, 2: virama, 3: vowel for this syllable
+        fun changeRaStatus(n: Int) {
+            yankedDevanagariRaStatus[0] = yankedDevanagariRaStatus[1]
+            yankedDevanagariRaStatus[1] = n
+        }
+        fun resetRaStatus() {
+            yankedDevanagariRaStatus[0] = 0
+            yankedDevanagariRaStatus[1] = 0
+        }
+
+        fun emptyOutYanked() {
+            while (!yankedCharacters.empty()) {
+                val poppedChar = yankedCharacters.pop()
+                if (poppedChar.second == DEVANAGARI_RA)
+                    seq4.add(DEVANAGARI_RA_SUPER)
+                else
+                    seq4.add(yankedCharacters.pop().second)
+            }
+        }
+        while (i < seq3.size) {
+//            val cPrev2 = seq3.getOrElse(i-2) { -1 }
+//            val cPrev = seq3.getOrElse(i-1) { -1 }
+            val c = seq3[i]
+            val cNext = seq3.getOrElse(i+1) { -1 }
+//            val cNext2 = seq3.getOrElse(i+2) { -1 }
+//            val cNext3 = seq3.getOrElse(i+3) { -1 }
+
+//            dbgprn("  र${yankedDevanagariRaStatus[1]} Chars: ${cPrev2.toCh()}${ZWNJ.toChar()} ${cPrev.toCh()}${ZWNJ.toChar()} [ ${c.toCh()}${ZWNJ.toChar()} ] ${cNext.toCh()}${ZWNJ.toChar()} ${cNext2.toCh()}${ZWNJ.toChar()}")
+
+
+            // in Regex: RA (vir C)+ V* ᴿ [not V && not vir]
+            if (yankedDevanagariRaStatus[1] == 0 && c == DEVANAGARI_RA && cNext == DEVANAGARI_VIRAMA) {
+//                dbgprn("   Yanking RA (0 -> 1)")
+                yankedCharacters.push(i to c)
+                changeRaStatus(1)
+            }
+            else if (yankedDevanagariRaStatus[0] == 0 && yankedDevanagariRaStatus[1] == 1 && c == DEVANAGARI_VIRAMA) {
+//                dbgprn("   First Virama (1 -> 2)")
+                changeRaStatus(2)
+            }
+            else if (yankedDevanagariRaStatus[1] == 2 && devanagariConsonants.contains(c)) {
+//                dbgprn("   Consonants after Virama (2 -> 1)")
+                seq4.add(c)
+                changeRaStatus(1)
+            }
+            else if ((yankedDevanagariRaStatus[1] == 1 || yankedDevanagariRaStatus[1] == 3) && devanagariRightVowels.contains(c)) {
+//                dbgprn("   Vowels (${yankedDevanagariRaStatus[1]} -> 3)")
+                seq4.add(c)
+                changeRaStatus(3)
+            }
+            // -- termination or illegal state for Devanagari RA
+            else if (yankedDevanagariRaStatus[1] > 0) {
+//                dbgprn("   Popping out RAsup")
+                yankedCharacters.pop()
+                seq4.add(DEVANAGARI_RA_SUPER)
+                resetRaStatus()
+                i-- // scan this character again next time
+            }
+            else if (!isDevanagari(c) && !yankedCharacters.empty()) {
+                emptyOutYanked()
+                seq4.add(c)
+                resetRaStatus()
+            }
+            else {
+                seq4.add(c)
+            }
+
+            i++
+        }
+        emptyOutYanked()
+
+        return seq4
+    }
+
+    private fun CodePoint.toCh() = if (this in 0xF0100..0xF02FF) this.puaToUni() else if (this < 65536) "${this.toChar()}" else this.toHex()
+
+    // nuke this function when the time that compiled bytecode exceeds 64 kb finally arrives
+    private fun CodePoint.puaToUni() = when (this) {
+        0xF0100 -> "रु"
+        0xF0101 -> "रू"
+        0xF0102 -> "ऱु"
+        0xF0103 -> "ऱू"
+        0xF0104 -> "˓"
+        in 0xF0105..0xF0129 -> "${(this - 0xF0100 + 0x910).toChar()}${DEVANAGARI_VIRAMA.toChar()}${ZWJ.toChar()}"
+        0xF012A -> "ऱ्\u200D"
+        0xF012B -> "क्ष्\u200D"
+        0xF012C -> "ज्ञ्\u200D"
+        0xF012D -> "त्त्\u200D"
+        0xF0130 -> "हु"
+        0xF0131 -> "हू"
+        0xF0136 -> "\u200Dय"
+        0xF0137 -> "\u200Dय\u200D"
+        in 0xF0138..0xF013F -> "${(this - 0xF0130 + 0x970).toChar()}${DEVANAGARI_VIRAMA.toChar()}${ZWJ.toChar()}"
+        0xF0140 -> "र\u200D्य"
+        0xF0141 -> "र\u200D्य\u200D"
+        in 0xF0145..0xF0169 -> "${(this - 0xF0140 + 0x910).toChar()}${DEVANAGARI_VIRAMA.toChar()}${DEVANAGARI_RA.toChar()}"
+        else -> this.toHex()
     }
 
     /** Takes input string, do normalisation, and returns sequence of codepoints (Int)
@@ -1810,6 +1847,7 @@ class TerrarumSansBitmap(
 
         private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) + (0xF0105..0xF01FF)).toHashSet()
         private val devanagariVowels = ((0x093A..0x093C) + (0x093E..0x094C) + (0x094E..0x094F)).toHashSet()
+        private val devanagariRightVowels = ((0x093A..0x093C) + (0x093E) + (0x0940..0x094C) + 0x094F).toHashSet()
 
         private val devanagariBaseConsonants = 0x0915..0x0939
         private val devanagariBaseConsonantsWithNukta = 0x0958..0x095F
@@ -1907,7 +1945,7 @@ class TerrarumSansBitmap(
 
         private fun ligateIndicConsonants(c1: CodePoint, c2: CodePoint): List<CodePoint> {
 //            println("[TerrarumSansBitmap] Indic ligation ${c1.charInfo()} - ${c2.charInfo()}")
-            if (c2 == DEVANAGARI_RA) return toRaAppended(c1) // Devanagari @.RA
+            if (c1 != DEVANAGARI_RA && c2 == DEVANAGARI_RA) return toRaAppended(c1) // Devanagari @.RA
             when (c1) {
                 0x0915 -> /* Devanagari KA */ when (c2) {
                     0x0924 -> return listOf(0xF0180) // K.T
