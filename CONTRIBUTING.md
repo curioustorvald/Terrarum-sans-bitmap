@@ -120,6 +120,7 @@ Currently supported opcodes:
   Replacement characters are encoded vertically from X-zero, bit by bit
   (colour of the pixel doesn't matter) with LSB sitting on Y-zero.
 
+*11111111: Tagging Used by the Subsystems. e.g. #FF0000 marks invalid combination.
 
 #### Stack Up/Down
 
