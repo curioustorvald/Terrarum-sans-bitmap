@@ -35,7 +35,7 @@ class FontTestGDX : Game() {
     private lateinit var faketex: Texture
 
     override fun create() {
-        font = TerrarumSansBitmap("./assets", debug = true, flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.796f) // must test for two flipY cases
+        font = TerrarumSansBitmap("./assets", debug = true, flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.5f) // must test for two flipY cases
 
         val inTextFile = Gdx.files.internal("./$demotextName")
         val reader = inTextFile.reader("UTF-8")
@@ -81,20 +81,18 @@ class FontTestGDX : Game() {
         if (tex == null) {
             frameBuffer.begin()
 
-            Gdx.gl.glClearColor(0f,0f,0f,0f)
+            Gdx.gl.glClearColor(.141f, .141f, .141f, 1f)
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
             Gdx.gl.glEnable(GL20.GL_TEXTURE_2D)
             Gdx.gl.glEnable(GL20.GL_BLEND)
-            Gdx.gl.glBlendFuncSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE)
-//            Gdx.gl.glBlendFuncSeparate(GL20.GL_SRC_COLOR, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_SRC_ALPHA, GL20.GL_ONE)
-
-//            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+            batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA) // for not premultiplied textures
 
             batch.projectionMatrix = camera.combined
             batch.begin()
 
             batch.color = backcol
             batch.draw(faketex, 0f, 0f, TEXW.toFloat(), TEXH.toFloat())
+            batch.flush()
 
             batch.color = Color.WHITE
             inputText.forEachIndexed { index, s ->
@@ -128,7 +126,7 @@ class FontTestGDX : Game() {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
         Gdx.gl.glEnable(GL20.GL_TEXTURE_2D)
         Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFuncSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE)
+        batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA) // for not premultiplied textures
 
 
         batch.begin()
