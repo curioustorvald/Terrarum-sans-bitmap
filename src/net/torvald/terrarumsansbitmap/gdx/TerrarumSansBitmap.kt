@@ -605,6 +605,9 @@ class TerrarumSansBitmap(
             SHEET_BENGALI_VARW -> {
                 sheetY = bengaliIndexY(ch)
             }
+            SHEET_BRAILLE_VARW -> {
+                sheetY = brailleIndexY(ch)
+            }
             else -> {
                 sheetY = ch / 16
             }
@@ -1736,6 +1739,7 @@ class TerrarumSansBitmap(
         internal val SHEET_ENCLOSED_ALPHNUM_SUPL_VARW = 31
         internal val SHEET_TAMIL_VARW = 32
         internal val SHEET_BENGALI_VARW = 33
+        internal val SHEET_BRAILLE_VARW = 34
 
         internal val SHEET_UNKNOWN = 254
 
@@ -1791,6 +1795,7 @@ class TerrarumSansBitmap(
             "enclosed_alphanumeric_supplement_variable.tga",
             "tamil_extrawide_variable.tga",
             "bengali_variable.tga",
+            "braille_variable.tga"
         )
         private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -1827,6 +1832,7 @@ class TerrarumSansBitmap(
             0x1F100..0x1F1FF, // SHEET_ENCLOSED_ALPHNUM_SUPL_VARW
             (0x0B80..0x0BFF) + (0xF00C0..0xF00FF), // SHEET_TAMIL_VARW
             0x980..0x9FF, // SHEET_BENGALI_VARW
+            0x2800..0x28FF, // SHEET_BRAILLE_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -2286,6 +2292,7 @@ class TerrarumSansBitmap(
         private fun letterlikeIndexY(c: CodePoint) = (c - 0x2100) / 16
         private fun enclosedAlphnumSuplY(c: CodePoint) = (c - 0x1F100) / 16
         private fun tamilIndexY(c: CodePoint) = (if (c < 0xF0000) (c - 0x0B80) else (c - 0xF0040)) / 16
+        private fun brailleIndexY(c: CodePoint) = (c - 0x2800) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
