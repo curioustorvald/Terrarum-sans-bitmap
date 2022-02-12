@@ -126,4 +126,7 @@ data class GlyphProps(
 
     fun forEachExtInfo(action: (Int) -> Unit) = extInfo.slice(0 until requiredExtInfoCount()).forEach(action)
     fun forEachExtInfoIndexed(action: (Int, Int) -> Unit) = extInfo.slice(0 until requiredExtInfoCount()).forEachIndexed(action)
+
+    val isIllegal: Boolean
+        get() = directiveOpcode == 255
 }

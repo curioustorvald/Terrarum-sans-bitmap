@@ -1006,24 +1006,37 @@ class TerrarumSansBitmap(
 
     // basically an Unicode NFD with some additional flavours
     private fun CodepointSequence.normalise(): CodepointSequence {
+        val seq0 = CodepointSequence()
         val seq = CodepointSequence()
         val seq2 = CodepointSequence()
         val seq3 = CodepointSequence()
         val seq4 = CodepointSequence()
 
         var i = 0
-        this.utf16to32().let { dis ->
 
-//        dbgprn("Charsequence: ${dis.map { "${it.toChar()}${ZWNJ.toChar()}" }.joinToString(" ")}")
+        seq0.add(0)
+        this.utf16to32().forEach { c ->
+            // turn Unicode Devanagari consonants into the internal one
+            if (c in 0x0915..0x0939 || c in 0x0958..0x095F)
+                seq0.add(c.toDevaInternal())
+            else
+                seq0.add(c)
+        }
+        seq0.add(0)
 
-        while (i < dis.size) {
-            val cPrev2 = dis.getOrElse(i-2) { -1 }
-            val cPrev = dis.getOrElse(i-1) { -1 }
-            val c = dis[i]
-            val cNext = dis.getOrElse(i+1) { -1 }
-            val cNext2 = dis.getOrElse(i+2) { -1 }
-            val cNext3 = dis.getOrElse(i+3) { -1 }
+
+        dbgprn("Charsequence: ${seq0.map { "${it.toChar()}${ZWNJ.toChar()}" }.joinToString(" ")}")
+
+        i = 0
+        while (i < seq0.lastIndex) {
+//            val cPrev2 = seq0.getOrElse(i-2) { -1 }
+            val cPrev = seq0.getOrElse(i-1) { -1 }
+            val c = seq0[i]
+            val cNext = seq0.getOrElse(i+1) { -1 }
+            val cNext2 = seq0.getOrElse(i+2) { -1 }
+            val cNext3 = seq0.getOrElse(i+3) { -1 }
             // can't use regular sliding window as the 'i' value is changed way too often
+
 
             // LET THE NORMALISATION BEGIN //
 
@@ -1107,10 +1120,10 @@ class TerrarumSansBitmap(
             else if (c == 0xBB8 && cNext == TAMIL_I) {
                 seq.add(0xF00F5); i++
             }
-            else if (c == 0xB95 && cNext == 0xBCD && dis.getOrElse(i+2){-1} == 0xBB7) {
+            else if (c == 0xB95 && cNext == 0xBCD && cNext2 == 0xBB7) {
                 seq.add(TAMIL_KSSA); i += 2
             }
-            else if (c == 0xBB6 && cNext == 0xBCD && dis.getOrElse(i+2){-1} == 0xBB0 && dis.getOrElse(i+3){-1} == 0xBC0) {
+            else if (c == 0xBB6 && cNext == 0xBCD && cNext2 == 0xBB0 && cNext3 == 0xBC0) {
                 seq.add(TAMIL_SHRII); i += 3
             }
             else if (c == 0xB9F && cNext == 0xBBF) {
@@ -1193,8 +1206,6 @@ class TerrarumSansBitmap(
 
             i++
         }
-        }
-
 
         // BEGIN of Devanagari String Replacer 2 (lookbehind type)
         i = 0
@@ -1659,6 +1670,177 @@ class TerrarumSansBitmap(
         else 0
     }
 
+
+
+
+    private fun CodePoint.toHalfFormOrNull(): CodePoint? {
+        if (this in devanagariBaseConsonantsExtended) return null
+        if (this < 0xF0000) throw IllegalArgumentException("Normalise consonants to internal encoding first!")
+
+        if (this == DEVANAGARI_RYA) return DEVANAGARI_HALF_RYA
+        if (this == MARWARI_LIG_DD_Y) return MARWARI_HALFLIG_DD_Y
+        if (this == DEVANAGARI_OPEN_YA) return DEVANAGARI_OPEN_HALF_YA
+
+        (this + 240).let {
+            if (glyphProps[it]?.isIllegal != false)
+                return null
+            else
+                return it
+        }
+    }
+
+
+    // TODO use proper version of Virama for respective scripts
+    private fun CodePoint.toHalfFormOrVirama(): List<CodePoint> = this.toHalfFormOrNull().let {
+//            println("[TerrarumSansBitmap] toHalfForm ${this.charInfo()} = ${it?.charInfo()}")
+        if (it == null) listOf(this, DEVANAGARI_VIRAMA) else listOf(it)
+    }
+
+
+    // TODO use proper version of Virama for respective scripts
+    private fun toRaAppended(c: CodePoint): List<CodePoint> {
+        if (c == MARWARI_DD) return listOf(MARWARI_LIG_DD_R)
+
+        (c + 480).let {
+            if (glyphProps[it]?.isIllegal != false)
+                return listOf(c, DEVANAGARI_VIRAMA, DEVANAGARI_RA)
+            else
+                return listOf(it)
+        }
+    }
+
+
+
+    private fun ligateIndicConsonants(c1: CodePoint, c2: CodePoint): List<CodePoint> {
+//            println("[TerrarumSansBitmap] Indic ligation ${c1.charInfo()} - ${c2.charInfo()}")
+        if (c1 != DEVANAGARI_RA && c2 == DEVANAGARI_RA) return toRaAppended(c1) // Devanagari @.RA
+        when (c1) {
+            0x0915.toDevaInternal() -> /* Devanagari KA */ when (c2) {
+                0x0924.toDevaInternal() -> return listOf(DEVANAGARI_LIG_K_T) // K.T
+                0x0937.toDevaInternal() -> return listOf(DEVANAGARI_LIG_K_SS) // K.SS
+                0xF0337 -> return listOf(0xF0351) // K.SS.R
+                DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // K.Y
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x0918.toDevaInternal() -> /* Devanagari GHA */ when (c2) {
+                0x091F.toDevaInternal() -> return listOf(0xF018D) // GH.TT
+                0x0920.toDevaInternal() -> return listOf(0xF018E) // GH.TTH
+                0x0922.toDevaInternal() -> return listOf(0xF018F) // GH.DDH
+                0xF032A -> return listOf(0xF036D) // GH.TTR
+                0xF032B -> return listOf(0xF036E) // GH.TTHR
+                0xF032D -> return listOf(0xF036F) // GH.DDHR
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x0919.toDevaInternal() -> /* Devanagari NGA */ when (c2) {
+                0x0917.toDevaInternal() -> return listOf(0xF01A2) // NG.G
+                DEVANAGARI_VA -> return listOf(0xF01A3) // NG.V
+                0x092E.toDevaInternal() -> return listOf(0xF01A4) // NG.M
+                DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // NG.Y
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x091B.toDevaInternal() -> /* Devanagari CHA */ when (c2) {
+                DEVANAGARI_VA -> return listOf(0xF01A5) // CH.V
+                DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // CH.Y
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x091C.toDevaInternal() -> /* Devanagari JA */ when (c2) {
+                0x091E.toDevaInternal() -> return listOf(DEVANAGARI_LIG_J_NY) // J.NY
+                DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // J.Y
+                0xF0329 -> return listOf(0xF0352) // J.NY.R
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x091F.toDevaInternal() -> /* Devanagari TTA */ when (c2) {
+                0x091F.toDevaInternal() -> return listOf(0xF01A6) // TT.TT
+                0x0920.toDevaInternal() -> return listOf(0xF01A7) // TT.TTH
+                DEVANAGARI_VA -> return listOf(0xF01A8) // TT.V
+                DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // TT.Y
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x0920.toDevaInternal() -> /* Devanagari TTHA */ when (c2) {
+                0x0920.toDevaInternal() -> return listOf(0xF01A9) // TTH.TTH
+                DEVANAGARI_VA -> return listOf(0xF01AA) // TTH.V
+                DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // TTH.Y
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x0921.toDevaInternal() -> /* Devanagari DDA */ when (c2) {
+                0x0921.toDevaInternal() -> return listOf(0xF01AB) // DD.DD
+                0x0922.toDevaInternal() -> return listOf(0xF01AC) // DD.DDH
+                DEVANAGARI_VA -> return listOf(0xF01AD) // DD.V
+                DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // DD.Y
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x0922.toDevaInternal() -> /* Devanagari DDHA */ when (c2) {
+                0x0922.toDevaInternal() -> return listOf(0xF01AE) // DDH.DDH
+                DEVANAGARI_VA -> return listOf(0xF01AF) // DDH.V
+                DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // DDH.Y
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x0924.toDevaInternal() -> /* Devanagari TA */ when (c2) {
+                0x0924.toDevaInternal() -> return listOf(DEVANAGARI_LIG_T_T) // T.T
+                0xF032F -> return listOf(0xF0353) // T.T.R
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x0926.toDevaInternal() -> /* Devanagari DA */ when (c2) {
+                0x0917.toDevaInternal() -> return listOf(0xF0180) // D.G
+                0x0918.toDevaInternal() -> return listOf(0xF0181) // D.GH
+                0x0926.toDevaInternal() -> return listOf(0xF0182) // D.D
+                0x0927.toDevaInternal() -> return listOf(0xF0183) // D.DH
+                0x0928.toDevaInternal() -> return listOf(0xF0184) // D.N
+                0x092C.toDevaInternal() -> return listOf(0xF0185) // D.B
+                0x092D.toDevaInternal() -> return listOf(0xF0186) // D.BH
+                0x092E.toDevaInternal() -> return listOf(0xF0187) // D.M
+                0x092F.toDevaInternal() -> return listOf(0xF0188) // D.Y
+                0x0935.toDevaInternal() -> return listOf(0xF0189) // D.V
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x0928.toDevaInternal() -> /* Devanagari NA */ when (c2) {
+                0x0924.toDevaInternal() -> return listOf(DEVANAGARI_LIG_N_T) // N.T
+                0x0928.toDevaInternal() -> return listOf(DEVANAGARI_LIG_N_N) // N.N
+                0xF032F -> return listOf(0xF0354) // N.T.R
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x092A.toDevaInternal() -> /* Devanagari PA */ when (c2) {
+                0x091F.toDevaInternal() -> return listOf(0xF0190) // P.TT
+                0x0920.toDevaInternal() -> return listOf(0xF0191) // P.TTH
+                0x0922.toDevaInternal() -> return listOf(0xF0192) // P.DDH
+                0xF032A -> return listOf(0xF0370) // P.TTR
+                0xF032B -> return listOf(0xF0371) // P.TTHR
+                0xF032D -> return listOf(0xF0372) // P.DDHR
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x0937.toDevaInternal() -> /* Devanagari SSA */ when (c2) {
+                0x091F.toDevaInternal() -> return listOf(0xF0193) // SS.TT
+                0x0920.toDevaInternal() -> return listOf(0xF0194) // SS.TTH
+                0x0922.toDevaInternal() -> return listOf(0xF0195) // SS.DDH
+                0xF032A -> return listOf(0xF0373) // SS.TTR
+                0xF032B -> return listOf(0xF0374) // SS.TTHR
+                0xF032D -> return listOf(0xF0375) // SS.DDHR
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x0939.toDevaInternal() -> /* Devanagari HA */ when (c2) {
+                0x0923.toDevaInternal() -> return listOf(0xF0196) // H.NN
+                0x0928.toDevaInternal() -> return listOf(0xF0197) // H.N
+                0x092E.toDevaInternal() -> return listOf(0xF0198) // H.M
+                0x092F.toDevaInternal() -> return listOf(0xF0199) // H.Y
+                0x0932.toDevaInternal() -> return listOf(0xF019A) // H.L
+                0x0935.toDevaInternal() -> return listOf(0xF019B) // H.V
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            0x0978 -> /* Marwari DDA */ when (c2) {
+                0x0978 -> return listOf(MARWARI_LIG_DD_DD) // DD.DD
+                0x0922.toDevaInternal() -> return listOf(MARWARI_LIG_DD_DDH) // DD.DDH
+                DEVANAGARI_YA -> return listOf(MARWARI_LIG_DD_Y) // DD.Y
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            in 0xF0180..0xF0189 -> /* Devanagari D.@A */ when (c2) {
+                DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
+            else -> return c1.toHalfFormOrVirama() + c2 // TODO use proper version of Virama for respective scripts
+        }
+    }
+
+
     companion object {
 
         private fun Boolean.toSign() = if (this) 1 else -1
@@ -1783,7 +1965,7 @@ class TerrarumSansBitmap(
             "cyrilic_serbian_variable.tga",
             "tsalagi_variable.tga",
             "phonetic_extensions_variable.tga",
-            "devanagari_variable.tga",
+            "devanagari_alt_encoding_variable.tga",
             "kartuli_allcaps_variable.tga",
             "diacritical_marks_variable.tga",
             "greek_polytonic_xyswap_variable.tga",
@@ -1820,7 +2002,7 @@ class TerrarumSansBitmap(
             0xF0060..0xF00BF, // SHEET_SERBIAN_VARW; assign them to PUA
             0x13A0..0x13F5, // SHEET_TSALAGI_VARW
             0x1D00..0x1DBF, // SHEET_PHONETIC_EXT_VARW
-            (0x900..0x97F) + (0xF0100..0xF01FF), // SHEET_DEVANAGARI_VARW
+            (0x900..0x97F) + (0xF0100..0xF04FF), // SHEET_DEVANAGARI_VARW
             0x1C90..0x1CBF, // SHEET_KARTULI_CAPS_VARW
             0x300..0x36F, // SHEET_DIACRITICAL_MARKS_VARW
             0x1F00..0x1FFF, // SHEET_GREEK_POLY_VARW
@@ -1851,231 +2033,74 @@ class TerrarumSansBitmap(
         private val TAMIL_SHRII = 0xF00EE
         private val TAMIL_I = 0xBBF
 
-        private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) + (0xF0105..0xF01FF)).toHashSet()
+        private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) + (0xF0140..0xF04FF)).toHashSet()
         private val devanagariVowels = ((0x093A..0x093C) + (0x093E..0x094C) + (0x094E..0x094F)).toHashSet()
         private val devanagariRightVowels = ((0x093A..0x093C) + (0x093E) + (0x0940..0x094C) + 0x094F).toHashSet()
 
         private val devanagariBaseConsonants = 0x0915..0x0939
         private val devanagariBaseConsonantsWithNukta = 0x0958..0x095F
         private val devanagariBaseConsonantsExtended = 0x0978..0x097F
-        private val devanagariPresentationConsonants = 0xF0140..0xF01FF
-        private val devanagariPresentationConsonantsWithRa = 0xF0145..0xF017F
-        private val devanagariPresentationIrregularConsonants = 0xF0180..0xF01BF
+        private val devanagariPresentationConsonants = 0xF0140..0xF022F
+        private val devanagariPresentationConsonantsHalf = 0xF0230..0xF031F
+        private val devanagariPresentationConsonantsWithRa = 0xF0320..0xF040F
+        private val devanagariPresentationConsonantsWithRaHalf = 0xF0410..0xF04FF
 
 
         private val devanagariConsonantsNonLig = (devanagariBaseConsonants +
                 devanagariBaseConsonantsWithNukta + devanagariBaseConsonantsExtended +
-                devanagariPresentationConsonantsWithRa + devanagariPresentationIrregularConsonants).toHashSet()
+                devanagariPresentationConsonants + devanagariPresentationConsonantsWithRa).toHashSet()
 
         private val devanariConsonantsHalfs = ((0xF0105..0xF012F) + (0xF0137..0xF013F) + (0xF01C0..0xF01FF)).toHashSet()
 
         private val DEVANAGARI_VIRAMA = 0x94D
-        private val DEVANAGARI_RA = 0x930
-        private val DEVANAGARI_YA = 0x92F
-        private val DEVANAGARI_RRA = 0x931
-        private val DEVANAGARI_VA = 0x0935
-        private val DEVANAGARI_HA = 0x939
+        private val DEVANAGARI_RA = 0x930.toDevaInternal()
+        private val DEVANAGARI_YA = 0x92F.toDevaInternal()
+        private val DEVANAGARI_RRA = 0x931.toDevaInternal()
+        private val DEVANAGARI_VA = 0x0935.toDevaInternal()
+        private val DEVANAGARI_HA = 0x939.toDevaInternal()
         private val DEVANAGARI_U = 0x941
         private val DEVANAGARI_UU = 0x942
-        private val DEVANAGARI_RYA = 0xF0140
-        private val DEVANAGARI_HALF_RYA = 0xF0141
+        private val DEVANAGARI_RYA = 0xF0106
+        private val DEVANAGARI_HALF_RYA = 0xF0107
 
         private val DEVANAGARI_SYLL_RU = 0xF0100
         private val DEVANAGARI_SYLL_RUU = 0xF0101
         private val DEVANAGARI_SYLL_RRU = 0xF0102
         private val DEVANAGARI_SYLL_RRUU = 0xF0103
-        private val DEVANAGARI_SYLL_HU = 0xF0130
-        private val DEVANAGARI_SYLL_HUU = 0xF0131
+        private val DEVANAGARI_SYLL_HU = 0xF0104
+        private val DEVANAGARI_SYLL_HUU = 0xF0105
 
-        private val DEVANAGARI_OPEN_YA = 0xF0136
-        private val DEVANAGARI_OPEN_HALF_YA = 0xF0137
-        private val DEVANAGARI_RA_SUPER = 0xF0104
-        private val DEVANAGARI_EYELASH_RA = 0xF012A
+        private val DEVANAGARI_OPEN_YA = 0xF0108
+        private val DEVANAGARI_OPEN_HALF_YA = 0xF0109
+        private val DEVANAGARI_RA_SUPER = 0xF010B
+        private val DEVANAGARI_EYELASH_RA = 0xF010C
 
-        private val DEVANAGARI_LIG_K_SS = 0xF0181
-        private val DEVANAGARI_LIG_J_NY = 0xF0184
-        private val DEVANAGARI_LIG_T_T = 0xF018B
-        private val DEVANAGARI_LIG_N_T = 0xF01B0
-        private val MARWARI_LIG_DD_DD = 0xF01AB
-        private val MARWARI_LIG_DD_DDH = 0xF01AC
-        private val MARWARI_LIG_DD_Y = 0xF01AD
+        private val MARWARI_DD = 0x978
 
-        private val DEVANAGARI_LIG_T_R = 0xF0154
-        private val MARWARI_LIG_DD_R = 0xF016A
+        private val DEVANAGARI_LIG_K_T = 0xF0170
+        private val DEVANAGARI_LIG_K_SS = 0xF0171
+        private val DEVANAGARI_LIG_J_NY = 0xF0172
+        private val DEVANAGARI_LIG_T_T = 0xF0173
+        private val DEVANAGARI_LIG_N_T = 0xF0174
+        private val DEVANAGARI_LIG_N_N = 0xF0175
 
-        private val DEVANAGARI_LIG_K_SS_R = 0xF016B
-        private val DEVANAGARI_LIG_J_NY_R = 0xF016C
-        private val DEVANAGARI_LIG_T_T_R = 0xF016D
-        private val DEVANAGARI_LIG_N_T_R = 0xF016E
-
-        private val DEVANAGARI_HALFLIG_K_SS = 0xF012B
-        private val DEVANAGARI_HALFLIG_J_NY = 0xF012C
-        private val DEVANAGARI_HALFLIG_T_T = 0xF012D
-        private val DEVANAGARI_HALFLIG_N_T = 0xF01C4
-        private val MARWARI_HALFLIG_DD_Y = 0xF01AE
+        private val MARWARI_LIG_DD_DD = 0xF018A
+        private val MARWARI_LIG_DD_DDH = 0xF018B
+        private val MARWARI_LIG_DD_Y = 0xF016E
+        private val MARWARI_HALFLIG_DD_Y = 0xF016F
+        private val MARWARI_LIG_DD_R = 0xF0118
 
 
-        private val DEVANAGARI_HALF_FORMS = 0xF0100 // starting point for Devanagari half forms
-        private val DEVANAGARI_LIG_X_R = 0xF0140 // starting point for Devanagari ligature CONSONANT+RA
 
-        private fun CodePoint.toHalfFormOrNull(): CodePoint? {
-            if (this == DEVANAGARI_RYA) return DEVANAGARI_HALF_RYA
-            if (this in 0xF018C..0xF018F) return this + 0x34
-            if (this == DEVANAGARI_LIG_K_SS) return DEVANAGARI_HALFLIG_K_SS
-            if (this == DEVANAGARI_LIG_J_NY) return DEVANAGARI_HALFLIG_J_NY
-            if (this == DEVANAGARI_LIG_T_T) return  DEVANAGARI_HALFLIG_T_T
-            if (this == DEVANAGARI_LIG_N_T) return  DEVANAGARI_HALFLIG_N_T
-            if (this == DEVANAGARI_OPEN_YA) return DEVANAGARI_OPEN_HALF_YA
-            if (this == MARWARI_LIG_DD_Y) return MARWARI_HALFLIG_DD_Y
-            if (this in devanagariBaseConsonants) return (this - 0x0910 + DEVANAGARI_HALF_FORMS)
-            if (this in devanagariBaseConsonantsWithNukta) return (this - 0x0920 + DEVANAGARI_HALF_FORMS)
-            if (this in devanagariPresentationConsonantsWithRa) return this + 0x80
-            return null
+        private val DEVANAGARI_HALF_FORMS = 0xF0230 // starting point for Devanagari half forms
+        private val DEVANAGARI_LIG_X_R = 0xF0410 // starting point for Devanagari ligature CONSONANT+RA
+
+        private fun Int.toDevaInternal(): Int {
+            if (this in 0x0915..0x0939) return this - 0x0915 + 0xF0140
+            else if (this in 0x0958..0x095F) return this - 0x0958 + 0xF0165
+            else throw IllegalArgumentException("No Internal form exists for ${this.charInfo()}")
         }
 
-        // TODO use proper version of Virama for respective scripts
-        private fun CodePoint.toHalfFormOrVirama(): List<CodePoint> = this.toHalfFormOrNull().let {
-//            println("[TerrarumSansBitmap] toHalfForm ${this.charInfo()} = ${it?.charInfo()}")
-            if (it == null) listOf(this, DEVANAGARI_VIRAMA) else listOf(it)
-        }
-
-        // TODO use proper version of Virama for respective scripts
-        private fun toRaAppended(c: CodePoint): List<CodePoint> {
-            if (c in devanagariBaseConsonants) return listOf(c - 0x0910 + DEVANAGARI_LIG_X_R)
-            else if (c == DEVANAGARI_LIG_K_SS) return listOf(DEVANAGARI_LIG_K_SS_R)
-            else if (c == DEVANAGARI_LIG_J_NY) return listOf(DEVANAGARI_LIG_J_NY_R)
-            else if (c == DEVANAGARI_LIG_T_T) return listOf(DEVANAGARI_LIG_T_T_R)
-            else if (c == 0x0978) return listOf(MARWARI_LIG_DD_R)
-            else return listOf(c, DEVANAGARI_VIRAMA, DEVANAGARI_RA)
-        }
-
-        private fun ligateIndicConsonants(c1: CodePoint, c2: CodePoint): List<CodePoint> {
-//            println("[TerrarumSansBitmap] Indic ligation ${c1.charInfo()} - ${c2.charInfo()}")
-            if (c1 != DEVANAGARI_RA && c2 == DEVANAGARI_RA) return toRaAppended(c1) // Devanagari @.RA
-            when (c1) {
-                0x0915 -> /* Devanagari KA */ when (c2) {
-                    0x0924 -> return listOf(0xF0180) // K.T
-                    0x0937 -> return listOf(DEVANAGARI_LIG_K_SS) // K.SS
-                    0xF0167 -> return listOf(DEVANAGARI_LIG_K_SS_R) // K.SS.R
-                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // K.Y
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x0918 -> /* Devanagari GHA */ when (c2) {
-                    0x091F -> return listOf(0xF01A2) // GH.TT
-                    0x0920 -> return listOf(0xF01A3) // GH.TTH
-                    0x0922 -> return listOf(0xF01A4) // GH.DDH
-                    0xF014F -> return listOf(0xF0172) // GH.TTR
-                    0xF0150 -> return listOf(0xF0173) // GH.TTHR
-                    0xF0152 -> return listOf(0xF0174) // GH.DDHR
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x0919 -> /* Devanagari NGA */ when (c2) {
-                    0x0917 -> return listOf(0xF0182) // NG.G
-                    0x092E -> return listOf(0xF0183) // NG.M
-                    DEVANAGARI_VA -> return listOf(0xF019C) // NG.V
-                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // NG.Y
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x091B -> /* Devanagari CHA */ when (c2) {
-                    DEVANAGARI_VA -> return listOf(0xF019D) // CH.V
-                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // CH.Y
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x091C -> /* Devanagari JA */ when (c2) {
-                    0x091E -> return listOf(DEVANAGARI_LIG_J_NY) // J.NY
-                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // J.Y
-                    0xF014E -> return listOf(DEVANAGARI_LIG_J_NY_R) // J.NY.R
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x091F -> /* Devanagari TTA */ when (c2) {
-                    0x091F -> return listOf(0xF0185) // TT.TT
-                    0x0920 -> return listOf(0xF0186) // TT.TTH
-                    DEVANAGARI_VA -> return listOf(0xF019E) // TT.V
-                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // TT.Y
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x0920 -> /* Devanagari TTHA */ when (c2) {
-                    0x0920 -> return listOf(0xF0187) // TTH.TTH
-                    DEVANAGARI_VA -> return listOf(0xF019F) // TTH.V
-                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // TTH.Y
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x0921 -> /* Devanagari DDA */ when (c2) {
-                    0x0921 -> return listOf(0xF0188) // DD.DD
-                    0x0922 -> return listOf(0xF0189) // DD.DDH
-                    DEVANAGARI_VA -> return listOf(0xF01A0) // DD.V
-                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // DD.Y
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x0922 -> /* Devanagari DDHA */ when (c2) {
-                    0x0922 -> return listOf(0xF018A) // DDH.DDH
-                    DEVANAGARI_VA -> return listOf(0xF01A1) // DDH.V
-                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // DDH.Y
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x0924 -> /* Devanagari TA */ when (c2) {
-                    0x0924 -> return listOf(DEVANAGARI_LIG_T_T) // T.T
-                    DEVANAGARI_LIG_T_R -> return listOf(DEVANAGARI_LIG_T_T_R) // T.T.R
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x0926 -> /* Devanagari DA */ when (c2) {
-                    0x0917 -> return listOf(0xF019A) // D.G
-                    0x0918 -> return listOf(0xF019B) // D.GH
-                    0x0926 -> return listOf(0xF018C) // D.D
-                    0x0927 -> return listOf(0xF018D) // D.DH
-                    0x092C -> return listOf(0xF018E) // D.B
-                    0x092D -> return listOf(0xF018F) // D.BH
-                    0x092E -> return listOf(0xF0190) // D.M
-                    0x092F -> return listOf(0xF0191) // D.Y
-                    0x0935 -> return listOf(0xF0192) // D.V
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x0928 -> /* Devanagari NA */ when (c2) {
-                    0x0924 -> return listOf(DEVANAGARI_LIG_N_T) // N.T
-                    0x0928 -> return listOf(0xF0193) // N.N
-                    DEVANAGARI_LIG_T_R -> return listOf(DEVANAGARI_LIG_N_T_R) // N.T.R
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x092A -> /* Devanagari PA */ when (c2) {
-                    0x091F -> return listOf(0xF01A5) // P.TT
-                    0x0920 -> return listOf(0xF01A6) // P.TTH
-                    0x0922 -> return listOf(0xF01A7) // P.DDH
-                    0xF014F -> return listOf(0xF0175) // P.TTR
-                    0xF0150 -> return listOf(0xF0176) // P.TTHR
-                    0xF0152 -> return listOf(0xF0177) // P.DDHR
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x0937 -> /* Devanagari SSA */ when (c2) {
-                    0x091F -> return listOf(0xF01A8) // SS.TT
-                    0x0920 -> return listOf(0xF01A9) // SS.TTH
-                    0x0922 -> return listOf(0xF01AA) // SS.DDH
-                    0xF014F -> return listOf(0xF0178) // SS.TTR
-                    0xF0150 -> return listOf(0xF0179) // SS.TTHR
-                    0xF0152 -> return listOf(0xF017A) // SS.DDHR
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x0939 -> /* Devanagari HA */ when (c2) {
-                    0x0923 -> return listOf(0xF0194) // H.NN
-                    0x0928 -> return listOf(0xF0195) // H.N
-                    0x092E -> return listOf(0xF0196) // H.M
-                    0x092F -> return listOf(0xF0197) // H.Y
-                    0x0932 -> return listOf(0xF0198) // H.L
-                    0x0935 -> return listOf(0xF0199) // H.V
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                0x0978 -> /* Marwari DDA */ when (c2) {
-                    0x0978 -> return listOf(MARWARI_LIG_DD_DD) // DD.DD
-                    0x0922 -> return listOf(MARWARI_LIG_DD_DDH) // DD.DDH
-                    DEVANAGARI_YA -> return listOf(MARWARI_LIG_DD_Y) // DD.Y
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                in 0xF018C..0xF018F -> /* Devanagari D.@A */ when (c2) {
-                    DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA
-                    else -> return c1.toHalfFormOrVirama() + c2
-                }
-                else -> return c1.toHalfFormOrVirama() + c2 // TODO use proper version of Virama for respective scripts
-            }
-        }
 
         /**
          * @param tone1 0..4 where 0 is extra-high
