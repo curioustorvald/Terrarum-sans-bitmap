@@ -1011,11 +1011,14 @@ class TerrarumSansBitmap(
         val seq2 = CodepointSequence()
         val seq3 = CodepointSequence()
         val seq4 = CodepointSequence()
+        val dis = this.utf16to32()
 
         var i = 0
 
+//        dbgprn("Charsequence: ${dis.map { "${it.toChar()}${ZWNJ.toChar()}" }.joinToString(" ")}")
+
         seq0.add(0)
-        this.utf16to32().forEach { c ->
+        dis.forEach { c ->
             // turn Unicode Devanagari consonants into the internal one
             if (c in 0x0915..0x0939 || c in 0x0958..0x095F)
                 seq0.add(c.toDevaInternal())
@@ -1025,7 +1028,6 @@ class TerrarumSansBitmap(
         seq0.add(0)
 
 
-        dbgprn("Charsequence: ${seq0.map { "${it.toChar()}${ZWNJ.toChar()}" }.joinToString(" ")}")
 
         i = 0
         while (i < seq0.lastIndex) {
@@ -1333,23 +1335,23 @@ class TerrarumSansBitmap(
             }
         }
         while (i < seq3.size) {
-//            val cPrev2 = seq3.getOrElse(i-2) { -1 }
-//            val cPrev = seq3.getOrElse(i-1) { -1 }
+            val cPrev2 = seq3.getOrElse(i-2) { -1 }
+            val cPrev = seq3.getOrElse(i-1) { -1 }
             val c = seq3[i]
             val cNext = seq3.getOrElse(i+1) { -1 }
-//            val cNext2 = seq3.getOrElse(i+2) { -1 }
+            val cNext2 = seq3.getOrElse(i+2) { -1 }
 //            val cNext3 = seq3.getOrElse(i+3) { -1 }
 
 //            dbgprn("  र${yankedDevanagariRaStatus[1]} Chars: ${cPrev2.toCh()}${ZWNJ.toChar()} ${cPrev.toCh()}${ZWNJ.toChar()} [ ${c.toCh()}${ZWNJ.toChar()} ] ${cNext.toCh()}${ZWNJ.toChar()} ${cNext2.toCh()}${ZWNJ.toChar()}")
 
 
-            // in Regex: RA (vir C)+ V* ᴿ [not V && not vir]
+            // in Regex: RA vir VL* (C vir C (vir C)*)? VR* ᴿ [not V && not vir]
             if (yankedDevanagariRaStatus[1] == 0 && c == DEVANAGARI_RA && cNext == DEVANAGARI_VIRAMA) {
 //                dbgprn("   Yanking RA (0 -> 1)")
                 yankedCharacters.push(i to c)
                 changeRaStatus(1)
             }
-            else if (yankedDevanagariRaStatus[0] == 0 && yankedDevanagariRaStatus[1] == 1 && c == DEVANAGARI_VIRAMA) {
+            else if (yankedDevanagariRaStatus[1] == 1 && yankedDevanagariRaStatus[0] == 0 && c == DEVANAGARI_VIRAMA) {
 //                dbgprn("   First Virama (1 -> 2)")
                 changeRaStatus(2)
             }
@@ -1358,8 +1360,18 @@ class TerrarumSansBitmap(
                 seq4.add(c)
                 changeRaStatus(1)
             }
-            else if ((yankedDevanagariRaStatus[1] == 1 || yankedDevanagariRaStatus[1] == 3) && devanagariRightVowels.contains(c)) {
-//                dbgprn("   Vowels (${yankedDevanagariRaStatus[1]} -> 3)")
+            else if (yankedDevanagariRaStatus[1] == 3 && devanagariConsonants.contains(c)) {
+//                dbgprn("   Consonants after Left Vowel (3 -> 1)")
+                seq4.add(c)
+                changeRaStatus(1)
+            }
+            else if ((yankedDevanagariRaStatus[1] > 0) && devanagariRightVowels.contains(c)) {
+//                dbgprn("   Right Vowels (${yankedDevanagariRaStatus[1]} -> 4)")
+                seq4.add(c)
+                changeRaStatus(4)
+            }
+            else if ((yankedDevanagariRaStatus[1] in 1..3) && devanagariVowels.contains(c)) {
+//                dbgprn("   Left Vowels (${yankedDevanagariRaStatus[1]} -> 3)")
                 seq4.add(c)
                 changeRaStatus(3)
             }
@@ -1395,20 +1407,10 @@ class TerrarumSansBitmap(
         0xF0101 -> "रू"
         0xF0102 -> "ऱु"
         0xF0103 -> "ऱू"
-        0xF0104 -> "˓"
-        in 0xF0105..0xF0129 -> "${(this - 0xF0100 + 0x910).toChar()}${DEVANAGARI_VIRAMA.toChar()}${ZWJ.toChar()}"
-        0xF012A -> "ऱ्\u200D"
-        0xF012B -> "क्ष्\u200D"
-        0xF012C -> "ज्ञ्\u200D"
-        0xF012D -> "त्त्\u200D"
-        0xF0130 -> "हु"
-        0xF0131 -> "हू"
-        0xF0136 -> "\u200Dय"
-        0xF0137 -> "\u200Dय\u200D"
-        in 0xF0138..0xF013F -> "${(this - 0xF0130 + 0x970).toChar()}${DEVANAGARI_VIRAMA.toChar()}${ZWJ.toChar()}"
-        0xF0140 -> "र\u200D्य"
-        0xF0141 -> "र\u200D्य\u200D"
-        in 0xF0145..0xF0169 -> "${(this - 0xF0140 + 0x910).toChar()}${DEVANAGARI_VIRAMA.toChar()}${DEVANAGARI_RA.toChar()}"
+        0xF0104 -> "हु"
+        0xF0105 -> "हू"
+        0xF010B -> "˓"
+        in 0xF0140..0xF0164 -> "${(this - 0xf0140 + 0x915).toChar()}"
         else -> this.toHex()
     }
 
@@ -1817,6 +1819,11 @@ class TerrarumSansBitmap(
                 0xF032D -> return listOf(0xF0375) // SS.DDHR
                 else -> return c1.toHalfFormOrVirama() + c2
             }
+            0x0938.toDevaInternal() -> /* Devanagari SA */ when (c2) {
+                0x0935.toDevaInternal() -> return listOf(DEVANAGARI_LIG_S_V) // S.V
+                0xF0340 -> return listOf(0xF0356) // S.V.R
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
             0x0939.toDevaInternal() -> /* Devanagari HA */ when (c2) {
                 0x0923.toDevaInternal() -> return listOf(0xF0196) // H.NN
                 0x0928.toDevaInternal() -> return listOf(0xF0197) // H.N
@@ -1965,7 +1972,7 @@ class TerrarumSansBitmap(
             "cyrilic_serbian_variable.tga",
             "tsalagi_variable.tga",
             "phonetic_extensions_variable.tga",
-            "devanagari_alt_encoding_variable.tga",
+            "devanagari_variable.tga",
             "kartuli_allcaps_variable.tga",
             "diacritical_marks_variable.tga",
             "greek_polytonic_xyswap_variable.tga",
@@ -2083,6 +2090,7 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_LIG_T_T = 0xF0173
         private val DEVANAGARI_LIG_N_T = 0xF0174
         private val DEVANAGARI_LIG_N_N = 0xF0175
+        private val DEVANAGARI_LIG_S_V = 0xF0176
 
         private val MARWARI_LIG_DD_DD = 0xF018A
         private val MARWARI_LIG_DD_DDH = 0xF018B
