@@ -30,6 +30,7 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.*
 import com.badlogic.gdx.utils.GdxRuntimeException
+import com.ibm.icu.impl.Normalizer2Impl.Hangul.isHangul
 import net.torvald.terrarumsansbitmap.DiacriticsAnchor
 import net.torvald.terrarumsansbitmap.GlyphProps
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.charInfo
@@ -1312,7 +1313,7 @@ class TerrarumSansBitmap(
 
         // reposition devanagari RA-initials into RAsup
         i = 0
-//        dbgprn("seq3 = ${seq3.map { "${it.toCh()}${ZWNJ.toChar()}" }.joinToString(" ")}")
+        dbgprnLig("seq3 = ${seq3.map { "${it.toCh()}${ZWNJ.toChar()}" }.joinToString(" ")}")
 
         val yankedCharacters  = Stack<Pair<Int, CodePoint>>() // Stack of <Position, CodePoint>; codepoint use -1 if not applicable
         var yankedDevanagariRaStatus = intArrayOf(0,0) // 0: none, 1: consonants, 2: virama, 3: vowel for this syllable
@@ -1340,44 +1341,54 @@ class TerrarumSansBitmap(
             val c = seq3[i]
             val cNext = seq3.getOrElse(i+1) { -1 }
             val cNext2 = seq3.getOrElse(i+2) { -1 }
-//            val cNext3 = seq3.getOrElse(i+3) { -1 }
 
-//            dbgprn("  र${yankedDevanagariRaStatus[1]} Chars: ${cPrev2.toCh()}${ZWNJ.toChar()} ${cPrev.toCh()}${ZWNJ.toChar()} [ ${c.toCh()}${ZWNJ.toChar()} ] ${cNext.toCh()}${ZWNJ.toChar()} ${cNext2.toCh()}${ZWNJ.toChar()}")
+            dbgprnLig("  र${yankedDevanagariRaStatus[1]} Chars: ${cPrev2.toCh()}${ZWNJ.toChar()} ${cPrev.toCh()}${ZWNJ.toChar()} [ ${c.toCh()}${ZWNJ.toChar()} ] ${cNext.toCh()}${ZWNJ.toChar()} ${cNext2.toCh()}${ZWNJ.toChar()}")
 
 
             // in Regex: RA vir VL* (C vir C (vir C)*)? VR* ᴿ [not V && not vir]
+            // TERMINATOR: right vowel | non-half consonant before any consonants
             if (yankedDevanagariRaStatus[1] == 0 && c == DEVANAGARI_RA && cNext == DEVANAGARI_VIRAMA) {
-//                dbgprn("   Yanking RA (0 -> 1)")
+                dbgprnLig("   Yanking RA (0 -> 1)")
                 yankedCharacters.push(i to c)
                 changeRaStatus(1)
             }
             else if (yankedDevanagariRaStatus[1] == 1 && yankedDevanagariRaStatus[0] == 0 && c == DEVANAGARI_VIRAMA) {
-//                dbgprn("   First Virama (1 -> 2)")
+                dbgprnLig("   First Virama (1 -> 2)")
                 changeRaStatus(2)
             }
             else if (yankedDevanagariRaStatus[1] == 2 && devanagariConsonants.contains(c)) {
-//                dbgprn("   Consonants after Virama (2 -> 1)")
+                dbgprnLig("   Consonants after Virama (2 -> 1)")
                 seq4.add(c)
                 changeRaStatus(1)
             }
-            else if (yankedDevanagariRaStatus[1] == 3 && devanagariConsonants.contains(c)) {
-//                dbgprn("   Consonants after Left Vowel (3 -> 1)")
+            else if (yankedDevanagariRaStatus[1] in listOf(1,3) && devanariConsonantsHalfs.contains(c)) {
+                dbgprnLig("   Consonants Half Form (${yankedDevanagariRaStatus[1]} -> 3)")
+                seq4.add(c)
+                changeRaStatus(3)
+            }
+            else if (yankedDevanagariRaStatus[1] == 5 && devanagariConsonants.contains(c)) {
+                dbgprnLig("   Consonants after Left Vowel (5 -> 1)")
                 seq4.add(c)
                 changeRaStatus(1)
             }
             else if ((yankedDevanagariRaStatus[1] > 0) && devanagariRightVowels.contains(c)) {
-//                dbgprn("   Right Vowels (${yankedDevanagariRaStatus[1]} -> 4)")
+                dbgprnLig("   Right Vowels (${yankedDevanagariRaStatus[1]} -> 4)")
                 seq4.add(c)
                 changeRaStatus(4)
             }
             else if ((yankedDevanagariRaStatus[1] in 1..3) && devanagariVowels.contains(c)) {
-//                dbgprn("   Left Vowels (${yankedDevanagariRaStatus[1]} -> 3)")
+                dbgprnLig("   Left Vowels (${yankedDevanagariRaStatus[1]} -> 5)")
                 seq4.add(c)
-                changeRaStatus(3)
+                changeRaStatus(5)
+            }
+            else if (yankedDevanagariRaStatus[1] > 0 && devanariConsonantsHalfs.contains(cPrev) && devanagariConsonants.contains(c)) {
+                dbgprnLig("   Consonant Tail after Halfs (${yankedDevanagariRaStatus[1]} -> 9)")
+                seq4.add(c)
+                changeRaStatus(9)
             }
             // -- termination or illegal state for Devanagari RA
             else if (yankedDevanagariRaStatus[1] > 0) {
-//                dbgprn("   Popping out RAsup")
+                dbgprnLig("   Popping out RAsup")
                 yankedCharacters.pop()
                 seq4.add(DEVANAGARI_RA_SUPER)
                 resetRaStatus()
@@ -1399,7 +1410,9 @@ class TerrarumSansBitmap(
         return seq4
     }
 
-    private fun CodePoint.toCh() = if (this in 0xF0100..0xF02FF) this.puaToUni() else if (this < 65536) "${this.toChar()}" else this.toHex()
+    private fun dbgprnLig(i: Any) { if (false) println("[${this.javaClass.simpleName}] $i") }
+
+    private fun CodePoint.toCh() = if (this >= 0xF0000) this.puaToUni() else if (this < 65536) "${this.toChar()}" else this.toHex()
 
     // nuke this function when the time that compiled bytecode exceeds 64 kb finally arrives
     private fun CodePoint.puaToUni() = when (this) {
@@ -1411,6 +1424,9 @@ class TerrarumSansBitmap(
         0xF0105 -> "हू"
         0xF010B -> "˓"
         in 0xF0140..0xF0164 -> "${(this - 0xf0140 + 0x915).toChar()}"
+        in 0xF0230..0xF0254 -> "${(this - 0xf0230 + 0x915).toChar()}${DEVANAGARI_VIRAMA.toChar()}${ZWJ.toChar()}"
+        in 0xF0320..0xF0344 -> "${(this - 0xf0320 + 0x915).toChar()}${DEVANAGARI_VIRAMA.toChar()}\u0930"
+        in 0xF0410..0xF0434 -> "${(this - 0xf0410 + 0x915).toChar()}${DEVANAGARI_VIRAMA.toChar()}\u0930${ZWJ.toChar()}"
         else -> this.toHex()
     }
 
@@ -2056,24 +2072,6 @@ class TerrarumSansBitmap(
         private val TAMIL_SHRII = 0xF00EE
         private val TAMIL_I = 0xBBF
 
-        private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) + (0xF0140..0xF04FF)).toHashSet()
-        private val devanagariVowels = ((0x093A..0x093C) + (0x093E..0x094C) + (0x094E..0x094F)).toHashSet()
-        private val devanagariRightVowels = ((0x093A..0x093C) + (0x093E) + (0x0940..0x094C) + 0x094F).toHashSet()
-
-        private val devanagariBaseConsonants = 0x0915..0x0939
-        private val devanagariBaseConsonantsWithNukta = 0x0958..0x095F
-        private val devanagariBaseConsonantsExtended = 0x0978..0x097F
-        private val devanagariPresentationConsonants = 0xF0140..0xF022F
-        private val devanagariPresentationConsonantsHalf = 0xF0230..0xF031F
-        private val devanagariPresentationConsonantsWithRa = 0xF0320..0xF040F
-        private val devanagariPresentationConsonantsWithRaHalf = 0xF0410..0xF04FF
-
-
-        private val devanagariConsonantsNonLig = (devanagariBaseConsonants +
-                devanagariBaseConsonantsWithNukta + devanagariBaseConsonantsExtended +
-                devanagariPresentationConsonants + devanagariPresentationConsonantsWithRa).toHashSet()
-
-        private val devanariConsonantsHalfs = ((0xF0105..0xF012F) + (0xF0137..0xF013F) + (0xF01C0..0xF01FF)).toHashSet()
 
         private val DEVANAGARI_VIRAMA = 0x94D
         private val DEVANAGARI_RA = 0x930.toDevaInternal()
@@ -2117,9 +2115,28 @@ class TerrarumSansBitmap(
         private val MARWARI_LIG_DD_R = 0xF0118
 
 
+        private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) +
+                (0xF0140..0xF04FF) + (0xF0106..0xF0109)).toHashSet()
+        private val devanagariVowels = ((0x093A..0x093C) + (0x093E..0x094C) + (0x094E..0x094F)).toHashSet()
+        private val devanagariRightVowels = ((0x093A..0x093C) + (0x093E) + (0x0940..0x094C) + 0x094F).toHashSet()
 
-        private val DEVANAGARI_HALF_FORMS = 0xF0230 // starting point for Devanagari half forms
-        private val DEVANAGARI_LIG_X_R = 0xF0410 // starting point for Devanagari ligature CONSONANT+RA
+        private val devanagariBaseConsonants = 0x0915..0x0939
+        private val devanagariBaseConsonantsWithNukta = 0x0958..0x095F
+        private val devanagariBaseConsonantsExtended = 0x0978..0x097F
+        private val devanagariPresentationConsonants = 0xF0140..0xF022F
+        private val devanagariPresentationConsonantsHalf = 0xF0230..0xF031F
+        private val devanagariPresentationConsonantsWithRa = 0xF0320..0xF040F
+        private val devanagariPresentationConsonantsWithRaHalf = 0xF0410..0xF04FF
+
+
+        private val devanagariConsonantsNonLig = (devanagariBaseConsonants +
+                devanagariBaseConsonantsWithNukta + devanagariBaseConsonantsExtended +
+                devanagariPresentationConsonants + devanagariPresentationConsonantsWithRa).toHashSet()
+
+        private val devanariConsonantsHalfs = (devanagariPresentationConsonantsHalf +
+                devanagariPresentationConsonantsWithRaHalf + listOf(DEVANAGARI_HALF_RYA, DEVANAGARI_OPEN_HALF_YA)).toHashSet()
+
+
 
         private fun Int.toDevaInternal(): Int {
             if (this in 0x0915..0x0939) return this - 0x0915 + 0xF0140
