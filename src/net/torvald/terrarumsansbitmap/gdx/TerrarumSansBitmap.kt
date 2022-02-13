@@ -1814,7 +1814,7 @@ class TerrarumSansBitmap(
                 0x091F.toDevaInternal() -> return listOf(0xF0193) // SS.TT
                 0x0920.toDevaInternal() -> return listOf(0xF0194) // SS.TTH
                 0x0922.toDevaInternal() -> return listOf(0xF0195) // SS.DDH
-                0x092A.toDevaInternal() -> return listOf(0xF0177) // SS.P
+                0x092A.toDevaInternal() -> return listOf(DEVANAGARI_LIG_SS_P) // SS.P
                 0xF032A -> return listOf(0xF0373) // SS.TTR
                 0xF032B -> return listOf(0xF0374) // SS.TTHR
                 0xF032D -> return listOf(0xF0375) // SS.DDHR
@@ -2086,7 +2086,7 @@ class TerrarumSansBitmap(
 
         private val MARWARI_DD = 0x978
 
-        private val DEVANAGARI_LIG_K_T = 0xF0170
+        private val DEVANAGARI_LIG_K_T = 0xF018C
         private val DEVANAGARI_LIG_K_SS = 0xF0171
         private val DEVANAGARI_LIG_J_NY = 0xF0172
         private val DEVANAGARI_LIG_T_T = 0xF0173
