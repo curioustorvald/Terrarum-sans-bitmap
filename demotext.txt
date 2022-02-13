@@ -64,6 +64,7 @@ How multilingual? Real multilingual!
     􏻬Do bạch kim rất quý nên sẽ dùng để lắp vô xương􀀀
     􏻬日堀油告観観藤村抄海評業庁経賃室弁市。太撮収改売週法所何都慣次現。価紙一無三洋日話転手治稿載末替付致治。􀀀
     􏻬[pʰnɣɬɥi.m͡ŋχɫʍɨnaɸ.cθʊɫɯ.ɹɨɫʏ͡ɛx.ɯ͡ɣaxɲaɣɫ.ɸtʰɑɣɴ]􀀀
+    􏻬⠑⠥⠊⠵⠀⠟⠫⠒⠵⠀⠓⠗⠎⠉⠂⠀⠠⠊⠗⠘⠍⠓⠎⠀⠨⠣⠩⠐⠥⠍⠑⠱⠀⠈⠪⠀⠨⠷⠎⠢⠈⠧⠀⠈⠏⠒⠐⠕⠝⠀⠕⠌⠎⠀⠊⠿⠊⠪⠶⠚⠊􀀀
 
 􏃯Features:􀀀
 
@@ -107,19 +108,19 @@ How multilingual? Real multilingual!
 
 􏃯Supported Unicode Blocks:􀀀
 
-    Basic Latin   Latin-1 Supplement   Latin Extended-A   Latin Extended-B   IPA Extensions
-    Spacing Modifier Letters   Combining Diacritical Marks   Greek and Coptic􏿆ᴱ􀀀   Cyrillic􏿆ᴭ􀀀   Cyrillic Supplement􏿆ᴭ􀀀
-    Armenian   Devanagari   Bengali􏿆ᶠⁱ􀀀   Tamil   Thai   Georgian􏿆ჼ􀀀   Hangul Jamo   Cherokee􏿆⁷􀀀   Runic
-    Georgian Extended   Phonetic Extensions   Phonetic Extensions Supplement   Latin Extended Additional
-    Greek Extended   General Punctuations   Superscripts and Subscripts   Currency Symbols   Letterlike Symbols
-    CJK Symbols and Punctuation   Latin Extended-C   Hiragana   Katakana   Hangul Compatibility Jamo
-    Katakana Phonetic Extensions   CJK Unified Ideographs Extension A􏿆¹²·¹􀀀   CJK Unified Ideographs􏿆⁶􀀀
-    Latin Extended-D   Hangul Jamo Extended-A   Hangul Syllables   Hangul Jamo Extended-B
-    Halfwidth and Fullwidth Forms   Kana Supplement􏿆⁹􀀀   Enclosed Alphanumeric Supplement
+   Basic Latin   Latin-1 Supplement   Latin Extended-A   Latin Extended-B   IPA Extensions   Spacing Modifier Letters
+   Combining Diacritical Marks   Greek and Coptic􏿆ᴱ􀀀   Cyrillic􏿆ᴭ􀀀   Cyrillic Supplement􏿆ᴭ􀀀   Armenian   Devanagari
+   Bengali􏿆ᶠⁱ􀀀   Tamil   Thai   Georgian􏿆ჼ􀀀   Hangul Jamo   Cherokee􏿆⁷􀀀   Runic   Georgian Extended   Phonetic Extensions
+   Phonetic Extensions Supplement   Latin Extended Additional   Greek Extended   General Punctuations
+   Superscripts and Subscripts   Currency Symbols   Letterlike Symbols   Braile Patterns   Latin Extended-C
+   CJK Symbols and Punctuation   Hiragana   Katakana   Hangul Compatibility Jamo   Katakana Phonetic Extensions
+   CJK Unified Ideographs Extension A􏿆¹²·¹􀀀   CJK Unified Ideographs􏿆⁶􀀀   Latin Extended-D   Hangul Jamo Extended-A
+   Hangul Syllables   Hangul Jamo Extended-B   Halfwidth and Fullwidth Forms   Kana Supplement􏿆⁹􀀀
+   Enclosed Alphanumeric Supplement
 
-    􏿆ᴭ􀀀  No support for archæic letters    􏿆ᴱ􀀀  No support for Coptic
-    􏿆ᶠⁱ􀀀  No support for ligatures    􏿆ჼ􀀀  Mkhedruli only
-    􏿆⁶􀀀  􏿆⁷􀀀  􏿆⁹􀀀  􏿆¹²·¹􀀀  Up to the specified Unicode version
+   􏿆ᴭ􀀀  No support for archæic letters    􏿆ᴱ􀀀  No support for Coptic
+   􏿆ᶠⁱ􀀀  No support for ligatures    􏿆ჼ􀀀  Mkhedruli only
+   􏿆⁶􀀀  􏿆⁷􀀀  􏿆⁹􀀀  􏿆¹²·¹􀀀  Up to the specified Unicode version
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀.
 You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make
