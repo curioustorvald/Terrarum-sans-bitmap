@@ -30,10 +30,8 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.*
 import com.badlogic.gdx.utils.GdxRuntimeException
-import com.ibm.icu.impl.Normalizer2Impl.Hangul.isHangul
 import net.torvald.terrarumsansbitmap.DiacriticsAnchor
 import net.torvald.terrarumsansbitmap.GlyphProps
-import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.charInfo
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
 import java.util.*
@@ -1836,6 +1834,16 @@ class TerrarumSansBitmap(
                 0xF032D -> return listOf(0xF0372) // P+DDH.R
                 else -> return c1.toHalfFormOrVirama() + c2
             }
+            0x0936.toDevaInternal() -> /* Devanagari SHA */ when (c2) {
+                0x091A.toDevaInternal() -> return listOf(DEVANAGARI_LIG_SH_C) // SH.C
+                0x0928.toDevaInternal() -> return listOf(DEVANAGARI_LIG_SH_N) // SH.N
+                0x0932.toDevaInternal() -> return listOf(DEVANAGARI_ALT_HALF_SHA, c2) // SH.L
+                0x0935.toDevaInternal() -> return listOf(DEVANAGARI_LIG_SH_V) // SH.V
+                0xF0325 -> return listOf(0xF0358) // SH+C.R
+                0xF033D -> return listOf(DEVANAGARI_ALT_HALF_SHA, c2)// SH+L.R
+                0xF0340 -> return listOf(0xF035A) // SH+V.R
+                else -> return c1.toHalfFormOrVirama() + c2
+            }
             0x0937.toDevaInternal() -> /* Devanagari SSA */ when (c2) {
                 0x091F.toDevaInternal() -> return listOf(0xF0193) // SS.TT
                 0x0920.toDevaInternal() -> return listOf(0xF0194) // SS.TTH
@@ -2093,6 +2101,7 @@ class TerrarumSansBitmap(
 
         private val DEVANAGARI_OPEN_YA = 0xF0108
         private val DEVANAGARI_OPEN_HALF_YA = 0xF0109
+        private val DEVANAGARI_ALT_HALF_SHA = 0xF0119
         private val DEVANAGARI_RA_SUPER = 0xF010B
         private val DEVANAGARI_EYELASH_RA = 0xF010C
 
@@ -2107,6 +2116,9 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_LIG_N_N = 0xF0175
         private val DEVANAGARI_LIG_S_V = 0xF0176
         private val DEVANAGARI_LIG_SS_P = 0xF0177
+        private val DEVANAGARI_LIG_SH_C = 0xF0178
+        private val DEVANAGARI_LIG_SH_N = 0xF0179
+        private val DEVANAGARI_LIG_SH_V = 0xF017A
 
         private val MARWARI_LIG_DD_DD = 0xF018A
         private val MARWARI_LIG_DD_DDH = 0xF018B
