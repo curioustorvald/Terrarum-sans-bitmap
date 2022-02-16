@@ -1412,19 +1412,28 @@ class TerrarumSansBitmap(
 
     private fun CodePoint.toCh() = if (this >= 0xF0000) this.puaToUni() else if (this < 65536) "${this.toChar()}" else this.toHex()
 
+    private val devaSyll = listOf("K","KH","G","GH","NG","C","CH","J","JH","NY","TT","TTH","DD","DDH","NN","T",
+        "TH","D","DH","N","NNN","P","PH","B","BH","M","Y","R","RR","L","LL","LLL",
+        "V","SH","SS","S","H","Q","KHH","GHH","Z","DDDH","RH","F","YY","x","x","x",
+        "D.R.Y","K.SS","J.NY","T.T","N.T","N.N","S.P","SS.V","SH.C","SH.N","SH.V","x","x","x","x","x",
+        "D.G","D.GH","D.D","D.DH","D.N","D.SS","D.BH","D.M","D.Y","D.V","mDD.DD","mDD.DDH","K.T","GH.TT","GH.TTH","GH.DDH",
+        "P.TT","P.TTH","P.DDH","SS.TT","SS.TTH","SS.DDH","H.NN","H.T","H.M","H.Y","H.L","H.V","x","x","x","x",
+        "DD.G","DD.BH","NG.G","NG.V","NG.M","CH.V","TT.TT","TT.TTH","TT.V","TTH.TTH","TTH.V","DD.DD","DD.DDH","DD.V","DDH.DDH","DDH.V"
+    )
     // nuke this function when the time that compiled bytecode exceeds 64 kb finally arrives
     private fun CodePoint.puaToUni() = when (this) {
-        0xF0100 -> "रु"
-        0xF0101 -> "रू"
-        0xF0102 -> "ऱु"
-        0xF0103 -> "ऱू"
-        0xF0104 -> "हु"
-        0xF0105 -> "हू"
-        0xF010B -> "˓"
-        in 0xF0140..0xF0164 -> "${(this - 0xf0140 + 0x915).toChar()}"
-        in 0xF0230..0xF0254 -> "${(this - 0xf0230 + 0x915).toChar()}${DEVANAGARI_VIRAMA.toChar()}${ZWJ.toChar()}"
-        in 0xF0320..0xF0344 -> "${(this - 0xf0320 + 0x915).toChar()}${DEVANAGARI_VIRAMA.toChar()}\u0930"
-        in 0xF0410..0xF0434 -> "${(this - 0xf0410 + 0x915).toChar()}${DEVANAGARI_VIRAMA.toChar()}\u0930${ZWJ.toChar()}"
+        0xF0100 -> "Ru"
+        0xF0101 -> "Ruu"
+        0xF0102 -> "RRu"
+        0xF0103 -> "RRuu"
+        0xF0104 -> "Hu"
+        0xF0105 -> "Huu"
+        0xF010B -> "ᴿᵃ"
+        0xF024C -> "Resh"
+        in 0xF0140 until 0xF0140+devaSyll.size -> devaSyll[this - 0xF0140]
+        in 0xF0230 until 0xF0230+devaSyll.size -> devaSyll[this - 0xF0230] + "ʰ"
+        in 0xF0320 until 0xF0320+devaSyll.size -> devaSyll[this - 0xF0320] + ".R"
+        in 0xF0410 until 0xF0410+devaSyll.size -> devaSyll[this - 0xF0410] + ".Rʰ"
         else -> this.toHex()
     }
 
@@ -1727,14 +1736,32 @@ class TerrarumSansBitmap(
 
 
 
-    private fun ligateIndicConsonants(c1: CodePoint, c2: CodePoint): List<CodePoint> {
-//            println("[TerrarumSansBitmap] Indic ligation ${c1.charInfo()} - ${c2.charInfo()}")
+    private fun ligateIndicConsonants(c1: CodePoint, c2: CodePoint, rec: Int = 0): List<CodePoint> {
+//        dbgprn("Indic ligation${if (rec > 0) "$rec" else ""} ${c1.toCh()} - ${c2.toCh()}")
         if (c1 != DEVANAGARI_RA && c2 == DEVANAGARI_RA) return toRaAppended(c1) // Devanagari @.RA
+        // when the font try to ligate KSSR, the arguments are K and SSR (for some reason I don't understand).
+        // This method drops last Ra on c2 and then recursively ligates the remainder KSS, finally
+        // attaches Ra on the conjunct and returns the results.
+        else if (c1 != DEVANAGARI_RA && isRaAppended(c2)) {
+//            dbgprn("Ends with RA, trying Rlig...")
+            val c12WithNoRa = ligateIndicConsonants(c1, c2 - 480, rec + 1)
+            if (c12WithNoRa.size == 1) {
+                val c12andRa = toRaAppended(c12WithNoRa[0])
+                if (c12andRa.size == 1) {
+//                    dbgprn("Rligation successful: ${c12WithNoRa[0].toCh()} + R = ${c12andRa[0].toCh()}")
+                    return c12andRa
+                }
+//                dbgprn("Rligation failed: ${c12WithNoRa[0].toCh()} + R = ${c12WithNoRa.map { it.toCh() }.joinToString(" + ")}")
+            }
+            // only return when ligation is possible, otherwise let the process continue so that
+            // Ka-Vir-SSRa form could be returned
+//            else dbgprn("Ligation failed, trying ${c1.toCh()} - ${c2.toCh()}")
+        }
+//        dbgprn("continue$rec: ${c1.toCh()} - ${c2.toCh()}")
         when (c1) {
             0x0915.toDevaInternal() -> /* Devanagari KA */ when (c2) {
                 0x0924.toDevaInternal() -> return listOf(DEVANAGARI_LIG_K_T) // K.T
                 0x0937.toDevaInternal() -> return listOf(DEVANAGARI_LIG_K_SS) // K.SS
-                0xF0337 -> return listOf(0xF0351) // K+SS.R
                 DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // K.Y
                 else -> return c1.toHalfFormOrVirama() + c2
             }
@@ -1742,14 +1769,11 @@ class TerrarumSansBitmap(
                 0x091F.toDevaInternal() -> return listOf(0xF018D) // GH.TT
                 0x0920.toDevaInternal() -> return listOf(0xF018E) // GH.TTH
                 0x0922.toDevaInternal() -> return listOf(0xF018F) // GH.DDH
-                0xF032A -> return listOf(0xF036D) // GH+TT.R
-                0xF032B -> return listOf(0xF036E) // GH+TTH.R
-                0xF032D -> return listOf(0xF036F) // GH+DDH.R
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0919.toDevaInternal() -> /* Devanagari NGA */ when (c2) {
                 0x0917.toDevaInternal() -> return listOf(0xF01A2) // NG.G
-                DEVANAGARI_VA -> return listOf(0xF01A3) // NG.V
+                0x0918.toDevaInternal() -> return listOf(0xF01A3) // NG.GH
                 0x092E.toDevaInternal() -> return listOf(0xF01A4) // NG.M
                 DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // NG.Y
                 else -> return c1.toHalfFormOrVirama() + c2
@@ -1762,7 +1786,6 @@ class TerrarumSansBitmap(
             0x091C.toDevaInternal() -> /* Devanagari JA */ when (c2) {
                 0x091E.toDevaInternal() -> return listOf(DEVANAGARI_LIG_J_NY) // J.NY
                 DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // J.Y
-                0xF0329 -> return listOf(0xF0352) // J.NY.R
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x091F.toDevaInternal() -> /* Devanagari TTA */ when (c2) {
@@ -1781,6 +1804,8 @@ class TerrarumSansBitmap(
             0x0921.toDevaInternal() -> /* Devanagari DDA */ when (c2) {
                 0x0921.toDevaInternal() -> return listOf(0xF01AB) // DD.DD
                 0x0922.toDevaInternal() -> return listOf(0xF01AC) // DD.DDH
+                0x0917.toDevaInternal() -> return listOf(0xF01A0) // DD.G
+                0x092D.toDevaInternal() -> return listOf(0xF01A1) // DD.BH
                 DEVANAGARI_VA -> return listOf(0xF01AD) // DD.V
                 DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // DD.Y
                 else -> return c1.toHalfFormOrVirama() + c2
@@ -1793,7 +1818,6 @@ class TerrarumSansBitmap(
             }
             0x0924.toDevaInternal() -> /* Devanagari TA */ when (c2) {
                 0x0924.toDevaInternal() -> return listOf(DEVANAGARI_LIG_T_T) // T.T
-                0xF032F -> return listOf(0xF0353) // T.T.R
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0926.toDevaInternal() -> /* Devanagari DA */ when (c2) {
@@ -1807,31 +1831,17 @@ class TerrarumSansBitmap(
                 0x092E.toDevaInternal() -> return listOf(0xF0187) // D.M
                 0x092F.toDevaInternal() -> return listOf(0xF0188) // D.Y
                 0x0935.toDevaInternal() -> return listOf(0xF0189) // D.V
-                0xF0322 -> return listOf(0xF0360) // D+G.R
-                0xF0323 -> return listOf(0xF0361) // D+GH.R
-                0xF0331 -> return listOf(0xF0362) // D+D.R
-                0xF0332 -> return listOf(0xF0363) // D+DH.R
-                0xF0333 -> return listOf(0xF0364) // D+N.R
-                0xF0337 -> return listOf(0xF0365) // D+B.R
-                0xF0338 -> return listOf(0xF0366) // D+BH.R
-                0xF0339 -> return listOf(0xF0367) // D+M.R
-                0xF033A -> return listOf(0xF0368) // D+Y.R
-                0xF0340 -> return listOf(0xF0369) // D+V.R
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0928.toDevaInternal() -> /* Devanagari NA */ when (c2) {
                 0x0924.toDevaInternal() -> return listOf(DEVANAGARI_LIG_N_T) // N.T
                 0x0928.toDevaInternal() -> return listOf(DEVANAGARI_LIG_N_N) // N.N
-                0xF032F -> return listOf(0xF0354) // N.T.R
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x092A.toDevaInternal() -> /* Devanagari PA */ when (c2) {
                 0x091F.toDevaInternal() -> return listOf(0xF0190) // P.TT
                 0x0920.toDevaInternal() -> return listOf(0xF0191) // P.TTH
                 0x0922.toDevaInternal() -> return listOf(0xF0192) // P.DDH
-                0xF032A -> return listOf(0xF0370) // P+TT.R
-                0xF032B -> return listOf(0xF0371) // P+TTH.R
-                0xF032D -> return listOf(0xF0372) // P+DDH.R
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0936.toDevaInternal() -> /* Devanagari SHA */ when (c2) {
@@ -1839,9 +1849,6 @@ class TerrarumSansBitmap(
                 0x0928.toDevaInternal() -> return listOf(DEVANAGARI_LIG_SH_N) // SH.N
                 0x0932.toDevaInternal() -> return listOf(DEVANAGARI_ALT_HALF_SHA, c2) // SH.L
                 0x0935.toDevaInternal() -> return listOf(DEVANAGARI_LIG_SH_V) // SH.V
-                0xF0325 -> return listOf(0xF0358) // SH+C.R
-                0xF033D -> return listOf(DEVANAGARI_ALT_HALF_SHA, c2)// SH+L.R
-                0xF0340 -> return listOf(0xF035A) // SH+V.R
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0937.toDevaInternal() -> /* Devanagari SSA */ when (c2) {
@@ -1849,15 +1856,10 @@ class TerrarumSansBitmap(
                 0x0920.toDevaInternal() -> return listOf(0xF0194) // SS.TTH
                 0x0922.toDevaInternal() -> return listOf(0xF0195) // SS.DDH
                 0x092A.toDevaInternal() -> return listOf(DEVANAGARI_LIG_SS_P) // SS.P
-                0xF032A -> return listOf(0xF0373) // SS+TT.R
-                0xF032B -> return listOf(0xF0374) // SS+TTH.R
-                0xF032D -> return listOf(0xF0375) // SS+DDH.R
-                0xF0335 -> return listOf(0xF0357) // SS+P.R
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0938.toDevaInternal() -> /* Devanagari SA */ when (c2) {
                 0x0935.toDevaInternal() -> return listOf(DEVANAGARI_LIG_S_V) // S.V
-                0xF0340 -> return listOf(0xF0356) // S.V.R
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0939.toDevaInternal() -> /* Devanagari HA */ when (c2) {
@@ -2156,6 +2158,7 @@ class TerrarumSansBitmap(
             else throw IllegalArgumentException("No Internal form exists for ${this.charInfo()}")
         }
 
+        private fun isRaAppended(c: CodePoint) = c in (0xF0320..0xF04FF)
 
         /**
          * @param tone1 0..4 where 0 is extra-high
