@@ -312,7 +312,8 @@ class TerrarumSansBitmap(
 
     private var nullProp = GlyphProps(15)
 
-    private val pixmapOffsetY = 10
+    private val linotypePaddingX = 16
+    private val linotypePaddingY = 10
 
     fun draw(batch: Batch, charSeq: CharSequence, x: Int, y: Int) = draw(batch, charSeq, x.toFloat(), y.toFloat())
     override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float): GlyphLayout? {
@@ -353,7 +354,7 @@ class TerrarumSansBitmap(
             if (cacheObj == null || flagFirstRun) {
                 textBuffer = newCodepoints
 
-                val (posXbuffer, posYbuffer) = buildPosMap(textBuffer)
+                val posmap = buildPosMap(textBuffer)
 
                 flagFirstRun = false
 
@@ -366,9 +367,9 @@ class TerrarumSansBitmap(
 
 //                resetHash(charSeq, x.toFloat(), y.toFloat())
 
-
-                val _pw = posXbuffer.last()
-                val _ph = H + (pixmapOffsetY * 2)
+                val textWidth = posmap.width
+                val _pw = textWidth + (linotypePaddingX * 2)
+                val _ph = H + (linotypePaddingY * 2)
                 if (_pw < 0 || _ph < 0) throw RuntimeException("Illegal linotype dimension (w: $_pw, h: $_ph)")
                 val linotypePixmap = Pixmap(_pw, _ph, Pixmap.Format.RGBA8888)
 
@@ -419,9 +420,9 @@ class TerrarumSansBitmap(
                             val jungTex = hangulSheet.get(indexJung, jungRow)
                             val jongTex = hangulSheet.get(indexJong, jongRow)
 
-                            linotypePixmap.drawPixmap(choTex,  posXbuffer[index], pixmapOffsetY, renderCol)
-                            linotypePixmap.drawPixmap(jungTex, posXbuffer[index], pixmapOffsetY, renderCol)
-                            linotypePixmap.drawPixmap(jongTex, posXbuffer[index], pixmapOffsetY, renderCol)
+                            linotypePixmap.drawPixmap(choTex,  posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                            linotypePixmap.drawPixmap(jungTex, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                            linotypePixmap.drawPixmap(jongTex, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
 
 
                             index += hangulLength - 1
@@ -429,17 +430,17 @@ class TerrarumSansBitmap(
                         }
                         else {
                             try {
-                                val posY = posYbuffer[index].flipY() +
+                                val posY = posmap.y[index].flipY() +
                                         if (sheetID == SHEET_UNIHAN) // evil exceptions
                                             offsetUnihan
                                         else if (sheetID == SHEET_CUSTOM_SYM)
                                             offsetCustomSym
                                         else 0
 
-                                val posX = posXbuffer[index]
+                                val posX = posmap.x[index]
                                 val texture = sheets[sheetID].get(sheetX, sheetY)
 
-                                linotypePixmap.drawPixmap(texture, posX, posY + pixmapOffsetY, renderCol)
+                                linotypePixmap.drawPixmap(texture, posX + linotypePaddingX, posY + linotypePaddingY, renderCol)
 
 
                             }
@@ -465,7 +466,7 @@ class TerrarumSansBitmap(
 
                 // put things into cache
                 //textCache[charSeq] = ShittyGlyphLayout(textBuffer, linotype!!)
-                addToCache(textBuffer, tempLinotype, posXbuffer.last())
+                addToCache(textBuffer, tempLinotype, textWidth)
                 linotypePixmap.dispose()
             }
             else {
@@ -474,8 +475,8 @@ class TerrarumSansBitmap(
             }
 
             batch.draw(tempLinotype,
-                x.toFloat(),
-                (y - pixmapOffsetY).toFloat() + (if (flipY) (tempLinotype.height) else 0) * scale,
+                (x - linotypePaddingX).toFloat(),
+                (y - linotypePaddingY).toFloat() + (if (flipY) (tempLinotype.height) else 0) * scale,
                 tempLinotype.width.toFloat() * scale,
                 (tempLinotype.height.toFloat()) * (if (flipY) -1 else 1) * scale
             )
@@ -757,7 +758,7 @@ class TerrarumSansBitmap(
             return cacheObj.glyphLayout!!.width
         }
         else {
-            return buildPosMap(s).first.last()
+            return buildPosMap(s).width
         }
     }
 
@@ -769,7 +770,7 @@ class TerrarumSansBitmap(
      * @return Pair of X-positions and Y-positions, of which the X-position's size is greater than the string
      * and the last element marks the width of entire string.
      */
-    private fun buildPosMap(str: List<Int>): Pair<IntArray, IntArray> {
+    private fun buildPosMap(str: List<Int>): Posmap {
         val posXbuffer = IntArray(str.size + 1) { 0 }
         val posYbuffer = IntArray(str.size) { 0 }
 
@@ -966,7 +967,7 @@ class TerrarumSansBitmap(
         }
         catch (e: NullPointerException) {}
 
-        return posXbuffer to posYbuffer
+        return Posmap(posXbuffer, posYbuffer)
     }
 
     private fun CodepointSequence.utf16to32(): CodepointSequence {
@@ -1907,6 +1908,9 @@ class TerrarumSansBitmap(
             override fun compareTo(other: TextCacheObj): Int {
                 return (this.hash - other.hash).sign
             }
+        }
+        data class Posmap(val x: IntArray, val y: IntArray) {
+            val width = x.maxOf { it }
         }
 
 
