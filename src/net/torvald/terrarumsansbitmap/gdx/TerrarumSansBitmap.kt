@@ -1406,6 +1406,10 @@ class TerrarumSansBitmap(
         }
         emptyOutYanked()
 
+        seq4.add(0) // add dummy terminator
+
+//        println(seq4.joinToString(" "))
+
         return seq4
     }
 
