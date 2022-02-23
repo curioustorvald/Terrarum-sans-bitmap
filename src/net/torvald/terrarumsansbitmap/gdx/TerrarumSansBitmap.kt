@@ -178,6 +178,9 @@ class TerrarumSansBitmap(
 
     private var charsetOverride = 0
 
+    private val tempDir = System.getProperty("java.io.tmpdir")
+//    private val tempFiles = ArrayList<String>()
+
     init {
         val sheetsPack = ArrayList<PixmapRegionPack>()
 
@@ -202,18 +205,19 @@ class TerrarumSansBitmap(
 
             // unpack gz if applicable
             if (it.endsWith(".gz")) {
-                val tmpFileName = "tmp_${it.dropLast(7)}.tga"
+                val tmpFilePath = tempDir + "/tmp_${it.dropLast(7)}.tga"
 
                 try {
                     val gzi = GZIPInputStream(Gdx.files.internal(fontParentDir + it).read(8192))
                     val wholeFile = gzi.readBytes()
                     gzi.close()
-                    val fos = BufferedOutputStream(FileOutputStream(tmpFileName))
+                    val fos = BufferedOutputStream(FileOutputStream(tmpFilePath))
                     fos.write(wholeFile)
                     fos.flush()
                     fos.close()
 
-                    pixmap = Pixmap(Gdx.files.internal(tmpFileName))
+                    pixmap = Pixmap(Gdx.files.absolute(tmpFilePath))
+//                    tempFiles.add(tmpFilePath)
                 }
                 catch (e: GdxRuntimeException) {
                     //e.printStackTrace()

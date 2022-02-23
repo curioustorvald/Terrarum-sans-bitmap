@@ -27,7 +27,7 @@ class FontTestGDX : Game() {
 
     lateinit var camera: OrthographicCamera
 
-    private val testing = false
+    private val testing = true
 
     private val demotextName = if (testing) "testtext.txt" else "demotext.txt"
     private val outimageName = if (testing) "testing.PNG" else "demo.PNG"
@@ -43,6 +43,9 @@ class FontTestGDX : Game() {
         reader.close()
 
         batch = SpriteBatch()
+
+
+        println(font.getWidth("हिन्दी"))
 
 
         // create faketex
@@ -149,7 +152,6 @@ class FontTestGDX : Game() {
     override fun dispose() {
         font.dispose()
         faketex.dispose()
-        File("./tmp_wenquanyi.tga").delete()
     }
 
     fun scrollAdd(x: Int = 1) {
