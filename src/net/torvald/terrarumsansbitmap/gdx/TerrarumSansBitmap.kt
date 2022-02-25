@@ -1333,7 +1333,10 @@ class TerrarumSansBitmap(
             while (!yankedCharacters.empty()) {
                 val poppedChar = yankedCharacters.pop()
                 if (poppedChar.second == DEVANAGARI_RA)
-                    seq4.add(DEVANAGARI_RA_SUPER)
+                    if (seq4.last() in devanagariSuperscripts)
+                        seq4.add(DEVANAGARI_RA_SUPER_COMPLEX)
+                    else
+                        seq4.add(DEVANAGARI_RA_SUPER)
                 else
                     seq4.add(yankedCharacters.pop().second)
             }
@@ -1393,7 +1396,10 @@ class TerrarumSansBitmap(
             else if (yankedDevanagariRaStatus[1] > 0) {
                 dbgprnLig("   Popping out RAsup")
                 yankedCharacters.pop()
-                seq4.add(DEVANAGARI_RA_SUPER)
+                if (seq4.last() in devanagariSuperscripts)
+                    seq4.add(DEVANAGARI_RA_SUPER_COMPLEX)
+                else
+                    seq4.add(DEVANAGARI_RA_SUPER)
                 resetRaStatus()
                 i-- // scan this character again next time
             }
@@ -2116,8 +2122,9 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_OPEN_YA = 0xF0108
         private val DEVANAGARI_OPEN_HALF_YA = 0xF0109
         private val DEVANAGARI_ALT_HALF_SHA = 0xF0119
-        private val DEVANAGARI_RA_SUPER = 0xF010B
-        private val DEVANAGARI_EYELASH_RA = 0xF010C
+        private val DEVANAGARI_EYELASH_RA = 0xF010B
+        private val DEVANAGARI_RA_SUPER = 0xF010C
+        private val DEVANAGARI_RA_SUPER_COMPLEX = 0xF010D
 
         private val MARWARI_DD = 0x978
 
@@ -2144,7 +2151,7 @@ class TerrarumSansBitmap(
         private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) +
                 (0xF0140..0xF04FF) + (0xF0106..0xF0109)).toHashSet()
         private val devanagariVowels = ((0x093A..0x093C) + (0x093E..0x094C) + (0x094E..0x094F)).toHashSet()
-        private val devanagariRightVowels = ((0x093A..0x093C) + (0x093E) + (0x0940..0x094C) + 0x094F).toHashSet()
+        private val devanagariRightVowels = ((0x093A..0x093C) + 0x093E + (0x0940..0x094C) + 0x094F).toHashSet()
 
         private val devanagariBaseConsonants = 0x0915..0x0939
         private val devanagariBaseConsonantsWithNukta = 0x0958..0x095F
@@ -2154,6 +2161,7 @@ class TerrarumSansBitmap(
         private val devanagariPresentationConsonantsWithRa = 0xF0320..0xF040F
         private val devanagariPresentationConsonantsWithRaHalf = 0xF0410..0xF04FF
 
+        private val devanagariSuperscripts = ((0x0900..0x0902) + (0x093A..0x093B) + 0x0940 + (0x0945..0x094C) + 0x094F + 0x0951 + (0x0953..0x0955)).toHashSet()
 
         private val devanagariConsonantsNonLig = (devanagariBaseConsonants +
                 devanagariBaseConsonantsWithNukta + devanagariBaseConsonantsExtended +
