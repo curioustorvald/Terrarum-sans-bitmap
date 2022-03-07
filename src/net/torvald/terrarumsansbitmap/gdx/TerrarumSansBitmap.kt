@@ -512,109 +512,43 @@ class TerrarumSansBitmap(
     }
 
     private fun getSheetwisePosition(cPrev: Int, ch: Int): IntArray {
-        var sheetX: Int; val sheetY: Int
-        sheetX = indexX(ch)
-        when (getSheetType(ch)) {
-            SHEET_UNIHAN -> {
-                sheetX = unihanIndexX(ch)
-                sheetY = unihanIndexY(ch)
-            }
-            SHEET_EXTA_VARW -> {
-                sheetY = extAindexY(ch)
-            }
-            SHEET_EXTB_VARW -> {
-                sheetY = extBindexY(ch)
-            }
-            SHEET_KANA -> {
-                sheetY = kanaIndexY(ch)
-            }
-            SHEET_CJK_PUNCT -> {
-                sheetY = cjkPunctIndexY(ch)
-            }
-            SHEET_CYRILIC_VARW -> {
-                sheetY = cyrilicIndexY(ch)
-            }
-            SHEET_HALFWIDTH_FULLWIDTH_VARW -> {
-                sheetY = fullwidthUniIndexY(ch)
-            }
-            SHEET_UNI_PUNCT_VARW -> {
-                sheetY = uniPunctIndexY(ch)
-            }
-            SHEET_GREEK_VARW -> {
-                sheetY = greekIndexY(ch)
-            }
-            SHEET_THAI_VARW -> {
-                sheetY = thaiIndexY(ch)
-            }
-            SHEET_CUSTOM_SYM -> {
-                sheetY = symbolIndexY(ch)
-            }
-            SHEET_HAYEREN_VARW -> {
-                sheetY = armenianIndexY(ch)
-            }
-            SHEET_KARTULI_VARW -> {
-                sheetY = kartvelianIndexY(ch)
-            }
-            SHEET_IPA_VARW -> {
-                sheetY = ipaIndexY(ch)
-            }
-            SHEET_RUNIC -> {
-                sheetY = runicIndexY(ch)
-            }
-            SHEET_LATIN_EXT_ADD_VARW -> {
-                sheetY = latinExtAddY(ch)
-            }
-            SHEET_BULGARIAN_VARW, SHEET_SERBIAN_VARW -> { // expects Unicode charpoint, NOT an internal one
-                sheetY = cyrilicIndexY(ch)
-            }
-            SHEET_TSALAGI_VARW -> {
-                sheetY = cherokeeIndexY(ch)
-            }
-            SHEET_PHONETIC_EXT_VARW -> {
-                sheetY = phoneticExtIndexY(ch)
-            }
-            SHEET_DEVANAGARI_VARW -> {
-                sheetY = devanagariIndexY(ch)
-            }
-            SHEET_KARTULI_CAPS_VARW -> {
-                sheetY = kartvelianCapsIndexY(ch)
-            }
-            SHEET_DIACRITICAL_MARKS_VARW -> {
-                sheetY = diacriticalMarksIndexY(ch)
-            }
-            SHEET_GREEK_POLY_VARW -> {
-                sheetY = polytonicGreekIndexY(ch)
-            }
-            SHEET_EXTC_VARW -> {
-                sheetY = extCIndexY(ch)
-            }
-            SHEET_EXTD_VARW -> {
-                sheetY = extDIndexY(ch)
-            }
-            SHEET_CURRENCIES_VARW -> {
-                sheetY = currenciesIndexY(ch)
-            }
-            SHEET_INTERNAL_VARW -> {
-                sheetY = internalIndexY(ch)
-            }
-            SHEET_LETTERLIKE_MATHS_VARW -> {
-                sheetY = letterlikeIndexY(ch)
-            }
-            SHEET_ENCLOSED_ALPHNUM_SUPL_VARW -> {
-                sheetY = enclosedAlphnumSuplY(ch)
-            }
-            SHEET_TAMIL_VARW -> {
-                sheetY = tamilIndexY(ch)
-            }
-            SHEET_BENGALI_VARW -> {
-                sheetY = bengaliIndexY(ch)
-            }
-            SHEET_BRAILLE_VARW -> {
-                sheetY = brailleIndexY(ch)
-            }
-            else -> {
-                sheetY = ch / 16
-            }
+        val sheetType = getSheetType(ch)
+        val sheetX: Int = if (sheetType == SHEET_UNIHAN) unihanIndexX(ch) else indexX(ch)
+        val sheetY: Int = when (sheetType) {
+            SHEET_UNIHAN ->  unihanIndexY(ch)
+            SHEET_EXTA_VARW -> extAindexY(ch)
+            SHEET_EXTB_VARW -> extBindexY(ch)
+            SHEET_KANA -> kanaIndexY(ch)
+            SHEET_CJK_PUNCT -> cjkPunctIndexY(ch)
+            SHEET_CYRILIC_VARW -> cyrilicIndexY(ch)
+            SHEET_HALFWIDTH_FULLWIDTH_VARW -> fullwidthUniIndexY(ch)
+            SHEET_UNI_PUNCT_VARW -> uniPunctIndexY(ch)
+            SHEET_GREEK_VARW -> greekIndexY(ch)
+            SHEET_THAI_VARW -> thaiIndexY(ch)
+            SHEET_CUSTOM_SYM -> symbolIndexY(ch)
+            SHEET_HAYEREN_VARW -> armenianIndexY(ch)
+            SHEET_KARTULI_VARW -> kartvelianIndexY(ch)
+            SHEET_IPA_VARW -> ipaIndexY(ch)
+            SHEET_RUNIC -> runicIndexY(ch)
+            SHEET_LATIN_EXT_ADD_VARW -> latinExtAddY(ch)
+            SHEET_BULGARIAN_VARW, SHEET_SERBIAN_VARW -> cyrilicIndexY(ch)
+            SHEET_TSALAGI_VARW -> cherokeeIndexY(ch)
+            SHEET_PHONETIC_EXT_VARW -> phoneticExtIndexY(ch)
+            SHEET_DEVANAGARI_VARW -> devanagariIndexY(ch)
+            SHEET_KARTULI_CAPS_VARW -> kartvelianCapsIndexY(ch)
+            SHEET_DIACRITICAL_MARKS_VARW -> diacriticalMarksIndexY(ch)
+            SHEET_GREEK_POLY_VARW -> polytonicGreekIndexY(ch)
+            SHEET_EXTC_VARW -> extCIndexY(ch)
+            SHEET_EXTD_VARW -> extDIndexY(ch)
+            SHEET_CURRENCIES_VARW -> currenciesIndexY(ch)
+            SHEET_INTERNAL_VARW -> internalIndexY(ch)
+            SHEET_LETTERLIKE_MATHS_VARW -> letterlikeIndexY(ch)
+            SHEET_ENCLOSED_ALPHNUM_SUPL_VARW -> enclosedAlphnumSuplY(ch)
+            SHEET_TAMIL_VARW -> tamilIndexY(ch)
+            SHEET_BENGALI_VARW -> bengaliIndexY(ch)
+            SHEET_BRAILLE_VARW -> brailleIndexY(ch)
+            SHEET_SUNDANESE_VARW -> sundaneseIndexY(ch)
+            else -> ch / 16
         }
 
         return intArrayOf(sheetX, sheetY)
@@ -1990,6 +1924,7 @@ class TerrarumSansBitmap(
         internal val SHEET_TAMIL_VARW = 32
         internal val SHEET_BENGALI_VARW = 33
         internal val SHEET_BRAILLE_VARW = 34
+        internal val SHEET_SUNDANESE_VARW = 35
 
         internal val SHEET_UNKNOWN = 254
 
@@ -2045,7 +1980,8 @@ class TerrarumSansBitmap(
             "enclosed_alphanumeric_supplement_variable.tga",
             "tamil_extrawide_variable.tga",
             "bengali_variable.tga",
-            "braille_variable.tga"
+            "braille_variable.tga",
+            "sundanese_variable.tga",
         )
         private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -2083,6 +2019,7 @@ class TerrarumSansBitmap(
             (0x0B80..0x0BFF) + (0xF00C0..0xF00FF), // SHEET_TAMIL_VARW
             0x980..0x9FF, // SHEET_BENGALI_VARW
             0x2800..0x28FF, // SHEET_BRAILLE_VARW
+            (0x1B80..0x1BBF) + (0x1CC0..0x1CCF), // SHEET_SUNDANESE_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -2322,44 +2259,11 @@ class TerrarumSansBitmap(
         // END Hangul //
 
         private fun isHangul(c: CodePoint) = c in codeRange[SHEET_HANGUL] || c in codeRangeHangulCompat
-        private fun isAscii(c: CodePoint) = c in codeRange[SHEET_ASCII_VARW]
-        private fun isRunic(c: CodePoint) = c in codeRange[SHEET_RUNIC]
-        private fun isExtA(c: CodePoint) = c in codeRange[SHEET_EXTA_VARW]
-        private fun isExtB(c: CodePoint) = c in codeRange[SHEET_EXTB_VARW]
-        private fun isKana(c: CodePoint) = c in codeRange[SHEET_KANA]
-        private fun isCJKPunct(c: CodePoint) = c in codeRange[SHEET_CJK_PUNCT]
-        private fun isUniHan(c: CodePoint) = c in codeRange[SHEET_UNIHAN]
-        private fun isCyrilic(c: CodePoint) = c in codeRange[SHEET_CYRILIC_VARW]
-        private fun isFullwidthUni(c: CodePoint) = c in codeRange[SHEET_HALFWIDTH_FULLWIDTH_VARW]
-        private fun isUniPunct(c: CodePoint) = c in codeRange[SHEET_UNI_PUNCT_VARW]
-        private fun isGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_VARW]
-        private fun isThai(c: CodePoint) = c in codeRange[SHEET_THAI_VARW]
-        /*private fun isDiacritics(c: CodePoint) = c in 0xE34..0xE3A
-                || c in 0xE47..0xE4E
-                || c == 0xE31*/
-        private fun isCustomSym(c: CodePoint) = c in codeRange[SHEET_CUSTOM_SYM]
-        private fun isArmenian(c: CodePoint) = c in codeRange[SHEET_HAYEREN_VARW]
-        private fun isKartvelian(c: CodePoint) = c in codeRange[SHEET_KARTULI_VARW]
-        private fun isIPA(c: CodePoint) = c in codeRange[SHEET_IPA_VARW]
-        private fun isLatinExtAdd(c: CodePoint) = c in 0x1E00..0x1EFF
         private fun isBulgarian(c: CodePoint) = c in 0x400..0x45F
         fun isColourCode(c: CodePoint) = c == 0x100000 || c in 0x10F000..0x10FFFF
         private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFFF
-        private fun isCherokee(c: CodePoint) = c in codeRange[SHEET_TSALAGI_VARW]
-        private fun isPhoneticExt(c: CodePoint) = c in codeRange[SHEET_PHONETIC_EXT_VARW]
         private fun isDevanagari(c: CodePoint) = c in codeRange[SHEET_DEVANAGARI_VARW]
-        private fun isKartvelianCaps(c: CodePoint) = c in codeRange[SHEET_KARTULI_CAPS_VARW]
-        private fun isDiacriticalMarks(c: CodePoint) = c in codeRange[SHEET_DIACRITICAL_MARKS_VARW]
-        private fun isPolytonicGreek(c: CodePoint) = c in codeRange[SHEET_GREEK_POLY_VARW]
-        private fun isExtC(c: CodePoint) = c in codeRange[SHEET_EXTC_VARW]
-        private fun isExtD(c: CodePoint) = c in codeRange[SHEET_EXTD_VARW]
         private fun isHangulCompat(c: CodePoint) = c in codeRangeHangulCompat
-        private fun isCurrencies(c: CodePoint) = c in codeRange[SHEET_CURRENCIES_VARW]
-        private fun isInternalSymbols(c: CodePoint) = c in codeRange[SHEET_INTERNAL_VARW]
-        private fun isLetterlike(c: CodePoint) = c in codeRange[SHEET_LETTERLIKE_MATHS_VARW]
-        private fun isEnclosedAlphnumSupl(c: CodePoint) = c in codeRange[SHEET_ENCLOSED_ALPHNUM_SUPL_VARW]
-        private fun isTamil(c: CodePoint) = c in codeRange[SHEET_TAMIL_VARW]
-        private fun isBengali(c: CodePoint) = c in codeRange[SHEET_BENGALI_VARW]
 
 
         private fun indexX(c: CodePoint) = c % 16
@@ -2399,6 +2303,7 @@ class TerrarumSansBitmap(
         private fun enclosedAlphnumSuplY(c: CodePoint) = (c - 0x1F100) / 16
         private fun tamilIndexY(c: CodePoint) = (if (c < 0xF0000) (c - 0x0B80) else (c - 0xF0040)) / 16
         private fun brailleIndexY(c: CodePoint) = (c - 0x2800) / 16
+        private fun sundaneseIndexY(c: CodePoint) = (if (c < 0x1BC0) (c - 0x1B80) else (c - 0x1C80)) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
