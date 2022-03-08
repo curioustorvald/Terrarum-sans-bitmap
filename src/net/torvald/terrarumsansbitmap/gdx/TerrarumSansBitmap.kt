@@ -956,19 +956,30 @@ class TerrarumSansBitmap(
 //        dbgprn("Charsequence: ${dis.map { "${it.toChar()}${ZWNJ.toChar()}" }.joinToString(" ")}")
 
         seq0.add(0)
-        dis.forEach { c ->
+        while (i < dis.size) {
+            val c = dis[i]
+            val cNext = dis.getOrElse(i+1) { -1 }
+
             // turn Unicode Devanagari consonants into the internal one
             if (c in 0x0915..0x0939 || c in 0x0958..0x095F)
-                seq0.add(c.toDevaInternal())
+                if (cNext == DEVANAGARI_NUQTA) {
+                    seq0.add(c.toDevaInternal().internalDevaAddNukta())
+                    i += 1
+                }
+                else {
+                    seq0.add(c.toDevaInternal())
+                }
             else
                 seq0.add(c)
+
+            i += 1
         }
         seq0.add(0)
 
 
 
         i = 0
-        while (i < seq0.lastIndex) {
+        while (i < seq0.size) {
 //            val cPrev2 = seq0.getOrElse(i-2) { -1 }
             val cPrev = seq0.getOrElse(i-1) { -1 }
             val c = seq0[i]
@@ -1149,7 +1160,7 @@ class TerrarumSansBitmap(
 
         // BEGIN of Devanagari String Replacer 2 (lookbehind type)
         i = 0
-        while (i <= seq.lastIndex) {
+        while (i < seq.size) {
 
             val cPrev2 = seq.getOrElse(i-2) { -1 }
             val cPrev = seq.getOrElse(i-1) { -1 }
@@ -1176,7 +1187,7 @@ class TerrarumSansBitmap(
 
         // second scan
         i = 0
-        while (i <= seq.lastIndex) {
+        while (i < seq.size) {
             // swap position of {letter, diacritics that comes before the letter}
             // reposition [cluster, align-before, align-after] into [align-before, cluster, align-after]
             if (i > 0 && (glyphProps[seq[i]] ?: nullProp).alignWhere == GlyphProps.ALIGN_BEFORE) {
@@ -1715,20 +1726,20 @@ class TerrarumSansBitmap(
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0918.toDevaInternal() -> /* Devanagari GHA */ when (c2) {
-                0x091F.toDevaInternal() -> return listOf(0xF018D) // GH.TT
-                0x0920.toDevaInternal() -> return listOf(0xF018E) // GH.TTH
-                0x0922.toDevaInternal() -> return listOf(0xF018F) // GH.DDH
+                0x091F.toDevaInternal() -> return listOf(0xF01BD) // GH.TT
+                0x0920.toDevaInternal() -> return listOf(0xF01BE) // GH.TTH
+                0x0922.toDevaInternal() -> return listOf(0xF01BF) // GH.DDH
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0919.toDevaInternal() -> /* Devanagari NGA */ when (c2) {
-                0x0917.toDevaInternal() -> return listOf(0xF01A2) // NG.G
-                0x0918.toDevaInternal() -> return listOf(0xF01A3) // NG.GH
-                0x092E.toDevaInternal() -> return listOf(0xF01A4) // NG.M
+                0x0917.toDevaInternal() -> return listOf(0xF01D2) // NG.G
+                0x0918.toDevaInternal() -> return listOf(0xF01D3) // NG.GH
+                0x092E.toDevaInternal() -> return listOf(0xF01D4) // NG.M
                 DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // NG.Y
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x091B.toDevaInternal() -> /* Devanagari CHA */ when (c2) {
-                DEVANAGARI_VA -> return listOf(0xF01A5) // CH.V
+                DEVANAGARI_VA -> return listOf(0xF01D5) // CH.V
                 DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // CH.Y
                 else -> return c1.toHalfFormOrVirama() + c2
             }
@@ -1739,30 +1750,30 @@ class TerrarumSansBitmap(
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x091F.toDevaInternal() -> /* Devanagari TTA */ when (c2) {
-                0x091F.toDevaInternal() -> return listOf(0xF01A6) // TT.TT
-                0x0920.toDevaInternal() -> return listOf(0xF01A7) // TT.TTH
-                DEVANAGARI_VA -> return listOf(0xF01A8) // TT.V
+                0x091F.toDevaInternal() -> return listOf(0xF01D6) // TT.TT
+                0x0920.toDevaInternal() -> return listOf(0xF01D7) // TT.TTH
+                DEVANAGARI_VA -> return listOf(0xF01D8) // TT.V
                 DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // TT.Y
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0920.toDevaInternal() -> /* Devanagari TTHA */ when (c2) {
-                0x0920.toDevaInternal() -> return listOf(0xF01A9) // TTH.TTH
-                DEVANAGARI_VA -> return listOf(0xF01AA) // TTH.V
+                0x0920.toDevaInternal() -> return listOf(0xF01D9) // TTH.TTH
+                DEVANAGARI_VA -> return listOf(0xF01DA) // TTH.V
                 DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // TTH.Y
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0921.toDevaInternal() -> /* Devanagari DDA */ when (c2) {
-                0x0921.toDevaInternal() -> return listOf(0xF01AB) // DD.DD
-                0x0922.toDevaInternal() -> return listOf(0xF01AC) // DD.DDH
-                0x0917.toDevaInternal() -> return listOf(0xF01A0) // DD.G
-                0x092D.toDevaInternal() -> return listOf(0xF01A1) // DD.BH
-                DEVANAGARI_VA -> return listOf(0xF01AD) // DD.V
+                0x0921.toDevaInternal() -> return listOf(0xF01DB) // DD.DD
+                0x0922.toDevaInternal() -> return listOf(0xF01DC) // DD.DDH
+                0x0917.toDevaInternal() -> return listOf(0xF01D0) // DD.G
+                0x092D.toDevaInternal() -> return listOf(0xF01D1) // DD.BH
+                DEVANAGARI_VA -> return listOf(0xF01DD) // DD.V
                 DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // DD.Y
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0922.toDevaInternal() -> /* Devanagari DDHA */ when (c2) {
-                0x0922.toDevaInternal() -> return listOf(0xF01AE) // DDH.DDH
-                DEVANAGARI_VA -> return listOf(0xF01AF) // DDH.V
+                0x0922.toDevaInternal() -> return listOf(0xF01DE) // DDH.DDH
+                DEVANAGARI_VA -> return listOf(0xF01DF) // DDH.V
                 DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA // DDH.Y
                 else -> return c1.toHalfFormOrVirama() + c2
             }
@@ -1771,16 +1782,16 @@ class TerrarumSansBitmap(
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0926.toDevaInternal() -> /* Devanagari DA */ when (c2) {
-                0x0917.toDevaInternal() -> return listOf(0xF0180) // D.G
-                0x0918.toDevaInternal() -> return listOf(0xF0181) // D.GH
-                0x0926.toDevaInternal() -> return listOf(0xF0182) // D.D
-                0x0927.toDevaInternal() -> return listOf(0xF0183) // D.DH
-                0x0928.toDevaInternal() -> return listOf(0xF0184) // D.N
-                0x092C.toDevaInternal() -> return listOf(0xF0185) // D.B
-                0x092D.toDevaInternal() -> return listOf(0xF0186) // D.BH
-                0x092E.toDevaInternal() -> return listOf(0xF0187) // D.M
-                0x092F.toDevaInternal() -> return listOf(0xF0188) // D.Y
-                0x0935.toDevaInternal() -> return listOf(0xF0189) // D.V
+                0x0917.toDevaInternal() -> return listOf(0xF01B0) // D.G
+                0x0918.toDevaInternal() -> return listOf(0xF01B1) // D.GH
+                0x0926.toDevaInternal() -> return listOf(0xF01B2) // D.D
+                0x0927.toDevaInternal() -> return listOf(0xF01B3) // D.DH
+                0x0928.toDevaInternal() -> return listOf(0xF01B4) // D.N
+                0x092C.toDevaInternal() -> return listOf(0xF01B5) // D.B
+                0x092D.toDevaInternal() -> return listOf(0xF01B6) // D.BH
+                0x092E.toDevaInternal() -> return listOf(0xF01B7) // D.M
+                0x092F.toDevaInternal() -> return listOf(0xF01B8) // D.Y
+                0x0935.toDevaInternal() -> return listOf(0xF01B9) // D.V
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0928.toDevaInternal() -> /* Devanagari NA */ when (c2) {
@@ -1789,9 +1800,9 @@ class TerrarumSansBitmap(
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x092A.toDevaInternal() -> /* Devanagari PA */ when (c2) {
-                0x091F.toDevaInternal() -> return listOf(0xF0190) // P.TT
-                0x0920.toDevaInternal() -> return listOf(0xF0191) // P.TTH
-                0x0922.toDevaInternal() -> return listOf(0xF0192) // P.DDH
+                0x091F.toDevaInternal() -> return listOf(0xF01C0) // P.TT
+                0x0920.toDevaInternal() -> return listOf(0xF01C1) // P.TTH
+                0x0922.toDevaInternal() -> return listOf(0xF01C2) // P.DDH
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0936.toDevaInternal() -> /* Devanagari SHA */ when (c2) {
@@ -1802,9 +1813,9 @@ class TerrarumSansBitmap(
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0937.toDevaInternal() -> /* Devanagari SSA */ when (c2) {
-                0x091F.toDevaInternal() -> return listOf(0xF0193) // SS.TT
-                0x0920.toDevaInternal() -> return listOf(0xF0194) // SS.TTH
-                0x0922.toDevaInternal() -> return listOf(0xF0195) // SS.DDH
+                0x091F.toDevaInternal() -> return listOf(0xF01C3) // SS.TT
+                0x0920.toDevaInternal() -> return listOf(0xF01C4) // SS.TTH
+                0x0922.toDevaInternal() -> return listOf(0xF01C5) // SS.DDH
                 0x092A.toDevaInternal() -> return listOf(DEVANAGARI_LIG_SS_P) // SS.P
                 else -> return c1.toHalfFormOrVirama() + c2
             }
@@ -1813,12 +1824,12 @@ class TerrarumSansBitmap(
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0939.toDevaInternal() -> /* Devanagari HA */ when (c2) {
-                0x0923.toDevaInternal() -> return listOf(0xF0196) // H.NN
-                0x0928.toDevaInternal() -> return listOf(0xF0197) // H.N
-                0x092E.toDevaInternal() -> return listOf(0xF0198) // H.M
-                0x092F.toDevaInternal() -> return listOf(0xF0199) // H.Y
-                0x0932.toDevaInternal() -> return listOf(0xF019A) // H.L
-                0x0935.toDevaInternal() -> return listOf(0xF019B) // H.V
+                0x0923.toDevaInternal() -> return listOf(0xF01C6) // H.NN
+                0x0928.toDevaInternal() -> return listOf(0xF01C7) // H.N
+                0x092E.toDevaInternal() -> return listOf(0xF01C8) // H.M
+                0x092F.toDevaInternal() -> return listOf(0xF01C9) // H.Y
+                0x0932.toDevaInternal() -> return listOf(0xF01CA) // H.L
+                0x0935.toDevaInternal() -> return listOf(0xF01CB) // H.V
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0978 -> /* Marwari DDA */ when (c2) {
@@ -1831,7 +1842,7 @@ class TerrarumSansBitmap(
                 DEVANAGARI_YA -> return listOf(DEVANAGARI_LIG_D_R_Y) // D.R+Y
                 else -> return c1.toHalfFormOrVirama() + c2
             }
-            in (0xF0180..0xF01AF) + (0xF0360..0xF038F) -> when (c2) {
+            in (0xF01B0..0xF01DF) + (0xF0390..0xF03BF) -> when (c2) {
                 DEVANAGARI_YA -> return c1.toHalfFormOrVirama() + DEVANAGARI_OPEN_YA
                 else -> return c1.toHalfFormOrVirama() + c2
             }
@@ -2040,6 +2051,7 @@ class TerrarumSansBitmap(
 
 
         private val DEVANAGARI_VIRAMA = 0x94D
+        private val DEVANAGARI_NUQTA = 0x93C
         private val DEVANAGARI_RA = 0x930.toDevaInternal()
         private val DEVANAGARI_YA = 0x92F.toDevaInternal()
         private val DEVANAGARI_RRA = 0x931.toDevaInternal()
@@ -2066,23 +2078,23 @@ class TerrarumSansBitmap(
 
         private val MARWARI_DD = 0x978
 
-        private val DEVANAGARI_LIG_K_T = 0xF018C
-        private val DEVANAGARI_LIG_D_R_Y = 0xF0170
-        private val DEVANAGARI_LIG_K_SS = 0xF0171
-        private val DEVANAGARI_LIG_J_NY = 0xF0172
-        private val DEVANAGARI_LIG_T_T = 0xF0173
-        private val DEVANAGARI_LIG_N_T = 0xF0174
-        private val DEVANAGARI_LIG_N_N = 0xF0175
-        private val DEVANAGARI_LIG_S_V = 0xF0176
-        private val DEVANAGARI_LIG_SS_P = 0xF0177
-        private val DEVANAGARI_LIG_SH_C = 0xF0178
-        private val DEVANAGARI_LIG_SH_N = 0xF0179
-        private val DEVANAGARI_LIG_SH_V = 0xF017A
-        private val DEVANAGARI_LIG_J_Y = 0xF017B
-        private val DEVANAGARI_LIG_J_J_Y = 0xF017C
+        private val DEVANAGARI_LIG_K_T = 0xF01BC
+        private val DEVANAGARI_LIG_D_R_Y = 0xF01A0
+        private val DEVANAGARI_LIG_K_SS = 0xF01A1
+        private val DEVANAGARI_LIG_J_NY = 0xF01A2
+        private val DEVANAGARI_LIG_T_T = 0xF01A3
+        private val DEVANAGARI_LIG_N_T = 0xF01A4
+        private val DEVANAGARI_LIG_N_N = 0xF01A5
+        private val DEVANAGARI_LIG_S_V = 0xF01A6
+        private val DEVANAGARI_LIG_SS_P = 0xF01A7
+        private val DEVANAGARI_LIG_SH_C = 0xF01A8
+        private val DEVANAGARI_LIG_SH_N = 0xF01A9
+        private val DEVANAGARI_LIG_SH_V = 0xF01AA
+        private val DEVANAGARI_LIG_J_Y = 0xF01AB
+        private val DEVANAGARI_LIG_J_J_Y = 0xF01AC
 
-        private val MARWARI_LIG_DD_DD = 0xF018A
-        private val MARWARI_LIG_DD_DDH = 0xF018B
+        private val MARWARI_LIG_DD_DD = 0xF01BA
+        private val MARWARI_LIG_DD_DDH = 0xF01BB
         private val MARWARI_LIG_DD_Y = 0xF016E
         private val MARWARI_HALFLIG_DD_Y = 0xF016F
         private val MARWARI_LIG_DD_R = 0xF0118
@@ -2110,11 +2122,15 @@ class TerrarumSansBitmap(
         private val devanariConsonantsHalfs = (devanagariPresentationConsonantsHalf +
                 devanagariPresentationConsonantsWithRaHalf + listOf(DEVANAGARI_HALF_RYA, DEVANAGARI_OPEN_HALF_YA)).toHashSet()
 
+        private fun Int.internalDevaAddNukta(): Int {
+            return this + 48
+        }
 
+        private val devanagariUnicodeNuqtaTable = intArrayOf(0xF0170,0xF0171,0xF0172,0xF0177,0xF017C,0xF017D,0xF0186,0xF018A)
 
         private fun Int.toDevaInternal(): Int {
             if (this in 0x0915..0x0939) return this - 0x0915 + 0xF0140
-            else if (this in 0x0958..0x095F) return this - 0x0958 + 0xF0165
+            else if (this in 0x0958..0x095F) return devanagariUnicodeNuqtaTable[this - 0x0958]
             else throw IllegalArgumentException("No Internal form exists for ${this.charInfo()}")
         }
 
