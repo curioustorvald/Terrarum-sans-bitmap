@@ -1732,6 +1732,8 @@ class TerrarumSansBitmap(
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0919.toDevaInternal() -> /* Devanagari NGA */ when (c2) {
+                0x0915.toDevaInternal() -> return listOf(0xF01CE) // NG.K
+                0x0916.toDevaInternal() -> return listOf(0xF01CF) // NG.KH
                 0x0917.toDevaInternal() -> return listOf(0xF01D2) // NG.G
                 0x0918.toDevaInternal() -> return listOf(0xF01D3) // NG.GH
                 0x092E.toDevaInternal() -> return listOf(0xF01D4) // NG.M
