@@ -1074,7 +1074,12 @@ class TerrarumSansBitmap(
             else if (c == 0xB95 && cNext == 0xBCD && cNext2 == 0xBB7) {
                 seq.add(TAMIL_KSSA); i += 2
             }
+            // there are TWO ways to represent Tamil SHRII
+            // https://www.unicode.org/L2/L2018/18054-tamil-shri.txt
             else if (c == 0xBB6 && cNext == 0xBCD && cNext2 == 0xBB0 && cNext3 == 0xBC0) {
+                seq.add(TAMIL_SHRII); i += 3
+            }
+            else if (c == 0xBB8 && cNext == 0xBCD && cNext2 == 0xBB0 && cNext3 == 0xBC0) {
                 seq.add(TAMIL_SHRII); i += 3
             }
             else if (c == 0xB9F && cNext == 0xBBF) {
