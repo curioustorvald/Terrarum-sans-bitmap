@@ -1737,6 +1737,7 @@ class TerrarumSansBitmap(
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x0919.toDevaInternal() -> /* Devanagari NGA */ when (c2) {
+                0x0928.toDevaInternal() -> return listOf(0xF01CD) // NG.N
                 0x0915.toDevaInternal() -> return listOf(0xF01CE) // NG.K
                 0x0916.toDevaInternal() -> return listOf(0xF01CF) // NG.KH
                 0x0917.toDevaInternal() -> return listOf(0xF01D2) // NG.G
@@ -1757,6 +1758,10 @@ class TerrarumSansBitmap(
                 else -> return c1.toHalfFormOrVirama() + c2
             }
             0x091F.toDevaInternal() -> /* Devanagari TTA */ when (c2) {
+                0x0915.toDevaInternal() -> return listOf(0xF01E0) // TT.K
+                0x092A.toDevaInternal() -> return listOf(0xF01E1) // TT.P
+                0x0936.toDevaInternal() -> return listOf(0xF01E2) // TT.SH
+                0x0938.toDevaInternal() -> return listOf(0xF01E3) // TT.S
                 0x091F.toDevaInternal() -> return listOf(0xF01D6) // TT.TT
                 0x0920.toDevaInternal() -> return listOf(0xF01D7) // TT.TTH
                 DEVANAGARI_VA -> return listOf(0xF01D8) // TT.V
