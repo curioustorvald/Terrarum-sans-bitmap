@@ -149,6 +149,10 @@ This tag can be used as a general "replace this with these" directive, as long a
 
 Also note that the font compiler will not "stack" these diacritics.
 
+#### The Keming Machine Tags
+
+Keming Machine Tags define the rough shape of the glyph. Please read `keming_machine.txt` for further information.
+
 
 #### NOTES
 - If glyphs are right or centre aligned, they must be aligned in the same way inside of the bitmap; the font compiler assumes every variable-width glyphs to have a width of 15, regardless of the tagged width.

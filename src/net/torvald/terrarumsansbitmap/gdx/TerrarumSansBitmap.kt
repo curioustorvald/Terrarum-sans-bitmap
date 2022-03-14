@@ -1370,6 +1370,52 @@ class TerrarumSansBitmap(
 
 //        println(seq4.joinToString(" "))
 
+        // replace devanagari I/II with variants
+        i = 0
+        var lenacc = 0
+        while (i < seq4.size) {
+            val cPrev = seq4.getOrElse(i - 1) { -1 }
+            val c = seq4[i]
+
+            if (c == DEVANAGARI_I) {
+                var j = 1
+                var w = 0
+                while (true) {
+                    val cj = seq4.getOrElse(i + j) { -1 }
+                    if (j > 3 || cj !in 0xF0140..0xF04FF)
+                        break
+
+                    if (cj in devanagariPresentationConsonants || cj in devanagariPresentationConsonantsWithRa) {
+                        w += glyphProps[cj]?.diacriticsAnchors?.get(0)?.x ?: 0
+                        break
+                    }
+                    else if (cj in devanagariPresentationConsonantsHalf || cj in devanagariPresentationConsonantsWithRaHalf) {
+                        w += glyphProps[cj]?.width ?: 0
+                        j += 1
+                    }
+                    else
+                        break
+                }
+
+//                println("length: $w, consonant count: $j")
+
+                seq4[i] = (w+2).coerceIn(6,11) - 6 + 0xF0110
+
+                if (j > 1) i += j
+            }
+            else if (c == DEVANAGARI_II &&
+                    (cPrev in devanagariPresentationConsonants || cPrev in devanagariPresentationConsonantsWithRa)) {
+                val w = ((glyphProps[cPrev]?.width ?: 0) - (glyphProps[cPrev]?.diacriticsAnchors?.get(0)?.x ?: 0))
+
+//                println("length: $w")
+
+                seq4[i] = 0xF0125 - ((w+1).coerceIn(4,9) - 4)
+            }
+
+
+            i++
+        }
+
         return seq4
     }
 
@@ -2071,6 +2117,8 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_HA = 0x939.toDevaInternal()
         private val DEVANAGARI_U = 0x941
         private val DEVANAGARI_UU = 0x942
+        private val DEVANAGARI_I = 0x093F
+        private val DEVANAGARI_II = 0x0940
         private val DEVANAGARI_RYA = 0xF0106
         private val DEVANAGARI_HALF_RYA = 0xF0107
 
@@ -2087,6 +2135,7 @@ class TerrarumSansBitmap(
         private val DEVANAGARI_EYELASH_RA = 0xF010B
         private val DEVANAGARI_RA_SUPER = 0xF010C
         private val DEVANAGARI_RA_SUPER_COMPLEX = 0xF010D
+
 
         private val MARWARI_DD = 0x978
 
