@@ -496,7 +496,7 @@ class TerrarumSansBitmap(
         sheets.forEach { it.dispose() }
     }
 
-    private fun getSheetType(c: CodePoint): Int {
+    fun getSheetType(c: CodePoint): Int {
         if (charsetOverride == 1 && isBulgarian(c))
             return SHEET_BULGARIAN_VARW
         else if (charsetOverride == 2 && isBulgarian(c))
@@ -504,7 +504,7 @@ class TerrarumSansBitmap(
         else if (isHangul(c))
             return SHEET_HANGUL
         else {
-            for (i in codeRange.indices) {
+            for (i in codeRange.indices.reversed()) {
                 if (c in codeRange[i]) return i
             }
             return SHEET_UNKNOWN
@@ -548,6 +548,7 @@ class TerrarumSansBitmap(
             SHEET_BENGALI_VARW -> bengaliIndexY(ch)
             SHEET_BRAILLE_VARW -> brailleIndexY(ch)
             SHEET_SUNDANESE_VARW -> sundaneseIndexY(ch)
+            SHEET_DEVANAGARI2_INTERNAL_VARW -> devanagari2IndexY(ch)
             else -> ch / 16
         }
 
@@ -558,6 +559,9 @@ class TerrarumSansBitmap(
     /** @return THIRTY-TWO bit number: this includes alpha channel value; or 0 if alpha is zero */
     private fun Int.tagify() = if (this and 255 == 0) 0 else this
 
+    /**
+     * Will happily overwrite any existing entries
+     */
     private fun buildWidthTable(pixmap: Pixmap, codeRange: Iterable<Int>, cellW: Int = 16, cols: Int = 16) {
         val binaryCodeOffset = cellW - 1
 
@@ -1399,7 +1403,7 @@ class TerrarumSansBitmap(
 
 //                println("length: $w, consonant count: $j")
 
-                seq4[i] = (w+2).coerceIn(6,11) - 6 + 0xF0110
+                seq4[i] = (w+2).coerceIn(6,21) - 6 + 0xF0110
 
                 if (j > 1) i += j
             }
@@ -1409,7 +1413,7 @@ class TerrarumSansBitmap(
 
 //                println("length: $w")
 
-                seq4[i] = 0xF0125 - ((w+1).coerceIn(4,9) - 4)
+                seq4[i] = 0xF012F - ((w+1).coerceIn(4,19) - 4)
             }
 
 
@@ -1932,82 +1936,83 @@ class TerrarumSansBitmap(
         }
 
 
-        private val HCF = 0x115F
-        private val HJF = 0x1160
+        private const val HCF = 0x115F
+        private const val HJF = 0x1160
 
-        internal val JUNG_COUNT = 21
-        internal val JONG_COUNT = 28
+        internal const val JUNG_COUNT = 21
+        internal const val JONG_COUNT = 28
 
-        internal val W_ASIAN_PUNCT = 10
-        internal val W_HANGUL_BASE = 13
-        internal val W_KANA = 12
-        internal val W_UNIHAN = 16
-        internal val W_LATIN_WIDE = 9 // width of regular letters
-        internal val W_VAR_INIT = 15 // it assumes width of 15 regardless of the tagged width
-        internal val W_WIDEVAR_INIT = 31 // it assumes width of 31 regardless of the tagged width
+        internal const val W_ASIAN_PUNCT = 10
+        internal const val W_HANGUL_BASE = 13
+        internal const val W_KANA = 12
+        internal const val W_UNIHAN = 16
+        internal const val W_LATIN_WIDE = 9 // width of regular letters
+        internal const val W_VAR_INIT = 15 // it assumes width of 15 regardless of the tagged width
+        internal const val W_WIDEVAR_INIT = 31 // it assumes width of 31 regardless of the tagged width
 
-        internal val HGAP_VAR = 1
+        internal const val HGAP_VAR = 1
 
-        internal val H = 20
-        internal val H_UNIHAN = 16
+        internal const val H = 20
+        internal const val H_UNIHAN = 16
 
-        internal val H_DIACRITICS = 3
+        internal const val H_DIACRITICS = 3
 
-        internal val H_STACKUP_LOWERCASE_SHIFTDOWN = 4
-        internal val H_OVERLAY_LOWERCASE_SHIFTDOWN = 2
+        internal const val H_STACKUP_LOWERCASE_SHIFTDOWN = 4
+        internal const val H_OVERLAY_LOWERCASE_SHIFTDOWN = 2
 
-        internal val SIZE_CUSTOM_SYM = 18
+        internal const val SIZE_CUSTOM_SYM = 18
 
-        internal val SHEET_ASCII_VARW =        0
-        internal val SHEET_HANGUL =            1
-        internal val SHEET_EXTA_VARW =         2
-        internal val SHEET_EXTB_VARW =         3
-        internal val SHEET_KANA =              4
-        internal val SHEET_CJK_PUNCT =         5
-        internal val SHEET_UNIHAN =            6
-        internal val SHEET_CYRILIC_VARW =      7
-        internal val SHEET_HALFWIDTH_FULLWIDTH_VARW = 8
-        internal val SHEET_UNI_PUNCT_VARW =    9
-        internal val SHEET_GREEK_VARW =        10
-        internal val SHEET_THAI_VARW =         11
-        internal val SHEET_HAYEREN_VARW =      12
-        internal val SHEET_KARTULI_VARW =      13
-        internal val SHEET_IPA_VARW =          14
-        internal val SHEET_RUNIC =             15
-        internal val SHEET_LATIN_EXT_ADD_VARW= 16
-        internal val SHEET_CUSTOM_SYM =        17
-        internal val SHEET_BULGARIAN_VARW =    18
-        internal val SHEET_SERBIAN_VARW =      19
-        internal val SHEET_TSALAGI_VARW =      20
-        internal val SHEET_PHONETIC_EXT_VARW = 21
-        internal val SHEET_DEVANAGARI_VARW=22
-        internal val SHEET_KARTULI_CAPS_VARW = 23
-        internal val SHEET_DIACRITICAL_MARKS_VARW = 24
-        internal val SHEET_GREEK_POLY_VARW   = 25
-        internal val SHEET_EXTC_VARW =         26
-        internal val SHEET_EXTD_VARW =         27
-        internal val SHEET_CURRENCIES_VARW =   28
-        internal val SHEET_INTERNAL_VARW = 29
-        internal val SHEET_LETTERLIKE_MATHS_VARW = 30
-        internal val SHEET_ENCLOSED_ALPHNUM_SUPL_VARW = 31
-        internal val SHEET_TAMIL_VARW = 32
-        internal val SHEET_BENGALI_VARW = 33
-        internal val SHEET_BRAILLE_VARW = 34
-        internal val SHEET_SUNDANESE_VARW = 35
+        internal const val SHEET_ASCII_VARW =        0
+        internal const val SHEET_HANGUL =            1
+        internal const val SHEET_EXTA_VARW =         2
+        internal const val SHEET_EXTB_VARW =         3
+        internal const val SHEET_KANA =              4
+        internal const val SHEET_CJK_PUNCT =         5
+        internal const val SHEET_UNIHAN =            6
+        internal const val SHEET_CYRILIC_VARW =      7
+        internal const val SHEET_HALFWIDTH_FULLWIDTH_VARW = 8
+        internal const val SHEET_UNI_PUNCT_VARW =    9
+        internal const val SHEET_GREEK_VARW =        10
+        internal const val SHEET_THAI_VARW =         11
+        internal const val SHEET_HAYEREN_VARW =      12
+        internal const val SHEET_KARTULI_VARW =      13
+        internal const val SHEET_IPA_VARW =          14
+        internal const val SHEET_RUNIC =             15
+        internal const val SHEET_LATIN_EXT_ADD_VARW= 16
+        internal const val SHEET_CUSTOM_SYM =        17
+        internal const val SHEET_BULGARIAN_VARW =    18
+        internal const val SHEET_SERBIAN_VARW =      19
+        internal const val SHEET_TSALAGI_VARW =      20
+        internal const val SHEET_PHONETIC_EXT_VARW = 21
+        internal const val SHEET_DEVANAGARI_VARW=22
+        internal const val SHEET_KARTULI_CAPS_VARW = 23
+        internal const val SHEET_DIACRITICAL_MARKS_VARW = 24
+        internal const val SHEET_GREEK_POLY_VARW   = 25
+        internal const val SHEET_EXTC_VARW =         26
+        internal const val SHEET_EXTD_VARW =         27
+        internal const val SHEET_CURRENCIES_VARW =   28
+        internal const val SHEET_INTERNAL_VARW = 29
+        internal const val SHEET_LETTERLIKE_MATHS_VARW = 30
+        internal const val SHEET_ENCLOSED_ALPHNUM_SUPL_VARW = 31
+        internal const val SHEET_TAMIL_VARW = 32
+        internal const val SHEET_BENGALI_VARW = 33
+        internal const val SHEET_BRAILLE_VARW = 34
+        internal const val SHEET_SUNDANESE_VARW = 35
+        internal const val SHEET_DEVANAGARI2_INTERNAL_VARW = 36
 
-        internal val SHEET_UNKNOWN = 254
+        internal const val SHEET_UNKNOWN = 254
 
         // custom codepoints
 
-        internal val RICH_TEXT_MODIFIER_RUBY_MASTER = 0xFFFA0
-        internal val RICH_TEXT_MODIFIER_RUBY_SLAVE = 0xFFFA1
-        internal val RICH_TEXT_MODIFIER_SUPERSCRIPT = 0xFFFA2
-        internal val RICH_TEXT_MODIFIER_SUBSCRIPT = 0xFFFA3
-        internal val RICH_TEXT_MODIFIER_TAG_END = 0xFFFBF
+        internal const val RICH_TEXT_MODIFIER_RUBY_MASTER = 0xFFFA0
+        internal const val RICH_TEXT_MODIFIER_RUBY_SLAVE = 0xFFFA1
+        internal const val RICH_TEXT_MODIFIER_SUPERSCRIPT = 0xFFFA2
+        internal const val RICH_TEXT_MODIFIER_SUBSCRIPT = 0xFFFA3
+        internal const val RICH_TEXT_MODIFIER_TAG_END = 0xFFFBF
 
-        internal val CHARSET_OVERRIDE_DEFAULT = 0xFFFC0
-        internal val CHARSET_OVERRIDE_BG_BG = 0xFFFC1
-        internal val CHARSET_OVERRIDE_SR_SR = 0xFFFC2
+        internal const val CHARSET_OVERRIDE_DEFAULT = 0xFFFC0
+        internal const val CHARSET_OVERRIDE_BG_BG = 0xFFFC1
+        internal const val CHARSET_OVERRIDE_SR_SR = 0xFFFC2
 
 
         private val autoShiftDownOnLowercase = arrayOf(
@@ -2051,6 +2056,7 @@ class TerrarumSansBitmap(
             "bengali_variable.tga",
             "braille_variable.tga",
             "sundanese_variable.tga",
+            "devanagari_internal_extrawide_variable.tga",
         )
         private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -2089,6 +2095,7 @@ class TerrarumSansBitmap(
             0x980..0x9FF, // SHEET_BENGALI_VARW
             0x2800..0x28FF, // SHEET_BRAILLE_VARW
             (0x1B80..0x1BBF) + (0x1CC0..0x1CCF), // SHEET_SUNDANESE_VARW
+            0xF0110..0xF012F, // SHEET_DEVANAGARI2_INTERNAL_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -2099,66 +2106,65 @@ class TerrarumSansBitmap(
 
         internal fun Int.charInfo() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}: ${Character.getName(this)}"
 
-        private val ZWNJ = 0x200C
-        private val ZWJ = 0x200D
+        private const val ZWNJ = 0x200C
+        private const val ZWJ = 0x200D
 
         private val tamilLigatingConsonants = listOf('க','ங','ச','ஞ','ட','ண','த','ந','ன','ப','ம','ய','ர','ற','ல','ள','ழ','வ').map { it.toInt() }.toIntArray() // this is the only thing that .indexOf() is called against, so NO HASHSET
-        private val TAMIL_KSSA = 0xF00ED
-        private val TAMIL_SHRII = 0xF00EE
-        private val TAMIL_I = 0xBBF
+        private const val TAMIL_KSSA = 0xF00ED
+        private const val TAMIL_SHRII = 0xF00EE
+        private const val TAMIL_I = 0xBBF
 
 
-        private val DEVANAGARI_VIRAMA = 0x94D
-        private val DEVANAGARI_NUQTA = 0x93C
+        private const val DEVANAGARI_VIRAMA = 0x94D
+        private const val DEVANAGARI_NUQTA = 0x93C
         private val DEVANAGARI_RA = 0x930.toDevaInternal()
         private val DEVANAGARI_YA = 0x92F.toDevaInternal()
         private val DEVANAGARI_RRA = 0x931.toDevaInternal()
         private val DEVANAGARI_VA = 0x0935.toDevaInternal()
         private val DEVANAGARI_HA = 0x939.toDevaInternal()
-        private val DEVANAGARI_U = 0x941
-        private val DEVANAGARI_UU = 0x942
-        private val DEVANAGARI_I = 0x093F
-        private val DEVANAGARI_II = 0x0940
-        private val DEVANAGARI_RYA = 0xF0106
-        private val DEVANAGARI_HALF_RYA = 0xF0107
+        private const val DEVANAGARI_U = 0x941
+        private const val DEVANAGARI_UU = 0x942
+        private const val DEVANAGARI_I = 0x093F
+        private const val DEVANAGARI_II = 0x0940
+        private const val DEVANAGARI_RYA = 0xF0106
+        private const val DEVANAGARI_HALF_RYA = 0xF0107
 
-        private val DEVANAGARI_SYLL_RU = 0xF0100
-        private val DEVANAGARI_SYLL_RUU = 0xF0101
-        private val DEVANAGARI_SYLL_RRU = 0xF0102
-        private val DEVANAGARI_SYLL_RRUU = 0xF0103
-        private val DEVANAGARI_SYLL_HU = 0xF0104
-        private val DEVANAGARI_SYLL_HUU = 0xF0105
+        private const val DEVANAGARI_SYLL_RU = 0xF0100
+        private const val DEVANAGARI_SYLL_RUU = 0xF0101
+        private const val DEVANAGARI_SYLL_RRU = 0xF0102
+        private const val DEVANAGARI_SYLL_RRUU = 0xF0103
+        private const val DEVANAGARI_SYLL_HU = 0xF0104
+        private const val DEVANAGARI_SYLL_HUU = 0xF0105
 
-        private val DEVANAGARI_OPEN_YA = 0xF0108
-        private val DEVANAGARI_OPEN_HALF_YA = 0xF0109
-        private val DEVANAGARI_ALT_HALF_SHA = 0xF0119
-        private val DEVANAGARI_EYELASH_RA = 0xF010B
-        private val DEVANAGARI_RA_SUPER = 0xF010C
-        private val DEVANAGARI_RA_SUPER_COMPLEX = 0xF010D
+        private const val DEVANAGARI_OPEN_YA = 0xF0108
+        private const val DEVANAGARI_OPEN_HALF_YA = 0xF0109
+        private const val DEVANAGARI_ALT_HALF_SHA = 0xF010F
+        private const val DEVANAGARI_EYELASH_RA = 0xF010B
+        private const val DEVANAGARI_RA_SUPER = 0xF010C
+        private const val DEVANAGARI_RA_SUPER_COMPLEX = 0xF010D
 
+        private const val MARWARI_DD = 0x978
 
-        private val MARWARI_DD = 0x978
+        private const val DEVANAGARI_LIG_K_T = 0xF01BC
+        private const val DEVANAGARI_LIG_D_R_Y = 0xF01A0
+        private const val DEVANAGARI_LIG_K_SS = 0xF01A1
+        private const val DEVANAGARI_LIG_J_NY = 0xF01A2
+        private const val DEVANAGARI_LIG_T_T = 0xF01A3
+        private const val DEVANAGARI_LIG_N_T = 0xF01A4
+        private const val DEVANAGARI_LIG_N_N = 0xF01A5
+        private const val DEVANAGARI_LIG_S_V = 0xF01A6
+        private const val DEVANAGARI_LIG_SS_P = 0xF01A7
+        private const val DEVANAGARI_LIG_SH_C = 0xF01A8
+        private const val DEVANAGARI_LIG_SH_N = 0xF01A9
+        private const val DEVANAGARI_LIG_SH_V = 0xF01AA
+        private const val DEVANAGARI_LIG_J_Y = 0xF01AB
+        private const val DEVANAGARI_LIG_J_J_Y = 0xF01AC
 
-        private val DEVANAGARI_LIG_K_T = 0xF01BC
-        private val DEVANAGARI_LIG_D_R_Y = 0xF01A0
-        private val DEVANAGARI_LIG_K_SS = 0xF01A1
-        private val DEVANAGARI_LIG_J_NY = 0xF01A2
-        private val DEVANAGARI_LIG_T_T = 0xF01A3
-        private val DEVANAGARI_LIG_N_T = 0xF01A4
-        private val DEVANAGARI_LIG_N_N = 0xF01A5
-        private val DEVANAGARI_LIG_S_V = 0xF01A6
-        private val DEVANAGARI_LIG_SS_P = 0xF01A7
-        private val DEVANAGARI_LIG_SH_C = 0xF01A8
-        private val DEVANAGARI_LIG_SH_N = 0xF01A9
-        private val DEVANAGARI_LIG_SH_V = 0xF01AA
-        private val DEVANAGARI_LIG_J_Y = 0xF01AB
-        private val DEVANAGARI_LIG_J_J_Y = 0xF01AC
-
-        private val MARWARI_LIG_DD_DD = 0xF01BA
-        private val MARWARI_LIG_DD_DDH = 0xF01BB
-        private val MARWARI_LIG_DD_Y = 0xF016E
-        private val MARWARI_HALFLIG_DD_Y = 0xF016F
-        private val MARWARI_LIG_DD_R = 0xF0118
+        private const val MARWARI_LIG_DD_DD = 0xF01BA
+        private const val MARWARI_LIG_DD_DDH = 0xF01BB
+        private const val MARWARI_LIG_DD_Y = 0xF016E
+        private const val MARWARI_HALFLIG_DD_Y = 0xF016F
+        private const val MARWARI_LIG_DD_R = 0xF010E
 
 
         private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) +
@@ -2381,6 +2387,7 @@ class TerrarumSansBitmap(
         private fun tamilIndexY(c: CodePoint) = (if (c < 0xF0000) (c - 0x0B80) else (c - 0xF0040)) / 16
         private fun brailleIndexY(c: CodePoint) = (c - 0x2800) / 16
         private fun sundaneseIndexY(c: CodePoint) = (if (c < 0x1BC0) (c - 0x1B80) else (c - 0x1C80)) / 16
+        private fun devanagari2IndexY(c: CodePoint) = (c - 0xF0110) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
