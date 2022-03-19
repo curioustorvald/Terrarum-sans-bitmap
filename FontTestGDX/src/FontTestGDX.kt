@@ -27,12 +27,14 @@ class FontTestGDX : Game() {
 
     lateinit var camera: OrthographicCamera
 
-    private val testing = true
+    private val testing = false
 
     private val demotextName = if (testing) "testtext.txt" else "demotext.txt"
     private val outimageName = if (testing) "testing.PNG" else "demo.PNG"
 
     private lateinit var faketex: Texture
+
+    private val lineHeight = 24
 
     override fun create() {
         font = TerrarumSansBitmap("./assets", debug = true, flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.5f) // must test for two flipY cases
@@ -43,9 +45,6 @@ class FontTestGDX : Game() {
         reader.close()
 
         batch = SpriteBatch()
-
-
-        println(font.getWidth("हिन्दी"))
 
 
         // create faketex
@@ -99,7 +98,7 @@ class FontTestGDX : Game() {
 
             batch.color = Color.WHITE
             inputText.forEachIndexed { index, s ->
-                font.draw(batch, s, 10f, TEXH - 30f - index * font.lineHeight)
+                font.draw(batch, s, 10f, TEXH - 30f - index * lineHeight)
             }
 
             batch.end()
@@ -155,11 +154,11 @@ class FontTestGDX : Game() {
     }
 
     fun scrollAdd(x: Int = 1) {
-        scrollOffsetY -= (TEXH.toFloat() / HEIGHT) * 20f * x
+        scrollOffsetY -= (TEXH.toFloat() / HEIGHT) * lineHeight * x
     }
 
     fun scrollSub(x: Int = 1) {
-        scrollOffsetY += (TEXH.toFloat() / HEIGHT) * 20f * x
+        scrollOffsetY += (TEXH.toFloat() / HEIGHT) * lineHeight * x
     }
 
     class Navigator(val main: FontTestGDX) : InputAdapter() {
@@ -270,7 +269,7 @@ class FontTestGDX : Game() {
 
 lateinit var appConfig: Lwjgl3ApplicationConfiguration
 const val TEXW = 874
-const val TEXH = 128 * 20
+const val TEXH = 24 * 130
 
 const val WIDTH = TEXW
 const val HEIGHT = 768

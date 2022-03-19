@@ -87,7 +87,10 @@ internal typealias Hash = Long
  * Shiftdown only occurs when non-diacritic character before the mark is lowercase, and the mark itself would stack up.
  * Stack-up or down is defined using Tag system.
  *
+ * ## Line Height
  *
+ * The line height is defined as 20 pixels on the font, and this number will not change on the source code to ensure backwards compatibility,
+ * **but I recommend you to use 24 pixels for the line height** for increased legibility.
  *
  *
  * @param noShadow Self-explanatory
