@@ -333,10 +333,7 @@ class TerrarumSansBitmap(
         // If the line starts with a letter-with-diacritic, it will error out
         // Some diacritics (e.g. COMBINING TILDE) do not obey lowercase letters
         val charSeqNotBlank = codepoints.size > 0 // determine emptiness BEFORE you hack a null chars in
-        val newCodepoints = CodepointSequence()
-        newCodepoints.add(0)
-        newCodepoints.addAll(codepoints)
-        newCodepoints.add(0)
+        val newCodepoints = codepoints
 
         fun Int.flipY() = this * if (flipY) 1 else -1
 
@@ -657,7 +654,8 @@ class TerrarumSansBitmap(
 //            if (directiveOpcode != 0) dbgprn("Directive opcode ${directiveOpcode.toString(2)}: ${code.charInfo()}")
 //            if (glyphProps[code]?.isPragma("replacewith") == true) dbgprn("Replacer: ${code.charInfo()} into ${glyphProps[code]!!.extInfo.map { it.toString(16) }.joinToString()}")
 //            if (stackWhere == GlyphProps.STACK_DONT) dbgprn("Diacritics Don't stack: ${code.charInfo()}")
-            if (stackWhere == GlyphProps.STACK_DOWN) dbgprn("Diacritics stack down: ${code.charInfo()}")
+//            if (stackWhere == GlyphProps.STACK_DOWN) dbgprn("Diacritics stack down: ${code.charInfo()}")
+//            if (writeOnTop > -1 && alignWhere == GlyphProps.ALIGN_RIGHT && width > 0) dbgprn("Diacritics aligned to the right with width of $width: ${code.charInfo()}")
         }
     }
 
@@ -788,10 +786,10 @@ class TerrarumSansBitmap(
                         posYbuffer[charIndex] = -thisProp.nudgeY
 
                         nonDiacriticCounter = charIndex
+                        extraWidth = thisProp.nudgeX // This resets extraWidth. NOTE: sign is flipped!
 
                         stackUpwardCounter = 0
                         stackDownwardCounter = 0
-                        extraWidth = thisProp.nudgeX // This resets extraWidth. NOTE: sign is flipped!
                     }
                     // FIXME HACK: using 0th diacritics' X-anchor pos as a type selector
                     /*else if (thisProp.writeOnTop && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
@@ -813,10 +811,13 @@ class TerrarumSansBitmap(
                                 when (thisProp.alignWhere) {
                                     GlyphProps.ALIGN_LEFT, GlyphProps.ALIGN_BEFORE -> posXbuffer[nonDiacriticCounter]
                                     GlyphProps.ALIGN_RIGHT -> {
-                                        println("thisprop alignright $kerning, $extraWidth")
+//                                        println("thisprop alignright $kerning, $extraWidth")
+
+                                        val anchorPoint =
+                                            if (!itsProp.diacriticsAnchors[diacriticsType].xUsed) itsProp.width else itsProp.diacriticsAnchors[diacriticsType].x
 
                                         extraWidth += thisProp.width
-                                        posXbuffer[nonDiacriticCounter]+ kerning + extraWidth - thisProp.width
+                                        posXbuffer[nonDiacriticCounter] + anchorPoint - W_VAR_INIT + kerning + extraWidth
                                     }
                                     GlyphProps.ALIGN_CENTRE -> {
                                         val anchorPoint =
@@ -964,7 +965,7 @@ class TerrarumSansBitmap(
             val c = dis[i]
             val cNext = dis.getOrElse(i+1) { -1 }
 
-            // turn Unicode Devanagari consonants into the internal one
+            // turn Unicode Devanagari consonants into the internal counterpart
             if (c in 0x0915..0x0939 || c in 0x0958..0x095F)
                 if (cNext == DEVANAGARI_NUQTA) {
                     seq0.add(c.toDevaInternal().internalDevaAddNukta())
@@ -973,8 +974,21 @@ class TerrarumSansBitmap(
                 else {
                     seq0.add(c.toDevaInternal())
                 }
+            // re-order Sundanese diacritics
+            else if ((c == 0x1BA1 || c == 0x1BA2) && cNext == 0x1BA5) {
+                seq0.add(cNext); seq0.add(c); i += 1
+            }
+            // combine two Sundanese diacritics to internal counterpart
+            else if (c == 0x1BA4 && cNext == 0x1B80) { seq0.add(SUNDANESE_ING); i += 1 }
+            else if (c == 0x1BA8 && cNext == 0x1B80) { seq0.add(SUNDANESE_ENG); i += 1 }
+            else if (c == 0x1BA9 && cNext == 0x1B80) { seq0.add(SUNDANESE_EUNG); i += 1 }
+            else if (c == 0x1BA4 && cNext == 0x1B81) { seq0.add(SUNDANESE_IR); i += 1 }
+            else if (c == 0x1BA8 && cNext == 0x1B81) { seq0.add(SUNDANESE_ER); i += 1 }
+            else if (c == 0x1BA9 && cNext == 0x1B81) { seq0.add(SUNDANESE_EUR); i += 1 }
+            else if (c == 0x1BA3 && cNext == 0x1BA5) { seq0.add(SUNDANESE_LU); i += 1 }
             else
                 seq0.add(c)
+
 
             i += 1
         }
@@ -2094,7 +2108,7 @@ class TerrarumSansBitmap(
             (0x0B80..0x0BFF) + (0xF00C0..0xF00FF), // SHEET_TAMIL_VARW
             0x980..0x9FF, // SHEET_BENGALI_VARW
             0x2800..0x28FF, // SHEET_BRAILLE_VARW
-            (0x1B80..0x1BBF) + (0x1CC0..0x1CCF), // SHEET_SUNDANESE_VARW
+            (0x1B80..0x1BBF) + (0x1CC0..0x1CCF) + (0xF0500..0xF050F), // SHEET_SUNDANESE_VARW
             0xF0110..0xF012F, // SHEET_DEVANAGARI2_INTERNAL_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
@@ -2394,7 +2408,7 @@ class TerrarumSansBitmap(
         private fun enclosedAlphnumSuplY(c: CodePoint) = (c - 0x1F100) / 16
         private fun tamilIndexY(c: CodePoint) = (if (c < 0xF0000) (c - 0x0B80) else (c - 0xF0040)) / 16
         private fun brailleIndexY(c: CodePoint) = (c - 0x2800) / 16
-        private fun sundaneseIndexY(c: CodePoint) = (if (c < 0x1BC0) (c - 0x1B80) else (c - 0x1C80)) / 16
+        private fun sundaneseIndexY(c: CodePoint) = (if (c >= 0xF0500) (c - 0xF04B0) else if (c < 0x1BC0) (c - 0x1B80) else (c - 0x1C80)) / 16
         private fun devanagari2IndexY(c: CodePoint) = (c - 0xF0110) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()

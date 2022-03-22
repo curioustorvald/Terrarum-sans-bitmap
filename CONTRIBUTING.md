@@ -57,12 +57,15 @@ Rightmost vertical column (should be 20 px tall) contains the tags. Tags are def
       Y  |= Diacritics Anchor Points (see below)
       X -'  
       A -,_ 0 Align  1 Align  0 Align   1 Align before
-      A -'  0 Left   0 Right  1 Centre* 1 the glyph
+      A -'  0 Left   0 Right  1 Centre  1 the glyph
       D --Diacritics Type Bit (see below; not all diacritics are actually marked as a diacritics on the spritesheet)
       S -,_ 0 Stack  1 Stack  0 Before  1 Up &
 (MSB) S -'  0 up     0 down   1 &After   1 Down* (e.g. U+0C48)
 
-Align Centre is actually "align to where the anchor point is". Said anchor point default to the X-centre of the glyph.
+Align Centre and Align Right will respect the diacritics anchor points.
+The Align Right AND Custom anchor point is being used for Thai diacritics.
+When a width AND diacritics type bit is set, the entire glyph is shifted to the right as specified and the space of same width will be inserted.
+(See SUNDANESE PAMINGKAL U+1BA1)
 
 Up&Down:
 1. when two pixels are both #00FF00 it's "don't stack"
