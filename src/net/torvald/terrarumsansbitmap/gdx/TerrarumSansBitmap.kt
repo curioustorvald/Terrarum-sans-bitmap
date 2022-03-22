@@ -87,12 +87,6 @@ internal typealias Hash = Long
  * Shiftdown only occurs when non-diacritic character before the mark is lowercase, and the mark itself would stack up.
  * Stack-up or down is defined using Tag system.
  *
- * ## Line Height
- *
- * The line height is defined as 20 pixels on the font, and this number will not change on the source code to ensure backwards compatibility,
- * **but I recommend you to use 24 pixels for the line height** for increased legibility.
- *
- *
  * @param noShadow Self-explanatory
  * @param flipY If you have Y-down coord system implemented on your GDX (e.g. legacy codebase), set this to ```true```
  * so that the shadow won't be upside-down.
@@ -292,7 +286,7 @@ class TerrarumSansBitmap(
         glyphProps[0] = GlyphProps(0)
     }
 
-    override fun getLineHeight(): Float = H.toFloat() * scale
+    override fun getLineHeight(): Float = 24f * scale
     override fun getXHeight() = 8f * scale
     override fun getCapHeight() = 12f * scale
     override fun getAscent() = 3f * scale
