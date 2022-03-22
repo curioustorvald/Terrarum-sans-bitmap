@@ -657,6 +657,7 @@ class TerrarumSansBitmap(
 //            if (directiveOpcode != 0) dbgprn("Directive opcode ${directiveOpcode.toString(2)}: ${code.charInfo()}")
 //            if (glyphProps[code]?.isPragma("replacewith") == true) dbgprn("Replacer: ${code.charInfo()} into ${glyphProps[code]!!.extInfo.map { it.toString(16) }.joinToString()}")
 //            if (stackWhere == GlyphProps.STACK_DONT) dbgprn("Diacritics Don't stack: ${code.charInfo()}")
+            if (stackWhere == GlyphProps.STACK_DOWN) dbgprn("Diacritics stack down: ${code.charInfo()}")
         }
     }
 
@@ -790,7 +791,7 @@ class TerrarumSansBitmap(
 
                         stackUpwardCounter = 0
                         stackDownwardCounter = 0
-                        extraWidth = thisProp.nudgeX // NOTE: sign is flipped!
+                        extraWidth = thisProp.nudgeX // This resets extraWidth. NOTE: sign is flipped!
                     }
                     // FIXME HACK: using 0th diacritics' X-anchor pos as a type selector
                     /*else if (thisProp.writeOnTop && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
@@ -808,36 +809,37 @@ class TerrarumSansBitmap(
                     else {
                         val diacriticsType = thisProp.writeOnTop
                         // set X pos according to alignment information
-                        posXbuffer[charIndex] = when (thisProp.alignWhere) {
-                            GlyphProps.ALIGN_LEFT, GlyphProps.ALIGN_BEFORE -> posXbuffer[nonDiacriticCounter]
-                            GlyphProps.ALIGN_RIGHT -> {
-                                val alignXPos = if (!itsProp.diacriticsAnchors[diacriticsType].xUsed) itsProp.width else itsProp.diacriticsAnchors[diacriticsType].x
+                        posXbuffer[charIndex] = -thisProp.nudgeX +
+                                when (thisProp.alignWhere) {
+                                    GlyphProps.ALIGN_LEFT, GlyphProps.ALIGN_BEFORE -> posXbuffer[nonDiacriticCounter]
+                                    GlyphProps.ALIGN_RIGHT -> {
+                                        println("thisprop alignright $kerning, $extraWidth")
 
-                                posXbuffer[nonDiacriticCounter] - W_VAR_INIT + alignXPos
-                            }
-                            GlyphProps.ALIGN_CENTRE -> {
-                                val alignXPos = if (!itsProp.diacriticsAnchors[diacriticsType].xUsed) itsProp.width.div(2) else itsProp.diacriticsAnchors[diacriticsType].x
+                                        extraWidth += thisProp.width
+                                        posXbuffer[nonDiacriticCounter]+ kerning + extraWidth - thisProp.width
+                                    }
+                                    GlyphProps.ALIGN_CENTRE -> {
+                                        val anchorPoint =
+                                            if (!itsProp.diacriticsAnchors[diacriticsType].xUsed) itsProp.width.div(2) else itsProp.diacriticsAnchors[diacriticsType].x
 
-                                if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
-                                    posXbuffer[nonDiacriticCounter] + alignXPos + (itsProp.width + 1).div(2)
+                                        if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
+                                            posXbuffer[nonDiacriticCounter] + anchorPoint + (itsProp.width + 1).div(2)
+                                        } else {
+                                            posXbuffer[nonDiacriticCounter] + anchorPoint - HALF_VAR_INIT
+                                        }
+                                    }
+                                    else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
                                 }
-                                else {
-                                    posXbuffer[nonDiacriticCounter] + alignXPos - HALF_VAR_INIT
-                                }
-                            }
-                            else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
-                        }
 
 
                         // set Y pos according to diacritics position
-//                        if (thisProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
                         when (thisProp.stackWhere) {
                             GlyphProps.STACK_DOWN -> {
-                                posYbuffer[charIndex] = (H_DIACRITICS * stackDownwardCounter + -thisProp.nudgeY) * flipY.toSign()
+                                posYbuffer[charIndex] = -thisProp.nudgeY + (H_DIACRITICS * stackDownwardCounter + -thisProp.nudgeY) * flipY.toSign()
                                 stackDownwardCounter++
                             }
                             GlyphProps.STACK_UP -> {
-                                posYbuffer[charIndex] = (-H_DIACRITICS * stackUpwardCounter + -thisProp.nudgeY) * flipY.toSign()
+                                posYbuffer[charIndex] = -thisProp.nudgeY + (-H_DIACRITICS * stackUpwardCounter + -thisProp.nudgeY) * flipY.toSign()
                                 // shift down on lowercase if applicable
                                 if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
                                     lastNonDiacriticChar.isLowHeight()) {
@@ -855,11 +857,11 @@ class TerrarumSansBitmap(
 //                                    dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.charInfo()}; stack counter: $stackUpwardCounter")
                             }
                             GlyphProps.STACK_UP_N_DOWN -> {
-                                posYbuffer[charIndex] = (H_DIACRITICS * stackDownwardCounter + -thisProp.nudgeY) * flipY.toSign()
+                                posYbuffer[charIndex] = -thisProp.nudgeY + (H_DIACRITICS * stackDownwardCounter + -thisProp.nudgeY) * flipY.toSign()
                                 stackDownwardCounter++
 
 
-                                posYbuffer[charIndex] = (-H_DIACRITICS * stackUpwardCounter + -thisProp.nudgeY) * flipY.toSign()
+                                posYbuffer[charIndex] = -thisProp.nudgeY + (-H_DIACRITICS * stackUpwardCounter + -thisProp.nudgeY) * flipY.toSign()
                                 // shift down on lowercase if applicable
                                 if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
                                     lastNonDiacriticChar.isLowHeight()) {
@@ -873,7 +875,8 @@ class TerrarumSansBitmap(
                             }
                             // for BEFORE_N_AFTER, do nothing in here
                         }
-//                        }
+
+                        // Don't reset extraWidth here!
                     }
                 }
             }
@@ -2162,6 +2165,14 @@ class TerrarumSansBitmap(
         private const val MARWARI_LIG_DD_Y = 0xF016E
         private const val MARWARI_HALFLIG_DD_Y = 0xF016F
         private const val MARWARI_LIG_DD_R = 0xF010E
+
+        private const val SUNDANESE_ING = 0xF0500
+        private const val SUNDANESE_ENG = 0xF0501
+        private const val SUNDANESE_EUNG = 0xF0502
+        private const val SUNDANESE_IR = 0xF0503
+        private const val SUNDANESE_ER = 0xF0504
+        private const val SUNDANESE_EUR = 0xF0505
+        private const val SUNDANESE_LU = 0xF0506
 
 
         private val devanagariConsonants = ((0x0915..0x0939) + (0x0958..0x095F) + (0x0978..0x097F) +
