@@ -173,7 +173,7 @@ class TerrarumSansBitmap(
     private val glyphProps = HashMap<CodePoint, GlyphProps>()
     private val sheets: Array<PixmapRegionPack>
 
-    private var charsetOverride = 0
+//    private var charsetOverride = 0
 
     private val tempDir = System.getProperty("java.io.tmpdir")
 //    private val tempFiles = ArrayList<String>()
@@ -375,8 +375,9 @@ class TerrarumSansBitmap(
                 var index = 0
                 while (index <= textBuffer.lastIndex) {
                     try {
-                        val c = textBuffer[index]
+                        var c = textBuffer[index]
                         val sheetID = getSheetType(c)
+
                         val (sheetX, sheetY) =
                             if (index == 0) getSheetwisePosition(0, c)
                             else getSheetwisePosition(textBuffer[index - 1], c)
@@ -389,9 +390,6 @@ class TerrarumSansBitmap(
                             else {
                                 renderCol = getColour(c)
                             }
-                        }
-                        else if (isCharsetOverride(c)) {
-                            charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
                         }
                         else if (sheetID == SHEET_HANGUL) {
                             // Flookahead for {I, P, F}
@@ -491,9 +489,9 @@ class TerrarumSansBitmap(
     }
 
     fun getSheetType(c: CodePoint): Int {
-        if (charsetOverride == 1 && isBulgarian(c))
+        if (isBulgarian(c))
             return SHEET_BULGARIAN_VARW
-        else if (charsetOverride == 2 && isBulgarian(c))
+        else if (isSerbian(c))
             return SHEET_SERBIAN_VARW
         else if (isHangul(c))
             return SHEET_HANGUL
@@ -525,7 +523,8 @@ class TerrarumSansBitmap(
             SHEET_IPA_VARW -> ipaIndexY(ch)
             SHEET_RUNIC -> runicIndexY(ch)
             SHEET_LATIN_EXT_ADD_VARW -> latinExtAddY(ch)
-            SHEET_BULGARIAN_VARW, SHEET_SERBIAN_VARW -> cyrilicIndexY(ch)
+            SHEET_BULGARIAN_VARW -> bulgarianIndexY(ch)
+            SHEET_SERBIAN_VARW -> serbianIndexY(ch)
             SHEET_TSALAGI_VARW -> cherokeeIndexY(ch)
             SHEET_PHONETIC_EXT_VARW -> phoneticExtIndexY(ch)
             SHEET_DEVANAGARI_VARW -> devanagariIndexY(ch)
@@ -656,6 +655,7 @@ class TerrarumSansBitmap(
 //            if (stackWhere == GlyphProps.STACK_DONT) dbgprn("Diacritics Don't stack: ${code.charInfo()}")
 //            if (stackWhere == GlyphProps.STACK_DOWN) dbgprn("Diacritics stack down: ${code.charInfo()}")
 //            if (writeOnTop > -1 && alignWhere == GlyphProps.ALIGN_RIGHT && width > 0) dbgprn("Diacritics aligned to the right with width of $width: ${code.charInfo()}")
+//            if (code in 0xF0000 until 0xF0060) dbgprn("Code ${code.toString(16)} width: $width")
         }
     }
 
@@ -742,7 +742,8 @@ class TerrarumSansBitmap(
                     val kerning = getKerning(lastNonDiacriticChar, thisChar)
 
 
-                    //dbgprn("char: ${thisChar.charInfo()}\nproperties: $thisProp")
+//                    if (thisChar in 0xF0000 until 0xF0060)
+//                        dbgprn("char: ${thisChar.charInfo()}\nproperties: $thisProp")
 
 
                     var alignmentOffset = when (thisProp.alignWhere) {
@@ -954,6 +955,7 @@ class TerrarumSansBitmap(
         val seq2 = CodepointSequence()
         val seq3 = CodepointSequence()
         val seq4 = CodepointSequence()
+        val seq5 = CodepointSequence()
         val dis = this.utf16to32()
 
         var i = 0
@@ -1390,7 +1392,6 @@ class TerrarumSansBitmap(
 
         // replace devanagari I/II with variants
         i = 0
-        var lenacc = 0
         while (i < seq4.size) {
             val cPrev = seq4.getOrElse(i - 1) { -1 }
             val c = seq4[i]
@@ -1434,7 +1435,26 @@ class TerrarumSansBitmap(
             i++
         }
 
-        return seq4
+
+        // process charset overriding
+        i = 0
+        var charsetOverride = 0
+        while (i < seq4.size) {
+            val c = seq4[i]
+            if (isCharsetOverride(c))
+                charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
+            else {
+                if (c in altCharsetCodepointDomains[charsetOverride])
+                    seq5.add(c + altCharsetCodepointOffsets[charsetOverride])
+                else
+                    seq5.add(c)
+            }
+
+            i++
+        }
+
+
+        return seq5
     }
 
     private fun dbgprnLig(i: Any) { if (false) println("[${this.javaClass.simpleName}] $i") }
@@ -2113,6 +2133,18 @@ class TerrarumSansBitmap(
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
+        private val altCharsetCodepointOffsets = arrayOf(
+                0, // null
+                0xF0000 - 0x400, // bulgarian
+                0xF0060 - 0x400 // serbian
+        )
+
+        private val altCharsetCodepointDomains = arrayOf(
+                0..0x10FFFF,
+                0x400..0x45F,
+                0x400..0x45F
+        )
+
         private val diacriticDotRemoval = hashMapOf(
             'i'.toInt() to 0x131,
             'j'.toInt() to 0x237
@@ -2364,7 +2396,8 @@ class TerrarumSansBitmap(
         // END Hangul //
 
         private fun isHangul(c: CodePoint) = c in codeRange[SHEET_HANGUL] || c in codeRangeHangulCompat
-        private fun isBulgarian(c: CodePoint) = c in 0x400..0x45F
+        private fun isBulgarian(c: CodePoint) = c in 0xF0000..0xF005F
+        private fun isSerbian(c: CodePoint) = c in 0xF0060..0xF00BF
         fun isColourCode(c: CodePoint) = c == 0x100000 || c in 0x10F000..0x10FFFF
         private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFFF
         private fun isDevanagari(c: CodePoint) = c in codeRange[SHEET_DEVANAGARI_VARW]
@@ -2383,6 +2416,8 @@ class TerrarumSansBitmap(
             else (c - 0x3040) / 16
         private fun cjkPunctIndexY(c: CodePoint) = (c - 0x3000) / 16
         private fun cyrilicIndexY(c: CodePoint) = (c - 0x400) / 16
+        private fun bulgarianIndexY(c: CodePoint) = (c - 0xF0000) / 16
+        private fun serbianIndexY(c: CodePoint) = (c - 0xF0060) / 16
         private fun fullwidthUniIndexY(c: CodePoint) = (c - 0xFF00) / 16
         private fun uniPunctIndexY(c: CodePoint) = (c - 0x2000) / 16
         private fun unihanIndexY(c: CodePoint) = (c - 0x3400) / 256
