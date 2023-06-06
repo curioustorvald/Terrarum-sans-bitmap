@@ -339,7 +339,7 @@ class TerrarumSansBitmap(
 
         // always draw at integer position; this is bitmap font after all
         val x = Math.round(x)
-        val y = Math.round(y)
+        val y = Math.round(y + (lineHeight - 20 * scale) / 2)
 
         val charSeqHash = newCodepoints.getHash()
 
