@@ -8,10 +8,10 @@ The JAR package is meant to be used with LibGDX (extends ```BitmapFont``` class)
 
 The issue page is open. If you have some issues to submit, or have a question, please leave it on the page.
 
-#### Little notes
-- To display Bulgarian/Serbian variants, you need special Control Characters. (GameFontBase.charsetOverrideBulgarian -- U+FFFC1; GameFontBase.charsetOverrideSerbian -- U+FFFC2)
-- All Han characters are in Chinese variant, no other variants are to be supported as most Chinese, Japanese and Korean people can understand other's variant and as long as I can, we don't bother anyway.
-- Indian script in general is not perfect: right now this font will never do the proper ligatures (I can't draw all the 1 224 possible combinations). Hopefully it's still be able to understand without them.
+#### Notes and Limitations
+- Displaying Bulgarian/Serbian variants of Cyrillic requires special Control Characters. (`GameFontBase.charsetOverrideBulgarian` -- U+FFFC1; `GameFontBase.charsetOverrideSerbian` -- U+FFFC2)
+- All Han characters are in Mainland Chinese variant. There is no plan to support the other variants unless there is someone willing to do the drawing of the characters
+- Only the Devanagari and Tamil has full (as much as I can) ligature support for Indic scripts -- Bengali script does not have any ligature support
 - Slick2d versions are now unsupported. I couldn't extend myself to work on both versions, but I'm still welcome to merge your pull requests.
 
 ### Design Goals
@@ -33,12 +33,14 @@ The issue page is open. If you have some issues to submit, or have a question, p
 
 On your code (Kotlin):
 
+    import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
+
     class YourGame : Game() {
 
         lateinit var fontGame: Font
     
         override fun create() {
-            fontGame = GameFontBase(path_to_assets)
+            fontGame = TerrarumSansBitmap(path_to_assets, ...)
             ...
         }
         
@@ -53,12 +55,14 @@ On your code (Kotlin):
     
 On your code (Java):
 
+    import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap;
+
     class YourGame extends BasicGame {
 
         Font fontGame;
     
         @Override void create() {
-            fontGame = new GameFontBase(path_to_assets);
+            fontGame = new TerrarumSansBitmap(path_to_assets, ...);
             ...
         }
         
@@ -68,43 +72,6 @@ On your code (Java):
             fontGame.draw(batch, text, ...);
             ...
             batch.end();
-        }
-    }
-
-
-### Using on Slick2d (legacy version only)
-
-On your code (Kotlin):
-
-    class YourGame : BasicGame("YourGameName") {
-
-        lateinit var fontGame: Font
-    
-        override fun init(gc: GameContainer) {
-            fontGame = GameFontBase(path_to_assets)
-            ...
-        }
-        
-        override fun render(gc: GameContainer, g: Graphics) {
-            g.font = fontGame
-            g.drawString(...)
-        }
-    }
-    
-On your code (Java):
-
-    class YourGame extends BasicGame {
-
-        Font fontGame;
-    
-        @Override void init(GameContainer gc) {
-            fontGame = new GameFontBase(path_to_assets);
-            ...
-        }
-        
-        @Override void render(GameContainer gc, Graphics g) {
-            g.setFont(fontGame);
-            g.drawString(...);
         }
     }
 
