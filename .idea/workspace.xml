@@ -10,34 +10,30 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/lib.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/badlogicgames_gdx.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/badlogicgames_gdx_backend_lwjgl3.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" beforeDir="false" afterPath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/ascii_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/ascii_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/cyrilic_bulgarian_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/cyrilic_bulgarian_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/cyrilic_serbian_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/cyrilic_serbian_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/cyrilic_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/cyrilic_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/greek_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/greek_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/latinExtA_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/latinExtA_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/latinExtB_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/latinExtB_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/cjkpunct.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/cjkpunct.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/currencies_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/currencies_variable.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/futhark.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/futhark.tga" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/latinExtC_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/latinExtC_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/latinExtD_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/latinExtD_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/latinExt_additional_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/latinExt_additional_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/demo.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/demo.PNG" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/ascii_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/ascii_variable.psd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/cyrilic_bulgarian_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/cyrilic_bulgarian_variable.psd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/cyrilic_serbian_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/cyrilic_serbian_variable.psd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/cyrilic_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/cyrilic_variable.psd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/greek_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/greek_variable.psd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/latinExtA_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/latinExtA_variable.psd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/latinExtB_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/latinExtB_variable.psd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/latinExtC_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/latinExtC_variable.psd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/latinExtD_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/latinExtD_variable.psd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/latinExt_additional_variable.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/latinExt_additional_variable.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/richtext_furigana.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/richtext_furigana.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/typewriter_intl_qwerty.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/typewriter/typewriter_intl_qwerty.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/typewriter_ko_3set-390.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/typewriter/typewriter_ko_3set-390.tga" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/wenquanyi.tga.gz" beforeDir="false" afterPath="$PROJECT_DIR$/assets/wenquanyi.tga.gz" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/font_drawing_template.png" beforeDir="false" afterPath="$PROJECT_DIR$/font_drawing_template.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/glyph_height_pos_annotation.png" beforeDir="false" afterPath="$PROJECT_DIR$/glyph_height_pos_annotation.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/samples/wikipedia_x86.png" beforeDir="false" afterPath="$PROJECT_DIR$/samples/wikipedia_x86.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/terrarum_sans_cyrillic_2.png" beforeDir="false" afterPath="$PROJECT_DIR$/terrarum_sans_cyrillic_2.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testing.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/testing.PNG" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testtext.txt" beforeDir="false" afterPath="$PROJECT_DIR$/testtext.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/width_bit_encoding_annotated.png" beforeDir="false" afterPath="$PROJECT_DIR$/width_bit_encoding_annotated.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/alphnum_glyphs_master.kra" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/alphnum_glyphs_master.kra" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/alphnum_glyphs_resized.kra" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/alphnum_glyphs_resized.kra" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/hangul_3set_glyphs_master.kra" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/hangul_3set_glyphs_master.kra" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_input_template.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_input_template.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_intl_qwerty.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_intl_qwerty.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_ko_3set-390.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_ko_3set-390.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_ko_3set_glyphs_resized.kra" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_ko_3set_glyphs_resized.kra" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -64,26 +60,22 @@
       <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
     </file-type-list>
   </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
   <component name="ProjectId" id="1aVE5t6KObkWt36lb07GBy1GY1S" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">
-    <property name="Downloaded.Files.Path.Enabled" value="false" />
-    <property name="Repository.Attach.Annotations" value="false" />
-    <property name="Repository.Attach.JavaDocs" value="false" />
-    <property name="Repository.Attach.Sources" value="false" />
-    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="SearchEverywhereHistoryKey" value="HashMap&#9;PSI&#9;JAVA://java.util.HashMap&#10;soft wr&#9;ACTION&#9;EditorToggleUseSoftWraps" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/lib" />
-    <property name="project.structure.last.edited" value="Libraries" />
-    <property name="project.structure.proportion" value="0.15" />
-    <property name="project.structure.side.proportion" value="0.32068965" />
-    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
-  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;last_opened_file_path&quot;: &quot;/home/torvald/Documents/Terrarum-sans-bitmap&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Artifacts&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;
+  }
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\minjaesong\Documents\Terrarum-sans-bitmap\" />
@@ -91,7 +83,7 @@
       <recent name="C:\Users\minjaesong\Documents\Terrarum-sans-bitmap\FontTestGDX\src" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Kotlin.FontTestGDXKt">
     <configuration default="true" type="Applet">
       <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
       <method v="2">
@@ -134,6 +126,13 @@
         </option>
       </method>
     </configuration>
+    <configuration name="TypewriterGDXKt" type="JetRunConfigurationType" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="TypewriterGDXKt" />
+      <module name="FontTestGDX" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
       <option name="filePath" />
       <method v="2">
@@ -161,6 +160,7 @@
     <recent_temporary>
       <list>
         <item itemvalue="Kotlin.FontTestGDXKt" />
+        <item itemvalue="Kotlin.TypewriterGDXKt" />
       </list>
     </recent_temporary>
   </component>
@@ -197,7 +197,6 @@
         </entry>
       </map>
     </option>
-    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
