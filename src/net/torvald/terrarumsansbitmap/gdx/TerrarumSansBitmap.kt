@@ -2277,9 +2277,9 @@ class TerrarumSansBitmap(
         // ㅣ
         private val jungseongI = arrayOf(21,61).toSortedSet()
         // ㅗ ㅛ ㅜ ㅠ
-        private val jungseongOU = arrayOf(9,13,14,18,34,35,39,45,51,53,54,64,80,83).toSortedSet()
+        private val jungseongOU = arrayOf(9,13,14,18,34,35,39,45,51,53,54,64,73,80,83).toSortedSet()
         // ㅘ ㅙ ㅞ
-        private val jungseongOUComplex = (arrayOf(10,11,16) + (22..33).toList() + arrayOf(36,37,38) + (41..44).toList() + arrayOf(46,47,48,49,50) + (56..59).toList() + arrayOf(63) + (67..79).toList() + arrayOf(81,82) + (84..93).toList()).toSortedSet()
+        private val jungseongOUComplex = (arrayOf(10,11,16) + (22..33).toList() + arrayOf(36,37,38) + (41..44).toList() + (46..50).toList() + (56..59).toList() + arrayOf(63) + (67..72).toList() + (74..79).toList() + (81..83).toList() + (85..91).toList() + arrayOf(93, 94)).toSortedSet()
         // ㅐ ㅒ ㅔ ㅖ etc
         private val jungseongRightie = arrayOf(2,4,6,8,11,16,32,33,37,42,44,48,50,71,72,75,78,79,83,86,87,88,94).toSortedSet()
         // ㅚ *ㅝ* ㅟ
@@ -2289,7 +2289,7 @@ class TerrarumSansBitmap(
         // ㅢ
         private val jungseongYI = arrayOf(20,60,65).toSortedSet()
         // ㅜ ㅝ ㅞ ㅟ ㅠ
-        private val jungseongUU = arrayOf(14,15,16,17,18,27,30,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,59,67,68,77,78,79,80,81,82,83,84,91).toSortedSet()
+        private val jungseongUU = arrayOf(14,15,16,17,18,27,30,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,59,67,68,73,77,78,79,80,81,82,83,84,91).toSortedSet()
 
         private val jungseongWide = (jungseongOU.toList() + jungseongEU.toList()).toSortedSet()
 
@@ -2316,15 +2316,15 @@ class TerrarumSansBitmap(
         private fun getHanInitialRow(i: Int, p: Int, f: Int): Int {
             var ret =
                 if (p in jungseongI) 3
-                else if (p in jungseongOUComplex) 7
                 else if (p in jungseongOEWI) 11
+                else if (p in jungseongOUComplex) 7
                 else if (p in jungseongOU) 5
                 else if (p in jungseongEU) 9
                 else if (p in jungseongYI) 13
                 else 1
 
             if (f != 0) ret += 1
-
+            //println("getHanInitialRow $i $p $f -> $ret")
             return if (p in jungseongUU && i in choseongGiyeoks) giyeokRemapping[ret] ?: throw NullPointerException("i=$i p=$p f=$f ret=$ret") else ret
         }
 
