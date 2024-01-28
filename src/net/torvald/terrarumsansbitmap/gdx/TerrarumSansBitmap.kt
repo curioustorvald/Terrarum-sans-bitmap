@@ -1346,6 +1346,16 @@ class TerrarumSansBitmap(
                 dbgprnLig("   Consonants after Left Vowel (5 -> 1)")
                 seq4.add(c)
                 changeRaStatus(1)
+
+                if (yankedDevanagariRaStatus[1] > 0) {
+                    dbgprnLig("   Popping out RAsup (2)")
+                    yankedCharacters.pop()
+                    if (seq4.last() in devanagariSuperscripts)
+                        seq4.add(DEVANAGARI_RA_SUPER_COMPLEX)
+                    else
+                        seq4.add(DEVANAGARI_RA_SUPER)
+                    resetRaStatus()
+                }
             }
             else if ((yankedDevanagariRaStatus[1] > 0) && devanagariRightVowels.contains(c)) {
                 dbgprnLig("   Right Vowels (${yankedDevanagariRaStatus[1]} -> 4)")
@@ -1388,7 +1398,7 @@ class TerrarumSansBitmap(
 
         seq4.add(0) // add dummy terminator
 
-//        println(seq4.joinToString(" "))
+//        println("seq4 = " + seq4.joinToString(" ") { it.toCh() })
 
         // replace devanagari I/II with variants
         i = 0
@@ -1453,6 +1463,7 @@ class TerrarumSansBitmap(
             i++
         }
 
+//        println("seq5 = " + seq5.joinToString(" ") { it.toCh() })
 
         return seq5
     }
@@ -1478,13 +1489,20 @@ class TerrarumSansBitmap(
         0xF0104 -> "Hu"
         0xF0105 -> "Huu"
         0xF010B -> "ᴿᵃ"
+        0xF010C -> "ᴿ¹"
+        0xF010D -> "ᴿ²"
+        0xF010E -> "DDRA"
+        0xF010F -> "ᶴ"
         0xF024C -> "Resh"
+        in 0xF0110..0xF011F -> "I-${(this - 0xF0110 + 1)}"
+        in 0xF0120..0xF012F -> "II-${(this - 0xF0120 + 1)}"
         in 0xF0140 until 0xF0140+devaSyll.size -> devaSyll[this - 0xF0140]
         in 0xF0230 until 0xF0230+devaSyll.size -> devaSyll[this - 0xF0230] + "ʰ"
         in 0xF0320 until 0xF0320+devaSyll.size -> devaSyll[this - 0xF0320] + ".R"
         in 0xF0410 until 0xF0410+devaSyll.size -> devaSyll[this - 0xF0410] + ".Rʰ"
-        else -> this.toHex()
+        else -> "<${this.toHex()}>"
     }
+
 
     /** Takes input string, do normalisation, and returns sequence of codepoints (Int)
      *
