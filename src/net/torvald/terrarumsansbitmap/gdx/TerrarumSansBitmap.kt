@@ -1290,6 +1290,7 @@ class TerrarumSansBitmap(
 
         val yankedCharacters  = Stack<Pair<Int, CodePoint>>() // Stack of <Position, CodePoint>; codepoint use -1 if not applicable
         var yankedDevanagariRaStatus = intArrayOf(0,0) // 0: none, 1: consonants, 2: virama, 3: vowel for this syllable
+        var sawLeftI = false
         fun changeRaStatus(n: Int) {
             yankedDevanagariRaStatus[0] = yankedDevanagariRaStatus[1]
             yankedDevanagariRaStatus[1] = n
@@ -1297,13 +1298,15 @@ class TerrarumSansBitmap(
         fun resetRaStatus() {
             yankedDevanagariRaStatus[0] = 0
             yankedDevanagariRaStatus[1] = 0
+
+            sawLeftI = false
         }
 
         fun emptyOutYanked() {
             while (!yankedCharacters.empty()) {
                 val poppedChar = yankedCharacters.pop()
                 if (poppedChar.second == DEVANAGARI_RA)
-                    if (seq4.last() in devanagariSuperscripts)
+                    if (seq4.last() in devanagariSuperscripts || sawLeftI)
                         seq4.add(DEVANAGARI_RA_SUPER_COMPLEX)
                     else
                         seq4.add(DEVANAGARI_RA_SUPER)
@@ -1337,7 +1340,7 @@ class TerrarumSansBitmap(
                 seq4.add(c)
                 changeRaStatus(1)
             }
-            else if (yankedDevanagariRaStatus[1] in listOf(1,3) && devanariConsonantsHalfs.contains(c)) {
+            else if (yankedDevanagariRaStatus[1] in listOf(1,3,5) && devanariConsonantsHalfs.contains(c)) {
                 dbgprnLig("   Consonants Half Form (${yankedDevanagariRaStatus[1]} -> 3)")
                 seq4.add(c)
                 changeRaStatus(3)
@@ -1350,7 +1353,7 @@ class TerrarumSansBitmap(
                 if (yankedDevanagariRaStatus[1] > 0) {
                     dbgprnLig("   Popping out RAsup (2)")
                     yankedCharacters.pop()
-                    if (seq4.last() in devanagariSuperscripts)
+                    if (seq4.last() in devanagariSuperscripts || sawLeftI)
                         seq4.add(DEVANAGARI_RA_SUPER_COMPLEX)
                     else
                         seq4.add(DEVANAGARI_RA_SUPER)
@@ -1364,6 +1367,7 @@ class TerrarumSansBitmap(
             }
             else if ((yankedDevanagariRaStatus[1] in 1..3) && devanagariVowels.contains(c)) {
                 dbgprnLig("   Left Vowels (${yankedDevanagariRaStatus[1]} -> 5)")
+                sawLeftI = true
                 seq4.add(c)
                 changeRaStatus(5)
             }
@@ -1376,7 +1380,7 @@ class TerrarumSansBitmap(
             else if (yankedDevanagariRaStatus[1] > 0) {
                 dbgprnLig("   Popping out RAsup")
                 yankedCharacters.pop()
-                if (seq4.last() in devanagariSuperscripts)
+                if (seq4.last() in devanagariSuperscripts || sawLeftI)
                     seq4.add(DEVANAGARI_RA_SUPER_COMPLEX)
                 else
                     seq4.add(DEVANAGARI_RA_SUPER)
