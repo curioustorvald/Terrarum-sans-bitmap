@@ -261,8 +261,6 @@ class TerrarumSansBitmap(
             // below they all have height of 20 'H'
             else if (index == SHEET_CJK_PUNCT)
                 PixmapRegionPack(pixmap, W_ASIAN_PUNCT, H)
-            else if (index == SHEET_KANA)
-                PixmapRegionPack(pixmap, W_KANA, H)
             else if (index == SHEET_HANGUL)
                 PixmapRegionPack(pixmap, W_HANGUL_BASE, H)
             else if (index == SHEET_CUSTOM_SYM)
@@ -665,7 +663,6 @@ class TerrarumSansBitmap(
         codeRange[SHEET_CUSTOM_SYM].forEach { glyphProps[it] = GlyphProps(20) }
         codeRange[SHEET_HANGUL].forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE) }
         codeRangeHangulCompat.forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE) }
-        codeRange[SHEET_KANA].forEach { glyphProps[it] = GlyphProps(W_KANA) }
         codeRange[SHEET_RUNIC].forEach { glyphProps[it] = GlyphProps(9) }
         codeRange[SHEET_UNIHAN].forEach { glyphProps[it] = GlyphProps(W_UNIHAN) }
         (0xD800..0xDFFF).forEach { glyphProps[it] = GlyphProps(0) }
@@ -2000,7 +1997,6 @@ class TerrarumSansBitmap(
 
         internal const val W_ASIAN_PUNCT = 10
         internal const val W_HANGUL_BASE = 13
-        internal const val W_KANA = 12
         internal const val W_UNIHAN = 16
         internal const val W_LATIN_WIDE = 9 // width of regular letters
         internal const val W_VAR_INIT = 15 // it assumes width of 15 regardless of the tagged width
@@ -2080,7 +2076,7 @@ class TerrarumSansBitmap(
             "hangul_johab.tga",
             "latinExtA_variable.tga",
             "latinExtB_variable.tga",
-            "kana.tga",
+            "kana_variable.tga",
             "cjkpunct.tga",
             "wenquanyi.tga.gz",
             "cyrilic_variable.tga",
