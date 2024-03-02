@@ -2,7 +2,7 @@
 
 ![Font sample — necessary information in this image is also provided below.](demo.PNG)
 
-This font is a bitmap font used in [my game project called Terrarum](https://github.com/minjaesong/Terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese and Korean. More technical side, it supports Latin-1 Supplement, Latin Ext-A/B/C, IPA Extension, Greek, Cyrillic (+ Bulgarian, Serbian variants) and the supplement, Armenian, Devanagari, Bengali, Thai, Georgian (Mkhedruli and Mtavruli), General Punctuations, Super/Subscrips, CJK Punctuations, All of the Kana (minus the Hentaigana), Chinese (limited to Unihan and Ext-A), Hangul (every possible syllables) and Fullwidth forms.
+This font is a bitmap font used in [my game project called Terrarum](https://github.com/minjaesong/Terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese, and Korean.
 
 The JAR package is meant to be used with LibGDX (extends ```BitmapFont``` class). If you are not using the framework, please refer to the __Font metrics__ section to implement the font metrics correctly on your system.
 
@@ -97,4 +97,4 @@ Please refer to [CONTRIBUTING.md](https://github.com/minjaesong/Terrarum-sans-bi
 
 Thanks to kind people of [/r/Typography](https://www.reddit.com/r/typography/) for amazing feedbacks.
 
-CJK Ideographs are powered by [WenQuanYi Font](http://wenq.org/wqy2/index.cgi?BitmapSong). The font is distributed under the GNU GPL version 2. Although the shapes of typefaces are not copyrightable (the program codes—e.g. TTF—do), we would like to give a credit for the font and the people behind it.
+CJK Ideographs are powered by [WenQuanYi Font](http://wenq.org/wqy2/index.cgi?BitmapSong). The font is distributed under the GNU GPL version 2. Although the shapes of typefaces are not copyrightable (the program codes—e.g. TTF—do), we would like to give a credit to the font and the people behind it.
