@@ -32,6 +32,7 @@ import com.badlogic.gdx.graphics.g2d.*
 import com.badlogic.gdx.utils.GdxRuntimeException
 import net.torvald.terrarumsansbitmap.DiacriticsAnchor
 import net.torvald.terrarumsansbitmap.GlyphProps
+import net.torvald.terrarumsansbitmap.MovableType
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
 import java.util.*
@@ -122,13 +123,14 @@ class TerrarumSansBitmap(
     private var textCacheCap = 0
     private val textCache = HashMap<Long, TextCacheObj>(textCacheSize * 2)
 
+    private var typesetCacheCap = 0
+    private val typesetCache = HashMap<Long, MovableType>(textCacheSize)
+
     /**
      * Insertion sorts the last element fo the textCache
      */
-    private fun addToCache(text: CodepointSequence, linotype: Texture, width: Int) {
-        val cacheObj = TextCacheObj(text.getHash(), ShittyGlyphLayout(text, linotype, width))
-
-        if (textCacheCap < textCacheSize) {
+    private fun addToCache(cacheObj: TextCacheObj) {
+        if (textCacheCap < textCacheSize * 2) {
             textCache[cacheObj.hash] = cacheObj
             textCacheCap += 1
         }
@@ -141,8 +143,26 @@ class TerrarumSansBitmap(
         }
     }
 
+    private fun addToTypesetCache(cacheObj: MovableType) {
+        if (typesetCacheCap < textCacheSize) {
+            typesetCache[cacheObj.hash] = cacheObj
+            typesetCacheCap += 1
+        }
+        else {
+            // randomly eliminate one
+            typesetCache.remove(typesetCache.keys.random())!!.dispose()
+
+            // add new one
+            typesetCache[cacheObj.hash] = cacheObj
+        }
+    }
+
     private fun getCache(hash: Long): TextCacheObj? {
         return textCache[hash]
+    }
+
+    private fun getTypesetCache(hash: Long): MovableType? {
+        return typesetCache[hash]
     }
 
 
@@ -244,6 +264,7 @@ class TerrarumSansBitmap(
 
             if (isVariable) buildWidthTable(pixmap, codeRange[index], if (isExtraWide) 32 else 16)
             buildWidthTableFixed()
+            buildWidthTableInternal()
 
 
             /*if (!noShadow) {
@@ -333,140 +354,23 @@ class TerrarumSansBitmap(
         val charSeqNotBlank = codepoints.size > 0 // determine emptiness BEFORE you hack a null chars in
         val newCodepoints = codepoints
 
-        fun Int.flipY() = this * if (flipY) 1 else -1
-
         // always draw at integer position; this is bitmap font after all
         val x = Math.round(x)
         val y = Math.round(y + (lineHeight - 20 * scale) / 2)
 
         val charSeqHash = newCodepoints.getHash()
 
-        var renderCol = -1 // subject to change with the colour code
-
         if (charSeqNotBlank) {
 
-            val cacheObj = getCache(charSeqHash)
+            var cacheObj = getCache(charSeqHash)
 
             if (cacheObj == null || flagFirstRun) {
-                textBuffer = newCodepoints
-
-                val posmap = buildPosMap(textBuffer)
-
-                flagFirstRun = false
-
-                //dbgprn("text not in buffer: $charSeq")
-
-
-                //textBuffer.forEach { print("${it.toHex()} ") }
-                //dbgprn()
-
-
-//                resetHash(charSeq, x.toFloat(), y.toFloat())
-
-                val textWidth = posmap.width
-                val _pw = textWidth + (linotypePaddingX * 2)
-                val _ph = H + (linotypePaddingY * 2)
-                if (_pw < 0 || _ph < 0) throw RuntimeException("Illegal linotype dimension (w: $_pw, h: $_ph)")
-                val linotypePixmap = Pixmap(_pw, _ph, Pixmap.Format.RGBA8888)
-
-
-                var index = 0
-                while (index <= textBuffer.lastIndex) {
-                    try {
-                        var c = textBuffer[index]
-                        val sheetID = getSheetType(c)
-
-                        val (sheetX, sheetY) =
-                            if (index == 0) getSheetwisePosition(0, c)
-                            else getSheetwisePosition(textBuffer[index - 1], c)
-                        val hash = getHash(c) // to be used with Bad Transmission Modifier
-
-                        if (isColourCode(c)) {
-                            if (c == 0x100000) {
-                                renderCol = -1
-                            }
-                            else {
-                                renderCol = getColour(c)
-                            }
-                        }
-                        else if (sheetID == SHEET_HANGUL) {
-                            // Flookahead for {I, P, F}
-
-                            val cNext = if (index + 1 < textBuffer.size) textBuffer[index + 1] else 0
-                            val cNextNext = if (index + 2 < textBuffer.size) textBuffer[index + 2] else 0
-
-                            val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
-                                3
-                            else if (isHangulJungseong(cNext))
-                                2
-                            else
-                                1
-
-                            val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
-
-                            val (indexCho, indexJung, indexJong) = indices
-                            val (choRow, jungRow, jongRow) = rows
-                            val hangulSheet = sheets[SHEET_HANGUL]
-
-
-
-                            val choTex = hangulSheet.get(indexCho, choRow)
-                            val jungTex = hangulSheet.get(indexJung, jungRow)
-                            val jongTex = hangulSheet.get(indexJong, jongRow)
-
-                            linotypePixmap.drawPixmap(choTex,  posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
-                            linotypePixmap.drawPixmap(jungTex, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
-                            linotypePixmap.drawPixmap(jongTex, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
-
-
-                            index += hangulLength - 1
-
-                        }
-                        else {
-                            try {
-                                val posY = posmap.y[index].flipY() +
-                                        if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                            offsetUnihan
-                                        else if (sheetID == SHEET_CUSTOM_SYM)
-                                            offsetCustomSym
-                                        else 0
-
-                                val posX = posmap.x[index]
-                                val texture = sheets[sheetID].get(sheetX, sheetY)
-
-                                linotypePixmap.drawPixmap(texture, posX + linotypePaddingX, posY + linotypePaddingY, renderCol)
-
-
-                            }
-                            catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
-                            }
-                        }
-
-
-                        index++
-                    }
-                    catch (e: NullPointerException) {
-                        System.err.println("Shit hit the multithreaded fan")
-                        e.printStackTrace()
-                        break
-                    }
-                }
-
-
-                makeShadow(linotypePixmap)
-
-                tempLinotype = Texture(linotypePixmap)
-                tempLinotype.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
-
-                // put things into cache
-                //textCache[charSeq] = ShittyGlyphLayout(textBuffer, linotype!!)
-                addToCache(textBuffer, tempLinotype, textWidth)
-                linotypePixmap.dispose()
+                cacheObj = createTextCache(newCodepoints)
+                addToCache(cacheObj)
             }
-            else {
-                textBuffer = cacheObj.glyphLayout!!.textBuffer
-                tempLinotype = cacheObj.glyphLayout!!.linotype
-            }
+
+            textBuffer = cacheObj.glyphLayout!!.textBuffer
+            tempLinotype = cacheObj.glyphLayout!!.linotype
 
             batch.draw(tempLinotype,
                 (x - linotypePaddingX).toFloat(),
@@ -477,6 +381,169 @@ class TerrarumSansBitmap(
         }
 
         return null
+    }
+
+    internal fun createTextCache(newCodepoints: CodepointSequence): TextCacheObj {
+        fun Int.flipY() = this * if (flipY) 1 else -1
+
+        var renderCol = -1 // subject to change with the colour code
+
+        val textBuffer = newCodepoints
+
+        val posmap = buildPosMap(textBuffer)
+
+        flagFirstRun = false
+
+        //dbgprn("text not in buffer: $charSeq")
+
+
+        //textBuffer.forEach { print("${it.toHex()} ") }
+        //dbgprn()
+
+
+//                resetHash(charSeq, x.toFloat(), y.toFloat())
+
+        val textWidth = posmap.width
+        val _pw = textWidth + (linotypePaddingX * 2)
+        val _ph = H + (linotypePaddingY * 2)
+        if (_pw < 0 || _ph < 0) throw RuntimeException("Illegal linotype dimension (w: $_pw, h: $_ph)")
+        val linotypePixmap = Pixmap(_pw, _ph, Pixmap.Format.RGBA8888)
+
+
+        var index = 0
+        while (index <= textBuffer.lastIndex) {
+            try {
+                var c = textBuffer[index]
+                val sheetID = getSheetType(c)
+
+                val (sheetX, sheetY) =
+                    if (index == 0) getSheetwisePosition(0, c)
+                    else getSheetwisePosition(textBuffer[index - 1], c)
+                val hash = getHash(c) // to be used with Bad Transmission Modifier
+
+                if (isColourCode(c)) {
+                    if (c == 0x100000) {
+                        renderCol = -1
+                    }
+                    else {
+                        renderCol = getColour(c)
+                    }
+                }
+                else if (sheetID == SHEET_HANGUL) {
+                    // Flookahead for {I, P, F}
+
+                    val cNext = if (index + 1 < textBuffer.size) textBuffer[index + 1] else 0
+                    val cNextNext = if (index + 2 < textBuffer.size) textBuffer[index + 2] else 0
+
+                    val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
+                        3
+                    else if (isHangulJungseong(cNext))
+                        2
+                    else
+                        1
+
+                    val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
+
+                    val (indexCho, indexJung, indexJong) = indices
+                    val (choRow, jungRow, jongRow) = rows
+                    val hangulSheet = sheets[SHEET_HANGUL]
+
+
+
+                    val choTex = hangulSheet.get(indexCho, choRow)
+                    val jungTex = hangulSheet.get(indexJung, jungRow)
+                    val jongTex = hangulSheet.get(indexJong, jongRow)
+
+                    linotypePixmap.drawPixmap(choTex,  posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                    linotypePixmap.drawPixmap(jungTex, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                    linotypePixmap.drawPixmap(jongTex, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+
+
+                    index += hangulLength - 1
+
+                }
+                else {
+                    try {
+                        val posY = posmap.y[index].flipY() +
+                                if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                    offsetUnihan
+                                else if (sheetID == SHEET_CUSTOM_SYM)
+                                    offsetCustomSym
+                                else 0
+
+                        val posX = posmap.x[index]
+                        val texture = sheets[sheetID].get(sheetX, sheetY)
+
+                        linotypePixmap.drawPixmap(texture, posX + linotypePaddingX, posY + linotypePaddingY, renderCol)
+
+
+                    }
+                    catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
+                    }
+                }
+
+
+                index++
+            }
+            catch (e: NullPointerException) {
+                System.err.println("Shit hit the multithreaded fan")
+                e.printStackTrace()
+                break
+            }
+        }
+
+
+        makeShadow(linotypePixmap)
+
+        val tempLinotype = Texture(linotypePixmap)
+        tempLinotype.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+
+        // make cache object
+        val cacheObj = TextCacheObj(textBuffer.getHash(), ShittyGlyphLayout(textBuffer, tempLinotype, textWidth))
+        linotypePixmap.dispose()
+
+        return cacheObj
+    }
+
+    /**
+     * Typesets given string and returns the typesetted results, with which the desired text can be drawn on the screen.
+     * This method alone will NOT draw the text to the screen, use [MovableType.draw].
+     */
+    fun typesetParagraph(batch: Batch, charSeq: CharSequence, targetWidth: Int): MovableType =
+        typesetParagraphNormalised(batch, charSeq.toCodePoints(2), targetWidth.toFloat())
+    /**
+     * Typesets given string and returns the typesetted results, with which the desired text can be drawn on the screen.
+     * This method alone will NOT draw the text to the screen, use [MovableType.draw].
+     */
+    fun typesetParagraph(batch: Batch, charSeq: CharSequence, targetWidth: Float): MovableType =
+        typesetParagraphNormalised(batch, charSeq.toCodePoints(2), targetWidth)
+
+
+    private val nullType = MovableType(this, "".toCodePoints(2), 0, true)
+
+    /**
+     * Typesets given string and returns the typesetted results, with which the desired text can be drawn on the screen.
+     * This method alone will NOT draw the text to the screen, use [MovableType.draw].
+     */
+    fun typesetParagraphNormalised(batch: Batch, codepoints: CodepointSequence, targetWidth: Float): MovableType {
+        val charSeqNotBlank = codepoints.size > 0 // determine emptiness BEFORE you hack a null chars in
+        val newCodepoints = codepoints
+
+        val charSeqHash = newCodepoints.getHash()
+
+        if (charSeqNotBlank) {
+            var cacheObj = getTypesetCache(charSeqHash)
+
+            if (cacheObj == null || flagFirstRun) {
+                cacheObj = MovableType(this, codepoints, targetWidth.toInt())
+                addToTypesetCache(cacheObj)
+            }
+
+            return cacheObj
+        }
+        else {
+            return nullType
+        }
     }
 
 
@@ -681,7 +748,12 @@ class TerrarumSansBitmap(
 
     }
 
-    private val glyphLayout = GlyphLayout()
+    private fun buildWidthTableInternal() {
+        for (i in 0 until 16) {
+            glyphProps[MOVABLE_BLOCK_1 + i] = GlyphProps(i + 1)
+            glyphProps[MOVABLE_BLOCK_M1 + i] = GlyphProps(-i - 1)
+        }
+    }
 
     fun getWidth(text: String) = getWidthNormalised(text.toCodePoints())
     fun getWidth(s: CodepointSequence) = getWidthNormalised(s.normalise())
@@ -946,7 +1018,10 @@ class TerrarumSansBitmap(
     }
 
     // basically an Unicode NFD with some additional flavours
-    private fun CodepointSequence.normalise(): CodepointSequence {
+    /**
+     * @param normaliseOption 1-full, 2-omit null filling
+     */
+    private fun CodepointSequence.normalise(normaliseOption: Int = 1): CodepointSequence {
         val seq0 = CodepointSequence()
         val seq = CodepointSequence()
         val seq2 = CodepointSequence()
@@ -1466,7 +1541,13 @@ class TerrarumSansBitmap(
 
 //        println("seq5 = " + seq5.joinToString(" ") { it.toCh() })
 
-        return seq5
+        if (normaliseOption == 2) {
+            while (seq5.remove(0)) {}
+            return seq5
+        }
+        else {
+            return seq5
+        }
     }
 
     private fun dbgprnLig(i: Any) { if (false) println("[${this.javaClass.simpleName}] $i") }
@@ -1511,11 +1592,17 @@ class TerrarumSansBitmap(
      * Note: CharSequence IS a String. java.lang.String implements CharSequence.
      *
      * Note to Programmer: DO NOT USE CHAR LITERALS, CODE EDITORS WILL CHANGE IT TO SOMETHING ELSE !!
+     *
+     * @param normaliseOption 0-don't, 1-full, 2-omit null filling
      */
-    private fun CharSequence.toCodePoints(): CodepointSequence {
+    private fun CharSequence.toCodePoints(normaliseOption: Int = 1): CodepointSequence {
         val seq = CodepointSequence()
         this.forEach { seq.add(it.toInt()) }
-        return seq.normalise()
+
+        return when (normaliseOption) {
+            0 -> seq
+            else -> seq.normalise(normaliseOption)
+        }
     }
 
     private fun surrogatesToCodepoint(var0: Int, var1: Int): Int {
@@ -1706,26 +1793,6 @@ class TerrarumSansBitmap(
         getHash(charSeq.crc32())
         getHash(x.toRawBits())
         getHash(y.toRawBits())
-    }
-
-
-    fun CodepointSequence.getHash(): Long {
-        val hashBasis = -3750763034362895579L
-        val hashPrime = 1099511628211L
-        var hashAccumulator = hashBasis
-
-        try {
-            this.forEach {
-                hashAccumulator = hashAccumulator xor it.toLong()
-                hashAccumulator *= hashPrime
-            }
-        }
-        catch (e: NullPointerException) {
-            System.err.println("CodepointSequence is null?!")
-            e.printStackTrace()
-        }
-
-        return hashAccumulator
     }
 
 
@@ -1968,6 +2035,25 @@ class TerrarumSansBitmap(
 
     companion object {
 
+        fun CodepointSequence.getHash(): Long {
+            val hashBasis = -3750763034362895579L
+            val hashPrime = 1099511628211L
+            var hashAccumulator = hashBasis
+
+            try {
+                this.forEach {
+                    hashAccumulator = hashAccumulator xor it.toLong()
+                    hashAccumulator *= hashPrime
+                }
+            }
+            catch (e: NullPointerException) {
+                System.err.println("CodepointSequence is null?!")
+                e.printStackTrace()
+            }
+
+            return hashAccumulator
+        }
+
         private fun Boolean.toSign() = if (this) 1 else -1
 
         /**
@@ -2065,6 +2151,9 @@ class TerrarumSansBitmap(
         internal const val CHARSET_OVERRIDE_DEFAULT = 0xFFFC0
         internal const val CHARSET_OVERRIDE_BG_BG = 0xFFFC1
         internal const val CHARSET_OVERRIDE_SR_SR = 0xFFFC2
+
+        internal const val MOVABLE_BLOCK_1 = 0xFFFF0
+        internal const val MOVABLE_BLOCK_M1 = 0xFFFE0
 
 
         private val autoShiftDownOnLowercase = arrayOf(
