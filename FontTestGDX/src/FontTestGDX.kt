@@ -4,9 +4,11 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.FrameBuffer
 import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.StreamUtils
+import net.torvald.terrarumsansbitmap.MovableType
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import java.io.File
 import java.io.IOException
@@ -19,32 +21,35 @@ class FontTestGDX : Game() {
 
     lateinit var font: TerrarumSansBitmap
 
-    lateinit var inputText: List<String>
+    lateinit var inputText: String
 
-    lateinit var batch: SpriteBatch
+    lateinit var batch: FlippingSpriteBatch
 
     lateinit var frameBuffer: FrameBuffer
 
     lateinit var camera: OrthographicCamera
 
-    private val testing = false
+    private val testing = true
 
-    private val demotextName = if (testing) "testtext.txt" else "demotext.txt"
+    private val demotextName = if (testing) "testtext.txt" else "demotext_unaligned.txt"
     private val outimageName = if (testing) "testing.PNG" else "demo.PNG"
 
     private lateinit var faketex: Texture
 
     private val lineHeight = 24
 
+
+    lateinit var layout: MovableType
+
     override fun create() {
         font = TerrarumSansBitmap("./assets", debug = true, flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.5f) // must test for two flipY cases
 
         val inTextFile = Gdx.files.internal("./$demotextName")
         val reader = inTextFile.reader("UTF-8")
-        inputText = reader.readLines()
+        inputText = reader.readLines().joinToString("\n")
         reader.close()
 
-        batch = SpriteBatch()
+        batch = FlippingSpriteBatch()
 
 
         // create faketex
@@ -56,12 +61,15 @@ class FontTestGDX : Game() {
         frameBuffer = FrameBuffer(Pixmap.Format.RGBA8888, TEXW, TEXH, true)
 
         camera = OrthographicCamera(TEXW.toFloat(), TEXH.toFloat())
-        camera.translate(TEXW.div(2f), 0f)
-        camera.setToOrtho(true, TEXW.toFloat(), TEXH.toFloat())
+        camera.translate(0f, 0f)
+        camera.setToOrtho(false, TEXW.toFloat(), TEXH.toFloat())
         camera.update()
 
 
         Gdx.input.inputProcessor = Navigator(this)
+
+
+        layout = font.typesetParagraph(batch, inputText, TEXW - 20)
     }
 
     override fun getScreen(): Screen? {
@@ -97,9 +105,10 @@ class FontTestGDX : Game() {
             batch.flush()
 
             batch.color = Color.WHITE
-            inputText.forEachIndexed { index, s ->
-                font.draw(batch, s, 10f, TEXH - 30f - index * lineHeight)
-            }
+//            inputText.forEachIndexed { index, s ->
+//                font.draw(batch, s, 10f, TEXH - 30f - index * lineHeight)
+//            }
+            layout.draw(batch, 10f, 0f)
 
             batch.end()
 
@@ -130,12 +139,12 @@ class FontTestGDX : Game() {
         Gdx.gl.glEnable(GL20.GL_BLEND)
         batch.setBlendFunctionSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA) // for not premultiplied textures
 
+        camera.setToOrtho(true, WIDTH.toFloat(), HEIGHT.toFloat())
 
+        batch.projectionMatrix = camera.combined
         batch.begin()
         batch.color = Color.WHITE
-        batch.draw(tex, 0f, (TEXH.toFloat()/HEIGHT)*TEXH - scrollOffsetY, TEXW.toFloat(), -(TEXH.toFloat() / HEIGHT) * TEXH.toFloat())
-
-
+        batch.draw(tex!!, 0f, scrollOffsetY)
         batch.end()
     }
 
@@ -154,11 +163,11 @@ class FontTestGDX : Game() {
     }
 
     fun scrollAdd(x: Int = 1) {
-        scrollOffsetY -= (TEXH.toFloat() / HEIGHT) * lineHeight * x
+        scrollOffsetY += lineHeight * x
     }
 
     fun scrollSub(x: Int = 1) {
-        scrollOffsetY += (TEXH.toFloat() / HEIGHT) * lineHeight * x
+        scrollOffsetY -= lineHeight * x
     }
 
     class Navigator(val main: FontTestGDX) : InputAdapter() {
@@ -267,8 +276,51 @@ class FontTestGDX : Game() {
     }
 }
 
+class FlippingSpriteBatch(size: Int = 1000) : SpriteBatch(size) {
+
+    /**
+     * This function draws the flipped version of the image by giving flipped uv-coord to the SpriteBatch
+     */
+    override fun draw(texture: Texture, x: Float, y: Float, width: Float, height: Float) =
+        draw(texture, x, y, width, height, 0f, 0f, 1f, 1f)
+
+    override fun draw(texture: Texture, x: Float, y: Float) =
+        draw(texture, x, y, texture.width.toFloat(), texture.height.toFloat(), 0f, 0f, 1f, 1f)
+
+    fun drawFlipped(texture: Texture, x: Float, y: Float, width: Float, height: Float) =
+        draw(texture, x, y, width, height, 0f, 1f, 1f, 0f)
+    fun drawFlipped(texture: Texture, x: Float, y: Float) =
+        draw(texture, x, y, texture.width.toFloat(), texture.height.toFloat(), 0f, 1f, 1f, 0f)
+
+
+    /**
+     * This function does obey the flipping set to the TextureRegion and try to draw flipped version of it,
+     * without touching the flipping setting of the given region.
+     */
+    override fun draw(region: TextureRegion, x: Float, y: Float, width: Float, height: Float) =
+        draw(region.texture, x, y, width, height, region.u, region.v, region.u2, region.v2)
+
+    override fun draw(region: TextureRegion, x: Float, y: Float) =
+        draw(region.texture, x, y, region.regionWidth.toFloat(), region.regionHeight.toFloat(), region.u, region.v, region.u2, region.v2)
+
+    fun drawFlipped(region: TextureRegion, x: Float, y: Float, width: Float, height: Float) =
+        draw(region.texture, x, y, width, height, region.u, region.v2, region.u2, region.v)
+    fun drawFlipped(region: TextureRegion, x: Float, y: Float) =
+        draw(region.texture, x, y, region.regionWidth.toFloat(), region.regionHeight.toFloat(), region.u, region.v2, region.u2, region.v)
+
+
+
+    /**
+     * NOTE TO SELF:
+     *
+     * It seems that original SpriteBatch Y-flips when it's drawing a texture, but NOT when it's drawing a textureregion
+     *
+     * (textureregion's default uv-coord is (0,0,1,1)
+     */
+}
+
 lateinit var appConfig: Lwjgl3ApplicationConfiguration
-const val TEXW = 874
+const val TEXW = 800
 const val TEXH = 24 * 130
 
 const val WIDTH = TEXW
