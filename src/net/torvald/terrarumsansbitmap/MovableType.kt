@@ -6,9 +6,7 @@ import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.TextCacheObj
-import kotlin.math.ceil
-import kotlin.math.pow
-import kotlin.math.round
+import kotlin.math.*
 
 /**
  * Created by minjaesong on 2024-03-24.
@@ -44,12 +42,13 @@ class MovableType(
         val inputCharSeqsTokenised = inputText.tokenise()
         val inputWords = inputCharSeqsTokenised.map {
             val seq = if (it.isEmpty())
-                CodepointSequence(listOf(0x20))
-            else
-                it
-
-            seq.add(0, 0)
-            seq.add(0)
+                CodepointSequence(listOf(0x00))
+            else {
+                it.also { seq ->
+                    seq.add(0, 0)
+                    seq.add(0)
+                }
+            }
 
             font.createTextCache(CodepointSequence(seq))
         }
@@ -82,9 +81,13 @@ class MovableType(
             val thisWordWidth = thisWord.width - if (nextWordEndsWithHangable) hangWidth else 0
             val scoreForAddingWordThenTightening0 = lineWidthNow + spaceWidth + thisWordWidth - width
             val scoreForAddingWordThenTightening = penaliseTightening(scoreForAddingWordThenTightening0)
+            // widen: 1, tighten: -1
+            val operation = if (scoreForWidening == 0f && scoreForAddingWordThenTightening == 0f) 0
+            else if (scoreForWidening < scoreForAddingWordThenTightening) 1
+            else -1
 
             // if adding word and contracting is better (has LOWER score), add the word
-            if (scoreForAddingWordThenTightening < scoreForWidening) {
+            if (operation == -1) {
                 currentLine.add(Block(lineWidthNow + spaceWidth, thisWordObj))
                 // remove this word from the list of future words
                 dequeue()
@@ -94,19 +97,24 @@ class MovableType(
 
             // continue with the widening/contraction
             val moveDeltas = IntArray(numberOfWords)
-            val finalScore = minOf(scoreForWidening, scoreForAddingWordThenTightening0.toFloat())
+
+            val finalScore = when (operation) {
+                1 -> scoreForWidening.toFloat()
+                -1 -> scoreForAddingWordThenTightening0.toFloat()
+                else -> 0f
+            }
+
             if (numberOfWords > 1) {
-                val moveAmountsByWord = coalesceIndices(sortWordsByPriority(currentLine, round(finalScore).toInt()))
+                val moveAmountsByWord = coalesceIndices(sortWordsByPriority(currentLine, round(finalScore.absoluteValue).toInt()))
                 for (i in 1 until moveDeltas.size) {
                     moveDeltas[i] = moveDeltas[i - 1] + moveAmountsByWord.getOrElse(i) { 0 }
                 }
             }
 
+            moveDeltas.indices.forEach {
+                moveDeltas[it] = moveDeltas[it] * finalScore.sign.toInt()
+            }
 
-            // widen: 1, tighten: -1
-            val operation = if (scoreForWidening == 0f && scoreForAddingWordThenTightening == 0f) 0
-            else if (scoreForWidening < scoreForAddingWordThenTightening) 1
-            else -1
 
             val widthOld = currentLine.last().let { it.posX + it.block.glyphLayout!!.width }
 
@@ -124,7 +132,7 @@ class MovableType(
 
             val lineHeader = "Strategy [L ${lines.size}]: "
             val lineHeader2 = " ".repeat(lineHeader.length)
-            println(lineHeader + (if (operation == 0) "Nop" else if (operation == 1) "Widen" else "Tighten") +
+            println(lineHeader + (if (operation * finalScore.sign.toInt() == 0) "Nop" else if (operation * finalScore.sign.toInt() == 1) "Widen" else "Tighten") +
                     " (W $scoreForWidening, T $scoreForAddingWordThenTightening; $finalScore), " +
                     "width: $widthOld -> $widthNew, wordCount: $numberOfWords, " +
                     "thislineEndsWithHangable: $thislineEndsWithHangable, nextWordEndsWithHangable: $nextWordEndsWithHangable")
@@ -147,14 +155,14 @@ class MovableType(
             thisWordStr = thisWord.textBuffer // ALWAYS starts and ends with \0
             lineWidthNow = if (currentLine.isEmpty()) -spaceWidth else currentLine.last().let { it.posX + it.block.glyphLayout!!.width }
 
-//            println("Processing word [$wordCount] ${thisWordStr.joinToString("") { Character.toString(it.toChar()) }} ; \t\t${thisWordStr.joinToString(" ") { it.toHex() }}")
+            println("Processing word [$wordCount] ${thisWordStr.joinToString("") { Character.toString(it.toChar()) }} ; \t\t${thisWordStr.joinToString(" ") { it.toHex() }}")
 
             // if the word is \n
             if (thisWordStr.size == 3 && thisWordStr[1] == 0x0A) {
-                println("Strategy [L ${lines.size}]: (line is shorter than the paper width)")
+                println("Strategy [L ${lines.size}]: line is shorter than the paper width ($lineWidthNow < $width)")
 
                 // flush the line
-                flush()
+                if (lineWidthNow >= 0) flush()
 
                 // remove the word from the list of future words
                 dequeue()
