@@ -235,9 +235,9 @@ class MovableType(
     private data class Block(var posX: Int, val block: TextCacheObj) // a single word
 
     companion object {
-        private val periods = listOf(0x2E, 0x3A, 0x21, 0x3F, 0x2026, 0x3002).toHashSet()
+        private val periods = listOf(0x2E, 0x3A, 0x21, 0x3F, 0x2026, 0x3002, 0xff0e).toHashSet()
         private val quots = listOf(0x22, 0x27, 0xAB, 0xBB, 0x2018, 0x2019, 0x201A, 0x201B, 0x201C, 0x201D, 0x201E, 0x201F, 0x2039, 0x203A).toHashSet()
-        private val commas = listOf(0x2C, 0x3B, 0x3001).toHashSet()
+        private val commas = listOf(0x2C, 0x3B, 0x3001, 0xff0c).toHashSet()
         private val hangable = listOf(0x2E, 0x2C).toHashSet()
         private val spaceWidth = 5
         private val hangWidth = 6
