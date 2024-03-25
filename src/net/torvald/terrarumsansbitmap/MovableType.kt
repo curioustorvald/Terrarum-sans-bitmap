@@ -121,12 +121,11 @@ class MovableType(
                 val thisWordObj = inputWords[wordCount]
                 val thisWord = thisWordObj.glyphLayout!!
 
-                val dropped = currentLine.removeLast()
-                val newBlock = Block(dropped.posX, thisWordObj)
+                val newBlock = Block(currentLine.last().getEndPos() + spaceWidth, thisWordObj)
                 currentLine.add(newBlock)
 
                 val lineWidthNow = if (currentLine.isEmpty()) -spaceWidth
-                else currentLine.penultimate().let { it.posX + it.block.glyphLayout!!.width } - 1 // subtract the tiny space AFTER the hyphen
+                else currentLine.penultimate().getEndPos() - 1 // subtract the tiny space AFTER the hyphen
 
                 justifyAndFlush(lineWidthNow, thisWordObj, thisWord, true, scoreForHyphenateThenTryAgain0, scoreForHyphenateThenTryAgain)
             }
@@ -168,7 +167,7 @@ class MovableType(
                 }
 
 
-                val widthOld = currentLine.last().let { it.posX + it.block.glyphLayout!!.width }
+                val widthOld = currentLine.last().getEndPos()
 
                 val anchorsOld = currentLine.map { it.posX }
 
@@ -180,7 +179,7 @@ class MovableType(
 
                 val anchorsNew = currentLine.map { it.posX }
 
-                val widthNew = currentLine.last().let { it.posX + it.block.glyphLayout!!.width }
+                val widthNew = currentLine.last().getEndPos()
 
                 val lineHeader = "Strategy [L ${lines.size}]: "
                 val lineHeader2 = " ".repeat(lineHeader.length)
@@ -210,7 +209,7 @@ class MovableType(
             thisWordStr = thisWord.textBuffer // ALWAYS starts and ends with \0
 
             lineWidthNow = if (currentLine.isEmpty()) -spaceWidth
-            else currentLine.last().let { it.posX + it.block.glyphLayout!!.width }
+            else currentLine.last().getEndPos()
 
             // thisWordStr.size > 2 : ignores nulls that somehow being inserted between CJ characters
             // (thisWordStr.size == 2 && currentLine.isEmpty()) : but DON'T ignore new empty lines (the line starts with TWO NULLS then NULL-LF-NULL)
@@ -279,7 +278,9 @@ class MovableType(
         }
     }
 
-    private data class Block(var posX: Int, val block: TextCacheObj) // a single word
+    private data class Block(var posX: Int, val block: TextCacheObj) { // a single word
+        fun getEndPos() = this.posX + this.block.glyphLayout!!.width
+    }
 
     companion object {
         private val periods = listOf(0x2E, 0x3A, 0x21, 0x3F, 0x2026, 0x3002, 0xff0e).toSortedSet()
@@ -384,9 +385,9 @@ class MovableType(
             return this[this.size - 2]
         }
 
-        private fun penaliseTightening(score: Int): Float = 0.06f * score * score * score + 0.036f * score
+        private fun penaliseTightening(score: Int): Float = 0.0006f * score * score * score + 0.18f * score
 
-        private fun penaliseHyphenation(score: Int): Float = (14.6 * pow(score.toDouble(), 1.0/3.0) + 0.14*score).toFloat()
+        private fun penaliseHyphenation(score: Int): Float = (10.0 * pow(score.toDouble(), 1.0/3.0) + 0.47*score).toFloat()
 
         private fun CodePoint.isCJ() = listOf(4, 6).any {
             TerrarumSansBitmap.codeRange[it].contains(this)
