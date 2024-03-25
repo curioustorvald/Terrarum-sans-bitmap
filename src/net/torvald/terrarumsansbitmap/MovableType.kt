@@ -337,10 +337,7 @@ class MovableType(
             return this[this.size - 2]
         }
 
-        private fun penaliseTightening(score: Int): Float = if (score < 0f)
-            -(-score).toFloat().pow(1.05f)
-        else
-            score.toFloat().pow(1.05f)
+        private fun penaliseTightening(score: Int): Float = 0.0006f * score * score * score + 0.036f * score
 
         private fun CodePoint.isCJ() = listOf(4, 6).any {
             TerrarumSansBitmap.codeRange[it].contains(this)
