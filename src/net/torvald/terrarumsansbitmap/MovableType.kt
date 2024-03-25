@@ -353,30 +353,66 @@ class MovableType(
             val tokens = mutableListOf<CodepointSequence>()
             var currentToken = mutableListOf<Int>()
 
+            val controlCharStack = ArrayList<CodePoint>()
+            var colourCode: CodePoint? = null
+            var colourCodeRemovalRequested = false
+
+            fun getControlHeader() = if (colourCode != null)
+                CodepointSequence(controlCharStack.reversed() + colourCode)
+            else
+                CodepointSequence(controlCharStack.reversed())
+
+            fun submitBlock(c: CodepointSequence) {
+                tokens.add(CodepointSequence(getControlHeader() + c))
+
+                if (colourCodeRemovalRequested) {
+                    colourCodeRemovalRequested = false
+                    colourCode = null
+                }
+            }
+
+            fun appendToWord(char: CodePoint) {
+                currentToken.add(char)
+            }
+
             this.forEach {
                 if (it == 0x20 || it == 0x0A) {
-                    tokens.add(CodepointSequence(currentToken))
+                    submitBlock(CodepointSequence(currentToken))
                     if (it != 0x20)
-                        tokens.add(CodepointSequence(listOf(it)))
+                        submitBlock(CodepointSequence(listOf(it)))
                     currentToken = mutableListOf()
                 }
                 else if (it.isCJ()) {
                     // flush out existing buffer
-                    tokens.add(CodepointSequence(currentToken))
+                    CodepointSequence(currentToken).let {
+                        if (it.isNotEmpty()) submitBlock(it)
+                    }
                     // tokenise this single character
-                    tokens.add(CodepointSequence(listOf(it)))
+                    submitBlock(CodepointSequence(listOf(it)))
                     // prepare new buffer, even if it's wasted because next character is also Chinese/Japanese
                     currentToken = mutableListOf()
                 }
+                else if (it.isColourCode()) {
+                    colourCode = it
+                    appendToWord(it)
+                }
+                else if (it == 0x100000) {
+                    colourCodeRemovalRequested = true
+                    appendToWord(it)
+                }
+                else if (it.isControlIn()) {
+                    controlCharStack.add(0, it)
+                }
+                else if (it.isControlOut()) {
+                    controlCharStack.removeAt(0)
+                }
                 else {
-                    currentToken.add(it)
+                    appendToWord(it)
                 }
             }
 
             // Add the last token if it's not empty
-            if (currentToken.isNotEmpty()) {
-                tokens.add(CodepointSequence(currentToken))
-            }
+            submitBlock(CodepointSequence(currentToken))
 
             return tokens
         }
@@ -392,6 +428,10 @@ class MovableType(
         private fun CodePoint.isCJ() = listOf(4, 6).any {
             TerrarumSansBitmap.codeRange[it].contains(this)
         }
+
+        private fun CodePoint.isControlIn() = controlIns.contains(this)
+        private fun CodePoint.isControlOut() = controlOuts.contains(this)
+        private fun CodePoint.isColourCode() = colourCodes.contains(this)
 
         /**
          * Hyphenates the word at the middle ("paragraph" -> "para-graph")
@@ -474,6 +514,9 @@ class MovableType(
 
         private val hangulI = ((0x1100..0x115E) + (0xA960..0xA97F)).toSortedSet()
         private val hangulPK = ((0x1160..0x11FF) + (0xD7B0..0xD7FF)).toSortedSet()
+        private val colourCodes = (0x10F000..0x10FFFF).toSortedSet()
+        private val controlIns = listOf(0xFFFA2, 0xFFFA3, 0xFFFC1, 0xFFFC2).toSortedSet()
+        private val controlOuts = listOf(0xFFFBF, 0xFFFC0).toSortedSet()
 
         private fun CodepointSequence.toReadable() = this.joinToString("") { Character.toString(it.toChar()) }
 
