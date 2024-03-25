@@ -8,6 +8,7 @@ import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.TextCacheObj
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.ShittyGlyphLayout
+import java.lang.Math.pow
 import kotlin.math.*
 
 /**
@@ -50,7 +51,7 @@ class MovableType(
             }
 
             font.createTextCache(CodepointSequence(seq))
-        } // list of [ word, word, \n, word, word, word, ... ]
+        }.toMutableList() // list of [ word, word, \n, word, word, word, ... ]
 
 
         println("Length of input text: ${inputText.size}")
@@ -75,8 +76,14 @@ class MovableType(
         fun justifyAndFlush(
             lineWidthNow: Int,
             thisWordObj: TextCacheObj,
-            thisWord: ShittyGlyphLayout
+            thisWord: ShittyGlyphLayout,
+            hyphenated: Boolean = false,
+            hyphenationScore0: Int? = null,
+            hyphenationScore: Float? = null
         ) {
+            println("    JustifyAndFlush: widthNow = $lineWidthNow, thisWord = ${thisWord.textBuffer.toReadable()}, hyphenated = $hyphenated")
+
+
             val thislineEndsWithHangable =
                 hangable.contains(currentLine.last().block.glyphLayout!!.textBuffer.penultimate())
             val nextWordEndsWithHangable = hangable.contains(thisWordObj.glyphLayout!!.textBuffer.penultimate())
@@ -86,71 +93,111 @@ class MovableType(
             val thisWordWidth = thisWord.width - if (nextWordEndsWithHangable) hangWidth else 0
             val scoreForAddingWordThenTightening0 = lineWidthNow + spaceWidth + thisWordWidth - width
             val scoreForAddingWordThenTightening = penaliseTightening(scoreForAddingWordThenTightening0)
-            // widen: 1, tighten: -1
-            val operation = if (scoreForWidening == 0f && scoreForAddingWordThenTightening == 0f) 0
-            else if (scoreForWidening < scoreForAddingWordThenTightening) 1
-            else -1
 
-            // if adding word and contracting is better (has LOWER score), add the word
-            if (operation == -1) {
-                currentLine.add(Block(lineWidthNow + spaceWidth, thisWordObj))
-                // remove this word from the list of future words
-                dequeue()
+            val (hyphFore, hypePost) = if (hyphenated) thisWord.textBuffer to CodepointSequence()
+                else thisWord.textBuffer.hyphenate() // hypePost may be empty!
+            val scoreForHyphenateThenTryAgain0 = if (!hyphenated) {
+                val halfWordWidth = font.getWidth(hyphFore)
+                (lineWidthNow + spaceWidth + halfWordWidth - width)
             }
-
-            val numberOfWords = currentLine.size
-
-            // continue with the widening/contraction
-            val moveDeltas = IntArray(numberOfWords)
-
-            val finalScore = when (operation) {
-                1 -> scoreForWidening.toFloat()
-                -1 -> scoreForAddingWordThenTightening0.toFloat()
-                else -> 0f
+            else {
+                2147483647
             }
+            val scoreForHyphenateThenTryAgain = penaliseHyphenation(scoreForHyphenateThenTryAgain0)
 
-            if (numberOfWords > 1) {
-                val moveAmountsByWord =
-                    coalesceIndices(sortWordsByPriority(currentLine, round(finalScore.absoluteValue).toInt()))
-                for (i in 1 until moveDeltas.size) {
-                    moveDeltas[i] = moveDeltas[i - 1] + moveAmountsByWord.getOrElse(i) { 0 }
+            println("Prestrategy [L ${lines.size}] Scores: W $scoreForWidening, T $scoreForAddingWordThenTightening ($scoreForAddingWordThenTightening0), H $scoreForHyphenateThenTryAgain ($scoreForHyphenateThenTryAgain0)")
+
+
+            if (scoreForHyphenateThenTryAgain < minOf(scoreForWidening, scoreForAddingWordThenTightening) && !hyphenated) {
+                println("        Hyphenation: '${hyphFore.toReadable()}' '${hypePost.toReadable()}'")
+
+                inputWords[wordCount] = font.createTextCache(hyphFore)
+                inputWords.add(wordCount + 1, font.createTextCache(hypePost))
+
+                // testing only
+//                inputWords[wordCount] = font.createTextCache(CodepointSequence("FORE-".toCharArray().map { it.toInt() }))
+//                inputWords.add(wordCount + 1, font.createTextCache((CodepointSequence("POST".toCharArray().map { it.toInt() }))))
+
+                val thisWordObj = inputWords[wordCount]
+                val thisWord = thisWordObj.glyphLayout!!
+
+                val dropped = currentLine.removeLast()
+                val newBlock = Block(dropped.posX, thisWordObj)
+                currentLine.add(newBlock)
+
+                val lineWidthNow = if (currentLine.isEmpty()) -spaceWidth
+                else currentLine.penultimate().let { it.posX + it.block.glyphLayout!!.width } - 1 // subtract the tiny space AFTER the hyphen
+
+                justifyAndFlush(lineWidthNow, thisWordObj, thisWord, true, scoreForHyphenateThenTryAgain0, scoreForHyphenateThenTryAgain)
+            }
+            else {
+                // widen: 1, tighten: -1
+                val operation = if (hyphenated) -1
+                else if (scoreForWidening == 0f && scoreForAddingWordThenTightening == 0f) 0
+                else if (scoreForWidening < scoreForAddingWordThenTightening) 1
+                else -1
+
+                // if adding word and contracting is better (has LOWER score), add the word
+                if (operation == -1) {
+                    if (!hyphenated) currentLine.add(Block(lineWidthNow + spaceWidth, thisWordObj))
+                    // remove this word from the list of future words
+                    dequeue()
                 }
+
+                val numberOfWords = currentLine.size
+
+                // continue with the widening/contraction
+                val moveDeltas = IntArray(numberOfWords)
+
+                val finalScore = when (operation) {
+                    1 -> scoreForWidening.toFloat()
+                    -1 -> scoreForAddingWordThenTightening0.toFloat()
+                    else -> 0f
+                }
+
+                if (numberOfWords > 1) {
+                    val moveAmountsByWord =
+                            coalesceIndices(sortWordsByPriority(currentLine, round(finalScore.absoluteValue).toInt()))
+                    for (i in 1 until moveDeltas.size) {
+                        moveDeltas[i] = moveDeltas[i - 1] + moveAmountsByWord.getOrElse(i) { 0 }
+                    }
+                }
+
+                moveDeltas.indices.forEach {
+                    moveDeltas[it] = moveDeltas[it] * finalScore.sign.toInt()
+                }
+
+
+                val widthOld = currentLine.last().let { it.posX + it.block.glyphLayout!!.width }
+
+                val anchorsOld = currentLine.map { it.posX }
+
+                // apply the operation
+                moveDeltas.forEachIndexed { index, it ->
+                    val delta = operation * it
+                    currentLine[index].posX += delta
+                }
+
+                val anchorsNew = currentLine.map { it.posX }
+
+                val widthNew = currentLine.last().let { it.posX + it.block.glyphLayout!!.width }
+
+                val lineHeader = "Strategy [L ${lines.size}]: "
+                val lineHeader2 = " ".repeat(lineHeader.length)
+                println(
+                        lineHeader + (if (operation * finalScore.sign.toInt() == 0) "Nop" else if (operation * finalScore.sign.toInt() == 1) "Widen" else "Tighten") +
+                                " (W $scoreForWidening, T $scoreForAddingWordThenTightening, H $hyphenationScore; $finalScore), " +
+                                "width: $widthOld -> $widthNew, wordCount: $numberOfWords, " +
+                                "thislineEndsWithHangable: $thislineEndsWithHangable, nextWordEndsWithHangable: $nextWordEndsWithHangable"
+                )
+                println(lineHeader2 + "moveDelta: ${moveDeltas.map { it * operation }} (${moveDeltas.size})")
+                println(lineHeader2 + "anchors old: $anchorsOld (${anchorsOld.size})")
+                println(lineHeader2 + "anchors new: $anchorsNew (${anchorsNew.size})")
+                println()
+
+                // flush the line
+                flush()
             }
-
-            moveDeltas.indices.forEach {
-                moveDeltas[it] = moveDeltas[it] * finalScore.sign.toInt()
-            }
-
-
-            val widthOld = currentLine.last().let { it.posX + it.block.glyphLayout!!.width }
-
-            val anchorsOld = currentLine.map { it.posX }
-
-            // apply the operation
-            moveDeltas.forEachIndexed { index, it ->
-                val delta = operation * it
-                currentLine[index].posX += delta
-            }
-
-            val anchorsNew = currentLine.map { it.posX }
-
-            val widthNew = currentLine.last().let { it.posX + it.block.glyphLayout!!.width }
-
-            val lineHeader = "Strategy [L ${lines.size}]: "
-            val lineHeader2 = " ".repeat(lineHeader.length)
-            println(
-                lineHeader + (if (operation * finalScore.sign.toInt() == 0) "Nop" else if (operation * finalScore.sign.toInt() == 1) "Widen" else "Tighten") +
-                        " (W $scoreForWidening, T $scoreForAddingWordThenTightening; $finalScore), " +
-                        "width: $widthOld -> $widthNew, wordCount: $numberOfWords, " +
-                        "thislineEndsWithHangable: $thislineEndsWithHangable, nextWordEndsWithHangable: $nextWordEndsWithHangable"
-            )
-            println(lineHeader2 + "moveDelta: ${moveDeltas.map { it * operation }} (${moveDeltas.size})")
-            println(lineHeader2 + "anchors old: $anchorsOld (${anchorsOld.size})")
-            println(lineHeader2 + "anchors new: $anchorsNew (${anchorsNew.size})")
-            println()
-
-            // flush the line
-            flush()
         }
 
         var thisWordObj: TextCacheObj
@@ -172,7 +219,7 @@ class MovableType(
                 val spaceWidth = if (thisWordStr[1].isCJ() && currentLine.isNotEmpty()) 0 else spaceWidth
 
                 println(
-                    "Processing word [$wordCount] ${thisWordStr.joinToString("") { Character.toString(it.toChar()) }} ; \t\t${
+                    "Processing word [$wordCount] ${thisWordStr.toReadable()} ; \t\t${
                         thisWordStr.joinToString(
                             " "
                         ) { it.toHex() }
@@ -235,10 +282,10 @@ class MovableType(
     private data class Block(var posX: Int, val block: TextCacheObj) // a single word
 
     companion object {
-        private val periods = listOf(0x2E, 0x3A, 0x21, 0x3F, 0x2026, 0x3002, 0xff0e).toHashSet()
-        private val quots = listOf(0x22, 0x27, 0xAB, 0xBB, 0x2018, 0x2019, 0x201A, 0x201B, 0x201C, 0x201D, 0x201E, 0x201F, 0x2039, 0x203A).toHashSet()
-        private val commas = listOf(0x2C, 0x3B, 0x3001, 0xff0c).toHashSet()
-        private val hangable = listOf(0x2E, 0x2C).toHashSet()
+        private val periods = listOf(0x2E, 0x3A, 0x21, 0x3F, 0x2026, 0x3002, 0xff0e).toSortedSet()
+        private val quots = listOf(0x22, 0x27, 0xAB, 0xBB, 0x2018, 0x2019, 0x201A, 0x201B, 0x201C, 0x201D, 0x201E, 0x201F, 0x2039, 0x203A).toSortedSet()
+        private val commas = listOf(0x2C, 0x3B, 0x3001, 0xff0c).toSortedSet()
+        private val hangable = listOf(0x2E, 0x2C).toSortedSet()
         private val spaceWidth = 5
         private val hangWidth = 6
 
@@ -261,7 +308,7 @@ class MovableType(
                 val sackOfIndices = (1 until currentLine.size).map {
                     val thisWord = currentLine[it].block.glyphLayout!!.textBuffer
 
-//                    println("    Index word [$it/$length]: ${thisWord.joinToString("") { Character.toString(it.toChar()) }} ; \t\t${thisWord.joinToString(" ") { it.toHex() }}")
+//                    println("    Index word [$it/$length]: ${thisWord.toReadable()} ; \t\t${thisWord.joinToString(" ") { it.toHex() }}")
 
                     val thisWordEnd = thisWord[thisWord.lastIndex]
                     val thisWordFirst = thisWord[0]
@@ -337,11 +384,66 @@ class MovableType(
             return this[this.size - 2]
         }
 
-        private fun penaliseTightening(score: Int): Float = 0.0006f * score * score * score + 0.036f * score
+        private fun penaliseTightening(score: Int): Float = 0.06f * score * score * score + 0.036f * score
+
+        private fun penaliseHyphenation(score: Int): Float = (14.6 * pow(score.toDouble(), 1.0/3.0) + 0.14*score).toFloat()
 
         private fun CodePoint.isCJ() = listOf(4, 6).any {
             TerrarumSansBitmap.codeRange[it].contains(this)
         }
+
+        /**
+         * Hyphenates the word at the middle ("paragraph" -> "para-graph")
+         * 
+         * @return left word ("para-"), right word ("graph")
+         */
+        private fun CodepointSequence.hyphenate(): Pair<CodepointSequence, CodepointSequence> {
+            val middlePoint = this.size / 2
+            // search for the end of the vowel cluster for left and right
+            // one with the least distance from the middle point will be used for hyphenating point
+            val hyphenateCandidates = ArrayList<Int>()
+            for (i in 1 until  this.size) {
+                val thisChar = this[i]
+                val prevChar = this[i-1]
+                if (!isVowel(thisChar) && isVowel(prevChar))
+                    hyphenateCandidates.add(i)
+            }
+
+            hyphenateCandidates.removeIf { it <= 2 || it >= this.size - 2 }
+
+//            println("Hyphenating ${this.toReadable()} -> [${hyphenateCandidates.joinToString()}]")
+
+            if (hyphenateCandidates.isEmpty()) {
+                return this to CodepointSequence()
+            }
+
+            val hyphPoint = hyphenateCandidates.minByOrNull { (it - middlePoint).absoluteValue }!!
+
+//            println("hyphPoint = $hyphPoint")
+
+            val fore = this.subList(0, hyphPoint).toMutableList().let {
+                it.add(0x2d); it.add(0x00)
+                CodepointSequence(it)
+            }
+            val post = this.subList(hyphPoint, this.size).toMutableList().let {
+                it.add(0, 0x00)
+                CodepointSequence(it)
+            }
+
+//            println("hyph return: ${fore.toReadable()} ${post.toReadable()}")
+
+            return fore to post
+        }
+
+        private fun isVowel(c: CodePoint) = vowels.contains(c)
+
+        private val vowels = (listOf(0x41, 0x45, 0x49, 0x4f, 0x55, 0x59, 0x41, 0x65, 0x69, 0x6f, 0x75, 0x79) +
+                (0xc0..0xc6) + (0xc8..0xcf) + (0xd2..0xd6) + (0xd8..0xdd) +
+                (0xe0..0xe6) + (0xe8..0xef) + (0xf2..0xf6) + (0xf8..0xfd) +
+                (0xff..0x105) + (0x112..0x118) + (0x128..0x131) + (0x14c..0x153) +
+                (0x168..0x173) + (0x176..0x178)).toSortedSet()
+
+        private fun CodepointSequence.toReadable() = this.joinToString("") { Character.toString(it.toChar()) }
 
     } // end of companion object
 }
