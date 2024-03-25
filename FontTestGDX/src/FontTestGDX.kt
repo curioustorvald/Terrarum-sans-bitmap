@@ -69,7 +69,7 @@ class FontTestGDX : Game() {
         Gdx.input.inputProcessor = Navigator(this)
 
 
-        layout = font.typesetParagraph(batch, inputText, TEXW - 20)
+        layout = font.typesetParagraph(batch, inputText, TEXW - 48)
     }
 
     override fun getScreen(): Screen? {
@@ -108,7 +108,7 @@ class FontTestGDX : Game() {
 //            inputText.forEachIndexed { index, s ->
 //                font.draw(batch, s, 10f, TEXH - 30f - index * lineHeight)
 //            }
-            layout.draw(batch, 10f, 0f)
+            layout.draw(batch, 24f, 12f)
 
             batch.end()
 

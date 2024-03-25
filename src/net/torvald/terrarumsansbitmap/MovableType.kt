@@ -2,10 +2,12 @@ package net.torvald.terrarumsansbitmap
 
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.utils.Disposable
+import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.TextCacheObj
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.ShittyGlyphLayout
 import kotlin.math.*
 
 /**
@@ -40,19 +42,16 @@ class MovableType(
         if (width < 100) throw IllegalArgumentException("Width too narrow; width must be at least 100 pixels (got $width)")
 
         val inputCharSeqsTokenised = inputText.tokenise()
+
         val inputWords = inputCharSeqsTokenised.map {
-            val seq = if (it.isEmpty())
-                CodepointSequence(listOf(0x00))
-            else {
-                it.also { seq ->
-                    seq.add(0, 0)
-                    seq.add(0)
-                }
+            val seq = it.also { seq ->
+                seq.add(0, 0)
+                seq.add(0)
             }
 
             font.createTextCache(CodepointSequence(seq))
-        }
-        // list of [ word, word, \n, word, word, word, ... ]
+        } // list of [ word, word, \n, word, word, word, ... ]
+
 
         println("Length of input text: ${inputText.size}")
         println("Token size: ${inputCharSeqsTokenised.size}")
@@ -73,11 +72,17 @@ class MovableType(
             currentLine = ArrayList()
         }
 
-        fun justifyAndFlush(lineWidthNow: Int, thisWordObj: TextCacheObj, thisWord: TerrarumSansBitmap.Companion.ShittyGlyphLayout) {
-            val thislineEndsWithHangable = hangable.contains(currentLine.last().block.glyphLayout!!.textBuffer.penultimate())
+        fun justifyAndFlush(
+            lineWidthNow: Int,
+            thisWordObj: TextCacheObj,
+            thisWord: ShittyGlyphLayout
+        ) {
+            val thislineEndsWithHangable =
+                hangable.contains(currentLine.last().block.glyphLayout!!.textBuffer.penultimate())
             val nextWordEndsWithHangable = hangable.contains(thisWordObj.glyphLayout!!.textBuffer.penultimate())
 
-            val scoreForWidening = (width - (lineWidthNow - if (thislineEndsWithHangable) hangWidth else 0)).toFloat()
+            val scoreForWidening =
+                (width - (lineWidthNow - if (thislineEndsWithHangable) hangWidth else 0)).toFloat()
             val thisWordWidth = thisWord.width - if (nextWordEndsWithHangable) hangWidth else 0
             val scoreForAddingWordThenTightening0 = lineWidthNow + spaceWidth + thisWordWidth - width
             val scoreForAddingWordThenTightening = penaliseTightening(scoreForAddingWordThenTightening0)
@@ -105,7 +110,8 @@ class MovableType(
             }
 
             if (numberOfWords > 1) {
-                val moveAmountsByWord = coalesceIndices(sortWordsByPriority(currentLine, round(finalScore.absoluteValue).toInt()))
+                val moveAmountsByWord =
+                    coalesceIndices(sortWordsByPriority(currentLine, round(finalScore.absoluteValue).toInt()))
                 for (i in 1 until moveDeltas.size) {
                     moveDeltas[i] = moveDeltas[i - 1] + moveAmountsByWord.getOrElse(i) { 0 }
                 }
@@ -132,10 +138,12 @@ class MovableType(
 
             val lineHeader = "Strategy [L ${lines.size}]: "
             val lineHeader2 = " ".repeat(lineHeader.length)
-            println(lineHeader + (if (operation * finalScore.sign.toInt() == 0) "Nop" else if (operation * finalScore.sign.toInt() == 1) "Widen" else "Tighten") +
-                    " (W $scoreForWidening, T $scoreForAddingWordThenTightening; $finalScore), " +
-                    "width: $widthOld -> $widthNew, wordCount: $numberOfWords, " +
-                    "thislineEndsWithHangable: $thislineEndsWithHangable, nextWordEndsWithHangable: $nextWordEndsWithHangable")
+            println(
+                lineHeader + (if (operation * finalScore.sign.toInt() == 0) "Nop" else if (operation * finalScore.sign.toInt() == 1) "Widen" else "Tighten") +
+                        " (W $scoreForWidening, T $scoreForAddingWordThenTightening; $finalScore), " +
+                        "width: $widthOld -> $widthNew, wordCount: $numberOfWords, " +
+                        "thislineEndsWithHangable: $thislineEndsWithHangable, nextWordEndsWithHangable: $nextWordEndsWithHangable"
+            )
             println(lineHeader2 + "moveDelta: ${moveDeltas.map { it * operation }} (${moveDeltas.size})")
             println(lineHeader2 + "anchors old: $anchorsOld (${anchorsOld.size})")
             println(lineHeader2 + "anchors new: $anchorsNew (${anchorsNew.size})")
@@ -145,44 +153,63 @@ class MovableType(
             flush()
         }
 
-        var thisWordObj = inputWords[wordCount]
-        var thisWord = thisWordObj.glyphLayout!!
-        var thisWordStr = thisWord.textBuffer // ALWAYS starts and ends with \0
-        var lineWidthNow = if (currentLine.isEmpty()) -spaceWidth else currentLine.last().let { it.posX + it.block.glyphLayout!!.width }
+        var thisWordObj: TextCacheObj
+        var thisWord: ShittyGlyphLayout
+        var thisWordStr: CodepointSequence
+        var lineWidthNow: Int
         while (wordCount < inputWords.size) {
             thisWordObj = inputWords[wordCount]
             thisWord = thisWordObj.glyphLayout!!
             thisWordStr = thisWord.textBuffer // ALWAYS starts and ends with \0
-            lineWidthNow = if (currentLine.isEmpty()) -spaceWidth else currentLine.last().let { it.posX + it.block.glyphLayout!!.width }
 
-            println("Processing word [$wordCount] ${thisWordStr.joinToString("") { Character.toString(it.toChar()) }} ; \t\t${thisWordStr.joinToString(" ") { it.toHex() }}")
+            lineWidthNow = if (currentLine.isEmpty()) -spaceWidth
+            else currentLine.last().let { it.posX + it.block.glyphLayout!!.width }
 
-            // if the word is \n
-            if (thisWordStr.size == 3 && thisWordStr[1] == 0x0A) {
-                println("Strategy [L ${lines.size}]: line is shorter than the paper width ($lineWidthNow < $width)")
+            // thisWordStr.size > 2 : ignores nulls that somehow being inserted between CJ characters
+            // (thisWordStr.size == 2 && currentLine.isEmpty()) : but DON'T ignore new empty lines (the line starts with TWO NULLS then NULL-LF-NULL)
+            if (thisWordStr.size > 2 || (thisWordStr.size == 2 && currentLine.isEmpty())) {
 
-                // flush the line
-                if (lineWidthNow >= 0) flush()
+                val spaceWidth = if (thisWordStr[1].isCJ() && currentLine.isNotEmpty()) 0 else spaceWidth
 
-                // remove the word from the list of future words
-                dequeue()
+                println(
+                    "Processing word [$wordCount] ${thisWordStr.joinToString("") { Character.toString(it.toChar()) }} ; \t\t${
+                        thisWordStr.joinToString(
+                            " "
+                        ) { it.toHex() }
+                    }"
+                )
+
+                // if the word is \n
+                if (thisWordStr.size == 3 && thisWordStr[1] == 0x0A) {
+                    println("Strategy [L ${lines.size}]: line is shorter than the paper width ($lineWidthNow < $width)")
+
+                    // flush the line
+                    if (lineWidthNow >= 0) flush()
+
+                    // remove the word from the list of future words
+                    dequeue()
+                }
+                // decide if it should add last word and make newline, or make newline then add the word
+                // would adding the current word would cause line overflow?
+                else if (lineWidthNow + spaceWidth + thisWord.width >= width) {
+                    justifyAndFlush(lineWidthNow, thisWordObj, thisWord)
+                }
+                // typeset the text normally
+                else {
+                    currentLine.add(Block(lineWidthNow + spaceWidth, thisWordObj))
+
+                    // remove the word from the list of future words
+                    dequeue()
+                }
             }
-            // decide if it should add last word and make newline, or make newline then add the word
-            // would adding the current word would cause line overflow?
-            else if (lineWidthNow + spaceWidth + thisWord.width >= width) {
-                justifyAndFlush(lineWidthNow, thisWordObj, thisWord)
-            }
-            // typeset the text normally
             else {
-                currentLine.add(Block(lineWidthNow + spaceWidth, thisWordObj))
-
-                // remove the word from the list of future words
                 dequeue()
             }
         } // end while
 
         println("Strategy [L ${lines.size}]: (end of the text)")
         flush()
+
 
 
         height = lines.size
@@ -285,6 +312,14 @@ class MovableType(
                         tokens.add(CodepointSequence(listOf(it)))
                     currentToken = mutableListOf()
                 }
+                else if (it.isCJ()) {
+                    // flush out existing buffer
+                    tokens.add(CodepointSequence(currentToken))
+                    // tokenise this single character
+                    tokens.add(CodepointSequence(listOf(it)))
+                    // prepare new buffer, even if it's wasted because next character is also Chinese/Japanese
+                    currentToken = mutableListOf()
+                }
                 else {
                     currentToken.add(it)
                 }
@@ -306,6 +341,11 @@ class MovableType(
             -(-score).toFloat().pow(1.05f)
         else
             score.toFloat().pow(1.05f)
-    }
+
+        private fun CodePoint.isCJ() = listOf(4, 6).any {
+            TerrarumSansBitmap.codeRange[it].contains(this)
+        }
+
+    } // end of companion object
 }
 

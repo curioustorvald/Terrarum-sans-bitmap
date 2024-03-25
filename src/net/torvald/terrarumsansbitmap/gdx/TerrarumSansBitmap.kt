@@ -2199,7 +2199,7 @@ class TerrarumSansBitmap(
             "sundanese_variable.tga",
             "devanagari_internal_extrawide_variable.tga",
         )
-        private val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
+        internal val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
             (0x1100..0x11FF) + (0xA960..0xA97F) + (0xD7B0..0xD7FF), // SHEET_HANGUL, because Hangul Syllables are disassembled prior to the render
             0x100..0x17F, // SHEET_EXTA_VARW
