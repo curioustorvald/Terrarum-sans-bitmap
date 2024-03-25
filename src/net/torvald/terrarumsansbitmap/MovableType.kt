@@ -403,46 +403,77 @@ class MovableType(
             // search for the end of the vowel cluster for left and right
             // one with the least distance from the middle point will be used for hyphenating point
             val hyphenateCandidates = ArrayList<Int>()
+            val splitCandidates = ArrayList<Int>()
             for (i in 1 until  this.size) {
                 val thisChar = this[i]
                 val prevChar = this[i-1]
                 if (!isVowel(thisChar) && isVowel(prevChar))
                     hyphenateCandidates.add(i)
+                if (isHangulPK(prevChar) && isHangulI(thisChar))
+                    splitCandidates.add((i))
             }
 
             hyphenateCandidates.removeIf { it <= 2 || it >= this.size - 2 }
+            splitCandidates.removeIf { it <= 2 || it >= this.size - 2 }
 
 //            println("Hyphenating ${this.toReadable()} -> [${hyphenateCandidates.joinToString()}]")
 
-            if (hyphenateCandidates.isEmpty()) {
+            if (hyphenateCandidates.isEmpty() && splitCandidates.isEmpty()) {
                 return this to CodepointSequence()
             }
 
-            val hyphPoint = hyphenateCandidates.minByOrNull { (it - middlePoint).absoluteValue }!!
+            // priority: 1st split, 2nd hyphenate
+
+            val splitPoint = splitCandidates.minByOrNull { (it - middlePoint).absoluteValue }
+            val hyphPoint = hyphenateCandidates.minByOrNull { (it - middlePoint).absoluteValue }
 
 //            println("hyphPoint = $hyphPoint")
 
-            val fore = this.subList(0, hyphPoint).toMutableList().let {
-                it.add(0x2d); it.add(0x00)
-                CodepointSequence(it)
-            }
-            val post = this.subList(hyphPoint, this.size).toMutableList().let {
-                it.add(0, 0x00)
-                CodepointSequence(it)
-            }
+            if (splitPoint != null) {
+                val fore = this.subList(0, splitPoint).toMutableList().let {
+                    it.add(0x00)
+                    CodepointSequence(it)
+                }
+                val post = this.subList(splitPoint, this.size).toMutableList().let {
+                    it.add(0, 0x00)
+                    CodepointSequence(it)
+                }
 
-//            println("hyph return: ${fore.toReadable()} ${post.toReadable()}")
+//                println("hyph return: ${fore.toReadable()} ${post.toReadable()}")
 
-            return fore to post
+                return fore to post
+            }
+            else if (hyphPoint != null) {
+                val fore = this.subList(0, hyphPoint).toMutableList().let {
+                    it.add(0x2d); it.add(0x00)
+                    CodepointSequence(it)
+                }
+                val post = this.subList(hyphPoint, this.size).toMutableList().let {
+                    it.add(0, 0x00)
+                    CodepointSequence(it)
+                }
+
+//                println("hyph return: ${fore.toReadable()} ${post.toReadable()}")
+
+                return fore to post
+            }
+            else {
+                return this to CodepointSequence()
+            }
         }
 
         private fun isVowel(c: CodePoint) = vowels.contains(c)
+        private fun isHangulI(c: CodePoint) = hangulI.contains(c)
+        private fun isHangulPK(c: CodePoint) = hangulPK.contains(c)
 
         private val vowels = (listOf(0x41, 0x45, 0x49, 0x4f, 0x55, 0x59, 0x41, 0x65, 0x69, 0x6f, 0x75, 0x79) +
                 (0xc0..0xc6) + (0xc8..0xcf) + (0xd2..0xd6) + (0xd8..0xdd) +
                 (0xe0..0xe6) + (0xe8..0xef) + (0xf2..0xf6) + (0xf8..0xfd) +
                 (0xff..0x105) + (0x112..0x118) + (0x128..0x131) + (0x14c..0x153) +
                 (0x168..0x173) + (0x176..0x178)).toSortedSet()
+
+        private val hangulI = ((0x1100..0x115E) + (0xA960..0xA97F)).toSortedSet()
+        private val hangulPK = ((0x1160..0x11FF) + (0xD7B0..0xD7FF)).toSortedSet()
 
         private fun CodepointSequence.toReadable() = this.joinToString("") { Character.toString(it.toChar()) }
 
