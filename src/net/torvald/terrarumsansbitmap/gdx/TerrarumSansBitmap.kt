@@ -1813,6 +1813,12 @@ class TerrarumSansBitmap(
     fun CodePoint.isLowHeight() = glyphProps[this]?.isLowheight == true
 
     private fun getKerning(prevChar: CodePoint, thisChar: CodePoint): Int {
+        // dirty way of special rule sue me lol
+        if (lowercaseRs.contains(prevChar) && dots.contains(thisChar)) {
+            return -1
+        }
+
+        // use keming machine
         val maskL = glyphProps[prevChar]?.kerningMask
         val maskR = glyphProps[thisChar]?.kerningMask
         return if (glyphProps[prevChar]?.hasKernData == true && glyphProps[thisChar]?.hasKernData == true) {
@@ -2501,6 +2507,13 @@ class TerrarumSansBitmap(
 
 
         // END Hangul //
+
+        // latin specific //
+
+        private val lowercaseRs = arrayOf(0x72, 0x155, 0x157, 0x159, 0x211, 0x213, 0x27c, 0x1e59, 0x1e58, 0x1e5f).toSortedSet()
+        private val dots = arrayOf(0x2c, 0x2e).toSortedSet()
+
+        // END latin //
 
         private fun isHangul(c: CodePoint) = c in codeRange[SHEET_HANGUL] || c in codeRangeHangulCompat
         private fun isBulgarian(c: CodePoint) = c in 0xF0000..0xF005F
