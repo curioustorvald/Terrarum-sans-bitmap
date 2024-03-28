@@ -2104,7 +2104,7 @@ class TerrarumSansBitmap(
         internal const val H_STACKUP_LOWERCASE_SHIFTDOWN = 4
         internal const val H_OVERLAY_LOWERCASE_SHIFTDOWN = 2
 
-        internal const val SIZE_CUSTOM_SYM = 18
+        internal const val SIZE_CUSTOM_SYM = 20
 
         internal const val SHEET_ASCII_VARW =        0
         internal const val SHEET_HANGUL =            1
