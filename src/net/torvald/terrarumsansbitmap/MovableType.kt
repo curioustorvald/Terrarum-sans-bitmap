@@ -349,72 +349,140 @@ class MovableType(
             return ret
         }
 
-        private fun CodepointSequence.tokenise(): MutableList<CodepointSequence> {
-            val tokens = mutableListOf<CodepointSequence>()
-            var currentToken = mutableListOf<Int>()
+        /**
+         * This function will tokenise input string into a list of boxes.
+         *
+         * Each element in the outer list is a single line of the text. The line can be empty.
+         *
+         * Inner list (ArrayList) contains the boxes for the single line.
+         */
+        private fun CodepointSequence.tokenise(): List<ArrayList<CodepointSequence>> {
+            val lines = ArrayList<ArrayList<CodepointSequence>>()
+            var tokens = ArrayList<CodepointSequence>()
+            var boxBuffer = mutableListOf<Int>()
 
             val controlCharStack = ArrayList<CodePoint>()
             var colourCode: CodePoint? = null
             var colourCodeRemovalRequested = false
+
+            var cM: Int? = null
+            var glue = 0
 
             fun getControlHeader() = if (colourCode != null)
                 CodepointSequence(controlCharStack.reversed() + colourCode)
             else
                 CodepointSequence(controlCharStack.reversed())
 
-            fun submitBlock(c: CodepointSequence) {
-                tokens.add(CodepointSequence(getControlHeader() + c))
+
+
+            fun sendoutBox() {
+                tokens.add(CodepointSequence(getControlHeader() + boxBuffer))
 
                 if (colourCodeRemovalRequested) {
                     colourCodeRemovalRequested = false
                     colourCode = null
                 }
+
+                boxBuffer = mutableListOf()
             }
 
-            fun appendToWord(char: CodePoint) {
-                currentToken.add(char)
+            fun sendoutGlue() {
+                if (glue == 0)
+                    tokens.add(CodepointSequence(ZWSP))
+                else if (glue.absoluteValue <= 16)
+                    if (glue > 0)
+                        tokens.add(CodepointSequence(GLUE_POSITIVE_ONE + (glue - 1)))
+                    else
+                        tokens.add(CodepointSequence(GLUE_NEGATIVE_ONE + (glue.absoluteValue - 1)))
+                else
+                    throw IllegalStateException("Glue too large ($glue)")
+
+                glue = 0
             }
 
-            this.forEach {
-                if (it == 0x20 || it == 0x0A) {
-                    submitBlock(CodepointSequence(currentToken))
-                    if (it != 0x20)
-                        submitBlock(CodepointSequence(listOf(it)))
-                    currentToken = mutableListOf()
+            fun appendToBuffer(char: CodePoint) {
+                boxBuffer.add(char)
+            }
+
+            fun appendGlue(char: CodePoint) {
+                glue += whitespaceGlues[char]!!
+            }
+
+            fun proceedToNextLine() {
+                lines.add(tokens)
+                tokens = ArrayList<CodepointSequence>()
+            }
+
+            this.forEachIndexed { index, it ->
+                val c0 = it
+
+                if (c0.isColourCode()) {
+                    colourCode = c0
+                    appendToBuffer(c0)
                 }
-                else if (it.isCJ()) {
-                    // flush out existing buffer
-                    CodepointSequence(currentToken).let {
-                        if (it.isNotEmpty()) submitBlock(it)
-                    }
-                    // tokenise this single character
-                    submitBlock(CodepointSequence(listOf(it)))
-                    // prepare new buffer, even if it's wasted because next character is also Chinese/Japanese
-                    currentToken = mutableListOf()
-                }
-                else if (it.isColourCode()) {
-                    colourCode = it
-                    appendToWord(it)
-                }
-                else if (it == 0x100000) {
+                else if (c0 == 0x100000) {
                     colourCodeRemovalRequested = true
-                    appendToWord(it)
+                    appendToBuffer(c0)
                 }
-                else if (it.isControlIn()) {
-                    controlCharStack.add(0, it)
+                else if (c0.isControlIn()) {
+                    controlCharStack.add(0, c0)
                 }
-                else if (it.isControlOut()) {
+                else if (c0.isControlOut()) {
                     controlCharStack.removeAt(0)
                 }
-                else {
-                    appendToWord(it)
+                else if (c0 == 0x0A) {
+                    sendoutBox()
+                    proceedToNextLine()
                 }
+                else if (c0.isCJ()) {
+                    if (cM.isWhiteSpace()) {
+                        sendoutGlue()
+                    }
+                    else if (cM.isCJpunct()) {
+                        appendGlue(cM!!) // will append 0 to the glue
+                        sendoutGlue()
+                    }
+                    else { // includes if cM.isCJ()
+                        sendoutBox()
+                    }
+
+                    appendToBuffer(c0)
+                }
+                else if (c0.isWhiteSpace()) {
+                    if (cM.isWhiteSpace() && cM != null)
+                        sendoutBox()
+
+                    appendGlue(c0)
+                }
+                else if (c0.isCJpunct()) {
+                    if (cM.isWhiteSpace())
+                        sendoutGlue()
+
+                    appendToBuffer(c0)
+                }
+                else {
+                    if (cM.isCJ()) {
+                        sendoutBox()
+                    }
+                    else if (cM.isWhiteSpace()) {
+                        sendoutGlue()
+                    }
+                    else if (cM.isCJpunct()) {
+                        appendGlue(cM!!) // will append 0 to the glue
+                        sendoutGlue()
+                    }
+
+                    appendToBuffer(c0)
+                }
+
+                cM = it
             }
 
             // Add the last token if it's not empty
-            submitBlock(CodepointSequence(currentToken))
+            sendoutBox()
+            proceedToNextLine()
 
-            return tokens
+            return lines
         }
 
         private fun <E> java.util.ArrayList<E>.penultimate(): E {
@@ -425,13 +493,17 @@ class MovableType(
 
         private fun penaliseHyphenation(score: Int): Float = (10.0 * pow(score.toDouble(), 1.0/3.0) + 0.47*score).toFloat()
 
-        private fun CodePoint.isCJ() = listOf(4, 6).any {
+        private fun CodePoint?.isCJ() = listOf(4, 6).any {
             TerrarumSansBitmap.codeRange[it].contains(this)
         }
 
-        private fun CodePoint.isControlIn() = controlIns.contains(this)
-        private fun CodePoint.isControlOut() = controlOuts.contains(this)
-        private fun CodePoint.isColourCode() = colourCodes.contains(this)
+        private fun CodePoint?.isWhiteSpace() = whitespaceGlues.contains(this)
+
+        private fun CodePoint?.isCJpunct() = cjpuncts.contains(this)
+
+        private fun CodePoint?.isControlIn() = controlIns.contains(this)
+        private fun CodePoint?.isControlOut() = controlOuts.contains(this)
+        private fun CodePoint?.isColourCode() = colourCodes.contains(this)
 
         /**
          * Hyphenates the word at the middle ("paragraph" -> "para-graph")
@@ -517,6 +589,20 @@ class MovableType(
         private val colourCodes = (0x10F000..0x10FFFF).toSortedSet()
         private val controlIns = listOf(0xFFFA2, 0xFFFA3, 0xFFFC1, 0xFFFC2).toSortedSet()
         private val controlOuts = listOf(0xFFFBF, 0xFFFC0).toSortedSet()
+        private val whitespaceGlues = hashMapOf(
+            0x20 to 5,
+            0x3000 to 16,
+            // cjpuncts
+            0x3001 to 0,
+            0x3002 to 0,
+            0xff0c to 0,
+            0xff0e to 0,
+        )
+        private val cjpuncts = listOf(0x3001, 0x3002, 0xff0c, 0xff0e).toSortedSet()
+
+        private val ZWSP = 0x200B
+        private val GLUE_POSITIVE_ONE = 0xFFFF0
+        private val GLUE_NEGATIVE_ONE = 0xFFFE0
 
         private fun CodepointSequence.toReadable() = this.joinToString("") { Character.toString(it.toChar()) }
 
