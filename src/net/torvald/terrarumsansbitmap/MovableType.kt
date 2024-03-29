@@ -2,6 +2,8 @@ package net.torvald.terrarumsansbitmap
 
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.utils.Disposable
+import net.torvald.terrarumsansbitmap.MovableType.Companion.isGlue
+import net.torvald.terrarumsansbitmap.MovableType.Companion.isNotGlue
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
@@ -12,6 +14,10 @@ import java.lang.Math.pow
 import kotlin.math.*
 
 /**
+ * Despite "CJK" texts needing their own typesetting rule, in this code Korean texts are typesetted much like
+ * the western texts minus the hyphenation rule (it does hyphenate just like the western texts, but omits the
+ * actual hyphen character), therefore only the "CJ" texts get their own typesetting rule.
+ *
  * Created by minjaesong on 2024-03-24.
  */
 class MovableType(
@@ -41,17 +47,20 @@ class MovableType(
     init { if (inputText.isNotEmpty() && !isNull) {
         if (paperWidth < 100) throw IllegalArgumentException("Width too narrow; width must be at least 100 pixels (got $paperWidth)")
 
+        println("Paper width: $paperWidth")
+
         val lines = inputText.tokenise()
         lines.debugprint()
 
-        TODO()
+        lines.forEachIndexed { linenum, it ->
+            println("Processing input text line ${linenum + 1} (word count: ${it.size})...")
 
-        lines.forEach {
             val boxes: MutableList<TextCacheObj> = it.map { font.createTextCache(it) }.toMutableList()
             var slug = ArrayList<Block>() // slug of the linotype machine
             var slugWidth = 0
+            var ignoreThisLine = false
 
-            fun dequeue() = boxes.removeAt(0)
+            fun dequeue() = boxes.removeFirst()
             fun addHyphenatedTail(box: TextCacheObj) = boxes.add(0, box)
             fun addToSlug(box: TextCacheObj) {
                 val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
@@ -67,9 +76,65 @@ class MovableType(
 
             ///////////////////////////////////////////////////////////////////////////////////////////////
 
-            fun getBadnessW(): Pair<Float, Int> = TODO()
-            fun getBadnessT(): Pair<Float, Int> = TODO()
-            fun getBadnessH(): Pair<Float, Int> = TODO()
+            // the slug is likely end with a glue, must take care of it (but don't modify the slug itself)
+            fun getBadnessW(box: TextCacheObj): Pair<Float, Int> {
+                val slug = slug.toMutableList()
+
+                // remove the trailing glue(s?) in the slug copy
+                while (slug.lastOrNull()?.block?.isGlue() == true) {
+                    slug.removeLastOrNull()
+                }
+
+                var slugWidth = slug.lastOrNull()?.getEndPos() ?: 0
+                if (slug.isNotEmpty() && hangable.contains(slug.last().block.penultimateChar))
+                    slugWidth -= hangWidth
+                else if (slug.isNotEmpty() && hangableFW.contains(slug.last().block.penultimateChar))
+                    slugWidth -= hangWidthFW
+
+                val difference = (paperWidth - slugWidth).absoluteValue
+                val badness = difference.toFloat()
+
+                return badness to difference
+            }
+
+            fun getBadnessT(box: TextCacheObj): Pair<Float, Int> {
+                val slug = slug.toMutableList()
+
+                // add the box to the slug copy
+                val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
+                slug.add(Block(nextPosX, box))
+
+                var slugWidth = slugWidth + box.width
+                if (slug.isNotEmpty() && hangable.contains(slug.last().block.penultimateChar))
+                    slugWidth -= hangWidth
+                else if (slug.isNotEmpty() && hangableFW.contains(slug.last().block.penultimateChar))
+                    slugWidth -= hangWidthFW
+
+                val difference = (paperWidth - slugWidth).absoluteValue
+                val badness = penaliseTightening(difference)
+
+                return badness to difference
+            }
+
+            fun getBadnessH(box: TextCacheObj): Pair<Float, Int> {
+                val slug = slug.toMutableList()
+                val (hyphHead, hyphTail) = box.text.hyphenate().toList().map { font.createTextCache(it) }
+
+                // add the hyphHead to the slug copy
+                val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
+                slug.add(Block(nextPosX, hyphHead))
+
+                var slugWidth = slugWidth + hyphHead.width
+                if (slug.isNotEmpty() && hangable.contains(slug.last().block.penultimateChar))
+                    slugWidth -= hangWidth
+                else if (slug.isNotEmpty() && hangableFW.contains(slug.last().block.penultimateChar))
+                    slugWidth -= hangWidthFW
+
+                val difference = (paperWidth - slugWidth)
+                val badness = penaliseHyphenation(difference.absoluteValue)
+
+                return badness to difference
+            }
 
             ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -77,13 +142,21 @@ class MovableType(
                 val box = dequeue()
 
                 if (box.isNotGlue()) {
-                    // if adding a box would cause overflow
-                    if (slugWidth + spaceWidth + box.width >= paperWidth) {
+                    // deal with the hangables
+                    val slugWidthForOverflowCalc = if (hangable.contains(box.penultimateChar))
+                        slugWidth - hangWidth
+                    else if (hangableFW.contains(box.penultimateChar))
+                        slugWidth - hangWidthFW
+                    else
+                        slugWidth
+
+                    // if adding the box would cause overflow
+                    if (slugWidthForOverflowCalc + box.width > paperWidth) {
                         // badness: always positive and weighted
                         // widthDelta: can be positive or negative
-                        val (badnessW, widthDeltaW) = getBadnessW()
-                        val (badnessT, widthDeltaT) = getBadnessT()
-                        val (badnessH, widthDeltaH) = getBadnessH()
+                        val (badnessW, widthDeltaW) = getBadnessW(box) // widthDeltaW is always positive
+                        val (badnessT, widthDeltaT) = getBadnessT(box) // widthDeltaT is always positive
+                        val (badnessH, widthDeltaH) = getBadnessH(box) // widthDeltaH can be anything
 
                         val (selectedBadness, selectedWidthDelta, selectedStrat) = listOf(
                             Triple(badnessW, widthDeltaW, "Widen"),
@@ -91,18 +164,63 @@ class MovableType(
                             Triple(badnessH, widthDeltaH, "Hyphenate"),
                         ).minByOrNull { it.first }!!
 
+                        println("    Line ${typesettedSlugs.size + 1} Strat: $selectedStrat (badness $selectedBadness, delta $selectedWidthDelta; full badness WTH = $badnessW, $badnessT, $badnessH; full delta WTH = $widthDeltaW, $widthDeltaT, $widthDeltaH)")
+                        println("          Interim Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
+
                         when (selectedStrat) {
-                            "Widen" -> {
-                                TODO()
-                            }
-                            "Tighten" -> {
-                                TODO()
+                            "Widen", "Tighten" -> {
+                                // widen/tighten the spacing between blocks
+
+                                // widen: 1, tighten: -1
+                                val operation = if (selectedStrat == "Widen") 1 else -1
+
+                                // Widen: remove the trailing glue(s?) in the slug
+                                if (selectedStrat == "Widen") {
+                                    while (slug.lastOrNull()?.block?.isGlue() == true) {
+                                        slug.removeLast()
+                                    }
+                                }
+                                // Tighten: add the box to the slug
+                                else {
+                                    addToSlug(box)
+                                    // remove glues on the upcoming blocks
+                                    while (boxes.firstOrNull()?.isGlue() == true) {
+                                        boxes.removeFirst()
+                                    }
+                                }
+
+                                moveSlugsToFitTheWidth(operation, slug, selectedWidthDelta)
+
+                                // put the trailing word back into the upcoming words
+                                if (selectedStrat == "Widen") {
+                                    addHyphenatedTail(box)
+                                }
+                                // if tightening leaves an empty line behind, signal the typesetter to discard that line
+                                else if (selectedStrat == "Tighten" && boxes.isEmpty()) {
+                                    ignoreThisLine = true
+                                }
                             }
                             "Hyphenate" -> {
-                                TODO()
+                                // insert hyphen-head to the slug
+                                // widen/tighten the spacing between blocks using widthDeltaH
+                                // insert hyphen-tail to the list of upcoming boxes
+
+                                val (hyphHead, hyphTail) = box.text.hyphenate().toList().map { font.createTextCache(it) }
+
+                                // widen: 1, tighten: -1
+                                val operation = widthDeltaH.sign
+
+                                // insert hyphHead into the slug
+                                addToSlug(hyphHead)
+
+                                moveSlugsToFitTheWidth(operation, slug, selectedWidthDelta)
+
+                                // put the tail into the upcoming words
+                                addHyphenatedTail(hyphTail)
                             }
                         }
 
+                        println("  > Line ${typesettedSlugs.size + 1} Final Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
                         dispatchSlug()
                     }
                     // typeset the boxes normally
@@ -110,15 +228,18 @@ class MovableType(
                         addToSlug(box)
                     }
                 }
-                else {
+                else { // box is glue
                     addToSlug(box)
                 }
             } // end of while (boxes.isNotEmpty())
 
-            dispatchSlug()
+            if (!ignoreThisLine) {
+                println("  > Line ${typesettedSlugs.size + 1} Final Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
+                dispatchSlug()
+            }
         } // end of lines.forEach
 
-        TODO()
+        height = typesettedSlugs.size
     } }
 
 
@@ -370,10 +491,83 @@ class MovableType(
         private val quots = listOf(0x22, 0x27, 0xAB, 0xBB, 0x2018, 0x2019, 0x201A, 0x201B, 0x201C, 0x201D, 0x201E, 0x201F, 0x2039, 0x203A).toSortedSet()
         private val commas = listOf(0x2C, 0x3B, 0x3001, 0xff0c).toSortedSet()
         private val hangable = listOf(0x2E, 0x2C).toSortedSet()
+        private val hangableFW = listOf(0x3001, 0x3002, 0xff0c, 0xff0e).toSortedSet()
         private const val spaceWidth = 5
         private const val hangWidth = 6
+        private const val hangWidthFW = TerrarumSansBitmap.W_ASIAN_PUNCT
 
         private fun CodePoint.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
+
+        private fun moveSlugsToFitTheWidth(operation: Int, slug: ArrayList<Block>, selectedWidthDelta: Int) {
+            var gluesInfo = slug.mapIndexed { index, block -> block to index }.filter { (block, index) ->
+                block.block.isGlue()
+            }.map { (block, index) ->
+                val prevBlockEndsWith = if (index == 0) null else slug[index - 1].block.penultimateChar // last() will just return {NUL}
+                Triple(block, index, prevBlockEndsWith)
+            }
+            // if there are no glues, put spaces between all characters
+            if (gluesInfo.isEmpty()) {
+                gluesInfo = slug.subList(1, slug.size).mapIndexed { index, block ->
+                    val prevBlockEndsWith = slug[index].block.penultimateChar // last() will just return {NUL}
+                    Triple(block, index + 1, prevBlockEndsWith)
+                }
+            }
+            val gluesMoveAmounts0 = getGluesMoveAmounts(gluesInfo, selectedWidthDelta) // first order derivative of gluesMoveAmounts
+            val gluesMoveAmounts = IntArray(slug.size) // actual move values
+            for (i in 1 until gluesMoveAmounts.size){
+                gluesMoveAmounts[i] = gluesMoveAmounts[i - 1] + gluesMoveAmounts0.getOrElse(i) { 0 }
+            }
+
+            // move blocks using gluesMoveAmounts
+            gluesMoveAmounts.forEachIndexed { index, moveAmounts ->
+                slug[index].posX += moveAmounts * operation
+            }
+        }
+
+        /**
+         * Returns move amounts in following format:
+         * intArray(0, 0, <absolute value of move amount>, 0, 0, 0, <absolute value of move amount>, ...)
+         */
+        private fun getGluesMoveAmounts(gluesInfo: List<Triple<Block, Int, CodePoint?>>, moveAmount: Int): IntArray {
+            if (gluesInfo.isEmpty()) throw IllegalArgumentException("Glues info is empty!")
+
+            val operations = HashMap<Int, Int>() // key: index, value: number of hits
+            var operationsSize = 0
+
+            while (operationsSize < moveAmount) {
+                val li = gluesInfo.sortedBy { (block, index, thisWordEnd) ->
+                    val priority = if (thisWordEnd == null)
+                        255
+                    else if (periods.contains(thisWordEnd))
+                        1
+                    else if (quots.contains(thisWordEnd) or quots.contains(block.block.text.firstOrNull()))
+                        2
+                    else if (commas.contains(thisWordEnd))
+                        3
+                    else
+                        255
+
+                    (Math.random() * 65535).toInt().or(priority.shl(16))
+                }
+                var c = 0
+                while (operationsSize < moveAmount && c < li.size) {
+                    val index = li[c].second
+                    operations[index] = (operations[index] ?: 0) + 1
+
+                    c += 1
+                    operationsSize += 1
+                }
+            }
+
+            val arrayoid = operations.entries.toList().map { it.key to it.value }.sortedBy { it.first }
+            if (arrayoid.isEmpty()) return IntArray(0)
+
+            val array = IntArray(arrayoid.last().first + 1)
+            arrayoid.forEach { (index, hits) ->
+                array[index] = hits
+            }
+            return array
+        }
 
         /**
          * @return indices of blocks in the `currentLine`
@@ -417,7 +611,7 @@ class MovableType(
         }
 
         // return: [ job count for 0th word, job count for 1st word, job count for 2nd word, ... ]
-        private fun coalesceIndices(listOfJobs: List<Int>): IntArray {
+        private fun coalesceIndices(listOfJobs: IntArray): IntArray {
             if (listOfJobs.isEmpty()) return IntArray(0)
 
 //            println("      sample: ${listOfJobs.joinToString()}")
@@ -477,8 +671,20 @@ class MovableType(
                         tokens.add(CodepointSequence(listOf(GLUE_POSITIVE_ONE + (glue - 1))))
                     else
                         tokens.add(CodepointSequence(listOf(GLUE_NEGATIVE_ONE + (glue.absoluteValue - 1))))
-                else
-                    throw IllegalStateException("Glue too large ($glue)")
+                else {
+                    val fullGlues = glue.absoluteValue / 16
+                    val smallGlues = glue.absoluteValue % 16
+                    if (glue > 0)
+                        tokens.add(CodepointSequence(
+                            List(fullGlues) { GLUE_POSITIVE_SIXTEEN } +
+                                    listOf(GLUE_POSITIVE_ONE + (smallGlues - 1))
+                        ))
+                    else
+                        tokens.add(CodepointSequence(
+                            List(fullGlues) { GLUE_NEGATIVE_SIXTEEN } +
+                                    listOf(GLUE_NEGATIVE_ONE + (smallGlues - 1))
+                        ))
+                }
 
                 glue = 0
             }
@@ -608,7 +814,7 @@ class MovableType(
 
         private fun penaliseHyphenation(score: Int): Float = (10.0 * pow(score.toDouble(), 1.0/3.0) + 0.47*score).toFloat()
 
-        private fun CodePoint?.isCJ() = if (this == null) false else listOf(4, 6).any {
+        private fun CodePoint?.isCJ() = if (this == null) false else listOf(4, 6, 20).any {
             TerrarumSansBitmap.codeRange[it].contains(this)
         }
 
@@ -622,6 +828,7 @@ class MovableType(
         private fun CodePoint?.isColourCode() = if (this == null) false else colourCodes.contains(this)
 
         private fun CodepointSequence.isGlue() = this.size == 1 && (this[0] == ZWSP || this[0] in 0xFFFE0..0xFFFFF)
+        private fun CodepointSequence.isNotGlue() = !this.isGlue()
         private fun CodepointSequence.isZeroGlue() = this.size == 1 && (this[0] == ZWSP)
         private fun CodePoint.toGlueSize() = when (this) {
             ZWSP -> 0
@@ -732,18 +939,23 @@ class MovableType(
 
         private const val ZWSP = 0x200B
         private const val SHY = 0xAD
+        private const val NBSP = 0xA0
         private const val GLUE_POSITIVE_ONE = 0xFFFF0
+        private const val GLUE_POSITIVE_SIXTEEN = 0xFFFFF
         private const val GLUE_NEGATIVE_ONE = 0xFFFE0
+        private const val GLUE_NEGATIVE_SIXTEEN = 0xFFFEF
 
         private fun CodepointSequence.toReadable() = this.joinToString("") {
             if (it in 0x00..0x1f)
                 "${(0x2400 + it).toChar()}"
             else if (it == 0x20)
                 "\u2423"
-            else if (it == 0xA0)
+            else if (it == NBSP)
                 "{NBSP}"
-            else if (it == 0xAD)
+            else if (it == SHY)
                 "{SHY}"
+            else if (it == ZWSP)
+                "{ZWSP}"
             else if (it >= 0xF0000)
                 it.toHex() + " "
             else
@@ -767,6 +979,9 @@ class MovableType(
         }
 
         private fun TextCacheObj.isNotGlue(): Boolean {
+            return this.glyphLayout!!.textBuffer.isNotGlue()
+        }
+        private fun TextCacheObj.isGlue(): Boolean {
             return this.glyphLayout!!.textBuffer.isGlue()
         }
 
