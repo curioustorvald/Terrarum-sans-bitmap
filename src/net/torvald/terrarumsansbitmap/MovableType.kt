@@ -45,12 +45,7 @@ class MovableType(
         val inputCharSeqsTokenised = inputText.tokenise()
 
         val inputWords = inputCharSeqsTokenised.map {
-            val seq = it.also { seq ->
-                seq.add(0, 0)
-                seq.add(0)
-            }
-
-            font.createTextCache(CodepointSequence(seq))
+            TODO()
         }.toMutableList() // list of [ word, word, \n, word, word, word, ... ]
 
 
@@ -80,7 +75,7 @@ class MovableType(
             hyphenated: Boolean = false,
             hyphenationScore0: Int? = null,
             hyphenationScore: Float? = null
-        ) {
+        ) { /*
             println("    JustifyAndFlush: widthNow = $lineWidthNow, thisWord = ${thisWord.textBuffer.toReadable()}, hyphenated = $hyphenated")
 
 
@@ -196,7 +191,7 @@ class MovableType(
 
                 // flush the line
                 flush()
-            }
+            }*/
         }
 
         var thisWordObj: TextCacheObj
@@ -290,7 +285,7 @@ class MovableType(
         private val spaceWidth = 5
         private val hangWidth = 6
 
-        private fun Int.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
+        private fun CodePoint.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
 
         /**
          * @return indices of blocks in the `currentLine`
@@ -359,13 +354,13 @@ class MovableType(
         private fun CodepointSequence.tokenise(): List<ArrayList<CodepointSequence>> {
             val lines = ArrayList<ArrayList<CodepointSequence>>()
             var tokens = ArrayList<CodepointSequence>()
-            var boxBuffer = mutableListOf<Int>()
+            var boxBuffer = ArrayList<CodePoint>()
 
             val controlCharStack = ArrayList<CodePoint>()
             var colourCode: CodePoint? = null
             var colourCodeRemovalRequested = false
 
-            var cM: Int? = null
+            var cM: CodePoint? = null
             var glue = 0
 
             fun getControlHeader() = if (colourCode != null)
@@ -383,17 +378,17 @@ class MovableType(
                     colourCode = null
                 }
 
-                boxBuffer = mutableListOf()
+                boxBuffer = ArrayList()
             }
 
             fun sendoutGlue() {
                 if (glue == 0)
-                    tokens.add(CodepointSequence(ZWSP))
+                    tokens.add(CodepointSequence(listOf((ZWSP))))
                 else if (glue.absoluteValue <= 16)
                     if (glue > 0)
-                        tokens.add(CodepointSequence(GLUE_POSITIVE_ONE + (glue - 1)))
+                        tokens.add(CodepointSequence(listOf(GLUE_POSITIVE_ONE + (glue - 1))))
                     else
-                        tokens.add(CodepointSequence(GLUE_NEGATIVE_ONE + (glue.absoluteValue - 1)))
+                        tokens.add(CodepointSequence(listOf(GLUE_NEGATIVE_ONE + (glue.absoluteValue - 1))))
                 else
                     throw IllegalStateException("Glue too large ($glue)")
 
@@ -405,12 +400,17 @@ class MovableType(
             }
 
             fun appendGlue(char: CodePoint) {
-                glue += whitespaceGlues[char]!!
+                glue += whitespaceGlues[char] ?: throw NullPointerException("${char.toHex()} is not a whitespace")
+            }
+
+            fun appendZeroGlue() {
+                glue += 0
             }
 
             fun proceedToNextLine() {
                 lines.add(tokens)
                 tokens = ArrayList<CodepointSequence>()
+                cM = null
             }
 
             this.forEachIndexed { index, it ->
@@ -438,8 +438,12 @@ class MovableType(
                     if (cM.isWhiteSpace()) {
                         sendoutGlue()
                     }
-                    else if (cM.isCJpunct()) {
-                        appendGlue(cM!!) // will append 0 to the glue
+                    else if (cM.isCJparenStart()) {
+                        /* do nothing */
+                    }
+                    else if (cM.isCJpunctOrParenEnd()) {
+                        sendoutBox()
+                        appendZeroGlue()
                         sendoutGlue()
                     }
                     else { // includes if cM.isCJ()
@@ -449,12 +453,20 @@ class MovableType(
                     appendToBuffer(c0)
                 }
                 else if (c0.isWhiteSpace()) {
-                    if (cM.isWhiteSpace() && cM != null)
+                    if (cM != null && !cM.isWhiteSpace())
                         sendoutBox()
 
                     appendGlue(c0)
                 }
-                else if (c0.isCJpunct()) {
+                else if (c0.isCJparenStart()) {
+                    if (boxBuffer.isNotEmpty())
+                        sendoutBox()
+                    appendZeroGlue()
+                    sendoutGlue()
+
+                    appendToBuffer(c0)
+                }
+                else if (c0.isCJpunctOrParenEnd()) {
                     if (cM.isWhiteSpace())
                         sendoutGlue()
 
@@ -467,20 +479,40 @@ class MovableType(
                     else if (cM.isWhiteSpace()) {
                         sendoutGlue()
                     }
-                    else if (cM.isCJpunct()) {
-                        appendGlue(cM!!) // will append 0 to the glue
+                    else if (cM.isCJpunctOrParenEnd()) {
+                        sendoutBox()
+                        appendZeroGlue()
                         sendoutGlue()
                     }
 
                     appendToBuffer(c0)
                 }
 
-                cM = it
+                cM = c0
             }
 
             // Add the last token if it's not empty
             sendoutBox()
             proceedToNextLine()
+
+            lines.forEach {
+                if (it[0].isEmpty() || it[0].isZeroGlue())
+                    it.removeAt(0)
+            }
+
+            println("Tokenised (${lines.size} lines):")
+            lines.forEach {
+                val readables = it.map {
+                    if (it.isEmpty())
+                        "<!! EMPTY !!>"
+                    else if (it.isGlue())
+                        "<Glue ${it.first().toGlueSize()}>"
+                    else
+                        it.toReadable()
+                }
+                println("(${readables.size})[ ${readables.joinToString(" | ")} ]")
+            }
+
 
             return lines
         }
@@ -493,17 +525,27 @@ class MovableType(
 
         private fun penaliseHyphenation(score: Int): Float = (10.0 * pow(score.toDouble(), 1.0/3.0) + 0.47*score).toFloat()
 
-        private fun CodePoint?.isCJ() = listOf(4, 6).any {
+        private fun CodePoint?.isCJ() = if (this == null) false else listOf(4, 6).any {
             TerrarumSansBitmap.codeRange[it].contains(this)
         }
 
-        private fun CodePoint?.isWhiteSpace() = whitespaceGlues.contains(this)
+        private fun CodePoint?.isWhiteSpace() = if (this == null) false else whitespaceGlues.contains(this)
 
-        private fun CodePoint?.isCJpunct() = cjpuncts.contains(this)
+        private fun CodePoint?.isCJparenStart() = if (this == null) false else cjparenStarts.contains(this)
+        private fun CodePoint?.isCJpunctOrParenEnd() = if (this == null) false else (cjpuncts.contains(this) || cjparenEnds.contains(this))
 
-        private fun CodePoint?.isControlIn() = controlIns.contains(this)
-        private fun CodePoint?.isControlOut() = controlOuts.contains(this)
-        private fun CodePoint?.isColourCode() = colourCodes.contains(this)
+        private fun CodePoint?.isControlIn() = if (this == null) false else controlIns.contains(this)
+        private fun CodePoint?.isControlOut() = if (this == null) false else controlOuts.contains(this)
+        private fun CodePoint?.isColourCode() = if (this == null) false else colourCodes.contains(this)
+
+        private fun CodepointSequence.isGlue() = this.size == 1 && (this[0] == ZWSP || this[0] in 0xFFFE0..0xFFFFF)
+        private fun CodepointSequence.isZeroGlue() = this.size == 1 && (this[0] == ZWSP)
+        private fun CodePoint.toGlueSize() = when (this) {
+            ZWSP -> 0
+            in 0xFFFE0..0xFFFEF -> -(this - 0xFFFE0 + 1)
+            in 0xFFFF0..0xFFFFF -> this - 0xFFFF0 + 1
+            else -> throw IllegalArgumentException()
+        }
 
         /**
          * Hyphenates the word at the middle ("paragraph" -> "para-graph")
@@ -592,19 +634,25 @@ class MovableType(
         private val whitespaceGlues = hashMapOf(
             0x20 to 5,
             0x3000 to 16,
-            // cjpuncts
-            0x3001 to 0,
-            0x3002 to 0,
-            0xff0c to 0,
-            0xff0e to 0,
         )
-        private val cjpuncts = listOf(0x3001, 0x3002, 0xff0c, 0xff0e).toSortedSet()
+        private val cjpuncts = listOf(0x3001, 0x3002, 0x3006, 0x303b, 0x30a0, 0x30fb, 0x30fc, 0x301c, 0xff01, 0xff0c, 0xff0e, 0xff1a, 0xff1b, 0xff1f, 0xff5e, 0xff65).toSortedSet()
+        private val cjparenStarts = listOf(0x3008, 0x300A, 0x300C, 0x300E, 0x3010, 0x3014, 0x3016, 0x3018, 0x301A, 0x30fb, 0xff65).toSortedSet()
+        private val cjparenEnds = listOf(0x3009, 0x300B, 0x300D, 0x300F, 0x3011, 0x3015, 0x3017, 0x3019, 0x301B).toSortedSet()
 
         private val ZWSP = 0x200B
         private val GLUE_POSITIVE_ONE = 0xFFFF0
         private val GLUE_NEGATIVE_ONE = 0xFFFE0
 
-        private fun CodepointSequence.toReadable() = this.joinToString("") { Character.toString(it.toChar()) }
+        private fun CodepointSequence.toReadable() = this.joinToString("") {
+            if (it == 0xA0)
+                "{NBSP}"
+            else if (it == 0xAD)
+                "{SHY}"
+            else if (it >= 0xF0000)
+                it.toHex() + " "
+            else
+                Character.toString(it.toChar())
+        }
 
     } // end of companion object
 }
