@@ -711,11 +711,16 @@ class MovableType(
                 val c0 = it
 
                 if (c0.isColourCode()) {
+                    if (glue != 0)
+                        sendoutGlue()
+
                     colourCode = c0
                     appendToBuffer(c0)
                 }
                 else if (c0 == 0x100000) {
                     colourCodeRemovalRequested = true
+                    if (glue != 0)
+                        sendoutGlue()
                     appendToBuffer(c0)
                 }
                 else if (c0.isControlIn()) {
