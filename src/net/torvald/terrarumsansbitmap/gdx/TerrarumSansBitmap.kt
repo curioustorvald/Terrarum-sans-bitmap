@@ -2068,6 +2068,13 @@ class TerrarumSansBitmap(
 
         data class ShittyGlyphLayout(val textBuffer: CodepointSequence, val linotype: Texture, val width: Int)
         data class TextCacheObj(val hash: Long, val glyphLayout: ShittyGlyphLayout?): Comparable<TextCacheObj> {
+            val text: CodepointSequence
+                get() = glyphLayout!!.textBuffer
+            val width: Int
+                get() = glyphLayout!!.width
+            val texture: Texture
+                get() = glyphLayout!!.linotype
+
             fun dispose() {
                 glyphLayout?.linotype?.dispose()
             }

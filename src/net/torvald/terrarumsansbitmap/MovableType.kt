@@ -17,19 +17,19 @@ import kotlin.math.*
 class MovableType(
     val font: TerrarumSansBitmap,
     val inputText: CodepointSequence,
-    val width: Int,
+    val paperWidth: Int,
     internal val isNull: Boolean = false
 ): Disposable {
 
     var height = 0; private set
     internal val hash: Long = inputText.getHash()
     private var disposed = false
-    private val lines = ArrayList<List<Block>>()
+    private val typesettedSlugs = ArrayList<List<Block>>()
 
     override fun dispose() {
         if (!disposed) {
             disposed = true
-            lines.forEach {
+            typesettedSlugs.forEach {
                 it.forEach {
                     it.block.dispose()
                 }
@@ -39,10 +39,84 @@ class MovableType(
 
     // perform typesetting
     init { if (inputText.isNotEmpty() && !isNull) {
-        if (width < 100) throw IllegalArgumentException("Width too narrow; width must be at least 100 pixels (got $width)")
+        if (paperWidth < 100) throw IllegalArgumentException("Width too narrow; width must be at least 100 pixels (got $paperWidth)")
 
         val lines = inputText.tokenise()
         lines.debugprint()
+
+        TODO()
+
+        lines.forEach {
+            val boxes: MutableList<TextCacheObj> = it.map { font.createTextCache(it) }.toMutableList()
+            var slug = ArrayList<Block>() // slug of the linotype machine
+            var slugWidth = 0
+
+            fun dequeue() = boxes.removeAt(0)
+            fun addHyphenatedTail(box: TextCacheObj) = boxes.add(0, box)
+            fun addToSlug(box: TextCacheObj) {
+                val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
+                slug.add(Block(nextPosX, box))
+                slugWidth += box.width
+            }
+            fun dispatchSlug() {
+                typesettedSlugs.add(slug)
+
+                slug = ArrayList()
+                slugWidth = 0
+            }
+
+            ///////////////////////////////////////////////////////////////////////////////////////////////
+
+            fun getBadnessW(): Pair<Float, Int> = TODO()
+            fun getBadnessT(): Pair<Float, Int> = TODO()
+            fun getBadnessH(): Pair<Float, Int> = TODO()
+
+            ///////////////////////////////////////////////////////////////////////////////////////////////
+
+            while (boxes.isNotEmpty()) {
+                val box = dequeue()
+
+                if (box.isNotGlue()) {
+                    // if adding a box would cause overflow
+                    if (slugWidth + spaceWidth + box.width >= paperWidth) {
+                        // badness: always positive and weighted
+                        // widthDelta: can be positive or negative
+                        val (badnessW, widthDeltaW) = getBadnessW()
+                        val (badnessT, widthDeltaT) = getBadnessT()
+                        val (badnessH, widthDeltaH) = getBadnessH()
+
+                        val (selectedBadness, selectedWidthDelta, selectedStrat) = listOf(
+                            Triple(badnessW, widthDeltaW, "Widen"),
+                            Triple(badnessT, widthDeltaT, "Tighten"),
+                            Triple(badnessH, widthDeltaH, "Hyphenate"),
+                        ).minByOrNull { it.first }!!
+
+                        when (selectedStrat) {
+                            "Widen" -> {
+                                TODO()
+                            }
+                            "Tighten" -> {
+                                TODO()
+                            }
+                            "Hyphenate" -> {
+                                TODO()
+                            }
+                        }
+
+                        dispatchSlug()
+                    }
+                    // typeset the boxes normally
+                    else {
+                        addToSlug(box)
+                    }
+                }
+                else {
+                    addToSlug(box)
+                }
+            } // end of while (boxes.isNotEmpty())
+
+            dispatchSlug()
+        } // end of lines.forEach
 
         TODO()
     } }
@@ -51,7 +125,7 @@ class MovableType(
 
     private fun lololololol() { if (inputText.isNotEmpty() && !isNull) {
 
-        if (width < 100) throw IllegalArgumentException("Width too narrow; width must be at least 100 pixels (got $width)")
+        if (paperWidth < 100) throw IllegalArgumentException("Width too narrow; width must be at least 100 pixels (got $paperWidth)")
 
         val inputCharSeqsTokenised = inputText.tokenise()
 
@@ -62,7 +136,7 @@ class MovableType(
 
         println("Length of input text: ${inputText.size}")
         println("Token size: ${inputCharSeqsTokenised.size}")
-        println("Paper width: $width")
+        println("Paper width: $paperWidth")
 
         var currentLine = ArrayList<Block>()
         var wordCount = 0
@@ -75,7 +149,7 @@ class MovableType(
 //            println("\n  Anchors [$wordCount] =${" ".repeat(if (wordCount < 10) 3 else if (wordCount < 100) 2 else 1)}${currentLine.map { it.posX }.joinToString()}\n")
 
             // flush the line
-            lines.add(currentLine)
+            typesettedSlugs.add(currentLine)
             currentLine = ArrayList()
         }
 
@@ -233,7 +307,7 @@ class MovableType(
 
                 // if the word is \n
                 if (thisWordStr.size == 3 && thisWordStr[1] == 0x0A) {
-                    println("Strategy [L ${lines.size}]: line is shorter than the paper width ($lineWidthNow < $width)")
+                    println("Strategy [L ${typesettedSlugs.size}]: line is shorter than the paper width ($lineWidthNow < $paperWidth)")
 
                     // flush the line
                     if (lineWidthNow >= 0) flush()
@@ -243,7 +317,7 @@ class MovableType(
                 }
                 // decide if it should add last word and make newline, or make newline then add the word
                 // would adding the current word would cause line overflow?
-                else if (lineWidthNow + spaceWidth + thisWord.width >= width) {
+                else if (lineWidthNow + spaceWidth + thisWord.width >= paperWidth) {
                     justifyAndFlush(lineWidthNow, thisWordObj, thisWord)
                 }
                 // typeset the text normally
@@ -259,12 +333,12 @@ class MovableType(
             }
         } // end while
 
-        println("Strategy [L ${lines.size}]: (end of the text)")
+        println("Strategy [L ${typesettedSlugs.size}]: (end of the text)")
         flush()
 
 
 
-        height = lines.size
+        height = typesettedSlugs.size
     } }
 
     fun draw(batch: Batch, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = -1, lineHeight: Int = 24) =
@@ -273,7 +347,7 @@ class MovableType(
     fun draw(batch: Batch, x: Float, y: Float, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = 24) {
         if (isNull) return
 
-        lines.subList(lineStart, minOf(lines.size, lineStart + linesToDraw)).forEachIndexed { lineNum, lineBlocks ->
+        typesettedSlugs.subList(lineStart, minOf(typesettedSlugs.size, lineStart + linesToDraw)).forEachIndexed { lineNum, lineBlocks ->
 //            println("Line [${lineNum+1}] anchors: "+ lineBlocks.map { it.posX }.joinToString())
 
             lineBlocks.forEach {
@@ -285,7 +359,10 @@ class MovableType(
     }
 
     private data class Block(var posX: Int, val block: TextCacheObj) { // a single word
-        fun getEndPos() = this.posX + this.block.glyphLayout!!.width
+        fun getEndPos() = this.posX + this.block.width
+//        fun isGlue() = this.block.text.isGlue()
+//        inline fun isNotGlue() = !isGlue()
+//        fun getGlueWidth() = this.block.text[0].toGlueSize()
     }
 
     companion object {
@@ -293,8 +370,8 @@ class MovableType(
         private val quots = listOf(0x22, 0x27, 0xAB, 0xBB, 0x2018, 0x2019, 0x201A, 0x201B, 0x201C, 0x201D, 0x201E, 0x201F, 0x2039, 0x203A).toSortedSet()
         private val commas = listOf(0x2C, 0x3B, 0x3001, 0xff0c).toSortedSet()
         private val hangable = listOf(0x2E, 0x2C).toSortedSet()
-        private val spaceWidth = 5
-        private val hangWidth = 6
+        private const val spaceWidth = 5
+        private const val hangWidth = 6
 
         private fun CodePoint.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
 
@@ -445,6 +522,35 @@ class MovableType(
                     sendoutBox()
                     proceedToNextLine()
                 }
+                else if (c0.isWhiteSpace()) {
+                    if (cM != null && !cM.isWhiteSpace())
+                        sendoutBox()
+
+                    appendGlue(c0)
+                }
+                else if (c0.isSmallKana()) {
+                    if (cM.isSmallKana() || cM.isCJ()) {
+                        appendToBuffer(c0)
+                    }
+                    else {
+                        sendoutBox()
+                        appendToBuffer(c0)
+                    }
+                }
+                else if (c0.isCJparenStart()) {
+                    if (boxBuffer.isNotEmpty())
+                        sendoutBox()
+                    appendZeroGlue()
+                    sendoutGlue()
+
+                    appendToBuffer(c0)
+                }
+                else if (c0.isCJpunctOrParenEnd()) {
+                    if (cM.isWhiteSpace())
+                        sendoutGlue()
+
+                    appendToBuffer(c0)
+                }
                 else if (c0.isCJ()) {
                     if (cM.isWhiteSpace()) {
                         sendoutGlue()
@@ -460,26 +566,6 @@ class MovableType(
                     else { // includes if cM.isCJ()
                         sendoutBox()
                     }
-
-                    appendToBuffer(c0)
-                }
-                else if (c0.isWhiteSpace()) {
-                    if (cM != null && !cM.isWhiteSpace())
-                        sendoutBox()
-
-                    appendGlue(c0)
-                }
-                else if (c0.isCJparenStart()) {
-                    if (boxBuffer.isNotEmpty())
-                        sendoutBox()
-                    appendZeroGlue()
-                    sendoutGlue()
-
-                    appendToBuffer(c0)
-                }
-                else if (c0.isCJpunctOrParenEnd()) {
-                    if (cM.isWhiteSpace())
-                        sendoutGlue()
 
                     appendToBuffer(c0)
                 }
@@ -530,7 +616,7 @@ class MovableType(
 
         private fun CodePoint?.isCJparenStart() = if (this == null) false else cjparenStarts.contains(this)
         private fun CodePoint?.isCJpunctOrParenEnd() = if (this == null) false else (cjpuncts.contains(this) || cjparenEnds.contains(this))
-
+        private fun CodePoint?.isSmallKana() = if (this == null) false else jaSmallKanas.contains(this)
         private fun CodePoint?.isControlIn() = if (this == null) false else controlIns.contains(this)
         private fun CodePoint?.isControlOut() = if (this == null) false else controlOuts.contains(this)
         private fun CodePoint?.isColourCode() = if (this == null) false else colourCodes.contains(this)
@@ -555,13 +641,20 @@ class MovableType(
             // one with the least distance from the middle point will be used for hyphenating point
             val hyphenateCandidates = ArrayList<Int>()
             val splitCandidates = ArrayList<Int>()
-            for (i in 1 until  this.size) {
+            var i = 1
+            while (i < this.size) {
                 val thisChar = this[i]
                 val prevChar = this[i-1]
                 if (!isVowel(thisChar) && isVowel(prevChar))
                     hyphenateCandidates.add(i)
+                else if (thisChar == SHY && isVowel((prevChar))) {
+                    hyphenateCandidates.add(i)
+                    i += 1 // skip SHY
+                }
                 if (isHangulPK(prevChar) && isHangulI(thisChar))
                     splitCandidates.add((i))
+
+                i += 1
             }
 
             hyphenateCandidates.removeIf { it <= 2 || it >= this.size - 2 }
@@ -632,13 +725,15 @@ class MovableType(
             0x20 to 5,
             0x3000 to 16,
         )
-        private val cjpuncts = listOf(0x3001, 0x3002, 0x3006, 0x303b, 0x30a0, 0x30fb, 0x30fc, 0x301c, 0xff01, 0xff0c, 0xff0e, 0xff1a, 0xff1b, 0xff1f, 0xff5e, 0xff65).toSortedSet()
+        private val cjpuncts = listOf(0x203c, 0x2047, 0x2048, 0x2049, 0x3001, 0x3002, 0x3006, 0x303b, 0x30a0, 0x30fb, 0x30fc, 0x301c, 0xff01, 0xff0c, 0xff0e, 0xff1a, 0xff1b, 0xff1f, 0xff5e, 0xff65).toSortedSet()
         private val cjparenStarts = listOf(0x3008, 0x300A, 0x300C, 0x300E, 0x3010, 0x3014, 0x3016, 0x3018, 0x301A, 0x30fb, 0xff65).toSortedSet()
         private val cjparenEnds = listOf(0x3009, 0x300B, 0x300D, 0x300F, 0x3011, 0x3015, 0x3017, 0x3019, 0x301B).toSortedSet()
+        private val jaSmallKanas = "ァィゥェォッャュョヮヵヶぁぃぅぇぉっゃゅょゎゕゖㇰㇱㇲㇳㇴㇵㇶㇷㇸㇹㇺㇻㇼㇽㇾㇿ".map { it.toInt() }.toSortedSet()
 
-        private val ZWSP = 0x200B
-        private val GLUE_POSITIVE_ONE = 0xFFFF0
-        private val GLUE_NEGATIVE_ONE = 0xFFFE0
+        private const val ZWSP = 0x200B
+        private const val SHY = 0xAD
+        private const val GLUE_POSITIVE_ONE = 0xFFFF0
+        private const val GLUE_NEGATIVE_ONE = 0xFFFE0
 
         private fun CodepointSequence.toReadable() = this.joinToString("") {
             if (it in 0x00..0x1f)
@@ -669,6 +764,10 @@ class MovableType(
                 }
                 println("(${readables.size})[ ${readables.joinToString(" | ")} ]")
             }
+        }
+
+        private fun TextCacheObj.isNotGlue(): Boolean {
+            return this.glyphLayout!!.textBuffer.isGlue()
         }
 
     } // end of companion object
