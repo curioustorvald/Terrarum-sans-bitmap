@@ -39,6 +39,17 @@ class MovableType(
 
     // perform typesetting
     init { if (inputText.isNotEmpty() && !isNull) {
+        if (width < 100) throw IllegalArgumentException("Width too narrow; width must be at least 100 pixels (got $width)")
+
+        val lines = inputText.tokenise()
+        lines.debugprint()
+
+        TODO()
+    } }
+
+
+
+    private fun lololololol() { if (inputText.isNotEmpty() && !isNull) {
 
         if (width < 100) throw IllegalArgumentException("Width too narrow; width must be at least 100 pixels (got $width)")
 
@@ -371,7 +382,7 @@ class MovableType(
 
 
             fun sendoutBox() {
-                tokens.add(CodepointSequence(getControlHeader() + boxBuffer))
+                tokens.add(CodepointSequence(listOf(0) + getControlHeader() + boxBuffer + listOf(0)))
 
                 if (colourCodeRemovalRequested) {
                     colourCodeRemovalRequested = false
@@ -496,23 +507,9 @@ class MovableType(
             proceedToNextLine()
 
             lines.forEach {
-                if (it[0].isEmpty() || it[0].isZeroGlue())
+                if ((it[0].size == 2 && it[0][0] == 0 && it[0][1] == 0) || it[0].isZeroGlue())
                     it.removeAt(0)
             }
-
-            println("Tokenised (${lines.size} lines):")
-            lines.forEach {
-                val readables = it.map {
-                    if (it.isEmpty())
-                        "<!! EMPTY !!>"
-                    else if (it.isGlue())
-                        "<Glue ${it.first().toGlueSize()}>"
-                    else
-                        it.toReadable()
-                }
-                println("(${readables.size})[ ${readables.joinToString(" | ")} ]")
-            }
-
 
             return lines
         }
@@ -644,7 +641,11 @@ class MovableType(
         private val GLUE_NEGATIVE_ONE = 0xFFFE0
 
         private fun CodepointSequence.toReadable() = this.joinToString("") {
-            if (it == 0xA0)
+            if (it in 0x00..0x1f)
+                "${(0x2400 + it).toChar()}"
+            else if (it == 0x20)
+                "\u2423"
+            else if (it == 0xA0)
                 "{NBSP}"
             else if (it == 0xAD)
                 "{SHY}"
@@ -652,6 +653,22 @@ class MovableType(
                 it.toHex() + " "
             else
                 Character.toString(it.toChar())
+        }
+
+
+        private fun List<ArrayList<CodepointSequence>>.debugprint() {
+            println("Tokenised (${this.size} lines):")
+            this.forEach {
+                val readables = it.map {
+                    if (it.isEmpty())
+                        "<!! EMPTY !!>"
+                    else if (it.isGlue())
+                        "<Glue ${it.first().toGlueSize()}>"
+                    else
+                        it.toReadable()
+                }
+                println("(${readables.size})[ ${readables.joinToString(" | ")} ]")
+            }
         }
 
     } // end of companion object
