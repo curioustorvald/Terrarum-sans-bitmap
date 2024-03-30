@@ -596,7 +596,7 @@ class MovableType(
 
         private fun penaliseHyphenation(score: Int): Float = (10.0 * pow(score.toDouble(), 1.0/3.0) + 0.47*score).toFloat()
 
-        private fun CodePoint?.isCJ() = if (this == null) false else listOf(4, 6, 20).any {
+        private fun CodePoint?.isCJ() = if (this == null) false else listOf(4, 6, 12, 13, 20, 23, ).any {
             TerrarumSansBitmap.codeRange[it].contains(this)
         }
 
