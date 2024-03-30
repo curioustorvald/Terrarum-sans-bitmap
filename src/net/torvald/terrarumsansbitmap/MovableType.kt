@@ -2,6 +2,7 @@ package net.torvald.terrarumsansbitmap
 
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.utils.Disposable
+import net.torvald.terrarumsansbitmap.MovableType.Companion.isGlue
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
@@ -279,7 +280,7 @@ class MovableType(
             }.map { (block, index) ->
                 val prevBlockEndsWith = if (index == 0) null else slug[index - 1].block.penultimateChar // last() will just return {NUL}
                 Triple(block, index, prevBlockEndsWith)
-            }
+            }.filter { it.third != null }
             // if there are no glues, put spaces between all characters
             if (gluesInfo.isEmpty()) {
                 gluesInfo = slug.subList(1, slug.size).mapIndexed { index, block ->
