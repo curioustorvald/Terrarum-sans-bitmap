@@ -269,7 +269,7 @@ class MovableType(
         private val hangableFW = listOf(0x3001, 0x3002, 0xff0c, 0xff0e).toSortedSet()
         private const val spaceWidth = 5
         private const val hangWidth = 6
-        private const val hangWidthFW = TerrarumSansBitmap.W_ASIAN_PUNCT
+        private const val hangWidthFW = 16
 
         private fun CodePoint.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
 

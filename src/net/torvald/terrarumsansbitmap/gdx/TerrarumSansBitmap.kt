@@ -280,8 +280,6 @@ class TerrarumSansBitmap(
             else if (index == SHEET_UNIHAN)
                 PixmapRegionPack(pixmap, W_UNIHAN, H_UNIHAN) // the only exception that is height is 16
             // below they all have height of 20 'H'
-            else if (index == SHEET_CJK_PUNCT)
-                PixmapRegionPack(pixmap, W_ASIAN_PUNCT, H)
             else if (index == SHEET_HANGUL)
                 PixmapRegionPack(pixmap, W_HANGUL_BASE, H)
             else if (index == SHEET_CUSTOM_SYM)
@@ -726,7 +724,6 @@ class TerrarumSansBitmap(
 
     private fun buildWidthTableFixed() {
         // fixed-width props
-        codeRange[SHEET_CJK_PUNCT].forEach { glyphProps[it] = GlyphProps(W_ASIAN_PUNCT) }
         codeRange[SHEET_CUSTOM_SYM].forEach { glyphProps[it] = GlyphProps(20) }
         codeRange[SHEET_HANGUL].forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE) }
         codeRangeHangulCompat.forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE) }
@@ -2096,7 +2093,6 @@ class TerrarumSansBitmap(
         internal const val JUNG_COUNT = 21
         internal const val JONG_COUNT = 28
 
-        internal const val W_ASIAN_PUNCT = 10
         internal const val W_HANGUL_BASE = 13
         internal const val W_UNIHAN = 16
         internal const val W_LATIN_WIDE = 9 // width of regular letters
@@ -2181,7 +2177,7 @@ class TerrarumSansBitmap(
             "latinExtA_variable.tga",
             "latinExtB_variable.tga",
             "kana_variable.tga",
-            "cjkpunct.tga",
+            "cjkpunct_variable.tga",
             "wenquanyi.tga.gz",
             "cyrilic_variable.tga",
             "halfwidth_fullwidth_variable.tga",
