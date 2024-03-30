@@ -2,14 +2,11 @@ package net.torvald.terrarumsansbitmap
 
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.utils.Disposable
-import net.torvald.terrarumsansbitmap.MovableType.Companion.isGlue
-import net.torvald.terrarumsansbitmap.MovableType.Companion.isNotGlue
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.TextCacheObj
-import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.ShittyGlyphLayout
 import java.lang.Math.pow
 import kotlin.math.*
 
@@ -47,13 +44,13 @@ class MovableType(
     init { if (inputText.isNotEmpty() && !isNull) {
         if (paperWidth < 100) throw IllegalArgumentException("Width too narrow; width must be at least 100 pixels (got $paperWidth)")
 
-        println("Paper width: $paperWidth")
+//        println("Paper width: $paperWidth")
 
         val lines = inputText.tokenise()
-        lines.debugprint()
+//        lines.debugprint()
 
         lines.forEachIndexed { linenum, it ->
-            println("Processing input text line ${linenum + 1} (word count: ${it.size})...")
+//            println("Processing input text line ${linenum + 1} (word count: ${it.size})...")
 
             val boxes: MutableList<TextCacheObj> = it.map { font.createTextCache(it) }.toMutableList()
             var slug = ArrayList<Block>() // slug of the linotype machine
@@ -164,8 +161,8 @@ class MovableType(
                             Triple(badnessH, widthDeltaH, "Hyphenate"),
                         ).minByOrNull { it.first }!!
 
-                        println("    Line ${typesettedSlugs.size + 1} Strat: $selectedStrat (badness $selectedBadness, delta $selectedWidthDelta; full badness WTH = $badnessW, $badnessT, $badnessH; full delta WTH = $widthDeltaW, $widthDeltaT, $widthDeltaH)")
-                        println("          Interim Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
+//                        println("    Line ${typesettedSlugs.size + 1} Strat: $selectedStrat (badness $selectedBadness, delta $selectedWidthDelta; full badness WTH = $badnessW, $badnessT, $badnessH; full delta WTH = $widthDeltaW, $widthDeltaT, $widthDeltaH)")
+//                        println("          Interim Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
 
                         when (selectedStrat) {
                             "Widen", "Tighten" -> {
@@ -220,7 +217,7 @@ class MovableType(
                             }
                         }
 
-                        println("  > Line ${typesettedSlugs.size + 1} Final Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
+//                        println("  > Line ${typesettedSlugs.size + 1} Final Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
                         dispatchSlug()
                     }
                     // typeset the boxes normally
@@ -234,7 +231,7 @@ class MovableType(
             } // end of while (boxes.isNotEmpty())
 
             if (!ignoreThisLine) {
-                println("  > Line ${typesettedSlugs.size + 1} Final Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
+//                println("  > Line ${typesettedSlugs.size + 1} Final Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
                 dispatchSlug()
             }
         } // end of lines.forEach
@@ -242,225 +239,6 @@ class MovableType(
         height = typesettedSlugs.size
     } }
 
-
-
-    private fun lololololol() { if (inputText.isNotEmpty() && !isNull) {
-
-        if (paperWidth < 100) throw IllegalArgumentException("Width too narrow; width must be at least 100 pixels (got $paperWidth)")
-
-        val inputCharSeqsTokenised = inputText.tokenise()
-
-        val inputWords = inputCharSeqsTokenised.map {
-            TODO()
-        }.toMutableList() // list of [ word, word, \n, word, word, word, ... ]
-
-
-        println("Length of input text: ${inputText.size}")
-        println("Token size: ${inputCharSeqsTokenised.size}")
-        println("Paper width: $paperWidth")
-
-        var currentLine = ArrayList<Block>()
-        var wordCount = 0
-
-        fun dequeue() {
-            wordCount += 1
-        }
-
-        fun flush() {
-//            println("\n  Anchors [$wordCount] =${" ".repeat(if (wordCount < 10) 3 else if (wordCount < 100) 2 else 1)}${currentLine.map { it.posX }.joinToString()}\n")
-
-            // flush the line
-            typesettedSlugs.add(currentLine)
-            currentLine = ArrayList()
-        }
-
-        fun justifyAndFlush(
-            lineWidthNow: Int,
-            thisWordObj: TextCacheObj,
-            thisWord: ShittyGlyphLayout,
-            hyphenated: Boolean = false,
-            hyphenationScore0: Int? = null,
-            hyphenationScore: Float? = null
-        ) { /*
-            println("    JustifyAndFlush: widthNow = $lineWidthNow, thisWord = ${thisWord.textBuffer.toReadable()}, hyphenated = $hyphenated")
-
-
-            val thislineEndsWithHangable =
-                hangable.contains(currentLine.last().block.glyphLayout!!.textBuffer.penultimate())
-            val nextWordEndsWithHangable = hangable.contains(thisWordObj.glyphLayout!!.textBuffer.penultimate())
-
-            val scoreForWidening =
-                (width - (lineWidthNow - if (thislineEndsWithHangable) hangWidth else 0)).toFloat()
-            val thisWordWidth = thisWord.width - if (nextWordEndsWithHangable) hangWidth else 0
-            val scoreForAddingWordThenTightening0 = lineWidthNow + spaceWidth + thisWordWidth - width
-            val scoreForAddingWordThenTightening = penaliseTightening(scoreForAddingWordThenTightening0)
-
-            val (hyphFore, hypePost) = if (hyphenated) thisWord.textBuffer to CodepointSequence()
-                else thisWord.textBuffer.hyphenate() // hypePost may be empty!
-            val scoreForHyphenateThenTryAgain0 = if (!hyphenated) {
-                val halfWordWidth = font.getWidth(hyphFore)
-                (lineWidthNow + spaceWidth + halfWordWidth - width)
-            }
-            else {
-                2147483647
-            }
-            val scoreForHyphenateThenTryAgain = penaliseHyphenation(scoreForHyphenateThenTryAgain0)
-
-            println("Prestrategy [L ${lines.size}] Scores: W $scoreForWidening, T $scoreForAddingWordThenTightening ($scoreForAddingWordThenTightening0), H $scoreForHyphenateThenTryAgain ($scoreForHyphenateThenTryAgain0)")
-
-
-            if (scoreForHyphenateThenTryAgain < minOf(scoreForWidening, scoreForAddingWordThenTightening) && !hyphenated) {
-                println("        Hyphenation: '${hyphFore.toReadable()}' '${hypePost.toReadable()}'")
-
-                inputWords[wordCount] = font.createTextCache(hyphFore)
-                inputWords.add(wordCount + 1, font.createTextCache(hypePost))
-
-                // testing only
-//                inputWords[wordCount] = font.createTextCache(CodepointSequence("FORE-".toCharArray().map { it.toInt() }))
-//                inputWords.add(wordCount + 1, font.createTextCache((CodepointSequence("POST".toCharArray().map { it.toInt() }))))
-
-                val thisWordObj = inputWords[wordCount]
-                val thisWord = thisWordObj.glyphLayout!!
-
-                val newBlock = Block(currentLine.last().getEndPos() + spaceWidth, thisWordObj)
-                currentLine.add(newBlock)
-
-                val lineWidthNow = if (currentLine.isEmpty()) -spaceWidth
-                else currentLine.penultimate().getEndPos() - 1 // subtract the tiny space AFTER the hyphen
-
-                justifyAndFlush(lineWidthNow, thisWordObj, thisWord, true, scoreForHyphenateThenTryAgain0, scoreForHyphenateThenTryAgain)
-            }
-            else {
-                // widen: 1, tighten: -1
-                val operation = if (hyphenated) -1
-                else if (scoreForWidening == 0f && scoreForAddingWordThenTightening == 0f) 0
-                else if (scoreForWidening < scoreForAddingWordThenTightening) 1
-                else -1
-
-                // if adding word and contracting is better (has LOWER score), add the word
-                if (operation == -1) {
-                    if (!hyphenated) currentLine.add(Block(lineWidthNow + spaceWidth, thisWordObj))
-                    // remove this word from the list of future words
-                    dequeue()
-                }
-
-                val numberOfWords = currentLine.size
-
-                // continue with the widening/contraction
-                val moveDeltas = IntArray(numberOfWords)
-
-                val finalScore = when (operation) {
-                    1 -> scoreForWidening.toFloat()
-                    -1 -> scoreForAddingWordThenTightening0.toFloat()
-                    else -> 0f
-                }
-
-                if (numberOfWords > 1) {
-                    val moveAmountsByWord =
-                            coalesceIndices(sortWordsByPriority(currentLine, round(finalScore.absoluteValue).toInt()))
-                    for (i in 1 until moveDeltas.size) {
-                        moveDeltas[i] = moveDeltas[i - 1] + moveAmountsByWord.getOrElse(i) { 0 }
-                    }
-                }
-
-                moveDeltas.indices.forEach {
-                    moveDeltas[it] = moveDeltas[it] * finalScore.sign.toInt()
-                }
-
-
-                val widthOld = currentLine.last().getEndPos()
-
-                val anchorsOld = currentLine.map { it.posX }
-
-                // apply the operation
-                moveDeltas.forEachIndexed { index, it ->
-                    val delta = operation * it
-                    currentLine[index].posX += delta
-                }
-
-                val anchorsNew = currentLine.map { it.posX }
-
-                val widthNew = currentLine.last().getEndPos()
-
-                val lineHeader = "Strategy [L ${lines.size}]: "
-                val lineHeader2 = " ".repeat(lineHeader.length)
-                println(
-                        lineHeader + (if (operation * finalScore.sign.toInt() == 0) "Nop" else if (operation * finalScore.sign.toInt() == 1) "Widen" else "Tighten") +
-                                " (W $scoreForWidening, T $scoreForAddingWordThenTightening, H $hyphenationScore; $finalScore), " +
-                                "width: $widthOld -> $widthNew, wordCount: $numberOfWords, " +
-                                "thislineEndsWithHangable: $thislineEndsWithHangable, nextWordEndsWithHangable: $nextWordEndsWithHangable"
-                )
-                println(lineHeader2 + "moveDelta: ${moveDeltas.map { it * operation }} (${moveDeltas.size})")
-                println(lineHeader2 + "anchors old: $anchorsOld (${anchorsOld.size})")
-                println(lineHeader2 + "anchors new: $anchorsNew (${anchorsNew.size})")
-                println()
-
-                // flush the line
-                flush()
-            }*/
-        }
-
-        var thisWordObj: TextCacheObj
-        var thisWord: ShittyGlyphLayout
-        var thisWordStr: CodepointSequence
-        var lineWidthNow: Int
-        while (wordCount < inputWords.size) {
-            thisWordObj = inputWords[wordCount]
-            thisWord = thisWordObj.glyphLayout!!
-            thisWordStr = thisWord.textBuffer // ALWAYS starts and ends with \0
-
-            lineWidthNow = if (currentLine.isEmpty()) -spaceWidth
-            else currentLine.last().getEndPos()
-
-            // thisWordStr.size > 2 : ignores nulls that somehow being inserted between CJ characters
-            // (thisWordStr.size == 2 && currentLine.isEmpty()) : but DON'T ignore new empty lines (the line starts with TWO NULLS then NULL-LF-NULL)
-            if (thisWordStr.size > 2 || (thisWordStr.size == 2 && currentLine.isEmpty())) {
-
-                val spaceWidth = if (thisWordStr[1].isCJ() && currentLine.isNotEmpty()) 0 else spaceWidth
-
-                println(
-                    "Processing word [$wordCount] ${thisWordStr.toReadable()} ; \t\t${
-                        thisWordStr.joinToString(
-                            " "
-                        ) { it.toHex() }
-                    }"
-                )
-
-                // if the word is \n
-                if (thisWordStr.size == 3 && thisWordStr[1] == 0x0A) {
-                    println("Strategy [L ${typesettedSlugs.size}]: line is shorter than the paper width ($lineWidthNow < $paperWidth)")
-
-                    // flush the line
-                    if (lineWidthNow >= 0) flush()
-
-                    // remove the word from the list of future words
-                    dequeue()
-                }
-                // decide if it should add last word and make newline, or make newline then add the word
-                // would adding the current word would cause line overflow?
-                else if (lineWidthNow + spaceWidth + thisWord.width >= paperWidth) {
-                    justifyAndFlush(lineWidthNow, thisWordObj, thisWord)
-                }
-                // typeset the text normally
-                else {
-                    currentLine.add(Block(lineWidthNow + spaceWidth, thisWordObj))
-
-                    // remove the word from the list of future words
-                    dequeue()
-                }
-            }
-            else {
-                dequeue()
-            }
-        } // end while
-
-        println("Strategy [L ${typesettedSlugs.size}]: (end of the text)")
-        flush()
-
-
-
-        height = typesettedSlugs.size
-    } }
 
     fun draw(batch: Batch, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = -1, lineHeight: Int = 24) =
         draw(batch, x.toFloat(), y.toFloat(), lineStart, linesToDraw, lineHeight)
@@ -481,9 +259,6 @@ class MovableType(
 
     private data class Block(var posX: Int, val block: TextCacheObj) { // a single word
         fun getEndPos() = this.posX + this.block.width
-//        fun isGlue() = this.block.text.isGlue()
-//        inline fun isNotGlue() = !isGlue()
-//        fun getGlueWidth() = this.block.text[0].toGlueSize()
     }
 
     companion object {
@@ -570,63 +345,6 @@ class MovableType(
         }
 
         /**
-         * @return indices of blocks in the `currentLine`
-         */
-        private fun sortWordsByPriority(currentLine: List<Block>, length: Int): List<Int> {
-            // priority:
-            // 1. words ending with period/colon/!/?/ellipses
-            // 2. words ending or starting with quotation marks or <>s
-            // 3. words ending with comma or semicolon
-            // 4. words
-
-            val ret = ArrayList<Int>()
-
-            while (ret.size < length) {
-                // give "score" then sort by it to give both priority and randomisation
-                val sackOfIndices = (1 until currentLine.size).map {
-                    val thisWord = currentLine[it].block.glyphLayout!!.textBuffer
-
-//                    println("    Index word [$it/$length]: ${thisWord.toReadable()} ; \t\t${thisWord.joinToString(" ") { it.toHex() }}")
-
-                    val thisWordEnd = thisWord[thisWord.lastIndex]
-                    val thisWordFirst = thisWord[0]
-
-                    val priority = if (periods.contains(thisWordEnd))
-                        1
-                    else if (quots.contains(thisWordEnd) or quots.contains(thisWordFirst))
-                        2
-                    else if (commas.contains(thisWordEnd))
-                        3
-                    else
-                        255
-
-                    it to (Math.random() * 65535).toInt().or(priority.shl(16))
-                }.sortedBy { it.second }.map { it.first }
-
-                ret.addAll(sackOfIndices)
-            }
-
-            if (ret.isEmpty()) return emptyList()
-            return ret.toList().subList(0, length)
-        }
-
-        // return: [ job count for 0th word, job count for 1st word, job count for 2nd word, ... ]
-        private fun coalesceIndices(listOfJobs: IntArray): IntArray {
-            if (listOfJobs.isEmpty()) return IntArray(0)
-
-//            println("      sample: ${listOfJobs.joinToString()}")
-
-            val ret = IntArray(listOfJobs.maxOrNull()!! + 1)
-            listOfJobs.forEach {
-                ret[it] += 1
-            }
-
-//            println("      ret: ${ret.joinToString()}")
-
-            return ret
-        }
-
-        /**
          * This function will tokenise input string into a list of boxes.
          *
          * Each element in the outer list is a single line of the text. The line can be empty.
@@ -638,26 +356,56 @@ class MovableType(
             var tokens = ArrayList<CodepointSequence>()
             var boxBuffer = ArrayList<CodePoint>()
 
-            val controlCharStack = ArrayList<CodePoint>()
-            var colourCode: CodePoint? = null
-            var colourCodeRemovalRequested = false
+            val controlCharList = ArrayList<Pair<CodePoint, Int>>()
+
+            var ccRemovalReqByPredicate: ((Pair<CodePoint, Int>) -> Boolean)? = null
+            var ccRemovalReqPopping = false
 
             var cM: CodePoint? = null
             var glue = 0
 
-            fun getControlHeader() = if (colourCode != null)
-                CodepointSequence(controlCharStack.reversed() + colourCode)
-            else
-                CodepointSequence(controlCharStack.reversed())
+            fun getControlHeader(row: Int, word: Int): CodepointSequence {
+                val index = row * 65536 or word
 
+//                println("GetControlHeader $row, $word -> $index")
+//                println("    ControlChars: ${controlCharList.joinToString()}")
+
+                val ret = CodepointSequence(controlCharList.filter { index > it.second }.map { it.first })
+
+//                println("    Filtered: ${ret.joinToString()}")
+
+                return ret
+            }
+
+
+            fun addControlChar(char: CodePoint) {
+                val row = lines.size
+                val word = tokens.size
+                val index = row * 65536 or word
+                controlCharList.add(char to index)
+            }
+
+            fun requestControlCharRemovalIf(predicate: (Pair<CodePoint, Int>) -> Boolean) {
+                ccRemovalReqByPredicate = predicate
+            }
+            fun requestControlCharRemovalPop() {
+                ccRemovalReqPopping = true
+            }
 
 
             fun sendoutBox() {
-                tokens.add(CodepointSequence(listOf(0) + getControlHeader() + boxBuffer + listOf(0)))
+                val row = lines.size
+                val word = tokens.size
 
-                if (colourCodeRemovalRequested) {
-                    colourCodeRemovalRequested = false
-                    colourCode = null
+                tokens.add(CodepointSequence(listOf(0) + getControlHeader(row, word) + boxBuffer + listOf(0)))
+
+                if (ccRemovalReqByPredicate != null) {
+                    controlCharList.removeIf(ccRemovalReqByPredicate!!)
+                    ccRemovalReqByPredicate = null
+                }
+                if (ccRemovalReqPopping) {
+                    controlCharList.removeLastOrNull()
+                    ccRemovalReqPopping = false
                 }
 
                 boxBuffer = ArrayList()
@@ -707,27 +455,40 @@ class MovableType(
                 cM = null
             }
 
-            this.forEachIndexed { index, it ->
+            this.forEachIndexed { indexxxx, it ->
                 val c0 = it
 
                 if (c0.isColourCode()) {
                     if (glue != 0)
                         sendoutGlue()
 
-                    colourCode = c0
+                    addControlChar(c0)
+
                     appendToBuffer(c0)
                 }
                 else if (c0 == 0x100000) {
-                    colourCodeRemovalRequested = true
+                    requestControlCharRemovalIf { (it.first in 0x10F000..0x10FFFF) }
+
                     if (glue != 0)
                         sendoutGlue()
+
                     appendToBuffer(c0)
                 }
                 else if (c0.isControlIn()) {
-                    controlCharStack.add(0, c0)
+                    if (glue != 0)
+                        sendoutGlue()
+
+                    addControlChar(c0)
+
+                    appendToBuffer(c0)
                 }
                 else if (c0.isControlOut()) {
-                    controlCharStack.removeAt(0)
+                    if (glue != 0)
+                        sendoutGlue()
+
+                    requestControlCharRemovalPop()
+
+                    appendToBuffer(c0)
                 }
                 else if (c0 == 0x0A) {
                     sendoutBox()
