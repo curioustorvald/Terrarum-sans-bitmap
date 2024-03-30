@@ -1,4 +1,4 @@
-􏿆The bitmap font for games developers who seek good font that has real multilingual support, for free (as in freedom and without cost)􀀀
+􏿆The bitmap font for game developers who seek good font that has real multilingual support, for free (as in freedom and without cost)􀀀
 
 There are many bitmap fonts on the internet. You care for the multilingual support, but alas! most of them do not support your language, vector fonts take too much time to load, and even then their legibility suffers because screw built-in antialias.
 
@@ -18,106 +18,137 @@ No more suffering. This font has everything you need.
 
 How multilingual? Real multilingual!
 
-    􏻬Ианҵоуп ақьаад, нусхур аҩырала, ҩ ҽшьаҟакла, иҧшӡоу анапҩырала􀀀
-    􏻬գրիչս վայր դրի, վեր կացա և պատրաստվում էի, որ քնեմ, երբ հանկարծ դռանս զանգակը հնչեց􀀀
-    􏻬ՄՇԱԿԻՉ ԿԱՄ ԿԵՆՏՐՈՆԱԿԱՆ ՄՇԱԿԻՉ ՀԱՆԳՈՒՅՑԸ ՀԱՆԴԻՍԱՆՈՒՄ Է ՀԱՄԱԿԱՐԳՉԻ ՍԱՐՔԱՎՈՐՈՒՄՆԵՐԻՑ􀀀
-    􏻬Zəfər, jaketini də papağını da götür, bu axşam hava çox soyuq olacaq􀀀
-    􏻬আমি কাঁচ খেতে পারি, তাতে আমার কোনো ক্ষতি হয় না। 􀀀
-    􏻬󿿁Под южно дърво, цъфтящо в синьо, бягаше малко пухкаво зайче󿿀􀀀
-    􏻬ᎠᏍᎦᏯᎡᎦᎢᎾᎨᎢᎣᏍᏓᎤᎩᏍᏗᎥᎴᏓᎯᎲᎢᏔᎵᏕᎦᏟᏗᏖᎸᎳᏗᏗᎧᎵᎢᏘᎴᎩ ᏙᏱᏗᏜᏫᏗᏣᏚᎦᏫᏛᏄᏓᎦᏝᏃᎠᎾᏗᎭᏞᎦᎯᎦᏘᏓᏠᎨᏏᏕᏡᎬᏢᏓᏥᏩᏝᎡᎢᎪᎢ􀀀
-    􏻬ᎠᎦᏂᏗᎮᎢᎫᎩᎬᏩᎴᎢᎠᏆᏅᏛᎫᏊᎾᎥᎠᏁᏙᎲᏐᏈᎵᎤᎩᎸᏓᏭᎷᏤᎢᏏᏉᏯᏌᏊ ᎤᏂᏋᎢᏡᎬᎢᎰᏩᎬᏤᎵᏍᏗᏱᎩᎱᎱᎤᎩᎴᎢᏦᎢᎠᏂᏧᏣᏨᎦᏥᎪᎥᏌᏊᎤᎶᏒᎢᎢᏡᎬᎢ􀀀
-    􏻬ᎹᎦᎺᎵᏥᎻᎼᏏᎽᏗᏩᏂᎦᏘᎾᎿᎠᏁᎬᎢᏅᎩᎾᏂᎡᎢᏌᎶᎵᏎᎷᎠᏑᏍᏗᏪᎩ ᎠᎴ ᏬᏗᏲᏭᎾᏓᏍᏓᏴᏁᎢᎤᎦᏅᏮᏰᎵᏳᏂᎨᎢ􀀀
-    􏻬Příliš žluťoučký kůň úpěl ďábelské ódy􀀀
-    􏻬Quizdeltagerne spiste jordbær med fløde, mens cirkusklovnen Walther spillede på xylofon􀀀
-    􏻬PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS􀀀
-    􏻬hƿæt ƿe ᵹardena inᵹear ꝺaᵹum þeoꝺ cynninᵹa þꞃym ᵹeꝼꞃumon􀀀
-    􏻬Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich    GROẞEN GROẞE􀀀
-    􏻬ζαφείρι δέξου πάγκαλο, βαθῶν ψυχῆς τὸ σῆμα􀀀
-    􏻬ΔΙΑΦΥΛΆΞΤΕ ΓΕΝΙΚΆ ΤΗ ΖΩΉ ΣΑΣ ΑΠΌ ΒΑΘΕΙΆ ΨΥΧΙΚΆ ΤΡΑΎΜΑΤΑ􀀀
-    􏻬სწრაფი ყავისფერი მელა გადაახტა ზარმაც ძაღლს    ᲘᲜᲢᲔᲚ ᲞᲔᲜᲢᲘᲣᲛᲘ ᲛᲘᲙᲠᲝᲞᲠᲝᲪᲔᲡᲝᲠᲘ􀀀
-    􏻬ऋषियों को सताने वाले दुष्ट राक्षसों के राजा रावण का सर्वनाश करने वाले विष्णुवतार भगवान श्रीराम अयोध्या के महाराज दशरथ के􀀀
-    􏻬Kæmi ný öxi hér, ykist þjófum nú bæði víl og ádrepa􀀀
-    􏻬Ċuaiġ bé ṁórṡáċ le dlúṫspád fíoꝛḟinn trí hata mo ḋea-ṗoꝛcáin ḃig􀀀
-    􏻬あめつちほしそら やまかはみねたに くもきりむろこけ ひといぬうへすゑ ゆわさるおふせよ えの𛀁をなれゐて􀀀
-    􏻬トリナクコヱス ユメサマセ ミヨアケワタル ヒンカシヲ ソライロハエテ オキツヘニ ホフネムレヰヌ モヤノウチ􀀀
-    􏻬田居に出で 菜摘むわれをぞ 君召すと 求食り追ひゆく 山城の 打酔へる子ら 藻葉干せよ え舟繋けぬ􀀀
-    􏻬정 참판 양반댁 규수 큰 교자 타고 혼례 치른 날    하얬다 도럄직한 퀡봹퉪헰ꥸᅦퟗꥸᅦퟗᄋힳᆫㅗㅜㅑㄷ􀀀
-    􏻬Četri psihi faķīri vēlu vakarā zāģēja guļbūvei durvis, fonā šņācot mežam􀀀
-    􏻬Įlinkdama fechtuotojo špaga sublykčiojusi pragręžė apvalų arbūzą􀀀
-    􏻬Ѕидарски пејзаж: шугав билмез со чудење џвака ќофте и кељ на туѓ цех􀀀
-    􏻬Щётканы фермд пийшин цувъя. Бөгж зогсч хэльюү􀀀
-    􏻬Pchnąć w tę łódź jeża lub ośm skrzyń fig􀀀
-    􏻬Înjurând pițigăiat, zoofobul comandă vexat whisky și tequila􀀀
-    􏻬Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства􀀀
-    􏻬अद्वैतामृवर्षिणीं भगवतीमष्टादशाध्यायिनीम् अम्ब त्वामनुसन्दधामि भगवद्गीते भवद्वेषिणीम् ॥􀀀
-    􏻬󿿂Ајшо, лепото и чежњо, за љубав срца мога дођи у Хаџиће на кафу󿿀􀀀
-    􏻬ᮙᮛᮔᮨᮂᮔ ᮓᮤᮘᮨᮛᮨ ᮃᮊᮜ᮪ ᮏᮩᮀ ᮠᮒᮨ ᮔᮥᮛᮔᮤ, ᮎᮙ᮪ᮕᮥᮁ-ᮌᮅᮜ᮪ ᮏᮩᮀ ᮞᮞᮙᮔ ᮃᮚ ᮓᮤᮔ ᮞᮥᮙᮔᮨᮒ᮪ ᮓᮥᮓᮥᮜᮥᮛᮔ᮪􀀀
-    􏻬Jovencillo emponzoñado de whisky: ¡qué figurota exhibe!􀀀
-    􏻬எழுத்து வடிவங்களுக்கு வார்த்தைகள் மற்றும் வாக்கியங்கள் போலவே தொனி, ஒலி பண்பு, தன்மை உண்டு􀀀
-    􏻬นายสังฆภัณฑ์ เฮงพิทักษ์ฝั่ง ผู้เฒ่าซึ่งมีอาชีพเป็นฅนขายฃวด ถูกตำรวจปฏิบัติการจับฟ้องศาล ฐานลักนาฬิกาคุณหญิงฉัตรชฎา ฌานสมาธิ􀀀
-    􏻬Pijamalı hasta yağız şoföre çabucak güvendi􀀀
-    􏻬Жебракують філософи при ґанку церкви в Гадячі, ще й шатро їхнє п’яне знаємо􀀀
-    􏻬Do bạch kim rất quý nên sẽ dùng để lắp vô xương􀀀
-    􏻬日堀油告観観藤村抄海評業庁経賃室弁市。太撮収改売週法所何都慣次現。価紙一無三洋日話転手治稿載末替付致治。􀀀
-    􏻬[pʰnɣɬɥi.m͡ŋχɫʍɨnaɸ.cθʊɫɯ.ɹɨɫʏ͡ɛx.ɯ͡ɣaxɲaɣɫ.ɸtʰɑɣɴ]􀀀
-    􏻬⠑⠥⠊⠵⠀⠟⠫⠒⠵⠀⠓⠗⠎⠉⠂⠀⠠⠊⠗⠘⠍⠓⠎⠀⠨⠣⠩⠐⠥⠍⠑⠱⠀⠈⠪⠀⠨⠷⠎⠢⠈⠧⠀⠈⠏⠒⠐⠕⠝⠀⠕⠌⠎⠀⠊⠿⠊⠪⠶⠚⠊􀀀
+􏻬Ианҵоуп ақьаад, нусхур аҩырала, ҩ ҽшьаҟакла, иҧшӡоу анапҩырала􀀀
+􏻬գրիչս վայր դրի, վեր կացա և պատրաստվում էի, որ քնեմ, երբ հանկարծ դռանս զանգակը հնչեց􀀀
+􏻬ՄՇԱԿԻՉ ԿԱՄ ԿԵՆՏՐՈՆԱԿԱՆ ՄՇԱԿԻՉ ՀԱՆԳՈՒՅՑԸ ՀԱՆԴԻՍԱՆՈՒՄ Է ՀԱՄԱԿԱՐԳՉԻ ՍԱՐՔԱՎՈՐՈՒՄՆԵՐԻՑ􀀀
+􏻬Zəfər, jaketini də papağını da götür, bu axşam hava çox soyuq olacaq􀀀
+􏻬আমি কাঁচ খেতে পারি, তাতে আমার কোনো ক্ষতি হয় না। 􀀀
+􏻬󿿁Под южно дърво, цъфтящо в синьо, бягаше малко пухкаво зайче󿿀􀀀
+􏻬ᎠᏍᎦᏯᎡᎦᎢᎾᎨᎢᎣᏍᏓᎤᎩᏍᏗᎥᎴᏓᎯᎲᎢᏔᎵᏕᎦᏟᏗᏖᎸᎳᏗᏗᎧᎵᎢᏘᎴᎩ ᏙᏱᏗᏜᏫᏗᏣᏚᎦᏫᏛᏄᏓᎦᏝᏃᎠᎾᏗᎭᏞᎦᎯᎦᏘᏓᏠᎨᏏᏕᏡᎬᏢᏓᏥᏩᏝᎡᎢᎪᎢ ᎠᎦᏂᏗᎮᎢᎫᎩᎬᏩᎴᎢᎠᏆᏅᏛᎫᏊᎾᎥᎠᏁᏙᎲᏐᏈᎵᎤᎩᎸᏓᏭᎷᏤᎢᏏᏉᏯᏌᏊ ᎤᏂᏋᎢᏡᎬᎢᎰᏩᎬᏤᎵᏍᏗᏱᎩᎱᎱᎤᎩᎴᎢᏦᎢᎠᏂᏧᏣᏨᎦᏥᎪᎥᏌᏊᎤᎶᏒᎢᎢᏡᎬᎢ ᎹᎦᎺᎵᏥᎻᎼᏏᎽᏗᏩᏂᎦᏘᎾᎿᎠᏁᎬᎢᏅᎩᎾᏂᎡᎢᏌᎶᎵᏎᎷᎠᏑᏍᏗᏪᎩ ᎠᎴ ᏬᏗᏲᏭᎾᏓᏍᏓᏴᏁᎢᎤᎦᏅᏮᏰᎵᏳᏂᎨᎢ􀀀
+􏻬Příliš žluťoučký kůň úpěl ďábelské ódy􀀀
+􏻬Quizdeltagerne spiste jordbær med fløde, mens cirkusklovnen Walther spillede på xylofon􀀀
+􏻬PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS􀀀
+􏻬hƿæt ƿe ᵹardena inᵹear ꝺaᵹum þeoꝺ cynninᵹa þꞃym ᵹeꝼꞃumon􀀀
+􏻬Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich  GROẞEN GROẞE􀀀
+􏻬ζαφείρι δέξου πάγκαλο, βαθῶν ψυχῆς τὸ σῆμα􀀀
+􏻬ΔΙΑΦΥΛΆΞΤΕ ΓΕΝΙΚΆ ΤΗ ΖΩΉ ΣΑΣ ΑΠΌ ΒΑΘΕΙΆ ΨΥΧΙΚΆ ΤΡΑΎΜΑΤΑ􀀀
+􏻬სწრაფი ყავისფერი მელა გადაახტა ზარმაც ძაღლს  ᲘᲜᲢᲔᲚ ᲞᲔᲜᲢᲘᲣᲛᲘ ᲛᲘᲙᲠᲝᲞᲠᲝᲪᲔᲡᲝᲠᲘ􀀀
+􏻬ऋषियों को सताने वाले दुष्ट राक्षसों के राजा रावण का सर्वनाश करने वाले विष्णुवतार भगवान श्रीराम अयोध्या के महाराज दशरथ के􀀀
+􏻬Kæmi ný öxi hér, ykist þjófum nú bæði víl og ádrepa􀀀
+􏻬Ċuaiġ bé ṁórṡáċ le dlúṫspád fíoꝛḟinn trí hata mo ḋea-ṗoꝛcáin ḃig􀀀
+􏻬あめつちほしそら やまかはみねたに くもきりむろこけ ひといぬうへすゑ ゆわさるおふせよ えの𛀁をなれゐて􀀀
+􏻬トリナクコヱス ユメサマセ ミヨアケワタル ヒンカシヲ ソライロハエテ オキツヘニ ホフネムレヰヌ モヤノウチ􀀀
+􏻬田居に出で 菜摘むわれをぞ 君召すと 求食り追ひゆく 山城の 打酔へる子ら 藻葉干せよ え舟繋けぬ􀀀
+􏻬정 참판 양반댁 규수 큰 교자 타고 혼례 치른 날하얬다 도럄직한 퀡봹퉪헰ꥸᅦퟗꥸᅦퟗᄋힳᆫㅗㅜㅑㄷ􀀀
+􏻬Četri psihi faķīri vēlu vakarā zāģēja guļbūvei durvis, fonā šņācot mežam􀀀
+􏻬Įlinkdama fechtuotojo špaga sublykčiojusi pragręžė apvalų arbūzą􀀀
+􏻬Ѕидарски пејзаж: шугав билмез со чудење џвака ќофте и кељ на туѓ цех􀀀
+􏻬Щётканы фермд пийшин цувъя. Бөгж зогсч хэльюү􀀀
+􏻬Pchnąć w tę łódź jeża lub ośm skrzyń fig􀀀
+􏻬Înjurând pițigăiat, zoofobul comandă vexat whisky și tequila􀀀
+􏻬Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства􀀀
+􏻬अद्वैतामृवर्षिणीं भगवतीमष्टादशाध्यायिनीम् अम्ब त्वामनुसन्दधामि भगवद्गीते भवद्वेषिणीम् ॥􀀀
+􏻬󿿂Ајшо, лепото и чежњо, за љубав срца мога дођи у Хаџиће на кафу󿿀􀀀
+􏻬ᮙᮛᮔᮨᮂᮔ ᮓᮤᮘᮨᮛᮨ ᮃᮊᮜ᮪ ᮏᮩᮀ ᮠᮒᮨ ᮔᮥᮛᮔᮤ, ᮎᮙ᮪ᮕᮥᮁ-ᮌᮅᮜ᮪ ᮏᮩᮀ ᮞᮞᮙᮔ ᮃᮚ ᮓᮤᮔ ᮞᮥᮙᮔᮨᮒ᮪ ᮓᮥᮓᮥᮜᮥᮛᮔ᮪􀀀
+􏻬Jovencillo emponzoñado de whisky: ¡qué figurota exhibe!􀀀
+􏻬எழுத்து வடிவங்களுக்கு வார்த்தைகள் மற்றும் வாக்கியங்கள் போலவே தொனி, ஒலி பண்பு, தன்மை உண்டு􀀀
+􏻬นายสังฆภัณฑ์ เฮงพิทักษ์ฝั่ง ผู้เฒ่าซึ่งมีอาชีพเป็นฅนขายฃวด ถูกตำรวจปฏิบัติการจับฟ้องศาล ฐานลักนาฬิกาคุณหญิงฉัตรชฎา ฌานสมาธิ􀀀
+􏻬Pijamalı hasta yağız şoföre çabucak güvendi􀀀
+􏻬Жебракують філософи при ґанку церкви в Гадячі, ще й шатро їхнє п’яне знаємо􀀀
+􏻬Do bạch kim rất quý nên sẽ dùng để lắp vô xương􀀀
+􏻬日堀油告観観藤村抄海評業庁経賃室弁市。太撮収改売週法所何都慣次現。価紙一無三洋日話転手治稿載末替付致治。􀀀
+􏻬[pʰnɣɬɥi.m͡ŋχɫʍɨnaɸ.cθʊɫɯ.ɹɨɫʏ͡ɛx.ɯ͡ɣaxɲaɣɫ.ɸtʰɑɣɴ]􀀀
+􏻬⠑⠥⠊⠵⠀⠟⠫⠒⠵⠀⠓⠗⠎⠉⠂⠀⠠⠊⠗⠘⠍⠓⠎⠀⠨⠣⠩⠐⠥⠍⠑⠱⠀⠈⠪⠀⠨⠷⠎⠢⠈⠧⠀⠈⠏⠒⠐⠕⠝⠀⠕⠌⠎⠀⠊⠿⠊⠪⠶⠚⠊􀀀
 
 􏃯Features:􀀀
 
-    􏿿Ever heard of « Guillemets »? You speak „Nederlands” or „Deutsch“? ”suomi”? 「日本語」しゃべる？或《中文》？􀀀
+􏻬Ever heard of « Guillemets »? You speak „Nederlands” or „Deutsch“? ”suomi”? 「日本語」しゃべる？或《中文》？􀀀
 
-􎳌Multilingual brackets; these are the most basic things, right?􀀀
+􎳌‣ Multilingual brackets; these are the most basic things, right?􀀀
 
-    􏋶99406 91902 59186 29182 45814 57862 34368 08240􀀀
-    􏋶31485 65379 04348 28952 42927 26157 42615 39526􀀀
+􏋶99406 91902 59186 29182 45814 57862 34368 08240􀀀
+􏋶31485 65379 04348 28952 42927 26157 42615 39526􀀀
 
-􎳌Fixed-width numbers, because number-crunching matters􀀀
+􎳌‣ Fixed-width (tabulated) numbers, because number-crunching matters􀀀
 
-    􏼀ᚱ􏼐ᛂ􏼠ᚴ􏼰ᛋ􏽀ᛂ􏽐ᛋ􏽠ᛏ􏽰ᛋ􏾀ᚮ􏾐ᚾ􏾠ᛔ􏾰ᚢ􏿀ᛏ􏿐ᛚ􏿠ᚮ􏿰ᛋ􏻰᛬􏷰ᚱ􏳰ᛂ􏯰ᚴ􏫰ᛋ􏧰ᛋ􏣰ᚢ􏟰ᚼ􏛰ᚾ􏗰ᚢ􏓰ᛘ􏏰ᚢ􏋰ᛚ􏇰ᚾ􏃰ᛏ􏃱ᚮ􏃲᛬􏃳ᛏ􏃴ᚮ􏃵ᛋ􏃶ᛁ􏃷ᚮ􏃸ᚵ􏃹ᛂ􏃺ᚢ􏃻ᛏ􏃼ᚮ􏃽ᚱ􏃾ᛘ􏃿ᛔ􏃯ᚱ􏃟ᛂ􏃏ᚴ􏂿ᛋ􏂯ᛏ􏂟᛭􏂏ᛋ􏁿ᚢ􏁯ᚼ􏁟ᚾ􏁏ᚢ􏀿ᛋ􏀯ᛘ􏀟ᚮ􏀏ᛁ􏄏ᚵ􏈏ᚾ􏌏ᛁ􏐏ᛂ􏔏ᛏ􏘏ᚮ􏜏ᛑ􏠏᛭􏤏ᚵ􏨏ᛂ􏬏ᚢ􏰏ᛏ􏴏ᚮ􏸏ᚱ􀀀
+􏼀ᚱ􏼐ᛂ􏼠ᚴ􏼰ᛋ􏽀ᛂ􏽐ᛋ􏽠ᛏ􏽰ᛋ􏾀ᚮ􏾐ᚾ􏾠ᛔ􏾰ᚢ􏿀ᛏ􏿐ᛚ􏿠ᚮ􏿰ᛋ􏻰᛬􏷰ᚱ􏳰ᛂ􏯰ᚴ􏫰ᛋ􏧰ᛋ􏣰ᚢ􏟰ᚼ􏛰ᚾ􏗰ᚢ􏓰ᛘ􏏰ᚢ􏋰ᛚ􏇰ᚾ􏃰ᛏ􏃱ᚮ􏃲᛬􏃳ᛏ􏃴ᚮ􏃵ᛋ􏃶ᛁ􏃷ᚮ􏃸ᚵ􏃹ᛂ􏃺ᚢ􏃻ᛏ􏃼ᚮ􏃽ᚱ􏃾ᛘ􏃿ᛔ􏃯ᚱ􏃟ᛂ􏃏ᚴ􏂿ᛋ􏂯ᛏ􏂟᛭􏂏ᛋ􏁿ᚢ􏁯ᚼ􏁟ᚾ􏁏ᚢ􏀿ᛋ􏀯ᛘ􏀟ᚮ􏀏ᛁ􏄏ᚵ􏈏ᚾ􏌏ᛁ􏐏ᛂ􏔏ᛏ􏘏ᚮ􏜏ᛑ􏠏᛭􏤏ᚵ􏨏ᛂ􏬏ᚢ􏰏ᛏ􏴏ᚮ􏸏ᚱ􀀀􀀀
 
-􎳌Colour-code that supports 4096 colours via 4 bit RGB􀀀
+􎳌‣ Colour-code that supports 4096 colours via 4 bit RGB􀀀
 
-    􏿿󿿁Щиглецът се яде само пържен в юфка без чушки и хвойна󿿀 (Bulgarian)􀀀
-    􏿿󿿂Љубазни фењерџија чађавог лица хоће да ми покаже штос󿿀 (Serbian)􀀀
-    􏿿Разъяренный чтец эгоистично бьёт пятью жердями шустрого фехтовальщика (Russian)􀀀
+􏻬󿿁Щиглецът се яде само пържен в юфка без чушки и хвойна󿿀 (Bulgarian)󿿀􀀀
+􏻬󿿂Љубазни фењерџија чађавог лица хоће да ми покаже штос󿿀 (Serbian)󿿀􀀀
+􏻬Разъяренный чтец эгоистично бьёт пятью жердями шустрого фехтовальщика (Russian)􀀀
 
-􎳌Control characters to support Bulgarian and Serbian letter shapes on the fly􀀀
+􎳌‣ Control characters to support Bulgarian and Serbian letter shapes on the fly􀀀
 
-    􏿿Press  to pay respects—or is it , or …􀀀
+􏻬Press  to pay respects—or is it , or …􀀀
 
-􎳌Custom symbols for video games􀀀
+􎳌‣ Custom symbols for video games􀀀
 
-    􏿿Can you distinguish following dashes: - – — - – — – - ――――――――――― 48–63 48-63􀀀
+􏻬Can you distinguish following dashes: - – — - – — – - ――――――――――― 48–63 48-63􀀀
 
-􎳌For all those dash-pedants, we have en-dash, em-dash, and even horizontal bars!􀀀
+􎳌‣ For all those dash-pedants, we have en-dash, em-dash, and even horizontal bars!􀀀
 
-    􏿿5¹⁹⁄₃₂ inch is 142.1 mm · (C₂F₄)ₙ is godly · Error = MoreCode²􀀀
-    􏿿NOTE: we don’t do fractions. 142¹⁄₁₀ mm is illegal!􀀀
+􏻬5¹⁹⁄₃₂ inch is 142.1 mm · (C₂F₄)ₙ is godly · Error = MoreCode²􀀀
+􏻬NOTE: we don’t do fractions. 142¹⁄₁₀ mm is illegal!􀀀
 
-􎳌Did you know Unicode supports arbitrary fractions? Actually I didn’t… as they abused super/subscripts!􀀀
+􎳌‣ Unicode fractions aka super/subscripts fully supported􀀀
 
-    􏿿ᄋᆡ급 일 ᄭᅡᄃᆞᆰ에 영국 ᄒᆞ고 불난셔 ᄒᆞ고 ᄃᆡ단이 시비가 잇슬 모양 인ᄃᆡ􀀀
-    􏿿일본 농샹공부에셔 젼긔학 학ᄉᆞ 셋ᄉᆞᆯ 미국과 구라파로 보내셔 젼화 쓰ᄂᆞᆫ 법을 더ᄇᆡ호게 ᄒᆞ더라􀀀
-    􏿿일쳔 구ᄇᆡᆨ년에 불난셔 셔울 파리스에 만국 박남회를 버릴터 인ᄃᆡ 각국이 다 물화와 졔조품을 거긔 보낼터이더라􀀀
+􏻬ᄋᆡ급 일 ᄭᅡᄃᆞᆰ에 영국 ᄒᆞ고 불난셔 ᄒᆞ고 ᄃᆡ단이 시비가 잇슬 모양 인ᄃᆡ􀀀
+􏻬일본 농샹공부에셔 젼긔학 학ᄉᆞ 셋ᄉᆞᆯ 미국과 구라파로 보내셔 젼화 쓰ᄂᆞᆫ 법을 더ᄇᆡ호게 ᄒᆞ더라􀀀
+􏻬일쳔 구ᄇᆡᆨ년에 불난셔 셔울 파리스에 만국 박남회를 버릴터 인ᄃᆡ 각국이 다 물화와 졔조품을 거긔 보낼터이더라􀀀
 
-􎳌Rejoice, now we can render Old Korean in a correct way!􀀀
+􎳌‣ Full support for Old Korean/Jeju dialect orthography􀀀
 
 􏃯Supported Unicode Blocks:􀀀
 
-   Basic Latin  Latin-1 Supplement  Latin Extended-A  Latin Extended-B  IPA Extensions  Spacing Modifier Letters
-   Combining Diacritical Marks   Greek and Coptic􏿆ᴱ􀀀   Cyrillic􏿆ᴭ􀀀   Cyrillic Supplement􏿆ᴭ􀀀   Armenian   Devanagari
-   Bengali􏿆ᶠⁱ􀀀   Tamil   Thai   Georgian􏿆ჼ􀀀   Hangul Jamo   Cherokee􏿆⁷􀀀   Runic   Sundanese   Georgian Extended
-   Sundanese Supplement   Phonetic Extensions   Phonetic Extensions Supplement   Latin Extended Additional
-   Greek Extended   General Punctuations   Superscripts and Subscripts   Currency Symbols   Letterlike Symbols
-   Braile Patterns   Latin Extended-C   CJK Symbols and Punctuation   Hiragana   Katakana
-   Hangul Compatibility Jamo   Katakana Phonetic Extensions   CJK Unified Ideographs Extension A􏿆¹²·¹􀀀
-   CJK Unified Ideographs􏿆⁶􀀀   Latin Extended-D   Hangul Jamo Extended-A   Hangul Syllables
-   Hangul Jamo Extended-B  Halfwidth and Fullwidth Forms  Kana Supplement􏿆⁹􀀀  Enclosed Alphanumeric Supplement
+⁃ Basic Latin
+⁃ Latin-1 Supplement
+⁃ Latin Extended Additional
+⁃ Latin Extended-A/B/C/D
+⁃ Armenian
+⁃ Bengali􏿆ᶠⁱ􀀀
+⁃ Braile Patterns
+⁃ Cherokee􏿆⁷􀀀
+⁃ CJK Symbols and Punctuation
+⁃ CJK Unified Ideographs􏿆⁶􀀀
+⁃ CJK Unified Ideographs Extension A􏿆¹²·¹􀀀
+⁃ Combining Diacritical Marks
+⁃ Currency Symbols
+⁃ Cyrillic􏿆ᴭ􀀀
+⁃ Cyrillic Supplement􏿆ᴭ􀀀
+⁃ Devanagari
+⁃ Enclosed Alphanumeric Supplement
+⁃ General Punctuations
+⁃ Georgian􏿆ჼ􀀀
+⁃ Georgian Extended
+⁃ Greek and Coptic􏿆ᴱ􀀀
+⁃ Greek Extended
+⁃ Halfwidth and Fullwidth Forms
+⁃ Hangul Compatibility Jamo
+⁃ Hangul Jamo
+⁃ Hangul Jamo Extended-A/B
+⁃ Hangul Syllables
+⁃ IPA Extensions
+⁃ Hiragana
+⁃ Katakana
+⁃ Katakana Phonetic Extensions
+⁃ Kana Supplement
+⁃ Kana Extended-A
+⁃ Small Kana Extension
+⁃ Letterlike Symbols
+⁃ Phonetic Extensions
+⁃ Phonetic Extensions Supplement
+⁃ Runic
+⁃ Spacing Modifier Letters
+⁃ Sundanese
+⁃ Sundanese Supplement
+⁃ Superscripts and Subscripts
+⁃ Tamil
+⁃ Thai
 
-   􏿆ᴭ􀀀  No support for archæic letters    􏿆ᴱ􀀀  No support for Coptic
-   􏿆ᶠⁱ􀀀  No support for ligatures    􏿆ჼ􀀀  Mkhedruli only
-   􏿆⁶􀀀  􏿆⁷􀀀  􏿆⁹􀀀  􏿆¹²·¹􀀀  Up to the specified Unicode version
+  􏿆ᴭ􀀀  No support for archæic letters 􏿆ᴱ􀀀  No support for Coptic
+  􏿆ᶠⁱ􀀀  No support for ligatures 􏿆ჼ􀀀  Mkhedruli only
+  􏿆⁶􀀀  􏿆⁷􀀀  􏿆⁹􀀀  􏿆¹²·¹􀀀  Up to the specified Unicode version
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀. You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make changes, and make a 􏽕pull request􀀀! I appreciate any and all supports.
-
-� 􎳌文字化け！􀀀 �

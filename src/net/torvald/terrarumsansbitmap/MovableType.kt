@@ -84,9 +84,9 @@ class MovableType(
                 }
 
                 var slugWidth = slug.lastOrNull()?.getEndPos() ?: 0
-                if (slug.isNotEmpty() && hangable.contains(slug.last().block.penultimateChar))
+                if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangable.contains(slug.last().block.penultimateCharOrNull))
                     slugWidth -= hangWidth
-                else if (slug.isNotEmpty() && hangableFW.contains(slug.last().block.penultimateChar))
+                else if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangableFW.contains(slug.last().block.penultimateCharOrNull))
                     slugWidth -= hangWidthFW
 
                 val difference = (paperWidth - slugWidth).absoluteValue
@@ -103,9 +103,9 @@ class MovableType(
                 slug.add(Block(nextPosX, box))
 
                 var slugWidth = slugWidth + box.width
-                if (slug.isNotEmpty() && hangable.contains(slug.last().block.penultimateChar))
+                if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangable.contains(slug.last().block.penultimateCharOrNull))
                     slugWidth -= hangWidth
-                else if (slug.isNotEmpty() && hangableFW.contains(slug.last().block.penultimateChar))
+                else if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangableFW.contains(slug.last().block.penultimateCharOrNull))
                     slugWidth -= hangWidthFW
 
                 val difference = (paperWidth - slugWidth).absoluteValue
@@ -123,9 +123,9 @@ class MovableType(
                 slug.add(Block(nextPosX, hyphHead))
 
                 var slugWidth = slugWidth + hyphHead.width
-                if (slug.isNotEmpty() && hangable.contains(slug.last().block.penultimateChar))
+                if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangable.contains(slug.last().block.penultimateCharOrNull))
                     slugWidth -= hangWidth
-                else if (slug.isNotEmpty() && hangableFW.contains(slug.last().block.penultimateChar))
+                else if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangableFW.contains(slug.last().block.penultimateCharOrNull))
                     slugWidth -= hangWidthFW
 
                 val difference = (paperWidth - slugWidth)
@@ -141,9 +141,11 @@ class MovableType(
 
                 if (box.isNotGlue()) {
                     // deal with the hangables
-                    val slugWidthForOverflowCalc = if (hangable.contains(box.penultimateChar))
+                    val slugWidthForOverflowCalc = if (box.penultimateCharOrNull == null)
+                        slugWidth
+                    else if (hangable.contains(box.penultimateCharOrNull))
                         slugWidth - hangWidth
-                    else if (hangableFW.contains(box.penultimateChar))
+                    else if (hangableFW.contains(box.penultimateCharOrNull))
                         slugWidth - hangWidthFW
                     else
                         slugWidth
@@ -278,13 +280,13 @@ class MovableType(
             var gluesInfo = slug.mapIndexed { index, block -> block to index }.filter { (block, index) ->
                 block.block.isGlue()
             }.map { (block, index) ->
-                val prevBlockEndsWith = if (index == 0) null else slug[index - 1].block.penultimateChar // last() will just return {NUL}
+                val prevBlockEndsWith = if (index == 0) null else slug[index - 1].block.penultimateCharOrNull // last() will just return {NUL}
                 Triple(block, index, prevBlockEndsWith)
             }.filter { it.third != null }
             // if there are no glues, put spaces between all characters
             if (gluesInfo.isEmpty()) {
                 gluesInfo = slug.subList(1, slug.size).mapIndexed { index, block ->
-                    val prevBlockEndsWith = slug[index].block.penultimateChar // last() will just return {NUL}
+                    val prevBlockEndsWith = slug[index].block.penultimateCharOrNull // last() will just return {NUL}
                     Triple(block, index + 1, prevBlockEndsWith)
                 }
             }
@@ -542,6 +544,19 @@ class MovableType(
 
                     appendToBuffer(c0)
                 }
+                else if (c0.isThaiConso()) {
+                    if (cM.isWhiteSpace()) {
+                        sendoutGlue()
+                    }
+                    else if (cM.isThaiConso() || cM.isThaiVowel()) {
+                        sendoutBox()
+                    }
+                    else {
+                        sendoutBox()
+                    }
+
+                    appendToBuffer(c0)
+                }
                 else {
                     if (cM.isCJ()) {
                         sendoutBox()
@@ -593,6 +608,8 @@ class MovableType(
         private fun CodePoint?.isControlIn() = if (this == null) false else controlIns.contains(this)
         private fun CodePoint?.isControlOut() = if (this == null) false else controlOuts.contains(this)
         private fun CodePoint?.isColourCode() = if (this == null) false else colourCodes.contains(this)
+        private fun CodePoint?.isThaiConso() = if (this == null) false else this in 0x0E01..0x0E2F
+        private fun CodePoint?.isThaiVowel() = if (this == null) false else (this in 0x0E30..0x0E3E || this in 0x0E40..0x0E4E)
 
         private fun CodepointSequence.isGlue() = this.size == 1 && (this[0] == ZWSP || this[0] in 0xFFFE0..0xFFFFF)
         private fun CodepointSequence.isNotGlue() = !this.isGlue()

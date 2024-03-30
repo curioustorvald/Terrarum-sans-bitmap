@@ -2071,8 +2071,10 @@ class TerrarumSansBitmap(
                 get() = glyphLayout!!.width
             val texture: Texture
                 get() = glyphLayout!!.linotype
-            val penultimateChar: CodePoint
-                get() = text[text.size - 2]
+//            val penultimateChar: CodePoint
+//                get() = text[text.size - 2]
+            val penultimateCharOrNull: CodePoint?
+                get() = text.getOrNull(text.size - 2)
 
             fun dispose() {
                 glyphLayout?.linotype?.dispose()
