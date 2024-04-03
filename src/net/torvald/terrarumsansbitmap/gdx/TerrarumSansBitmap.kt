@@ -305,7 +305,7 @@ class TerrarumSansBitmap(
         glyphProps[0] = GlyphProps(0)
     }
 
-    override fun getLineHeight(): Float = 24f * scale
+    override fun getLineHeight(): Float = LINE_HEIGHT.toFloat() * scale
     override fun getXHeight() = 8f * scale
     override fun getCapHeight() = 12f * scale
     override fun getAscent() = 3f * scale
@@ -2039,6 +2039,8 @@ class TerrarumSansBitmap(
 
 
     companion object {
+
+        const val LINE_HEIGHT = 24
 
         fun CodepointSequence.getHash(): Long {
             val hashBasis = -3750763034362895579L

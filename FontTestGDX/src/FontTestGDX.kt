@@ -41,8 +41,12 @@ class FontTestGDX : Game() {
 
     lateinit var layout: MovableType
 
+    private lateinit var testtex: TextureRegion
+
     override fun create() {
         font = TerrarumSansBitmap("./assets", debug = true, flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.5f) // must test for two flipY cases
+
+        testtex = TextureRegion(Texture("./testtex.tga"))
 
         val inTextFile = Gdx.files.internal("./$demotextName")
         val reader = inTextFile.reader("UTF-8")
@@ -108,7 +112,14 @@ class FontTestGDX : Game() {
 //            inputText.forEachIndexed { index, s ->
 //                font.draw(batch, s, 10f, TEXH - 30f - index * lineHeight)
 //            }
-            layout.draw(batch, 24f, 12f)
+
+            // draw position debuggers
+//            font.draw(batch, "soft\uFE0F\u00ADhyphen\uFE0F\u00ADated", 24f, 12f)
+//            batch.draw(testtex, 24f, 12f)
+            // end of draw position debuggers
+
+            val layoutDrawCall = { x: Float, y: Float, _: Int -> batch.draw(testtex, x, y) }
+            layout.draw(batch, 24f, 12f, mapOf(0 to layoutDrawCall))
 
             batch.end()
 
@@ -160,6 +171,7 @@ class FontTestGDX : Game() {
     override fun dispose() {
         font.dispose()
         faketex.dispose()
+        testtex.texture.dispose()
     }
 
     fun scrollAdd(x: Int = 1) {
@@ -321,7 +333,7 @@ class FlippingSpriteBatch(size: Int = 1000) : SpriteBatch(size) {
 
 lateinit var appConfig: Lwjgl3ApplicationConfiguration
 const val TEXW = 800
-const val TEXH = 24 * 130
+const val TEXH = 24 * 170
 
 const val WIDTH = TEXW
 const val HEIGHT = 768

@@ -243,17 +243,31 @@ class MovableType(
     } }
 
 
-    fun draw(batch: Batch, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = -1, lineHeight: Int = 24) =
-        draw(batch, x.toFloat(), y.toFloat(), lineStart, linesToDraw, lineHeight)
+    fun draw(batch: Batch, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = -1, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT, drawJobs: Map<Int, (Float, Float, Int) -> Unit> = HashMap()) =
+        draw(batch, x.toFloat(), y.toFloat(), lineStart, linesToDraw, lineHeight, drawJobs)
 
-    fun draw(batch: Batch, x: Float, y: Float, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = 24) {
+    fun draw(batch: Batch, x: Int, y: Int, drawJobs: Map<Int, (Float, Float, Int) -> Unit> = HashMap()) =
+        draw(batch, x.toFloat(), y.toFloat(), 0, 2147483647, TerrarumSansBitmap.LINE_HEIGHT, drawJobs)
+
+    fun draw(batch: Batch, x: Float, y: Float, drawJobs: Map<Int, (Float, Float, Int) -> Unit> = HashMap()) =
+        draw(batch, x, y, 0, 2147483647, TerrarumSansBitmap.LINE_HEIGHT, drawJobs)
+
+    /**
+     * @param drawJobs Draw call for specific lines (absolute line). This takes the form of Map from linnumber to draw function,
+     * which has three arguments: (line's top-left position-x, line's top-left position-y, absolute line number)
+     */
+    fun draw(batch: Batch, x: Float, y: Float, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT, drawJobs: Map<Int, (Float, Float, Int) -> Unit> = HashMap()) {
         if (isNull) return
 
         typesettedSlugs.subList(lineStart, minOf(typesettedSlugs.size, lineStart + linesToDraw)).forEachIndexed { lineNum, lineBlocks ->
 //            println("Line [${lineNum+1}] anchors: "+ lineBlocks.map { it.posX }.joinToString())
 
+            val absoluteLineNum = lineStart + lineNum
+
+            drawJobs[absoluteLineNum]?.invoke(x, y + lineNum * lineHeight, absoluteLineNum)
+
             lineBlocks.forEach {
-                batch.draw(it.block.glyphLayout!!.linotype, x + it.posX - 16, y + lineNum * lineHeight)
+                batch.draw(it.block.glyphLayout!!.linotype, x + it.posX - 16, y + lineNum * lineHeight - 8)
             }
 
 //            font.draw(batch, "I", x, y + lineNum * lineHeight + 14)
