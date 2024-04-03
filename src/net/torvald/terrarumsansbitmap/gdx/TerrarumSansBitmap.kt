@@ -266,6 +266,8 @@ class TerrarumSansBitmap(
             buildWidthTableFixed()
             buildWidthTableInternal()
 
+            glyphProps[0xAD] = GlyphProps(-15) // what the fuck's going on that made this necessary??
+
 
             /*if (!noShadow) {
                 makeShadowForSheet(pixmap)

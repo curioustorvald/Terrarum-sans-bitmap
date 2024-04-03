@@ -493,9 +493,13 @@ class MovableType(
 
                     appendToBuffer(c0)
                 }
-                else if (c0 == 0x0A) {
+                else if (c0 == 0x0A) { // \n
                     sendoutBox()
                     proceedToNextLine()
+                }
+                else if (c0 == 0x2D) { // hyphen
+                    appendToBuffer(c0)
+                    sendoutBox()
                 }
                 else if (c0.isWhiteSpace()) {
                     if (cM != null && !cM.isWhiteSpace())
