@@ -116,10 +116,10 @@ class FontTestGDX : Game() {
             // draw position debuggers
 //            font.draw(batch, "soft\uFE0F\u00ADhyphen\uFE0F\u00ADated", 24f, 12f)
 //            batch.draw(testtex, 24f, 12f)
+//            val layoutDrawCall = { x: Float, y: Float, _: Int -> batch.draw(testtex, x, y) }
+//            layout.draw(batch, 24f, 12f, mapOf(0 to layoutDrawCall))
             // end of draw position debuggers
-
-            val layoutDrawCall = { x: Float, y: Float, _: Int -> batch.draw(testtex, x, y) }
-            layout.draw(batch, 24f, 12f, mapOf(0 to layoutDrawCall))
+            layout.draw(batch, 24f, 12f)
 
             batch.end()
 

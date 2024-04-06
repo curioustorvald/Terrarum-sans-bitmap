@@ -551,7 +551,7 @@ class MovableType(
                     else if (cM.isCJparenStart()) {
                         /* do nothing */
                     }
-                    else if (cM.isCJpunctOrParenEnd()) {
+                    else if (cM.isCJpunctOrParenEnd() || cM.isNumeric()) {
                         sendoutBox()
                         appendZeroGlue()
                         sendoutGlue()
@@ -575,8 +575,36 @@ class MovableType(
 
                     appendToBuffer(c0)
                 }
+                else if (isHangulI(c0)) {
+                    if (cM.isWhiteSpace()) {
+                        sendoutGlue()
+                    }
+                    else if (!isHangulPK(cM ?: 0)) {
+                        if (boxBuffer.isNotEmpty()) sendoutBox()
+                    }
+
+                    appendToBuffer(c0)
+                }
+                else if (c0.isNumeric()) {
+                    if (cM.isWhiteSpace()) {
+                        sendoutGlue()
+                    }
+                    else if (cM.isCJ()) {
+                        sendoutBox()
+                        appendZeroGlue()
+                        sendoutGlue()
+                    }
+                    else if (cM != null && !cM!!.isNumeric()) {
+                        sendoutBox()
+                    }
+
+                    appendToBuffer(c0)
+                }
                 else {
-                    if (cM.isCJ()) {
+                    if (!isHangulPK(c0) && isHangulPK(cM ?: 0)) {
+                        sendoutBox()
+                    }
+                    else if (cM.isCJ() || cM.isNumeric()) {
                         sendoutBox()
                     }
                     else if (cM.isWhiteSpace()) {
@@ -614,9 +642,16 @@ class MovableType(
 
         private fun penaliseHyphenation(score: Int): Float = (10.0 * pow(score.toDouble(), 1.0/3.0) + 0.47*score).toFloat()
 
+        private fun isVowel(c: CodePoint) = vowels.contains(c)
+
         private fun CodePoint?.isCJ() = if (this == null) false else listOf(4, 6, 12, 13, 20, 23, ).any {
             TerrarumSansBitmap.codeRange[it].contains(this)
         }
+
+        private fun isHangulI(c: CodePoint) = hangulI.contains(c)
+        private fun isHangulPK(c: CodePoint) = hangulPK.contains(c)
+
+        private fun CodePoint?.isNumeric() = if (this == null) false else (this in 0x30..0x39 || this in (0xFF10..0xFF19))
 
         private fun CodePoint?.isWhiteSpace() = if (this == null) false else whitespaceGlues.contains(this)
 
@@ -714,10 +749,6 @@ class MovableType(
                 return this to CodepointSequence()
             }
         }
-
-        private fun isVowel(c: CodePoint) = vowels.contains(c)
-        private fun isHangulI(c: CodePoint) = hangulI.contains(c)
-        private fun isHangulPK(c: CodePoint) = hangulPK.contains(c)
 
         private val vowels = (listOf(0x41, 0x45, 0x49, 0x4f, 0x55, 0x59, 0x41, 0x65, 0x69, 0x6f, 0x75, 0x79) +
                 (0xc0..0xc6) + (0xc8..0xcf) + (0xd2..0xd6) + (0xd8..0xdd) +
