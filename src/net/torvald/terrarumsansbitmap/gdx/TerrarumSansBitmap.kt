@@ -2532,7 +2532,7 @@ class TerrarumSansBitmap(
         private fun isBulgarian(c: CodePoint) = c in 0xF0000..0xF005F
         private fun isSerbian(c: CodePoint) = c in 0xF0060..0xF00BF
         fun isColourCode(c: CodePoint) = c == 0x100000 || c in 0x10F000..0x10FFFF
-        private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFFF
+        private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFDF
         private fun isDevanagari(c: CodePoint) = c in codeRange[SHEET_DEVANAGARI_VARW]
         private fun isHangulCompat(c: CodePoint) = c in codeRangeHangulCompat
 

@@ -49,7 +49,7 @@ class MovableType(
 //        println("Paper width: $paperWidth")
 
         val lines = inputText.tokenise()
-        lines.debugprint()
+//        lines.debugprint()
 
         lines.forEachIndexed { linenum, it ->
 //            println("Processing input text line ${linenum + 1} (word count: ${it.size})...")
@@ -653,7 +653,7 @@ class MovableType(
             proceedToNextLine()
 
             lines.forEach {
-                if ((it[0].size == 2 && it[0][0] == 0 && it[0][1] == 0) || it[0].isZeroGlue())
+                if (it.isNotEmpty() && ((it[0].size == 2 && it[0][0] == 0 && it[0][1] == 0) || it[0].isZeroGlue()))
                     it.removeAt(0)
             }
 
