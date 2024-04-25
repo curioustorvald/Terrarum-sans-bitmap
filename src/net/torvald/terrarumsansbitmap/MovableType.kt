@@ -2,7 +2,6 @@ package net.torvald.terrarumsansbitmap
 
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.utils.Disposable
-import net.torvald.terrarumsansbitmap.MovableType.Companion.isGlue
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
@@ -30,6 +29,8 @@ class MovableType(
     private var disposed = false
     private val typesettedSlugs = ArrayList<List<Block>>()
 
+    constructor(font: TerrarumSansBitmap, string: String, paperWidth: Int) : this(font, font.normaliseStringForMovableType(string), paperWidth)
+
     override fun dispose() {
         if (!disposed) {
             disposed = true
@@ -48,7 +49,7 @@ class MovableType(
 //        println("Paper width: $paperWidth")
 
         val lines = inputText.tokenise()
-//        lines.debugprint()
+        lines.debugprint()
 
         lines.forEachIndexed { linenum, it ->
 //            println("Processing input text line ${linenum + 1} (word count: ${it.size})...")
@@ -243,7 +244,7 @@ class MovableType(
     } }
 
 
-    fun draw(batch: Batch, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = -1, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT, drawJobs: Map<Int, (Float, Float, Int) -> Unit> = HashMap()) =
+    fun draw(batch: Batch, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT, drawJobs: Map<Int, (Float, Float, Int) -> Unit> = HashMap()) =
         draw(batch, x.toFloat(), y.toFloat(), lineStart, linesToDraw, lineHeight, drawJobs)
 
     fun draw(batch: Batch, x: Int, y: Int, drawJobs: Map<Int, (Float, Float, Int) -> Unit> = HashMap()) =
@@ -414,7 +415,9 @@ class MovableType(
                 val row = lines.size
                 val word = tokens.size
 
-                tokens.add(CodepointSequence(listOf(0) + getControlHeader(row, word) + boxBuffer + listOf(0)))
+                if (boxBuffer.isNotEmpty()) {
+                    tokens.add(CodepointSequence(listOf(0) + getControlHeader(row, word) + boxBuffer + listOf(0)))
+                }
 
                 if (ccRemovalReqByPredicate != null) {
                     controlCharList.removeIf(ccRemovalReqByPredicate!!)
@@ -531,16 +534,35 @@ class MovableType(
                     }
                 }
                 else if (c0.isCJparenStart()) {
-                    if (boxBuffer.isNotEmpty())
-                        sendoutBox()
+                    sendoutBox()
+
                     appendZeroGlue()
                     sendoutGlue()
 
                     appendToBuffer(c0)
                 }
-                else if (c0.isCJpunctOrParenEnd()) {
-                    if (cM.isWhiteSpace())
-                        sendoutGlue()
+                else if (c0.isParenOpen()) {
+                    sendoutBox()
+
+                    if (glue > 0) sendoutGlue()
+
+                    appendToBuffer(c0)
+                }
+                else if (c0.isCJparenEnd()) {
+                    appendToBuffer(c0)
+                    sendoutBox()
+
+                    appendZeroGlue()
+                    sendoutGlue()
+                }
+                else if (c0.isParenClose()) {
+                    appendToBuffer(c0)
+                    sendoutBox()
+
+                    if (glue > 0) sendoutGlue()
+                }
+                else if (c0.isCJpunct()) {
+                    if (cM.isWhiteSpace()) sendoutGlue()
 
                     appendToBuffer(c0)
                 }
@@ -551,10 +573,14 @@ class MovableType(
                     else if (cM.isCJparenStart()) {
                         /* do nothing */
                     }
-                    else if (cM.isCJpunctOrParenEnd() || cM.isNumeric()) {
+                    else if (cM.isCJpunct() || cM.isNumeric()) {
                         sendoutBox()
-                        appendZeroGlue()
-                        sendoutGlue()
+
+                        // don't append glue for kana-dash
+                        if (cM != 0x30FC) {
+                            appendZeroGlue()
+                            sendoutGlue()
+                        }
                     }
                     else { // includes if cM.isCJ()
                         sendoutBox()
@@ -579,8 +605,8 @@ class MovableType(
                     if (cM.isWhiteSpace()) {
                         sendoutGlue()
                     }
-                    else if (!isHangulPK(cM ?: 0)) {
-                        if (boxBuffer.isNotEmpty()) sendoutBox()
+                    else if (!isHangulPK(cM ?: 0) && !cM.isKoreanPunct() && !cM.isParens() && !cM.isCJpunct() && !cM.isCJparenStart()) {
+                        sendoutBox()
                     }
 
                     appendToBuffer(c0)
@@ -601,7 +627,7 @@ class MovableType(
                     appendToBuffer(c0)
                 }
                 else {
-                    if (!isHangulPK(c0) && isHangulPK(cM ?: 0)) {
+                    if (!isHangulPK(c0) && !c0.isKoreanPunct() && !c0.isCJpunct() && !c0.isParens() && isHangulPK(cM ?: 0)) {
                         sendoutBox()
                     }
                     else if (cM.isCJ() || cM.isNumeric()) {
@@ -610,7 +636,7 @@ class MovableType(
                     else if (cM.isWhiteSpace()) {
                         sendoutGlue()
                     }
-                    else if (cM.isCJpunctOrParenEnd()) {
+                    else if (cM.isCJpunct()) {
                         sendoutBox()
                         appendZeroGlue()
                         sendoutGlue()
@@ -656,7 +682,9 @@ class MovableType(
         private fun CodePoint?.isWhiteSpace() = if (this == null) false else whitespaceGlues.contains(this)
 
         private fun CodePoint?.isCJparenStart() = if (this == null) false else cjparenStarts.contains(this)
-        private fun CodePoint?.isCJpunctOrParenEnd() = if (this == null) false else (cjpuncts.contains(this) || cjparenEnds.contains(this))
+        private fun CodePoint?.isCJparenEnd() = if (this == null) false else cjparenEnds.contains(this)
+//        private fun CodePoint?.isCJpunctOrParenEnd() = if (this == null) false else (cjpuncts.contains(this) || cjparenEnds.contains(this))
+        private fun CodePoint?.isCJpunct() = if (this == null) false else cjpuncts.contains(this)
         private fun CodePoint?.isSmallKana() = if (this == null) false else jaSmallKanas.contains(this)
         private fun CodePoint?.isControlIn() = if (this == null) false else controlIns.contains(this)
         private fun CodePoint?.isControlOut() = if (this == null) false else controlOuts.contains(this)
@@ -673,6 +701,11 @@ class MovableType(
             in 0xFFFF0..0xFFFFF -> this - 0xFFFF0 + 1
             else -> throw IllegalArgumentException()
         }
+
+        private fun CodePoint?.isKoreanPunct() = if (this == null) false else koreanPuncts.contains(this)
+        private fun CodePoint?.isParens() = if (this == null) false else parens.contains(this)
+        private fun CodePoint?.isParenOpen() = if (this == null) false else parenOpen.contains(this)
+        private fun CodePoint?.isParenClose() = if (this == null) false else parenClose.contains(this)
 
         /**
          * Hyphenates the word at the middle ("paragraph" -> "para-graph")
@@ -769,6 +802,10 @@ class MovableType(
         private val cjparenStarts = listOf(0x3008, 0x300A, 0x300C, 0x300E, 0x3010, 0x3014, 0x3016, 0x3018, 0x301A, 0x30fb, 0xff65).toSortedSet()
         private val cjparenEnds = listOf(0x3009, 0x300B, 0x300D, 0x300F, 0x3011, 0x3015, 0x3017, 0x3019, 0x301B).toSortedSet()
         private val jaSmallKanas = "ァィゥェォッャュョヮヵヶぁぃぅぇぉっゃゅょゎゕゖㇰㇱㇲㇳㇴㇵㇶㇷㇸㇹㇺㇻㇼㇽㇾㇿ".map { it.toInt() }.toSortedSet()
+        private val koreanPuncts = listOf(0x21,0x2C,0x2E,0x2F,0x3A,0x3B,0x3F,0x7E).toSortedSet()
+        private val parens = listOf(0x28,0x29,0x5B,0x5D,0x7B,0x7D).toSortedSet()
+        private val parenOpen = listOf(0x28,0x5B,0x7B).toSortedSet().also { it.addAll(cjparenStarts) }
+        private val parenClose = listOf(0x29,0x5D,0x7D).toSortedSet().also { it.addAll(cjparenEnds) }
 
         private const val ZWSP = 0x200B
         private const val SHY = 0xAD

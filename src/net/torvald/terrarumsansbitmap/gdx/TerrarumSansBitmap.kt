@@ -510,13 +510,13 @@ class TerrarumSansBitmap(
      * This method alone will NOT draw the text to the screen, use [MovableType.draw].
      */
     fun typesetParagraph(batch: Batch, charSeq: CharSequence, targetWidth: Int): MovableType =
-        typesetParagraphNormalised(batch, charSeq.toCodePoints(2), targetWidth.toFloat())
+        typesetParagraphNormalised(batch, normaliseStringForMovableType(charSeq), targetWidth.toFloat())
     /**
      * Typesets given string and returns the typesetted results, with which the desired text can be drawn on the screen.
      * This method alone will NOT draw the text to the screen, use [MovableType.draw].
      */
     fun typesetParagraph(batch: Batch, charSeq: CharSequence, targetWidth: Float): MovableType =
-        typesetParagraphNormalised(batch, charSeq.toCodePoints(2), targetWidth)
+        typesetParagraphNormalised(batch, normaliseStringForMovableType(charSeq), targetWidth)
 
 
     private val nullType = MovableType(this, "".toCodePoints(2), 0, true)
@@ -1015,6 +1015,8 @@ class TerrarumSansBitmap(
 
         return seq
     }
+
+    internal fun normaliseStringForMovableType(s: CharSequence) = s.toCodePoints(2)
 
     // basically an Unicode NFD with some additional flavours
     /**
