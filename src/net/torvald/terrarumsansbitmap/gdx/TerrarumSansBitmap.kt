@@ -332,9 +332,6 @@ class TerrarumSansBitmap(
 
     private var nullProp = GlyphProps(15)
 
-    private val linotypePaddingX = 16
-    private val linotypePaddingY = 10
-
     fun draw(batch: Batch, charSeq: CharSequence, x: Int, y: Int) = draw(batch, charSeq, x.toFloat(), y.toFloat())
     override fun draw(batch: Batch, charSeq: CharSequence, x: Float, y: Float): GlyphLayout? {
 //        charSeq.forEach { dbgprn("${it.toInt().charInfo()} ${glyphProps[it.toInt()]}") }
@@ -372,9 +369,12 @@ class TerrarumSansBitmap(
             textBuffer = cacheObj.glyphLayout!!.textBuffer
             tempLinotype = cacheObj.glyphLayout!!.linotype
 
+            val linotypeScaleOffsetX = -linotypePaddingX * (scale - 1)
+            val linotypeScaleOffsetY = -linotypePaddingY * (scale - 1) * (if (flipY) -1 else 1)
+
             batch.draw(tempLinotype,
-                (x - linotypePaddingX).toFloat(),
-                (y - linotypePaddingY).toFloat() + (if (flipY) (tempLinotype.height) else 0) * scale,
+                (x - linotypePaddingX).toFloat() + linotypeScaleOffsetX,
+                (y - linotypePaddingY).toFloat() + linotypeScaleOffsetY + (if (flipY) (tempLinotype.height) else 0) * scale,
                 tempLinotype.width.toFloat() * scale,
                 (tempLinotype.height.toFloat()) * (if (flipY) -1 else 1) * scale
             )
@@ -2041,6 +2041,9 @@ class TerrarumSansBitmap(
 
 
     companion object {
+
+        const internal val linotypePaddingX = 16
+        const internal val linotypePaddingY = 10
 
         const val LINE_HEIGHT = 24
 

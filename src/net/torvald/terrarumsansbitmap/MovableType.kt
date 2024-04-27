@@ -27,7 +27,9 @@ class MovableType(
     var height = 0; private set
     internal val hash: Long = inputText.getHash()
     private var disposed = false
-    private val typesettedSlugs = ArrayList<List<Block>>()
+    val typesettedSlugs = ArrayList<List<Block>>()
+
+    var width = 0; private set
 
     constructor(font: TerrarumSansBitmap, string: String, paperWidth: Int) : this(font, font.normaliseStringForMovableType(string), paperWidth)
 
@@ -65,6 +67,8 @@ class MovableType(
                 val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
                 slug.add(Block(nextPosX, box))
                 slugWidth += box.width
+
+                width = maxOf(width, nextPosX + box.width)
             }
             fun dispatchSlug() {
                 typesettedSlugs.add(slug)
@@ -153,6 +157,9 @@ class MovableType(
 
                     // if adding the box would cause overflow
                     if (slugWidthForOverflowCalc + box.width > paperWidth) {
+                        // text overflow occured; set the width to the max value
+                        width = paperWidth
+
                         // badness: always positive and weighted
                         // widthDelta: can be positive or negative
                         val (badnessW, widthDeltaW) = getBadnessW(box) // widthDeltaW is always positive
@@ -268,14 +275,22 @@ class MovableType(
             drawJobs[absoluteLineNum]?.invoke(x, y + lineNum * lineHeight, absoluteLineNum)
 
             lineBlocks.forEach {
-                batch.draw(it.block.glyphLayout!!.linotype, x + it.posX - 16, y + lineNum * lineHeight - 8)
+                val tex = it.block.glyphLayout!!.linotype
+                val linotypeScaleOffsetX = -TerrarumSansBitmap.linotypePaddingX * (font.scale - 1)
+                val linotypeScaleOffsetY = -TerrarumSansBitmap.linotypePaddingY * (font.scale - 1) * (if (font.flipY) -1 else 1)
+                batch.draw(tex,
+                    x + it.posX * font.scale - 16 + linotypeScaleOffsetX.toFloat(),
+                    y + lineNum * (lineHeight * font.scale) - 8 + linotypeScaleOffsetY.toFloat(),
+                    tex.width * font.scale.toFloat(),
+                    tex.height * font.scale.toFloat()
+                )
             }
 
 //            font.draw(batch, "I", x, y + lineNum * lineHeight + 14)
         }
     }
 
-    private data class Block(var posX: Int, val block: TextCacheObj) { // a single word
+    data class Block(var posX: Int, val block: TextCacheObj) { // a single word
         fun getEndPos() = this.posX + this.block.width
     }
 
