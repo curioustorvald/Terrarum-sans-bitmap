@@ -1,5 +1,6 @@
 package net.torvald.terrarumsansbitmap
 
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.utils.Disposable
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
@@ -278,19 +279,29 @@ class MovableType(
                 val tex = it.block.glyphLayout!!.linotype
                 val linotypeScaleOffsetX = -TerrarumSansBitmap.linotypePaddingX * (font.scale - 1)
                 val linotypeScaleOffsetY = -TerrarumSansBitmap.linotypePaddingY * (font.scale - 1) * (if (font.flipY) -1 else 1)
+                lateinit var oldColour: Color
+
+                if (it.colour != null) {
+                    oldColour = batch.color.cpy()
+                    batch.color = it.colour
+                }
+
                 batch.draw(tex,
                     x + it.posX * font.scale - 16 + linotypeScaleOffsetX.toFloat(),
                     y + lineNum * (lineHeight * font.scale) - 8 + linotypeScaleOffsetY.toFloat(),
                     tex.width * font.scale.toFloat(),
                     tex.height * font.scale.toFloat()
                 )
+
+                if (it.colour != null)
+                    batch.color = oldColour
             }
 
 //            font.draw(batch, "I", x, y + lineNum * lineHeight + 14)
         }
     }
 
-    data class Block(var posX: Int, val block: TextCacheObj) { // a single word
+    data class Block(var posX: Int, val block: TextCacheObj, var colour: Color? = null) { // a single word
         fun getEndPos() = this.posX + this.block.width
     }
 
