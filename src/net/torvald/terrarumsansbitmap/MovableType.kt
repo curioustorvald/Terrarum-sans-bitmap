@@ -3,6 +3,7 @@ package net.torvald.terrarumsansbitmap
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.utils.Disposable
+import net.torvald.terrarumsansbitmap.MovableType.Companion.isParenClose
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
@@ -652,6 +653,11 @@ class MovableType(
 
                     appendToBuffer(c0)
                 }
+                // tokenise camelCase
+                else if (cM.isMiniscule() && c0.isMajuscule()) {
+                    sendoutBox()
+                    appendToBuffer(c0)
+                }
                 else {
                     if (!isHangulPK(c0) && !c0.isKoreanPunct() && !c0.isCJpunct() && !c0.isParens() && isHangulPK(cM ?: 0)) {
                         sendoutBox()
@@ -703,7 +709,7 @@ class MovableType(
         private fun isHangulI(c: CodePoint) = hangulI.contains(c)
         private fun isHangulPK(c: CodePoint) = hangulPK.contains(c)
 
-        private fun CodePoint?.isNumeric() = if (this == null) false else (this in 0x30..0x39 || this in (0xFF10..0xFF19))
+        private fun CodePoint?.isNumeric() = if (this == null) false else Character.isDigit(this)
 
         private fun CodePoint?.isWhiteSpace() = if (this == null) false else whitespaceGlues.contains(this)
 
@@ -732,6 +738,9 @@ class MovableType(
         private fun CodePoint?.isParens() = if (this == null) false else parens.contains(this)
         private fun CodePoint?.isParenOpen() = if (this == null) false else parenOpen.contains(this)
         private fun CodePoint?.isParenClose() = if (this == null) false else parenClose.contains(this)
+
+        private fun CodePoint?.isMajuscule() = if (this == null) false else Character.isUpperCase(this)
+        private fun CodePoint?.isMiniscule() = if (this == null) false else Character.isLowerCase(this)
 
         /**
          * Hyphenates the word at the middle ("paragraph" -> "para-graph")
@@ -821,7 +830,7 @@ class MovableType(
         private val controlIns = listOf(0xFFFA2, 0xFFFA3, 0xFFFC1, 0xFFFC2).toSortedSet()
         private val controlOuts = listOf(0xFFFBF, 0xFFFC0).toSortedSet()
         private val whitespaceGlues = hashMapOf(
-            0x20 to 5,
+            0x20 to 4,
             0x3000 to 16,
         )
         private val cjpuncts = listOf(0x203c, 0x2047, 0x2048, 0x2049, 0x3001, 0x3002, 0x3006, 0x303b, 0x30a0, 0x30fb, 0x30fc, 0x301c, 0xff01, 0xff0c, 0xff0e, 0xff1a, 0xff1b, 0xff1f, 0xff5e, 0xff65).toSortedSet()
