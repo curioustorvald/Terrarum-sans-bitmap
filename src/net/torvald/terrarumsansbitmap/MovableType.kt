@@ -122,6 +122,12 @@ class MovableType(
             }
 
             fun getBadnessH(box: TextCacheObj): Pair<Float, Int> {
+                // don't hyphenate if:
+                // - the word is too short (5 chars or less)
+                // - the word is pre-hyphenated (ends with hyphen-null)
+                if (box.text.size < 8 || box.text.penultimate() == 0x2D)
+                    return 10000f to 10000
+
                 val slug = slug.toMutableList()
                 val (hyphHead, hyphTail) = box.text.hyphenate().toList().map { font.createTextCache(it) }
 
