@@ -3,7 +3,6 @@ package net.torvald.terrarumsansbitmap
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.utils.Disposable
-import net.torvald.terrarumsansbitmap.MovableType.Companion.isParenClose
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
@@ -637,7 +636,7 @@ class MovableType(
                     if (cM.isWhiteSpace()) {
                         sendoutGlue()
                     }
-                    else if (!isHangulPK(cM ?: 0) && !cM.isKoreanPunct() && !cM.isParens() && !cM.isCJpunct() && !cM.isCJparenStart()) {
+                    else if (!isHangulPK(cM ?: 0) && !cM.isWesternPunctOrQuotes() && !cM.isParens() && !cM.isCJpunct() && !cM.isCJparenStart()) {
                         sendoutBox()
                     }
 
@@ -664,7 +663,7 @@ class MovableType(
                     appendToBuffer(c0)
                 }
                 else {
-                    if (!isHangulPK(c0) && !c0.isKoreanPunct() && !c0.isCJpunct() && !c0.isParens() && isHangulPK(cM ?: 0)) {
+                    if (!isHangulPK(c0) && !c0.isWesternPunctOrQuotes() && !c0.isCJpunct() && !c0.isParens() && isHangulPK(cM ?: 0)) {
                         sendoutBox()
                     }
                     else if (cM.isCJ() || cM.isNumeric()) {
@@ -739,7 +738,7 @@ class MovableType(
             else -> throw IllegalArgumentException()
         }
 
-        private fun CodePoint?.isKoreanPunct() = if (this == null) false else koreanPuncts.contains(this)
+        private fun CodePoint?.isWesternPunctOrQuotes() = if (this == null) false else (westernPuncts.contains(this) || quots.contains(this))
         private fun CodePoint?.isParens() = if (this == null) false else parens.contains(this)
         private fun CodePoint?.isParenOpen() = if (this == null) false else parenOpen.contains(this)
         private fun CodePoint?.isParenClose() = if (this == null) false else parenClose.contains(this)
@@ -842,7 +841,7 @@ class MovableType(
         private val cjparenStarts = listOf(0x3008, 0x300A, 0x300C, 0x300E, 0x3010, 0x3014, 0x3016, 0x3018, 0x301A, 0x30fb, 0xff65).toSortedSet()
         private val cjparenEnds = listOf(0x3009, 0x300B, 0x300D, 0x300F, 0x3011, 0x3015, 0x3017, 0x3019, 0x301B).toSortedSet()
         private val jaSmallKanas = "ァィゥェォッャュョヮヵヶぁぃぅぇぉっゃゅょゎゕゖㇰㇱㇲㇳㇴㇵㇶㇷㇸㇹㇺㇻㇼㇽㇾㇿ".map { it.toInt() }.toSortedSet()
-        private val koreanPuncts = listOf(0x21,0x2C,0x2E,0x2F,0x3A,0x3B,0x3F,0x7E).toSortedSet()
+        private val westernPuncts = listOf(0x21,0x2C,0x2E,0x2F,0x3A,0x3B,0x3F,0x7E).toSortedSet()
         private val parens = listOf(0x28,0x29,0x5B,0x5D,0x7B,0x7D).toSortedSet()
         private val parenOpen = listOf(0x28,0x5B,0x7B).toSortedSet().also { it.addAll(cjparenStarts) }
         private val parenClose = listOf(0x29,0x5D,0x7D).toSortedSet().also { it.addAll(cjparenEnds) }
