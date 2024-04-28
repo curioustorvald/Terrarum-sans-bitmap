@@ -7,7 +7,6 @@ import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
-import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.TextCacheObj
 import java.lang.Math.pow
 import kotlin.math.*
 
@@ -37,11 +36,6 @@ class MovableType(
     override fun dispose() {
         if (!disposed) {
             disposed = true
-            typesettedSlugs.forEach {
-                it.forEach {
-                    it.block.dispose()
-                }
-            }
         }
     }
 
@@ -57,14 +51,14 @@ class MovableType(
         lines.forEachIndexed { linenum, it ->
 //            println("Processing input text line ${linenum + 1} (word count: ${it.size})...")
 
-            val boxes: MutableList<TextCacheObj> = it.map { font.createTextCache(it) }.toMutableList()
+            val boxes: MutableList<NoTexGlyphLayout> = it.map { createGlyphLayout(font, it) }.toMutableList()
             var slug = ArrayList<Block>() // slug of the linotype machine
             var slugWidth = 0
             var ignoreThisLine = false
 
             fun dequeue() = boxes.removeFirst()
-            fun addHyphenatedTail(box: TextCacheObj) = boxes.add(0, box)
-            fun addToSlug(box: TextCacheObj) {
+            fun addHyphenatedTail(box: NoTexGlyphLayout) = boxes.add(0, box)
+            fun addToSlug(box: NoTexGlyphLayout) {
                 val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
                 slug.add(Block(nextPosX, box))
                 slugWidth += box.width
@@ -81,7 +75,7 @@ class MovableType(
             ///////////////////////////////////////////////////////////////////////////////////////////////
 
             // the slug is likely end with a glue, must take care of it (but don't modify the slug itself)
-            fun getBadnessW(box: TextCacheObj): Pair<Float, Int> {
+            fun getBadnessW(box: NoTexGlyphLayout): Pair<Float, Int> {
                 val slug = slug.toMutableList()
 
                 // remove the trailing glue(s?) in the slug copy
@@ -101,7 +95,7 @@ class MovableType(
                 return badness to difference
             }
 
-            fun getBadnessT(box: TextCacheObj): Pair<Float, Int> {
+            fun getBadnessT(box: NoTexGlyphLayout): Pair<Float, Int> {
                 val slug = slug.toMutableList()
 
                 // add the box to the slug copy
@@ -120,7 +114,7 @@ class MovableType(
                 return badness to difference
             }
 
-            fun getBadnessH(box: TextCacheObj): Pair<Float, Int> {
+            fun getBadnessH(box: NoTexGlyphLayout): Pair<Float, Int> {
                 // don't hyphenate if:
                 // - the word is too short (5 chars or less)
                 // - the word is pre-hyphenated (ends with hyphen-null)
@@ -128,7 +122,7 @@ class MovableType(
                     return 10000f to 10000
 
                 val slug = slug.toMutableList()
-                val (hyphHead, hyphTail) = box.text.hyphenate().toList().map { font.createTextCache(it) }
+                val (hyphHead, hyphTail) = box.text.hyphenate().toList().map { createGlyphLayout(font, it) }
 
                 // add the hyphHead to the slug copy
                 val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
@@ -220,7 +214,7 @@ class MovableType(
                                 // widen/tighten the spacing between blocks using widthDeltaH
                                 // insert hyphen-tail to the list of upcoming boxes
 
-                                val (hyphHead, hyphTail) = box.text.hyphenate().toList().map { font.createTextCache(it) }
+                                val (hyphHead, hyphTail) = box.text.hyphenate().toList().map { createGlyphLayout(font, it) }
 
                                 // widen: 1, tighten: -1
                                 val operation = widthDeltaH.sign
@@ -257,7 +251,6 @@ class MovableType(
         height = typesettedSlugs.size
     } }
 
-
     fun draw(batch: Batch, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT, drawJobs: Map<Int, (Float, Float, Int) -> Unit> = HashMap()) =
         draw(batch, x.toFloat(), y.toFloat(), lineStart, linesToDraw, lineHeight, drawJobs)
 
@@ -282,9 +275,6 @@ class MovableType(
             drawJobs[absoluteLineNum]?.invoke(x, y + lineNum * lineHeight, absoluteLineNum)
 
             lineBlocks.forEach {
-                val tex = it.block.glyphLayout!!.linotype
-                val linotypeScaleOffsetX = -TerrarumSansBitmap.linotypePaddingX * (font.scale - 1)
-                val linotypeScaleOffsetY = -TerrarumSansBitmap.linotypePaddingY * (font.scale - 1) * (if (font.flipY) -1 else 1)
                 lateinit var oldColour: Color
 
                 if (it.colour != null) {
@@ -292,22 +282,19 @@ class MovableType(
                     batch.color = it.colour
                 }
 
-                batch.draw(tex,
-                    x + it.posX * font.scale - 16 + linotypeScaleOffsetX.toFloat(),
-                    y + lineNum * (lineHeight * font.scale) - 8 + linotypeScaleOffsetY.toFloat(),
-                    tex.width * font.scale.toFloat(),
-                    tex.height * font.scale.toFloat()
+                font.drawNormalised(batch,
+                    it.block.text,
+                    x + it.posX,
+                    y + lineNum * lineHeight
                 )
 
                 if (it.colour != null)
                     batch.color = oldColour
             }
-
-//            font.draw(batch, "I", x, y + lineNum * lineHeight + 14)
         }
     }
 
-    data class Block(var posX: Int, val block: TextCacheObj, var colour: Color? = null) { // a single word
+    data class Block(var posX: Int, val block: NoTexGlyphLayout, var colour: Color? = null) { // a single word
         fun getEndPos() = this.posX + this.block.width
     }
 
@@ -899,13 +886,24 @@ class MovableType(
             }
         }
 
-        private fun TextCacheObj.isNotGlue(): Boolean {
-            return this.glyphLayout!!.textBuffer.isNotGlue()
+        private fun NoTexGlyphLayout.isNotGlue(): Boolean {
+            return this.text.isNotGlue()
         }
-        private fun TextCacheObj.isGlue(): Boolean {
-            return this.glyphLayout!!.textBuffer.isGlue()
+        private fun NoTexGlyphLayout.isGlue(): Boolean {
+            return this.text.isGlue()
         }
 
+
     } // end of companion object
+
+    data class NoTexGlyphLayout(val text: CodepointSequence, val width: Int) {
+        val penultimateCharOrNull: CodePoint?
+            get() = text.getOrNull(text.size - 2)
+    }
+
+    private fun createGlyphLayout(font: TerrarumSansBitmap, str: CodepointSequence): NoTexGlyphLayout {
+        return NoTexGlyphLayout(str, font.getWidth(str))
+    }
+
 }
 
