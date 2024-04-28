@@ -20,7 +20,7 @@ import kotlin.math.*
 class MovableType(
     val font: TerrarumSansBitmap,
     val inputText: CodepointSequence,
-    val paperWidth: Int,
+    paperWidth: Int,
     internal val isNull: Boolean = false
 ): Disposable {
 
@@ -285,7 +285,7 @@ class MovableType(
                 font.drawNormalised(batch,
                     it.block.text,
                     x + it.posX,
-                    y + lineNum * lineHeight
+                    y + lineNum * lineHeight * font.scale
                 )
 
                 if (it.colour != null)

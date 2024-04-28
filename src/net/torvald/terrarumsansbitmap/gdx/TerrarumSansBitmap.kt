@@ -766,10 +766,10 @@ class TerrarumSansBitmap(
         val cacheObj = getCache(s.getHash())
 
         if (cacheObj != null) {
-            return cacheObj.glyphLayout!!.width
+            return cacheObj.glyphLayout!!.width * scale
         }
         else {
-            return buildPosMap(s).width
+            return buildPosMap(s).width * scale
         }
     }
 
