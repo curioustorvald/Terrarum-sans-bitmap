@@ -199,7 +199,7 @@ class MovableType(
                                     }
                                 }
 
-                                moveSlugsToFitTheWidth(operation, slug, selectedWidthDelta)
+                                moveSlugsToFitTheWidth(operation, slug, selectedWidthDelta.absoluteValue)
 
                                 // put the trailing word back into the upcoming words
                                 if (selectedStrat == "Widen") {
@@ -223,7 +223,7 @@ class MovableType(
                                 // insert hyphHead into the slug
                                 addToSlug(hyphHead)
 
-                                moveSlugsToFitTheWidth(operation, slug, selectedWidthDelta)
+                                moveSlugsToFitTheWidth(operation, slug, selectedWidthDelta.absoluteValue)
 
                                 // put the tail into the upcoming words
                                 addHyphenatedTail(hyphTail)
@@ -312,7 +312,6 @@ class MovableType(
         private val commas = listOf(0x2C, 0x3B, 0x3001, 0xff0c).toSortedSet()
         private val hangable = listOf(0x2E, 0x2C, 0x3A, 0x3B).toSortedSet()
         private val hangableFW = listOf(0x3001, 0x3002, 0xff0c, 0xff0e).toSortedSet()
-        private const val spaceWidth = 5
         private const val hangWidth = 6
         private const val hangWidthFW = 16
 
