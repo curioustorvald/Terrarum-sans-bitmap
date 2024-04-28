@@ -497,42 +497,32 @@ class MovableType(
                 val c0 = it
 
                 if (c0.isColourCode()) {
-                    if (glue != 0)
-                        sendoutGlue()
-
+                    if (glue > 0) sendoutGlue()
                     addControlChar(c0)
-
                     appendToBuffer(c0)
                 }
                 else if (c0 == 0x100000) {
                     requestControlCharRemovalIf { (it.first in 0x10F000..0x10FFFF) }
-
-                    if (glue != 0)
-                        sendoutGlue()
-
+                    if (glue > 0) sendoutGlue()
                     appendToBuffer(c0)
                 }
                 else if (c0.isControlIn()) {
-                    if (glue != 0)
-                        sendoutGlue()
-
+                    if (glue > 0) sendoutGlue()
                     addControlChar(c0)
-
                     appendToBuffer(c0)
                 }
                 else if (c0.isControlOut()) {
-                    if (glue != 0)
-                        sendoutGlue()
-
+                    if (glue > 0) sendoutGlue()
                     requestControlCharRemovalPop()
-
                     appendToBuffer(c0)
                 }
                 else if (c0 == 0x0A) { // \n
+                    glue = 0
                     sendoutBox()
                     proceedToNextLine()
                 }
                 else if (c0 == 0x2D) { // hyphen
+                    if (glue > 0) sendoutGlue()
                     appendToBuffer(c0)
                     sendoutBox()
                 }
@@ -646,6 +636,7 @@ class MovableType(
                 }
                 // tokenise camelCase
                 else if (cM.isMiniscule() && c0.isMajuscule()) {
+                    if (glue > 0) sendoutGlue()
                     sendoutBox()
                     appendToBuffer(c0)
                 }
