@@ -75,7 +75,7 @@ class MovableType(
             ///////////////////////////////////////////////////////////////////////////////////////////////
 
             // the slug is likely end with a glue, must take care of it (but don't modify the slug itself)
-            fun getBadnessW(box: NoTexGlyphLayout): Pair<Float, Int> {
+            fun getBadnessW(box: NoTexGlyphLayout): Triple<Int, Int, Any?> {
                 val slug = slug.toMutableList()
 
                 // remove the trailing glue(s?) in the slug copy
@@ -90,12 +90,12 @@ class MovableType(
                     slugWidth -= hangWidthFW
 
                 val difference = (paperWidth - slugWidth).absoluteValue
-                val badness = difference.toFloat()
+                val badness = penaliseWidening(difference)
 
-                return badness to difference
+                return Triple(badness, difference, null)
             }
 
-            fun getBadnessT(box: NoTexGlyphLayout): Pair<Float, Int> {
+            fun getBadnessT(box: NoTexGlyphLayout): Triple<Int, Int, Any?> {
                 val slug = slug.toMutableList()
 
                 // add the box to the slug copy
@@ -111,18 +111,18 @@ class MovableType(
                 val difference = (paperWidth - slugWidth).absoluteValue
                 val badness = penaliseTightening(difference)
 
-                return badness to difference
+                return Triple(badness, difference, null)
             }
 
-            fun getBadnessH(box: NoTexGlyphLayout): Pair<Float, Int> {
+            fun getBadnessH(box: NoTexGlyphLayout, diff: Int): Triple<Int, Int, Any?> {
                 // don't hyphenate if:
                 // - the word is too short (5 chars or less)
                 // - the word is pre-hyphenated (ends with hyphen-null)
-                if (box.text.size < 8 || box.text.penultimate() == 0x2D)
-                    return 10000f to 10000
+                if (box.text.size <= 8 || box.text.penultimate() == 0x2D)
+                    return Triple(2147483647, 2147483647, null)
 
                 val slug = slug.toMutableList()
-                val (hyphHead, hyphTail) = box.text.hyphenate().toList().map { createGlyphLayout(font, it) }
+                val (hyphHead, hyphTail) = box.text.hyphenate(font, diff).toList().map { createGlyphLayout(font, it) }
 
                 // add the hyphHead to the slug copy
                 val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
@@ -137,7 +137,7 @@ class MovableType(
                 val difference = (paperWidth - slugWidth)
                 val badness = penaliseHyphenation(difference.absoluteValue)
 
-                return badness to difference
+                return Triple(badness, difference, hyphHead to hyphTail)
             }
 
             ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -163,9 +163,9 @@ class MovableType(
 
                         // badness: always positive and weighted
                         // widthDelta: can be positive or negative
-                        val (badnessW, widthDeltaW) = getBadnessW(box) // widthDeltaW is always positive
-                        val (badnessT, widthDeltaT) = getBadnessT(box) // widthDeltaT is always positive
-                        val (badnessH, widthDeltaH) = getBadnessH(box) // widthDeltaH can be anything
+                        val (badnessW, widthDeltaW, _) = getBadnessW(box) // widthDeltaW is always positive
+                        val (badnessT, widthDeltaT, _) = getBadnessT(box) // widthDeltaT is always positive
+                        val (badnessH, widthDeltaH, hyph) = getBadnessH(box, box.width - slugWidthForOverflowCalc) // widthDeltaH can be anything
 
                         val (selectedBadness, selectedWidthDelta, selectedStrat) = listOf(
                             Triple(badnessW, widthDeltaW, "Widen"),
@@ -214,7 +214,7 @@ class MovableType(
                                 // widen/tighten the spacing between blocks using widthDeltaH
                                 // insert hyphen-tail to the list of upcoming boxes
 
-                                val (hyphHead, hyphTail) = box.text.hyphenate().toList().map { createGlyphLayout(font, it) }
+                                val (hyphHead, hyphTail) = hyph as Pair<NoTexGlyphLayout, NoTexGlyphLayout>
 
                                 // widen: 1, tighten: -1
                                 val operation = widthDeltaH.sign
@@ -302,7 +302,7 @@ class MovableType(
         private val periods = listOf(0x2E, 0x3A, 0x21, 0x3F, 0x2026, 0x3002, 0xff0e).toSortedSet()
         private val quots = listOf(0x22, 0x27, 0xAB, 0xBB, 0x2018, 0x2019, 0x201A, 0x201B, 0x201C, 0x201D, 0x201E, 0x201F, 0x2039, 0x203A).toSortedSet()
         private val commas = listOf(0x2C, 0x3B, 0x3001, 0xff0c).toSortedSet()
-        private val hangable = listOf(0x2E, 0x2C, 0x3A, 0x3B).toSortedSet()
+        private val hangable = (listOf(0x2E, 0x2C, 0x3A, 0x3B, 0x22, 0x27) + (0x2018..0x201f)).toSortedSet()
         private val hangableFW = listOf(0x3001, 0x3002, 0xff0c, 0xff0e).toSortedSet()
         private const val hangWidth = 6
         private const val hangWidthFW = 16
@@ -678,9 +678,9 @@ class MovableType(
             return this[this.size - 2]
         }
 
-        private fun penaliseTightening(score: Int): Float = 0.0006f * score * score * score + 0.18f * score
-
-        private fun penaliseHyphenation(score: Int): Float = (10.0 * pow(score.toDouble(), 1.0/3.0) + 0.47*score).toFloat()
+        private fun penaliseWidening(score: Int): Int = score*score
+        private fun penaliseTightening(score: Int): Int = score*score//0.0006f * score * score * score + 0.18f * score
+        private fun penaliseHyphenation(score: Int): Int = score*score//(10.0 * pow(score.toDouble(), 1.0/3.0) + 0.47*score).toFloat()
 
         private fun isVowel(c: CodePoint) = vowels.contains(c)
 
@@ -729,18 +729,19 @@ class MovableType(
          * 
          * @return left word ("para-"), right word ("graph")
          */
-        private fun CodepointSequence.hyphenate(): Pair<CodepointSequence, CodepointSequence> {
-            val middlePoint = this.size / 2
+        private fun CodepointSequence.hyphenate(font: TerrarumSansBitmap, optimalCuttingPointInPx: Int): Pair<CodepointSequence, CodepointSequence> {
+//            val middlePoint = this.size / 2
             // search for the end of the vowel cluster for left and right
             // one with the least distance from the middle point will be used for hyphenating point
-            val hyphenateCandidates = ArrayList<Int>()
-            val splitCandidates = ArrayList<Int>()
-            var i = 1
-            while (i < this.size) {
+            val hyphenateCandidates = ArrayList<Int>() // stores indices
+            val splitCandidates = ArrayList<Int>() // stores indices
+            var i = 3
+            while (i < this.size - 3) {
                 val thisChar = this[i]
                 val prevChar = this[i-1]
-                if (!isVowel(thisChar) && isVowel(prevChar))
-                    hyphenateCandidates.add(i)
+                if (isVowel(prevChar) && !isVowel(thisChar) || !isVowel(prevChar) && isVowel(thisChar)) {
+                    hyphenateCandidates.add(i+1)
+                }
                 else if (thisChar == SHY && isVowel((prevChar))) {
                     hyphenateCandidates.add(i)
                     i += 1 // skip SHY
@@ -751,9 +752,6 @@ class MovableType(
                 i += 1
             }
 
-            hyphenateCandidates.removeIf { it <= 2 || it >= this.size - 2 }
-            splitCandidates.removeIf { it <= 2 || it >= this.size - 2 }
-
 //            println("Hyphenating ${this.toReadable()} -> [${hyphenateCandidates.joinToString()}]")
 
             if (hyphenateCandidates.isEmpty() && splitCandidates.isEmpty()) {
@@ -762,8 +760,8 @@ class MovableType(
 
             // priority: 1st split, 2nd hyphenate
 
-            val splitPoint = splitCandidates.minByOrNull { (it - middlePoint).absoluteValue }
-            val hyphPoint = hyphenateCandidates.minByOrNull { (it - middlePoint).absoluteValue }
+            val splitPoint = splitCandidates.minByOrNull { (font.getWidth(CodepointSequence(this.slice(0..it))) - optimalCuttingPointInPx).absoluteValue }
+            val hyphPoint = hyphenateCandidates.minByOrNull { (font.getWidth(CodepointSequence(this.slice(0..it))) - optimalCuttingPointInPx).absoluteValue }
 
 //            println("hyphPoint = $hyphPoint")
 
