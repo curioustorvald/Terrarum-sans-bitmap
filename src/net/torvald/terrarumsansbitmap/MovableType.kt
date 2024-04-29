@@ -7,6 +7,7 @@ import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
+import java.lang.Math.log
 import java.lang.Math.pow
 import kotlin.math.*
 
@@ -75,7 +76,7 @@ class MovableType(
             ///////////////////////////////////////////////////////////////////////////////////////////////
 
             // the slug is likely end with a glue, must take care of it (but don't modify the slug itself)
-            fun getBadnessW(box: NoTexGlyphLayout): Triple<Int, Int, Any?> {
+            fun getBadnessW(box: NoTexGlyphLayout): Triple<Double, Int, Any?> {
                 val slug = slug.toMutableList()
 
                 // remove the trailing glue(s?) in the slug copy
@@ -95,7 +96,7 @@ class MovableType(
                 return Triple(badness, difference, null)
             }
 
-            fun getBadnessT(box: NoTexGlyphLayout): Triple<Int, Int, Any?> {
+            fun getBadnessT(box: NoTexGlyphLayout): Triple<Double, Int, Any?> {
                 val slug = slug.toMutableList()
 
                 // add the box to the slug copy
@@ -114,12 +115,12 @@ class MovableType(
                 return Triple(badness, difference, null)
             }
 
-            fun getBadnessH(box: NoTexGlyphLayout, diff: Int): Triple<Int, Int, Any?> {
+            fun getBadnessH(box: NoTexGlyphLayout, diff: Int): Triple<Double, Int, Any?> {
                 // don't hyphenate if:
                 // - the word is too short (5 chars or less)
                 // - the word is pre-hyphenated (ends with hyphen-null)
                 if (box.text.size <= 8 || box.text.penultimate() == 0x2D)
-                    return Triple(2147483647, 2147483647, null)
+                    return Triple(2147483648.0, 2147483647, null)
 
                 val slug = slug.toMutableList()
                 val (hyphHead, hyphTail) = box.text.hyphenate(font, diff).toList().map { createGlyphLayout(font, it) }
@@ -135,7 +136,7 @@ class MovableType(
                     slugWidth -= hangWidthFW
 
                 val difference = (paperWidth - slugWidth)
-                val badness = penaliseHyphenation(difference.absoluteValue)
+                val badness = penaliseHyphenation(difference.absoluteValue, paperWidth)
 
                 return Triple(badness, difference, hyphHead to hyphTail)
             }
@@ -678,9 +679,9 @@ class MovableType(
             return this[this.size - 2]
         }
 
-        private fun penaliseWidening(score: Int): Int = score*score
-        private fun penaliseTightening(score: Int): Int = score*score//0.0006f * score * score * score + 0.18f * score
-        private fun penaliseHyphenation(score: Int): Int = score*score//(10.0 * pow(score.toDouble(), 1.0/3.0) + 0.47*score).toFloat()
+        private fun penaliseWidening(score: Int): Double = pow(score.toDouble(), 2.0)
+        private fun penaliseTightening(score: Int): Double = pow(score.toDouble(), 2.0)//0.0006f * score * score * score + 0.18f * score
+        private fun penaliseHyphenation(score: Int, paperWidth: Int): Double = pow(score.toDouble().absoluteValue, log2(paperWidth.toDouble()) / 3.0)//(10.0 * pow(score.toDouble(), 1.0/3.0) + 0.47*score).toFloat()
 
         private fun isVowel(c: CodePoint) = vowels.contains(c)
 
