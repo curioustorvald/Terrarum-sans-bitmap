@@ -9,6 +9,7 @@ import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
 import java.lang.Math.pow
 import kotlin.math.*
+import kotlin.properties.Delegates
 
 /**
  * Despite "CJK" texts needing their own typesetting rule, in this code Korean texts are typesetted much like
@@ -20,7 +21,7 @@ import kotlin.math.*
 class MovableType(
     val font: TerrarumSansBitmap,
     val inputText: CodepointSequence,
-    paperWidth: Int,
+    textWidth: Int,
     internal val isNull: Boolean = false
 ): Disposable {
 
@@ -40,8 +41,11 @@ class MovableType(
         }
     }
 
+    private var paperWidth by Delegates.notNull<Int>()
+
     // perform typesetting
     init { if (inputText.isNotEmpty() && !isNull) {
+        paperWidth = textWidth / font.scale
         if (paperWidth < 100) throw IllegalArgumentException("Width too narrow; width must be at least 100 pixels (got $paperWidth)")
 
 //        println("Paper width: $paperWidth")
@@ -68,7 +72,7 @@ class MovableType(
             }
             fun dispatchSlug() {
 //                typesettedSlugs.add(slug)
-                typesettedSlugs.add(slug.freezeIntoCodepointSequence())
+                typesettedSlugs.add(slug.freezeIntoCodepointSequence(font))
 
                 slug = ArrayList()
                 slugWidth = 0
@@ -742,8 +746,8 @@ class MovableType(
 
             // priority: 1st split, 2nd hyphenate
 
-            val splitPoint = splitCandidates.minByOrNull { (font.getWidth(CodepointSequence(this.slice(0..it))) - optimalCuttingPointInPx).absoluteValue }
-            val hyphPoint = hyphenateCandidates.minByOrNull { (font.getWidth(CodepointSequence(this.slice(0..it))) - optimalCuttingPointInPx).absoluteValue }
+            val splitPoint = splitCandidates.minByOrNull { (font.getWidthNormalised(CodepointSequence(this.slice(0..it))).div(font.scale) - optimalCuttingPointInPx).absoluteValue }
+            val hyphPoint = hyphenateCandidates.minByOrNull { (font.getWidthNormalised(CodepointSequence(this.slice(0..it))).div(font.scale) - optimalCuttingPointInPx).absoluteValue }
 
 //            println("hyphPoint = $hyphPoint")
 
@@ -771,7 +775,7 @@ class MovableType(
                     CodepointSequence(it)
                 }
 
-                println("hyph return: ${fore.toReadable()} ${post.toReadable()}")
+//                println("hyph return: ${fore.toReadable()} ${post.toReadable()}")
 
                 return returnWithCC(fore, post)
             }
@@ -894,7 +898,7 @@ class MovableType(
             return tokens
         }
 
-        private fun List<Block>.freezeIntoCodepointSequence(): CodepointSequence {
+        private fun List<Block>.freezeIntoCodepointSequence(font: TerrarumSansBitmap): CodepointSequence {
             val out = CodepointSequence()
 
             val input = this.filter { it.block.text.isNotGlue() }
@@ -915,7 +919,7 @@ class MovableType(
 
             // process blocks
             input.forEachIndexed { index, it ->
-                val posX = it.posX + 1
+                val posX = it.posX + 1 - font.interchar * 2
                 val prevEndPos = if (index == 0) 0 else input[index-1].getEndPos()
                 if (index > 0 && posX != prevEndPos) {
                     out.addAll((posX - prevEndPos).glueSizeToGlueChars())
@@ -934,7 +938,7 @@ class MovableType(
         }
 
         private fun createGlyphLayout(font: TerrarumSansBitmap, str: CodepointSequence): NoTexGlyphLayout {
-            return NoTexGlyphLayout(str, font.getWidth(str))
+            return NoTexGlyphLayout(str, font.getWidthNormalised(str).div(font.scale))
         }
     } // end of companion object
 }
