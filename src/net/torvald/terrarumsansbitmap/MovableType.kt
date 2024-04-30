@@ -3,7 +3,6 @@ package net.torvald.terrarumsansbitmap
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.utils.Disposable
-import net.torvald.terrarumsansbitmap.MovableType.Companion.isGlue
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
@@ -170,11 +169,13 @@ class MovableType(
                         val (badnessT, widthDeltaT, _) = getBadnessT(box) // widthDeltaT is always positive
                         var (badnessH, widthDeltaH, hyph) = getBadnessH(box, box.width - slugWidthForOverflowCalc) // widthDeltaH can be anything
 
+                        val disableHyphThre = 200.0 * paperWidth.toDouble().pow(0.25)
+
 //                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
 //                        println("W diff: $widthDeltaW, badness: $badnessW")
 //                        println("T diff: $widthDeltaT, badness: $badnessT")
 
-                        if (badnessW < 1000.0 || badnessT <= 1000.0) {
+                        if (badnessW <= disableHyphThre || badnessT <= disableHyphThre) {
 //                            println("H diff: $widthDeltaH, badness: $badnessH (disabled)")
                             badnessH = 2147483648.0
                         }
