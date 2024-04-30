@@ -750,6 +750,7 @@ class TerrarumSansBitmap(
     private fun buildWidthTableInternal() {
         for (i in 0 until 16) {
             glyphProps[i] = GlyphProps(0)
+            glyphProps[i + 16] = GlyphProps(0)
             glyphProps[MOVABLE_BLOCK_1 + i] = GlyphProps(i + 1)
             glyphProps[MOVABLE_BLOCK_M1 + i] = GlyphProps(-i - 1)
         }

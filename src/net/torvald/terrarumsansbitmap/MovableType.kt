@@ -3,11 +3,11 @@ package net.torvald.terrarumsansbitmap
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.utils.Disposable
+import net.torvald.terrarumsansbitmap.MovableType.Companion.isGlue
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
-import java.lang.Math.log
 import java.lang.Math.pow
 import kotlin.math.*
 
@@ -28,7 +28,8 @@ class MovableType(
     var height = 0; private set
     internal val hash: Long = inputText.getHash()
     private var disposed = false
-    val typesettedSlugs = ArrayList<List<Block>>()
+//    val typesettedSlugs = ArrayList<List<Block>>()
+    val typesettedSlugs = ArrayList<CodepointSequence>()
 
     var width = 0; private set
 
@@ -67,7 +68,8 @@ class MovableType(
                 width = maxOf(width, nextPosX + box.width)
             }
             fun dispatchSlug() {
-                typesettedSlugs.add(slug)
+//                typesettedSlugs.add(slug)
+                typesettedSlugs.add(slug.freezeIntoCodepointSequence())
 
                 slug = ArrayList()
                 slugWidth = 0
@@ -252,46 +254,24 @@ class MovableType(
         height = typesettedSlugs.size
     } }
 
-    fun draw(batch: Batch, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT, drawJobs: Map<Int, (Float, Float, Int) -> Unit> = HashMap()) =
-        draw(batch, x.toFloat(), y.toFloat(), lineStart, linesToDraw, lineHeight, drawJobs)
+    fun draw(batch: Batch, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT) =
+        draw(batch, x.toFloat(), y.toFloat(), lineStart, linesToDraw, lineHeight)
 
-    fun draw(batch: Batch, x: Int, y: Int, drawJobs: Map<Int, (Float, Float, Int) -> Unit> = HashMap()) =
-        draw(batch, x.toFloat(), y.toFloat(), 0, 2147483647, TerrarumSansBitmap.LINE_HEIGHT, drawJobs)
+    fun draw(batch: Batch, x: Int, y: Int) =
+        draw(batch, x.toFloat(), y.toFloat(), 0, 2147483647, TerrarumSansBitmap.LINE_HEIGHT)
 
-    fun draw(batch: Batch, x: Float, y: Float, drawJobs: Map<Int, (Float, Float, Int) -> Unit> = HashMap()) =
-        draw(batch, x, y, 0, 2147483647, TerrarumSansBitmap.LINE_HEIGHT, drawJobs)
+    fun draw(batch: Batch, x: Float, y: Float) =
+        draw(batch, x, y, 0, 2147483647, TerrarumSansBitmap.LINE_HEIGHT)
 
     /**
      * @param drawJobs Draw call for specific lines (absolute line). This takes the form of Map from linnumber to draw function,
      * which has three arguments: (line's top-left position-x, line's top-left position-y, absolute line number)
      */
-    fun draw(batch: Batch, x: Float, y: Float, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT, drawJobs: Map<Int, (Float, Float, Int) -> Unit> = HashMap()) {
+    fun draw(batch: Batch, x: Float, y: Float, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT) {
         if (isNull) return
 
-        typesettedSlugs.subList(lineStart, minOf(typesettedSlugs.size, lineStart + linesToDraw)).forEachIndexed { lineNum, lineBlocks ->
-//            println("Line [${lineNum+1}] anchors: "+ lineBlocks.map { it.posX }.joinToString())
-
-            val absoluteLineNum = lineStart + lineNum
-
-            drawJobs[absoluteLineNum]?.invoke(x, y + lineNum * lineHeight, absoluteLineNum)
-
-            lineBlocks.forEach {
-                lateinit var oldColour: Color
-
-                if (it.colour != null) {
-                    oldColour = batch.color.cpy()
-                    batch.color = it.colour
-                }
-
-                font.drawNormalised(batch,
-                    it.block.text,
-                    x + it.posX,
-                    y + lineNum * lineHeight * font.scale
-                )
-
-                if (it.colour != null)
-                    batch.color = oldColour
-            }
+        typesettedSlugs.subList(lineStart, minOf(typesettedSlugs.size, lineStart + linesToDraw)).forEachIndexed { lineNum, text ->
+            font.drawNormalised(batch, text, x, y + lineNum * lineHeight * font.scale)
         }
     }
 
@@ -451,28 +431,7 @@ class MovableType(
             }
 
             fun sendoutGlue() {
-                if (glue == 0)
-                    tokens.add(CodepointSequence(listOf((ZWSP))))
-                else if (glue.absoluteValue <= 16)
-                    if (glue > 0)
-                        tokens.add(CodepointSequence(listOf(GLUE_POSITIVE_ONE + (glue - 1))))
-                    else
-                        tokens.add(CodepointSequence(listOf(GLUE_NEGATIVE_ONE + (glue.absoluteValue - 1))))
-                else {
-                    val fullGlues = glue.absoluteValue / 16
-                    val smallGlues = glue.absoluteValue % 16
-                    if (glue > 0)
-                        tokens.add(CodepointSequence(
-                            List(fullGlues) { GLUE_POSITIVE_SIXTEEN } +
-                                    listOf(GLUE_POSITIVE_ONE + (smallGlues - 1))
-                        ))
-                    else
-                        tokens.add(CodepointSequence(
-                            List(fullGlues) { GLUE_NEGATIVE_SIXTEEN } +
-                                    listOf(GLUE_NEGATIVE_ONE + (smallGlues - 1))
-                        ))
-                }
-
+                tokens.add(glue.glueSizeToGlueChars())
                 glue = 0
             }
 
@@ -710,7 +669,7 @@ class MovableType(
         private fun CodepointSequence.isGlue() = this.size == 1 && (this[0] == ZWSP || this[0] in 0xFFFE0..0xFFFFF)
         private fun CodepointSequence.isNotGlue() = !this.isGlue()
         private fun CodepointSequence.isZeroGlue() = this.size == 1 && (this[0] == ZWSP)
-        private fun CodePoint.toGlueSize() = when (this) {
+        private fun CodePoint.glueCharToGlueSize() = when (this) {
             ZWSP -> 0
             in 0xFFFE0..0xFFFEF -> -(this - 0xFFFE0 + 1)
             in 0xFFFF0..0xFFFFF -> this - 0xFFFF0 + 1
@@ -854,6 +813,8 @@ class MovableType(
                 "{SHY}"
             else if (it == ZWSP)
                 "{ZWSP}"
+            else if (it in GLUE_NEGATIVE_ONE..GLUE_POSITIVE_SIXTEEN)
+                " <glue ${it.glueCharToGlueSize()}> "
             else if (it >= 0xF0000)
                 it.toHex() + " "
             else
@@ -868,7 +829,7 @@ class MovableType(
                     if (it.isEmpty())
                         "<!! EMPTY !!>"
                     else if (it.isGlue())
-                        "<Glue ${it.first().toGlueSize()}>"
+                        "<Glue ${it.first().glueCharToGlueSize()}>"
                     else
                         it.toReadable()
                 }
@@ -883,17 +844,77 @@ class MovableType(
             return this.text.isGlue()
         }
 
+        private fun Int.glueSizeToGlueChars(): CodepointSequence {
+            val tokens = CodepointSequence()
 
+            if (this == 0)
+                tokens.add(ZWSP)
+            else if (this.absoluteValue <= 16)
+                if (this > 0)
+                    tokens.addAll(listOf(GLUE_POSITIVE_ONE + (this - 1)))
+                else
+                    tokens.addAll(listOf(GLUE_NEGATIVE_ONE + (this.absoluteValue - 1)))
+            else {
+                val fullGlues = this.absoluteValue / 16
+                val smallGlues = this.absoluteValue % 16
+                if (this > 0)
+                    tokens.addAll(
+                        List(fullGlues) { GLUE_POSITIVE_SIXTEEN } +
+                                listOf(GLUE_POSITIVE_ONE + (smallGlues - 1))
+                    )
+                else
+                    tokens.addAll(
+                        List(fullGlues) { GLUE_NEGATIVE_SIXTEEN } +
+                                listOf(GLUE_NEGATIVE_ONE + (smallGlues - 1))
+                    )
+            }
+
+            return tokens
+        }
+
+        private fun List<Block>.freezeIntoCodepointSequence(): CodepointSequence {
+            val out = CodepointSequence()
+
+            val input = this.filter { it.block.text.isNotGlue() }
+
+//            println("Blocks:")
+//            input.forEach {
+//                println("x ${it.posX}\te ${it.getEndPos()}\tw ${it.block.width}; ${it.block.text.toReadable()}")
+//            }
+
+            if (input.isEmpty()) {
+//                println("FreezeSlugs: ${out.toReadable()}")
+                return out
+            }
+
+            // process line indents
+            if (input.first().posX > 0)
+                out.addAll(input.first().posX.glueSizeToGlueChars())
+
+            // process blocks
+            input.forEachIndexed { index, it ->
+                val posX = it.posX + 1
+                val prevEndPos = if (index == 0) 0 else input[index-1].getEndPos()
+                if (index > 0 && posX != prevEndPos) {
+                    out.addAll((posX - prevEndPos).glueSizeToGlueChars())
+                }
+                out.addAll(it.block.text)
+            }
+
+//            println("FreezeSlugs: ${out.toReadable()}\n")
+
+            return out
+        }
+
+        data class NoTexGlyphLayout(val text: CodepointSequence, val width: Int) {
+            val penultimateCharOrNull: CodePoint?
+                get() = text.getOrNull(text.size - 2)
+        }
+
+        private fun createGlyphLayout(font: TerrarumSansBitmap, str: CodepointSequence): NoTexGlyphLayout {
+            return NoTexGlyphLayout(str, font.getWidth(str))
+        }
     } // end of companion object
-
-    data class NoTexGlyphLayout(val text: CodepointSequence, val width: Int) {
-        val penultimateCharOrNull: CodePoint?
-            get() = text.getOrNull(text.size - 2)
-    }
-
-    private fun createGlyphLayout(font: TerrarumSansBitmap, str: CodepointSequence): NoTexGlyphLayout {
-        return NoTexGlyphLayout(str, font.getWidth(str))
-    }
-
 }
+
 
