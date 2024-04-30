@@ -93,7 +93,7 @@ class MovableType(
                     slugWidth -= hangWidthFW
 
                 val difference = (paperWidth - slugWidth).absoluteValue
-                val badness = penaliseWidening(difference)
+                val badness = penaliseWidening(difference, paperWidth.toDouble())
 
                 return Triple(badness, difference, null)
             }
@@ -112,7 +112,7 @@ class MovableType(
                     slugWidth -= hangWidthFW
 
                 val difference = (paperWidth - slugWidth).absoluteValue
-                val badness = penaliseTightening(difference)
+                val badness = penaliseTightening(difference, paperWidth.toDouble())
 
                 return Triple(badness, difference, null)
             }
@@ -138,7 +138,7 @@ class MovableType(
                     slugWidth -= hangWidthFW
 
                 val difference = (paperWidth - slugWidth)
-                val badness = penaliseHyphenation(difference.absoluteValue, paperWidth)
+                val badness = penaliseHyphenation(difference.absoluteValue, paperWidth.toDouble())
 
                 return Triple(badness, difference, hyphHead to hyphTail)
             }
@@ -168,7 +168,19 @@ class MovableType(
                         // widthDelta: can be positive or negative
                         val (badnessW, widthDeltaW, _) = getBadnessW(box) // widthDeltaW is always positive
                         val (badnessT, widthDeltaT, _) = getBadnessT(box) // widthDeltaT is always positive
-                        val (badnessH, widthDeltaH, hyph) = getBadnessH(box, box.width - slugWidthForOverflowCalc) // widthDeltaH can be anything
+                        var (badnessH, widthDeltaH, hyph) = getBadnessH(box, box.width - slugWidthForOverflowCalc) // widthDeltaH can be anything
+
+//                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
+//                        println("W diff: $widthDeltaW, badness: $badnessW")
+//                        println("T diff: $widthDeltaT, badness: $badnessT")
+
+                        if (badnessW < 1000.0 || badnessT <= 1000.0) {
+//                            println("H diff: $widthDeltaH, badness: $badnessH (disabled)")
+                            badnessH = 2147483648.0
+                        }
+                        else {
+//                            println("H diff: $widthDeltaH, badness: $badnessH")
+                        }
 
                         val (selectedBadness, selectedWidthDelta, selectedStrat) = listOf(
                             Triple(badnessW, widthDeltaW, "Widen"),
@@ -638,9 +650,12 @@ class MovableType(
             return this[this.size - 2]
         }
 
-        private fun penaliseWidening(score: Int): Double = pow(score.toDouble(), 2.0)
-        private fun penaliseTightening(score: Int): Double = pow(score.toDouble(), 2.0)//0.0006f * score * score * score + 0.18f * score
-        private fun penaliseHyphenation(score: Int, paperWidth: Int): Double = pow(score.toDouble().absoluteValue, log2(paperWidth.toDouble()) / 3.0)//(10.0 * pow(score.toDouble(), 1.0/3.0) + 0.47*score).toFloat()
+        private fun penaliseWidening(score: Int, paperWidth: Double): Double =
+            pow(score.toDouble(), 2.0)
+        private fun penaliseTightening(score: Int, paperWidth: Double): Double =
+            pow(score.toDouble(), 2.0)
+        private fun penaliseHyphenation(score: Int, paperWidth: Double): Double =
+            pow(score.toDouble().absoluteValue, 3.0 * tanh(paperWidth / 650.0))
 
         private fun isVowel(c: CodePoint) = vowels.contains(c)
 
