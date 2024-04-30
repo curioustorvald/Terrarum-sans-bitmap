@@ -120,7 +120,7 @@ class MovableType(
                 // don't hyphenate if:
                 // - the word is too short (5 chars or less)
                 // - the word is pre-hyphenated (ends with hyphen-null)
-                if (box.text.size <= 8 || box.text.penultimate() == 0x2D)
+                if (box.text.size <= (if (paperWidth < 350) 6 else if (paperWidth < 480) 7 else 8) || box.text.penultimate() == 0x2D)
                     return Triple(2147483648.0, 2147483647, null)
 
                 val slug = slug.toMutableList()
@@ -171,16 +171,16 @@ class MovableType(
 
                         val disableHyphThre = 200.0 * paperWidth.toDouble().pow(0.25)
 
-                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
-                        println("W diff: $widthDeltaW, badness: $badnessW")
-                        println("T diff: $widthDeltaT, badness: $badnessT")
+//                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
+//                        println("W diff: $widthDeltaW, badness: $badnessW")
+//                        println("T diff: $widthDeltaT, badness: $badnessT")
 
-                        if ((badnessW <= disableHyphThre || badnessT <= disableHyphThre) && badnessH > minOf(badnessW, badnessT) / 100.0) {
-                            println("H diff: $widthDeltaH, badness: $badnessH (disabled)")
+                        if ((badnessW <= disableHyphThre || badnessT <= disableHyphThre) && badnessH > minOf(badnessW, badnessT) / 12.0) {
+//                            println("H diff: $widthDeltaH, badness: $badnessH (disabled)")
                             badnessH = 2147483648.0
                         }
                         else {
-                            println("H diff: $widthDeltaH, badness: $badnessH")
+//                            println("H diff: $widthDeltaH, badness: $badnessH")
                         }
 
                         val (selectedBadness, selectedWidthDelta, selectedStrat) = listOf(
