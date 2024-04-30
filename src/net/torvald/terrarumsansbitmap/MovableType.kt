@@ -120,7 +120,8 @@ class MovableType(
                 // don't hyphenate if:
                 // - the word is too short (5 chars or less)
                 // - the word is pre-hyphenated (ends with hyphen-null)
-                if (box.text.size <= (if (paperWidth < 350) 6 else if (paperWidth < 480) 7 else 8) || box.text.penultimate() == 0x2D)
+                val glyphCount = box.text.count { it in 32..0xfffff }
+                if (glyphCount <= (if (paperWidth < 350) 4 else if (paperWidth < 480) 5 else 6) || box.text.penultimate() == 0x2D)
                     return Triple(2147483648.0, 2147483647, null)
 
                 val slug = slug.toMutableList()
@@ -706,7 +707,12 @@ class MovableType(
          * @return left word ("para-"), right word ("graph")
          */
         private fun CodepointSequence.hyphenate(font: TerrarumSansBitmap, optimalCuttingPointInPx: Int): Pair<CodepointSequence, CodepointSequence> {
-//            val middlePoint = this.size / 2
+            fun returnWithCC(fore: CodepointSequence, post: CodepointSequence): Pair<CodepointSequence, CodepointSequence> {
+                val cc = fore.lastOrNull { it in 0x100000..0x10FFFF }
+                return fore to post.also { if (cc != null) it.add(1, cc) }
+            }
+
+            //            val middlePoint = this.size / 2
             // search for the end of the vowel cluster for left and right
             // one with the least distance from the middle point will be used for hyphenating point
             val hyphenateCandidates = ArrayList<Int>() // stores indices
@@ -753,7 +759,7 @@ class MovableType(
 
 //                println("hyph return: ${fore.toReadable()} ${post.toReadable()}")
 
-                return fore to post
+                return returnWithCC(fore, post)
             }
             else if (hyphPoint != null) {
                 val fore = this.subList(0, hyphPoint).toMutableList().let {
@@ -765,9 +771,9 @@ class MovableType(
                     CodepointSequence(it)
                 }
 
-//                println("hyph return: ${fore.toReadable()} ${post.toReadable()}")
+                println("hyph return: ${fore.toReadable()} ${post.toReadable()}")
 
-                return fore to post
+                return returnWithCC(fore, post)
             }
             else {
                 return this to CodepointSequence()
