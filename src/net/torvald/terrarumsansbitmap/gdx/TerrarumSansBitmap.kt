@@ -759,6 +759,10 @@ class TerrarumSansBitmap(
         for (i in 0 until 256) {
             glyphProps[0xF800 + i] = GlyphProps(0)
         }
+
+        for (i in 0xFFF70..0xFFF9F) {
+            glyphProps[i] = GlyphProps(0)
+        }
     }
 
     fun getWidth(text: String) = getWidthNormalised(text.toCodePoints())

@@ -81,7 +81,7 @@ class MovableType(
             ///////////////////////////////////////////////////////////////////////////////////////////////
 
             // the slug is likely end with a glue, must take care of it (but don't modify the slug itself)
-            fun getBadnessW(box: NoTexGlyphLayout): Triple<Double, Int, Any?> {
+            fun getBadnessW(box: NoTexGlyphLayout, availableGlues: Int): Triple<Double, Int, Any?> {
                 val slug = slug.toMutableList()
 
                 // remove the trailing glue(s?) in the slug copy
@@ -96,12 +96,12 @@ class MovableType(
                     slugWidth -= hangWidthFW
 
                 val difference = (paperWidth - slugWidth).absoluteValue
-                val badness = penaliseWidening(difference, paperWidth.toDouble())
+                val badness = penaliseWidening(difference, availableGlues.toDouble())
 
                 return Triple(badness, difference, null)
             }
 
-            fun getBadnessT(box: NoTexGlyphLayout): Triple<Double, Int, Any?> {
+            fun getBadnessT(box: NoTexGlyphLayout, availableGlues: Int): Triple<Double, Int, Any?> {
                 val slug = slug.toMutableList()
 
                 // add the box to the slug copy
@@ -115,21 +115,24 @@ class MovableType(
                     slugWidth -= hangWidthFW
 
                 val difference = (paperWidth - slugWidth).absoluteValue
-                val badness = penaliseTightening(difference, paperWidth.toDouble())
+                val badness = penaliseTightening(difference, availableGlues.toDouble())
 
                 return Triple(badness, difference, null)
             }
 
-            fun getBadnessH(box: NoTexGlyphLayout, diff: Int): Triple<Double, Int, Any?> {
+            fun getBadnessH(box: NoTexGlyphLayout, diff: Int, availableGlues: Int): Triple<Double, Int, Any?> {
                 // don't hyphenate if:
                 // - the word is too short (5 chars or less)
                 // - the word is pre-hyphenated (ends with hyphen-null)
                 val glyphCount = box.text.count { it in 32..0xfffff }
                 if (glyphCount <= (if (paperWidth < 350) 4 else if (paperWidth < 480) 5 else 6) || box.text.penultimate() == 0x2D)
-                    return Triple(2147483648.0, 2147483647, null)
+                    return Triple(1111111111.0, 2147483647, null)
 
                 val slug = slug.toMutableList()
                 val (hyphHead, hyphTail) = box.text.hyphenate(font, diff).toList().map { createGlyphLayout(font, it) }
+
+                if (hyphTail.text.isEmpty())
+                    return Triple(2222222222.0, 2147483647, null)
 
                 // add the hyphHead to the slug copy
                 val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
@@ -142,7 +145,7 @@ class MovableType(
                     slugWidth -= hangWidthFW
 
                 val difference = (paperWidth - slugWidth)
-                val badness = penaliseHyphenation(difference.absoluteValue, paperWidth.toDouble())
+                val badness = penaliseHyphenation(difference.absoluteValue, availableGlues.toDouble())
 
                 return Triple(badness, difference, hyphHead to hyphTail)
             }
@@ -168,24 +171,29 @@ class MovableType(
                         // text overflow occured; set the width to the max value
                         width = paperWidth
 
+                        val initialGlueCount = slug.getGlueSizeSum(font)
+
                         // badness: always positive and weighted
                         // widthDelta: can be positive or negative
-                        val (badnessW, widthDeltaW, _) = getBadnessW(box) // widthDeltaW is always positive
-                        val (badnessT, widthDeltaT, _) = getBadnessT(box) // widthDeltaT is always positive
-                        var (badnessH, widthDeltaH, hyph) = getBadnessH(box, box.width - slugWidthForOverflowCalc) // widthDeltaH can be anything
+                        var (badnessW, widthDeltaW, _) = getBadnessW(box, initialGlueCount) // widthDeltaW is always positive
+                        var (badnessT, widthDeltaT, _) = getBadnessT(box, initialGlueCount) // widthDeltaT is always positive
+                        var (badnessH, widthDeltaH, hyph) = getBadnessH(box, box.width - slugWidthForOverflowCalc, initialGlueCount) // widthDeltaH can be anything
 
-                        val disableHyphThre = 200.0 * paperWidth.toDouble().pow(0.25)
+                        badnessT -= 0.1 // try to break even
+                        badnessH -= 0.01 // try to break even
+                        val disableHyphThre = 5.0
 
-//                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
-//                        println("W diff: $widthDeltaW, badness: $badnessW")
-//                        println("T diff: $widthDeltaT, badness: $badnessT")
+                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
+                        println("W diff: $widthDeltaW, badness: $badnessW")
+                        println("T diff: $widthDeltaT, badness: $badnessT")
 
-                        if ((badnessW <= disableHyphThre || badnessT <= disableHyphThre) && badnessH > minOf(badnessW, badnessT) / 12.0) {
-//                            println("H diff: $widthDeltaH, badness: $badnessH (disabled)")
+
+                        if ((badnessW <= disableHyphThre || badnessT <= disableHyphThre)) {
+                            println("H diff: $widthDeltaH, badness: $badnessH (disabled)")
                             badnessH = 2147483648.0
                         }
                         else {
-//                            println("H diff: $widthDeltaH, badness: $badnessH")
+                            println("H diff: $widthDeltaH, badness: $badnessH")
                         }
 
                         val (selectedBadness, selectedWidthDelta, selectedStrat) = listOf(
@@ -193,6 +201,14 @@ class MovableType(
                             Triple(badnessT, widthDeltaT, "Tighten"),
                             Triple(badnessH, widthDeltaH, "Hyphenate"),
                         ).minByOrNull { it.first }!!
+
+
+                        if (selectedStrat == "Hyphenate") {
+                            val (hyphHead, hyphTail) = hyph as Pair<NoTexGlyphLayout?, NoTexGlyphLayout?>
+                            println("Selected: $selectedStrat (${hyphHead?.text?.toReadable()}, ${hyphTail?.text?.toReadable()}) (badness $selectedBadness, diff $selectedWidthDelta)")
+                        }
+                        else
+                            println("Selected: $selectedStrat (badness $selectedBadness, diff $selectedWidthDelta)")
 
 //                        println("    Line ${typesettedSlugs.size + 1} Strat: $selectedStrat (badness $selectedBadness, delta $selectedWidthDelta; full badness WTH = $badnessW, $badnessT, $badnessH; full delta WTH = $widthDeltaW, $widthDeltaT, $widthDeltaH)")
 //                        println("          Interim Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
@@ -656,12 +672,15 @@ class MovableType(
             return this[this.size - 2]
         }
 
-        private fun penaliseWidening(score: Int, paperWidth: Double): Double =
-            pow(score.toDouble(), 2.0)
-        private fun penaliseTightening(score: Int, paperWidth: Double): Double =
-            pow(score.toDouble(), 2.0)
-        private fun penaliseHyphenation(score: Int, paperWidth: Double): Double =
-            pow(score.toDouble().absoluteValue, 3.0 * tanh(paperWidth / 650.0))
+        private fun penaliseWidening(score: Int, availableGlues: Double): Double =
+            100.0 * (score / availableGlues).pow(3.0)
+//            pow(score.toDouble(), 2.0)
+        private fun penaliseTightening(score: Int, availableGlues: Double): Double =
+            100.0 * (score / availableGlues).pow(3.0)
+//            pow(score.toDouble(), 2.0)
+        private fun penaliseHyphenation(score: Int, availableGlues: Double): Double =
+            100.0 * (score / availableGlues).pow(3.0)
+//            pow(score.toDouble().absoluteValue, 3.0 * tanh(paperWidth / 650.0))
 
         private fun isVowel(c: CodePoint) = vowels.contains(c)
 
@@ -722,7 +741,7 @@ class MovableType(
             val hyphenateCandidates = ArrayList<Int>() // stores indices
             val splitCandidates = ArrayList<Int>() // stores indices
             var i = 3
-            while (i < this.size - 3) {
+            while (i < this.size - 4) {
                 val thisChar = this[i]
                 val prevChar = this[i-1]
                 if (isVowel(prevChar) && !isVowel(thisChar) || !isVowel(prevChar) && isVowel(thisChar)) {
@@ -914,16 +933,7 @@ class MovableType(
             val out = CodepointSequence()
 
             val input = this.filter { it.block.text.isNotGlue() }
-
-//            println("Blocks:")
-//            input.forEach {
-//                println("x ${it.posX}\te ${it.getEndPos()}\tw ${it.block.width}; ${it.block.text.toReadable()}")
-//            }
-
-            if (input.isEmpty()) {
-//                println("FreezeSlugs: ${out.toReadable()}")
-                return out
-            }
+            if (input.isEmpty()) return out
 
             // process line indents
             if (input.first().posX > 0)
@@ -939,8 +949,6 @@ class MovableType(
                 out.addAll(it.block.text)
             }
 
-//            println("FreezeSlugs: ${out.toReadable()}\n")
-
             return out
         }
 
@@ -952,6 +960,25 @@ class MovableType(
         private fun createGlyphLayout(font: TerrarumSansBitmap, str: CodepointSequence): NoTexGlyphLayout {
             return NoTexGlyphLayout(str, font.getWidthNormalised(str).div(font.scale))
         }
+
+        private fun List<Block>.getGlueSizeSum(font: TerrarumSansBitmap): Int {
+            var out = 0
+
+            val input = this.filter { it.block.text.isNotGlue() }
+            if (input.isEmpty()) return 0
+
+            // process blocks
+            input.forEachIndexed { index, it ->
+                val posX = it.posX + 1 - font.interchar * 2
+                val prevEndPos = if (index == 0) 0 else input[index-1].getEndPos()
+                if (index > 0 && posX != prevEndPos) {
+                    out += posX - prevEndPos
+                }
+            }
+
+            return out
+        }
+
     } // end of companion object
 }
 
