@@ -183,17 +183,17 @@ class MovableType(
                         badnessH -= 0.01 // try to break even
                         val disableHyphThre = 5.0
 
-                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
-                        println("W diff: $widthDeltaW, badness: $badnessW")
-                        println("T diff: $widthDeltaT, badness: $badnessT")
+//                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
+//                        println("W diff: $widthDeltaW, badness: $badnessW")
+//                        println("T diff: $widthDeltaT, badness: $badnessT")
 
 
                         if ((badnessW <= disableHyphThre || badnessT <= disableHyphThre)) {
-                            println("H diff: $widthDeltaH, badness: $badnessH (disabled)")
+//                            println("H diff: $widthDeltaH, badness: $badnessH (disabled)")
                             badnessH = 2147483648.0
                         }
                         else {
-                            println("H diff: $widthDeltaH, badness: $badnessH")
+//                            println("H diff: $widthDeltaH, badness: $badnessH")
                         }
 
                         val (selectedBadness, selectedWidthDelta, selectedStrat) = listOf(
@@ -203,12 +203,12 @@ class MovableType(
                         ).minByOrNull { it.first }!!
 
 
-                        if (selectedStrat == "Hyphenate") {
-                            val (hyphHead, hyphTail) = hyph as Pair<NoTexGlyphLayout?, NoTexGlyphLayout?>
-                            println("Selected: $selectedStrat (${hyphHead?.text?.toReadable()}, ${hyphTail?.text?.toReadable()}) (badness $selectedBadness, diff $selectedWidthDelta)")
-                        }
-                        else
-                            println("Selected: $selectedStrat (badness $selectedBadness, diff $selectedWidthDelta)")
+//                        if (selectedStrat == "Hyphenate") {
+//                            val (hyphHead, hyphTail) = hyph as Pair<NoTexGlyphLayout?, NoTexGlyphLayout?>
+//                            println("Selected: $selectedStrat (${hyphHead?.text?.toReadable()}, ${hyphTail?.text?.toReadable()}) (badness $selectedBadness, diff $selectedWidthDelta)")
+//                        }
+//                        else
+//                            println("Selected: $selectedStrat (badness $selectedBadness, diff $selectedWidthDelta)")
 
 //                        println("    Line ${typesettedSlugs.size + 1} Strat: $selectedStrat (badness $selectedBadness, delta $selectedWidthDelta; full badness WTH = $badnessW, $badnessT, $badnessH; full delta WTH = $widthDeltaW, $widthDeltaT, $widthDeltaH)")
 //                        println("          Interim Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
