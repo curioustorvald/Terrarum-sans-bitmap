@@ -883,16 +883,28 @@ class MovableType(
             else {
                 val fullGlues = this.absoluteValue / 16
                 val smallGlues = this.absoluteValue % 16
-                if (this > 0)
-                    tokens.addAll(
-                        List(fullGlues) { GLUE_POSITIVE_SIXTEEN } +
-                                listOf(GLUE_POSITIVE_ONE + (smallGlues - 1))
-                    )
-                else
-                    tokens.addAll(
-                        List(fullGlues) { GLUE_NEGATIVE_SIXTEEN } +
-                                listOf(GLUE_NEGATIVE_ONE + (smallGlues - 1))
-                    )
+                if (smallGlues > 0) {
+                    if (this > 0)
+                        tokens.addAll(
+                            List(fullGlues) { GLUE_POSITIVE_SIXTEEN } +
+                                    listOf(GLUE_POSITIVE_ONE + (smallGlues - 1))
+                        )
+                    else
+                        tokens.addAll(
+                            List(fullGlues) { GLUE_NEGATIVE_SIXTEEN } +
+                                    listOf(GLUE_NEGATIVE_ONE + (smallGlues - 1))
+                        )
+                }
+                else {
+                    if (this > 0)
+                        tokens.addAll(
+                            List(fullGlues) { GLUE_POSITIVE_SIXTEEN }
+                        )
+                    else
+                        tokens.addAll(
+                            List(fullGlues) { GLUE_NEGATIVE_SIXTEEN }
+                        )
+                }
             }
 
             return tokens

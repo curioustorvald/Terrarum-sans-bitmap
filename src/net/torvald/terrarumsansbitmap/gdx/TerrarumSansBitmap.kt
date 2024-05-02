@@ -751,6 +751,7 @@ class TerrarumSansBitmap(
         for (i in 0 until 16) {
             glyphProps[i] = GlyphProps(0)
             glyphProps[i + 16] = GlyphProps(0)
+            glyphProps[FIXED_BLOCK_1 + i] = GlyphProps(i + 1)
             glyphProps[MOVABLE_BLOCK_1 + i] = GlyphProps(i + 1)
             glyphProps[MOVABLE_BLOCK_M1 + i] = GlyphProps(-i - 1)
         }
@@ -2180,8 +2181,9 @@ class TerrarumSansBitmap(
         internal const val CHARSET_OVERRIDE_BG_BG = 0xFFFC1
         internal const val CHARSET_OVERRIDE_SR_SR = 0xFFFC2
 
-        internal const val MOVABLE_BLOCK_1 = 0xFFFF0
+        internal const val FIXED_BLOCK_1 = 0xFFFD0
         internal const val MOVABLE_BLOCK_M1 = 0xFFFE0
+        internal const val MOVABLE_BLOCK_1 = 0xFFFF0
 
 
         private val autoShiftDownOnLowercase = arrayOf(
@@ -2541,7 +2543,7 @@ class TerrarumSansBitmap(
         private fun isBulgarian(c: CodePoint) = c in 0xF0000..0xF005F
         private fun isSerbian(c: CodePoint) = c in 0xF0060..0xF00BF
         fun isColourCode(c: CodePoint) = c == 0x100000 || c in 0x10F000..0x10FFFF
-        private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFDF
+        private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFCF
         private fun isDevanagari(c: CodePoint) = c in codeRange[SHEET_DEVANAGARI_VARW]
         private fun isHangulCompat(c: CodePoint) = c in codeRangeHangulCompat
 
