@@ -199,10 +199,10 @@ class MovableType(
                         }
 
 
-                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
-                        println("W diff: $widthDeltaW, badness: $badnessW")
-                        println("T diff: $widthDeltaT, badness: $badnessT")
-                        println("H diff: $widthDeltaH, badness: $badnessH")
+//                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
+//                        println("W diff: $widthDeltaW, badness: $badnessW")
+//                        println("T diff: $widthDeltaT, badness: $badnessT")
+//                        println("H diff: $widthDeltaH, badness: $badnessH")
 
                         val (selectedBadness, selectedWidthDelta, selectedStrat) = listOf(
                             Triple(badnessW, widthDeltaW, "Widen"),
@@ -211,12 +211,12 @@ class MovableType(
                         ).minByOrNull { it.first }!!
 
 
-                        if (selectedStrat == "Hyphenate") {
-                            val (hyphHead, hyphTail) = hyph as Pair<NoTexGlyphLayout?, NoTexGlyphLayout?>
-                            println("Selected: $selectedStrat (${hyphHead?.text?.toReadable()}, ${hyphTail?.text?.toReadable()}) (badness $selectedBadness, diff $selectedWidthDelta)")
-                        }
-                        else
-                            println("Selected: $selectedStrat (badness $selectedBadness, diff $selectedWidthDelta)")
+//                        if (selectedStrat == "Hyphenate") {
+//                            val (hyphHead, hyphTail) = hyph as Pair<NoTexGlyphLayout?, NoTexGlyphLayout?>
+//                            println("Selected: $selectedStrat (${hyphHead?.text?.toReadable()}, ${hyphTail?.text?.toReadable()}) (badness $selectedBadness, diff $selectedWidthDelta)")
+//                        }
+//                        else
+//                            println("Selected: $selectedStrat (badness $selectedBadness, diff $selectedWidthDelta)")
 
 //                        println("    Line ${typesettedSlugs.size + 1} Strat: $selectedStrat (badness $selectedBadness, delta $selectedWidthDelta; full badness WTH = $badnessW, $badnessT, $badnessH; full delta WTH = $widthDeltaW, $widthDeltaT, $widthDeltaH)")
 //                        println("          Interim Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
