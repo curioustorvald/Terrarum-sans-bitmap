@@ -126,13 +126,13 @@ class MovableType(
                 // - the word is pre-hyphenated (ends with hyphen-null)
                 val glyphCount = box.text.count { it in 32..0xfffff }
                 if (glyphCount <= (if (paperWidth < 350) 4 else if (paperWidth < 480) 5 else 6) || box.text.penultimate() == 0x2D)
-                    return Triple(1111111111.0, 2147483647, null)
+                    return Triple(Double.POSITIVE_INFINITY, 2147483647, null)
 
                 val slug = slug.toMutableList()
                 val (hyphHead, hyphTail) = box.text.hyphenate(font, diff).toList().map { createGlyphLayout(font, it) }
 
                 if (hyphTail.text.isEmpty())
-                    return Triple(2222222222.0, 2147483647, null)
+                    return Triple(Double.POSITIVE_INFINITY, 2147483647, null)
 
                 // add the hyphHead to the slug copy
                 val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
@@ -183,18 +183,26 @@ class MovableType(
                         badnessH -= 0.01 // try to break even
                         val disableHyphThre = 5.0
 
-//                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
-//                        println("W diff: $widthDeltaW, badness: $badnessW")
-//                        println("T diff: $widthDeltaT, badness: $badnessT")
-
-
+                        // disable hyphenation if badness of others is lower than the threshold
                         if ((badnessW <= disableHyphThre || badnessT <= disableHyphThre)) {
-//                            println("H diff: $widthDeltaH, badness: $badnessH (disabled)")
-                            badnessH = 2147483648.0
+                            badnessH = Double.POSITIVE_INFINITY
                         }
-                        else {
-//                            println("H diff: $widthDeltaH, badness: $badnessH")
+
+                        // disable hyphenation if hyphenating a word is impossible
+                        if (hyph == null) {
+                            badnessH = Double.POSITIVE_INFINITY
                         }
+
+
+                        if (badnessH.isInfinite() && badnessW.isInfinite() && badnessT.isInfinite()) {
+                            throw Error("Typesetting failed: badness of all three strategies diverged to infinity\ntext (${slug.size} tokens): ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
+                        }
+
+
+                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
+                        println("W diff: $widthDeltaW, badness: $badnessW")
+                        println("T diff: $widthDeltaT, badness: $badnessT")
+                        println("H diff: $widthDeltaH, badness: $badnessH")
 
                         val (selectedBadness, selectedWidthDelta, selectedStrat) = listOf(
                             Triple(badnessW, widthDeltaW, "Widen"),
@@ -203,12 +211,12 @@ class MovableType(
                         ).minByOrNull { it.first }!!
 
 
-//                        if (selectedStrat == "Hyphenate") {
-//                            val (hyphHead, hyphTail) = hyph as Pair<NoTexGlyphLayout?, NoTexGlyphLayout?>
-//                            println("Selected: $selectedStrat (${hyphHead?.text?.toReadable()}, ${hyphTail?.text?.toReadable()}) (badness $selectedBadness, diff $selectedWidthDelta)")
-//                        }
-//                        else
-//                            println("Selected: $selectedStrat (badness $selectedBadness, diff $selectedWidthDelta)")
+                        if (selectedStrat == "Hyphenate") {
+                            val (hyphHead, hyphTail) = hyph as Pair<NoTexGlyphLayout?, NoTexGlyphLayout?>
+                            println("Selected: $selectedStrat (${hyphHead?.text?.toReadable()}, ${hyphTail?.text?.toReadable()}) (badness $selectedBadness, diff $selectedWidthDelta)")
+                        }
+                        else
+                            println("Selected: $selectedStrat (badness $selectedBadness, diff $selectedWidthDelta)")
 
 //                        println("    Line ${typesettedSlugs.size + 1} Strat: $selectedStrat (badness $selectedBadness, delta $selectedWidthDelta; full badness WTH = $badnessW, $badnessT, $badnessH; full delta WTH = $widthDeltaW, $widthDeltaT, $widthDeltaH)")
 //                        println("          Interim Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
@@ -829,6 +837,7 @@ class MovableType(
         private val whitespaceGlues = hashMapOf(
             0x20 to 4,
             0x3000 to 16,
+            0xf0520 to 9,
         )
         private val cjpuncts = listOf(0x203c, 0x2047, 0x2048, 0x2049, 0x3001, 0x3002, 0x3006, 0x303b, 0x30a0, 0x30fb, 0x30fc, 0x301c, 0xff01, 0xff0c, 0xff0e, 0xff1a, 0xff1b, 0xff1f, 0xff5e, 0xff65).toSortedSet()
         private val cjparenStarts = listOf(0x3008, 0x300A, 0x300C, 0x300E, 0x3010, 0x3014, 0x3016, 0x3018, 0x301A, 0x30fb, 0xff65).toSortedSet()

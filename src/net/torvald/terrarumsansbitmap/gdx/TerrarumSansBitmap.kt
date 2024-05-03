@@ -607,6 +607,7 @@ class TerrarumSansBitmap(
             SHEET_BRAILLE_VARW -> brailleIndexY(ch)
             SHEET_SUNDANESE_VARW -> sundaneseIndexY(ch)
             SHEET_DEVANAGARI2_INTERNAL_VARW -> devanagari2IndexY(ch)
+            SHEET_CODESTYLE_ASCII_VARW -> codestyleAsciiIndexY(ch)
             else -> ch / 16
         }
 
@@ -1789,6 +1790,7 @@ class TerrarumSansBitmap(
     val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
     val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
     val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR).toSurrogatedString()
+    val charsetOverrideCodestyle = Character.toChars(CHARSET_OVERRIDE_CODESTYLE).toSurrogatedString()
 
     // randomiser effect hash ONLY
     private val hashBasis = -3750763034362895579L
@@ -2170,6 +2172,7 @@ class TerrarumSansBitmap(
         internal const val SHEET_BRAILLE_VARW = 34
         internal const val SHEET_SUNDANESE_VARW = 35
         internal const val SHEET_DEVANAGARI2_INTERNAL_VARW = 36
+        internal const val SHEET_CODESTYLE_ASCII_VARW = 37
 
         internal const val SHEET_UNKNOWN = 254
 
@@ -2184,6 +2187,7 @@ class TerrarumSansBitmap(
         internal const val CHARSET_OVERRIDE_DEFAULT = 0xFFFC0
         internal const val CHARSET_OVERRIDE_BG_BG = 0xFFFC1
         internal const val CHARSET_OVERRIDE_SR_SR = 0xFFFC2
+        internal const val CHARSET_OVERRIDE_CODESTYLE = 0xFFFC3
 
         internal const val FIXED_BLOCK_1 = 0xFFFD0
         internal const val MOVABLE_BLOCK_M1 = 0xFFFE0
@@ -2232,6 +2236,7 @@ class TerrarumSansBitmap(
             "braille_variable.tga",
             "sundanese_variable.tga",
             "devanagari_internal_extrawide_variable.tga",
+            "pua_codestyle_ascii_variable.tga",
         )
         internal val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -2271,19 +2276,22 @@ class TerrarumSansBitmap(
             0x2800..0x28FF, // SHEET_BRAILLE_VARW
             (0x1B80..0x1BBF) + (0x1CC0..0x1CCF) + (0xF0500..0xF050F), // SHEET_SUNDANESE_VARW
             0xF0110..0xF012F, // SHEET_DEVANAGARI2_INTERNAL_VARW
+            0xF0520..0xF057F, // SHEET_CODESTYLE_ASCII_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
         private val altCharsetCodepointOffsets = arrayOf(
                 0, // null
                 0xF0000 - 0x400, // bulgarian
-                0xF0060 - 0x400 // serbian
+                0xF0060 - 0x400, // serbian
+                0xF0520 - 0x20, // codestyle
         )
 
         private val altCharsetCodepointDomains = arrayOf(
                 0..0x10FFFF,
                 0x400..0x45F,
-                0x400..0x45F
+                0x400..0x45F,
+                0x20..0x7F,
         )
 
         private val diacriticDotRemoval = hashMapOf(
@@ -2593,10 +2601,12 @@ class TerrarumSansBitmap(
         private fun brailleIndexY(c: CodePoint) = (c - 0x2800) / 16
         private fun sundaneseIndexY(c: CodePoint) = (if (c >= 0xF0500) (c - 0xF04B0) else if (c < 0x1BC0) (c - 0x1B80) else (c - 0x1C80)) / 16
         private fun devanagari2IndexY(c: CodePoint) = (c - 0xF0110) / 16
+        private fun codestyleAsciiIndexY(c: CodePoint) = (c - 0xF0520) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
         val charsetOverrideSerbian = Character.toChars(CHARSET_OVERRIDE_SR_SR).toSurrogatedString()
+        val charsetOverrideCodestyle = Character.toChars(CHARSET_OVERRIDE_CODESTYLE).toSurrogatedString()
         fun toColorCode(argb4444: Int): String = Character.toChars(0x100000 + argb4444).toSurrogatedString()
         fun toColorCode(r: Int, g: Int, b: Int, a: Int = 0x0F): String = toColorCode(a.shl(12) or r.shl(8) or g.shl(4) or b)
         private fun CharArray.toSurrogatedString(): String = "${this[0]}${this[1]}"
