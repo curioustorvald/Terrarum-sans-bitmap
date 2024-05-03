@@ -7,9 +7,12 @@ import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
-import java.lang.Math.pow
 import kotlin.math.*
 import kotlin.properties.Delegates
+
+enum class TypesettingStrategy {
+    JUSTIFIED, RAGGED_RIGHT
+}
 
 /**
  * Despite "CJK" texts needing their own typesetting rule, in this code Korean texts are typesetted much like
@@ -22,8 +25,21 @@ class MovableType(
     val font: TerrarumSansBitmap,
     val inputText: CodepointSequence,
     textWidth: Int,
-    internal val isNull: Boolean = false
+    strategy: TypesettingStrategy = TypesettingStrategy.JUSTIFIED
 ): Disposable {
+
+
+    private var isNull = false
+
+    internal constructor(
+        font: TerrarumSansBitmap,
+        inputText: CodepointSequence,
+        textWidth: Int,
+        strategy: TypesettingStrategy = TypesettingStrategy.JUSTIFIED,
+        isNull: Boolean
+    ) : this(font, inputText, textWidth, strategy) {
+        this.isNull = isNull
+    }
 
     var height = 0; private set
     internal val hash: Long = inputText.getHash()
@@ -168,35 +184,52 @@ class MovableType(
 
                     // if adding the box would cause overflow
                     if (slugWidthForOverflowCalc + box.width > paperWidth) {
-                        // text overflow occured; set the width to the max value
-                        width = paperWidth
+                        // if adding the box would cause overflow (justified)
+                        if (strategy == TypesettingStrategy.JUSTIFIED) {
+                            // text overflow occured; set the width to the max value
+                            width = paperWidth
 
-                        val initialGlueCount = slug.getGlueSizeSum(font)
+                            val initialGlueCount = slug.getGlueSizeSum(font)
 
-                        // badness: always positive and weighted
-                        // widthDelta: can be positive or negative
-                        var (badnessW, widthDeltaW, _) = getBadnessW(box, initialGlueCount) // widthDeltaW is always positive
-                        var (badnessT, widthDeltaT, _) = getBadnessT(box, initialGlueCount) // widthDeltaT is always positive
-                        var (badnessH, widthDeltaH, hyph) = getBadnessH(box, box.width - slugWidthForOverflowCalc, initialGlueCount) // widthDeltaH can be anything
+                            // badness: always positive and weighted
+                            // widthDelta: can be positive or negative
+                            var (badnessW, widthDeltaW, _) = getBadnessW(
+                                box,
+                                initialGlueCount
+                            ) // widthDeltaW is always positive
+                            var (badnessT, widthDeltaT, _) = getBadnessT(
+                                box,
+                                initialGlueCount
+                            ) // widthDeltaT is always positive
+                            var (badnessH, widthDeltaH, hyph) = getBadnessH(
+                                box,
+                                box.width - slugWidthForOverflowCalc,
+                                initialGlueCount
+                            ) // widthDeltaH can be anything
 
-                        badnessT -= 0.1 // try to break even
-                        badnessH -= 0.01 // try to break even
-                        val disableHyphThre = 5.0
+                            badnessT -= 0.1 // try to break even
+                            badnessH -= 0.01 // try to break even
+                            val disableHyphThre = 5.0
 
-                        // disable hyphenation if badness of others is lower than the threshold
-                        if ((badnessW <= disableHyphThre || badnessT <= disableHyphThre)) {
-                            badnessH = Double.POSITIVE_INFINITY
-                        }
+                            // disable hyphenation if badness of others is lower than the threshold
+                            if ((badnessW <= disableHyphThre || badnessT <= disableHyphThre)) {
+                                badnessH = Double.POSITIVE_INFINITY
+                            }
 
-                        // disable hyphenation if hyphenating a word is impossible
-                        if (hyph == null) {
-                            badnessH = Double.POSITIVE_INFINITY
-                        }
+                            // disable hyphenation if hyphenating a word is impossible
+                            if (hyph == null) {
+                                badnessH = Double.POSITIVE_INFINITY
+                            }
 
 
-                        if (badnessH.isInfinite() && badnessW.isInfinite() && badnessT.isInfinite()) {
-                            throw Error("Typesetting failed: badness of all three strategies diverged to infinity\ntext (${slug.size} tokens): ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
-                        }
+                            if (badnessH.isInfinite() && badnessW.isInfinite() && badnessT.isInfinite()) {
+                                throw Error(
+                                    "Typesetting failed: badness of all three strategies diverged to infinity\ntext (${slug.size} tokens): ${
+                                        slug.map { it.block.text }.filter { it.isNotGlue() }
+                                            .joinToString(" ") { it.toReadable() }
+                                    }"
+                                )
+                            }
 
 
 //                        println("\nLine: ${slug.map { it.block.text }.filter { it.isNotGlue() }.joinToString(" ") { it.toReadable() }}")
@@ -204,11 +237,11 @@ class MovableType(
 //                        println("T diff: $widthDeltaT, badness: $badnessT")
 //                        println("H diff: $widthDeltaH, badness: $badnessH")
 
-                        val (selectedBadness, selectedWidthDelta, selectedStrat) = listOf(
-                            Triple(badnessW, widthDeltaW, "Widen"),
-                            Triple(badnessT, widthDeltaT, "Tighten"),
-                            Triple(badnessH, widthDeltaH, "Hyphenate"),
-                        ).minByOrNull { it.first }!!
+                            val (selectedBadness, selectedWidthDelta, selectedStrat) = listOf(
+                                Triple(badnessW, widthDeltaW, "Widen"),
+                                Triple(badnessT, widthDeltaT, "Tighten"),
+                                Triple(badnessH, widthDeltaH, "Hyphenate"),
+                            ).minByOrNull { it.first }!!
 
 
 //                        if (selectedStrat == "Hyphenate") {
@@ -221,61 +254,77 @@ class MovableType(
 //                        println("    Line ${typesettedSlugs.size + 1} Strat: $selectedStrat (badness $selectedBadness, delta $selectedWidthDelta; full badness WTH = $badnessW, $badnessT, $badnessH; full delta WTH = $widthDeltaW, $widthDeltaT, $widthDeltaH)")
 //                        println("          Interim Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
 
-                        when (selectedStrat) {
-                            "Widen", "Tighten" -> {
-                                // widen/tighten the spacing between blocks
+                            when (selectedStrat) {
+                                "Widen", "Tighten" -> {
+                                    // widen/tighten the spacing between blocks
 
-                                // widen: 1, tighten: -1
-                                val operation = if (selectedStrat == "Widen") 1 else -1
+                                    // widen: 1, tighten: -1
+                                    val operation = if (selectedStrat == "Widen") 1 else -1
 
-                                // Widen: remove the trailing glue(s?) in the slug
-                                if (selectedStrat == "Widen") {
-                                    while (slug.lastOrNull()?.block?.isGlue() == true) {
-                                        slug.removeLast()
+                                    // Widen: remove the trailing glue(s?) in the slug
+                                    if (selectedStrat == "Widen") {
+                                        while (slug.lastOrNull()?.block?.isGlue() == true) {
+                                            slug.removeLast()
+                                        }
+                                    }
+                                    // Tighten: add the box to the slug
+                                    else {
+                                        addToSlug(box)
+                                        // remove glues on the upcoming blocks
+                                        while (boxes.firstOrNull()?.isGlue() == true) {
+                                            boxes.removeFirst()
+                                        }
+                                    }
+
+                                    moveSlugsToFitTheWidth(operation, slug, selectedWidthDelta.absoluteValue)
+
+                                    // put the trailing word back into the upcoming words
+                                    if (selectedStrat == "Widen") {
+                                        addHyphenatedTail(box)
+                                    }
+                                    // if tightening leaves an empty line behind, signal the typesetter to discard that line
+                                    else if (selectedStrat == "Tighten" && boxes.isEmpty()) {
+                                        ignoreThisLine = true
                                     }
                                 }
-                                // Tighten: add the box to the slug
-                                else {
-                                    addToSlug(box)
-                                    // remove glues on the upcoming blocks
-                                    while (boxes.firstOrNull()?.isGlue() == true) {
-                                        boxes.removeFirst()
-                                    }
-                                }
 
-                                moveSlugsToFitTheWidth(operation, slug, selectedWidthDelta.absoluteValue)
+                                "Hyphenate" -> {
+                                    // insert hyphen-head to the slug
+                                    // widen/tighten the spacing between blocks using widthDeltaH
+                                    // insert hyphen-tail to the list of upcoming boxes
 
-                                // put the trailing word back into the upcoming words
-                                if (selectedStrat == "Widen") {
-                                    addHyphenatedTail(box)
-                                }
-                                // if tightening leaves an empty line behind, signal the typesetter to discard that line
-                                else if (selectedStrat == "Tighten" && boxes.isEmpty()) {
-                                    ignoreThisLine = true
+                                    val (hyphHead, hyphTail) = hyph as Pair<NoTexGlyphLayout, NoTexGlyphLayout>
+
+                                    // widen: 1, tighten: -1
+                                    val operation = widthDeltaH.sign
+
+                                    // insert hyphHead into the slug
+                                    addToSlug(hyphHead)
+
+                                    moveSlugsToFitTheWidth(operation, slug, selectedWidthDelta.absoluteValue)
+
+                                    // put the tail into the upcoming words
+                                    addHyphenatedTail(hyphTail)
                                 }
                             }
-                            "Hyphenate" -> {
-                                // insert hyphen-head to the slug
-                                // widen/tighten the spacing between blocks using widthDeltaH
-                                // insert hyphen-tail to the list of upcoming boxes
-
-                                val (hyphHead, hyphTail) = hyph as Pair<NoTexGlyphLayout, NoTexGlyphLayout>
-
-                                // widen: 1, tighten: -1
-                                val operation = widthDeltaH.sign
-
-                                // insert hyphHead into the slug
-                                addToSlug(hyphHead)
-
-                                moveSlugsToFitTheWidth(operation, slug, selectedWidthDelta.absoluteValue)
-
-                                // put the tail into the upcoming words
-                                addHyphenatedTail(hyphTail)
-                            }
-                        }
 
 //                        println("  > Line ${typesettedSlugs.size + 1} Final Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
-                        dispatchSlug()
+                            dispatchSlug()
+                        }
+                        // if adding the box would cause overflow (ragged right)
+                        else if (strategy == TypesettingStrategy.RAGGED_RIGHT) {
+                            // remove trailing glues
+                            while (slug.lastOrNull()?.block?.isGlue() == true) {
+                                slug.removeLast()
+                            }
+
+                            addHyphenatedTail(box)
+
+                            dispatchSlug()
+                        }
+                        else {
+                            throw UnsupportedOperationException("Unknown typesetting strategy: ${strategy.name}")
+                        }
                     }
                     // typeset the boxes normally
                     else {
@@ -425,14 +474,7 @@ class MovableType(
 
             fun getControlHeader(row: Int, word: Int): CodepointSequence {
                 val index = row * 65536 or word
-
-//                println("GetControlHeader $row, $word -> $index")
-//                println("    ControlChars: ${controlCharList.joinToString()}")
-
                 val ret = CodepointSequence(controlCharList.filter { index > it.second }.map { it.first })
-
-//                println("    Filtered: ${ret.joinToString()}")
-
                 return ret
             }
 
@@ -837,7 +879,7 @@ class MovableType(
         private val whitespaceGlues = hashMapOf(
             0x20 to 4,
             0x3000 to 16,
-            0xf0520 to 9,
+            0xF0520 to 7, // why????
         )
         private val cjpuncts = listOf(0x203c, 0x2047, 0x2048, 0x2049, 0x3001, 0x3002, 0x3006, 0x303b, 0x30a0, 0x30fb, 0x30fc, 0x301c, 0xff01, 0xff0c, 0xff0e, 0xff1a, 0xff1b, 0xff1f, 0xff5e, 0xff65).toSortedSet()
         private val cjparenStarts = listOf(0x3008, 0x300A, 0x300C, 0x300E, 0x3010, 0x3014, 0x3016, 0x3018, 0x301A, 0x30fb, 0xff65).toSortedSet()
@@ -856,10 +898,14 @@ class MovableType(
         private const val GLUE_NEGATIVE_ONE = 0xFFFE0
         private const val GLUE_NEGATIVE_SIXTEEN = 0xFFFEF
 
+        private fun CharArray.toSurrogatedString(): String = if (this.size == 1) "${this[0]}" else "${this[0]}${this[1]}"
+
+        private inline fun Int.codepointToString() = Character.toChars(this).toSurrogatedString()
+
         private fun CodepointSequence.toReadable() = this.joinToString("") {
             if (it in 0x00..0x1f)
                 "${(0x2400 + it).toChar()}"
-            else if (it == 0x20)
+            else if (it == 0x20 || it == 0xF0520)
                 "\u2423"
             else if (it == NBSP)
                 "{NBSP}"
@@ -869,6 +915,18 @@ class MovableType(
                 "{ZWSP}"
             else if (it in GLUE_NEGATIVE_ONE..GLUE_POSITIVE_SIXTEEN)
                 " <glue ${it.glueCharToGlueSize()}> "
+            else if (it in 0xF0541..0xF055A) {
+                (it - 0xF0541 + 0x1D670).codepointToString()
+            }
+            else if (it in 0xF0561..0xF057A) {
+                (it - 0xF0561 + 0x1D68A).codepointToString()
+            }
+            else if (it in 0xF0530..0xF0539) {
+                (it - 0xF0530 + 0x1D7F6).codepointToString()
+            }
+            else if (it in 0xF0520..0xF057F) {
+                (it - 0xF0520 + 0x20).codepointToString()
+            }
             else if (it >= 0xF0000)
                 it.toHex() + " "
             else

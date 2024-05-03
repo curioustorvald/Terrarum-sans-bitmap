@@ -33,6 +33,7 @@ import com.badlogic.gdx.utils.GdxRuntimeException
 import net.torvald.terrarumsansbitmap.DiacriticsAnchor
 import net.torvald.terrarumsansbitmap.GlyphProps
 import net.torvald.terrarumsansbitmap.MovableType
+import net.torvald.terrarumsansbitmap.TypesettingStrategy
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
 import java.util.*
@@ -510,22 +511,27 @@ class TerrarumSansBitmap(
      * This method alone will NOT draw the text to the screen, use [MovableType.draw].
      */
     fun typesetParagraph(batch: Batch, charSeq: CharSequence, targetWidth: Int): MovableType =
-        typesetParagraphNormalised(batch, normaliseStringForMovableType(charSeq), targetWidth.toFloat())
+        typesetParagraphNormalised(batch, normaliseStringForMovableType(charSeq), targetWidth.toFloat(), TypesettingStrategy.JUSTIFIED)
     /**
      * Typesets given string and returns the typesetted results, with which the desired text can be drawn on the screen.
      * This method alone will NOT draw the text to the screen, use [MovableType.draw].
      */
     fun typesetParagraph(batch: Batch, charSeq: CharSequence, targetWidth: Float): MovableType =
-        typesetParagraphNormalised(batch, normaliseStringForMovableType(charSeq), targetWidth)
+        typesetParagraphNormalised(batch, normaliseStringForMovableType(charSeq), targetWidth, TypesettingStrategy.JUSTIFIED)
+
+    fun typesetParagraphRaggedRight(batch: Batch, charSeq: CharSequence, targetWidth: Int): MovableType =
+        typesetParagraphNormalised(batch, normaliseStringForMovableType(charSeq), targetWidth.toFloat(), TypesettingStrategy.RAGGED_RIGHT)
+    fun typesetParagraphRaggedRight(batch: Batch, charSeq: CharSequence, targetWidth: Float): MovableType =
+        typesetParagraphNormalised(batch, normaliseStringForMovableType(charSeq), targetWidth, TypesettingStrategy.RAGGED_RIGHT)
 
 
-    private val nullType = MovableType(this, "".toCodePoints(2), 0, true)
+    private val nullType = MovableType(this, "".toCodePoints(2), 0, isNull = true)
 
     /**
      * Typesets given string and returns the typesetted results, with which the desired text can be drawn on the screen.
      * This method alone will NOT draw the text to the screen, use [MovableType.draw].
      */
-    fun typesetParagraphNormalised(batch: Batch, codepoints: CodepointSequence, targetWidth: Float): MovableType {
+    fun typesetParagraphNormalised(batch: Batch, codepoints: CodepointSequence, targetWidth: Float, strategy: TypesettingStrategy): MovableType {
         val charSeqNotBlank = codepoints.size > 0 // determine emptiness BEFORE you hack a null chars in
         val newCodepoints = codepoints
 
@@ -535,7 +541,7 @@ class TerrarumSansBitmap(
             var cacheObj = getTypesetCache(charSeqHash)
 
             if (cacheObj == null || flagFirstRun) {
-                cacheObj = MovableType(this, codepoints, targetWidth.toInt())
+                cacheObj = MovableType(this, codepoints, targetWidth.toInt(), strategy)
                 addToTypesetCache(cacheObj)
             }
 
