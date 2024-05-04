@@ -192,6 +192,7 @@ class TerrarumSansBitmap(
 
     /** Props of all printable Unicode points. */
     private val glyphProps = HashMap<CodePoint, GlyphProps>()
+    private val textReplaces = HashMap<CodePoint, CodePoint>()
     private val sheets: Array<PixmapRegionPack>
 
 //    private var charsetOverride = 0
@@ -266,6 +267,8 @@ class TerrarumSansBitmap(
             if (isVariable) buildWidthTable(pixmap, codeRange[index], if (isExtraWide) 32 else 16)
             buildWidthTableFixed()
             buildWidthTableInternal()
+
+            setupDynamicTextReplacer()
 
             glyphProps[0xAD] = GlyphProps(-15) // what the fuck's going on that made this necessary??
 
@@ -772,6 +775,13 @@ class TerrarumSansBitmap(
         }
     }
 
+    private fun setupDynamicTextReplacer() {
+        // replace NBSP into a block of same width
+        val spaceWidth = glyphProps[32]?.width ?: throw IllegalStateException()
+        if (spaceWidth > 16) throw InternalError("Space (U+0020) character is too wide ($spaceWidth)")
+        textReplaces[0xA0] = FIXED_BLOCK_1 + (spaceWidth - 1)
+    }
+
     fun getWidth(text: String) = getWidthNormalised(text.toCodePoints())
     fun getWidth(s: CodepointSequence) = getWidthNormalised(s.normalise())
 
@@ -1055,8 +1065,13 @@ class TerrarumSansBitmap(
 
         seq0.add(0)
         while (i < dis.size) {
-            val c = dis[i]
+            var c = dis[i]
             val cNext = dis.getOrElse(i+1) { -1 }
+
+            // replace characters in-line
+            textReplaces[c]?.let {
+                c = it
+            }
 
             // turn Unicode Devanagari consonants into the internal counterpart
             if (c in 0x0915..0x0939 || c in 0x0958..0x095F)

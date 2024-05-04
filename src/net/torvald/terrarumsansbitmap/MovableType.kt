@@ -6,6 +6,7 @@ import com.badlogic.gdx.utils.Disposable
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.FIXED_BLOCK_1
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
 import kotlin.math.*
 import kotlin.properties.Delegates
@@ -67,7 +68,7 @@ class MovableType(
 //        println("Paper width: $paperWidth")
 
         val lines = inputText.tokenise()
-//        lines.debugprint()
+        lines.debugprint()
 
         lines.forEachIndexed { linenum, it ->
 //            println("Processing input text line ${linenum + 1} (word count: ${it.size})...")
@@ -913,6 +914,8 @@ class MovableType(
                 "{SHY}"
             else if (it == ZWSP)
                 "{ZWSP}"
+            else if (it in FIXED_BLOCK_1..FIXED_BLOCK_1+15)
+                " <block ${it - FIXED_BLOCK_1 + 1}>"
             else if (it in GLUE_NEGATIVE_ONE..GLUE_POSITIVE_SIXTEEN)
                 " <glue ${it.glueCharToGlueSize()}> "
             else if (it in 0xF0541..0xF055A) {
