@@ -50,7 +50,12 @@ class MovableType(
 
     var width = 0; private set
 
-    constructor(font: TerrarumSansBitmap, string: String, paperWidth: Int) : this(font, font.normaliseStringForMovableType(string), paperWidth)
+    constructor(
+        font: TerrarumSansBitmap,
+        string: String,
+        paperWidth: Int,
+        strategy: TypesettingStrategy = TypesettingStrategy.JUSTIFIED
+    ) : this(font, font.normaliseStringForMovableType(string), paperWidth, strategy)
 
     override fun dispose() {
         if (!disposed) {
@@ -68,7 +73,7 @@ class MovableType(
 //        println("Paper width: $paperWidth")
 
         val lines = inputText.tokenise()
-        lines.debugprint()
+//        lines.debugprint()
 
         lines.forEachIndexed { linenum, it ->
 //            println("Processing input text line ${linenum + 1} (word count: ${it.size})...")
@@ -141,7 +146,7 @@ class MovableType(
                 // don't hyphenate if:
                 // - the word is too short (5 chars or less)
                 // - the word is pre-hyphenated (ends with hyphen-null)
-                val glyphCount = box.text.count { it in 32..0xfffff }
+                val glyphCount = box.text.count { it in 32..0xFFF6F && it !in 0xFFF0..0xFFFF }
                 if (glyphCount <= (if (paperWidth < 350) 4 else if (paperWidth < 480) 5 else 6) || box.text.penultimate() == 0x2D)
                     return Triple(Double.POSITIVE_INFINITY, 2147483647, null)
 
@@ -375,7 +380,7 @@ class MovableType(
         private val periods = listOf(0x2E, 0x3A, 0x21, 0x3F, 0x2026, 0x3002, 0xff0e).toSortedSet()
         private val quots = listOf(0x22, 0x27, 0xAB, 0xBB, 0x2018, 0x2019, 0x201A, 0x201B, 0x201C, 0x201D, 0x201E, 0x201F, 0x2039, 0x203A).toSortedSet()
         private val commas = listOf(0x2C, 0x3B, 0x3001, 0xff0c).toSortedSet()
-        private val hangable = (listOf(0x2E, 0x2C, 0x3A, 0x3B, 0x22, 0x27) + (0x2018..0x201f)).toSortedSet()
+        private val hangable = (listOf(0x2E, 0x2C, 0x2D, 0x3A, 0x3B, 0x22, 0x27) + (0x2018..0x201f)).toSortedSet()
         private val hangableFW = listOf(0x3001, 0x3002, 0xff0c, 0xff0e).toSortedSet()
         private const val hangWidth = 6
         private const val hangWidthFW = 16
