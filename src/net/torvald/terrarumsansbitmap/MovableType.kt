@@ -180,10 +180,14 @@ class MovableType(
                 val difference = (paperWidth - slugWidth).absoluteValue
                 val badness = penaliseTightening(difference, availableGlues.toDouble())
 
-                return Triple(badness, difference, null)
+                // return -INF if you used up all the available glues
+                if (difference > availableGlues)
+                    return Triple(Double.POSITIVE_INFINITY, difference, null)
+                else
+                    return Triple(badness, difference, null)
             }
 
-            fun getBadnessH(box: NoTexGlyphLayout, diff: Int, availableGlues: Int, unindentSize: Int): Triple<Double, Int, Any?> {
+            fun getBadnessH(box: NoTexGlyphLayout, diff: Int, availableGlues: Int, unindentSize: Int, currentWidth: Int): Triple<Double, Int, Any?> {
                 // don't hyphenate if:
                 // - the word is too short (5 chars or less)
                 // - the word is pre-hyphenated (ends with hyphen-null)
@@ -191,23 +195,28 @@ class MovableType(
                 if (glyphCount <= (if (paperWidth < 350) 4 else if (paperWidth < 480) 5 else 6) || box.text.penultimate() == 0x2D)
                     return Triple(Double.POSITIVE_INFINITY, 2147483647, null)
 
-                val slug = slug.toMutableList()
-                val (hyphHead, hyphTail) = box.text.hyphenate(font, diff).toList().map { createGlyphLayout(font, it) }
+                val slug = slug.toMutableList() // ends with a glue
+
+                // calculate new slug width which contains the given box
+                val slugWidth = slugWidth + box.width - unindentSize
+
+//                println("Width: $slugWidth/$paperWidth")
+
+                val cutPoint = box.width - (slugWidth - paperWidth) + hyphenWidth
+                val (hyphHead, hyphTail) = box.text.hyphenate(font, cutPoint).toList().map { createGlyphLayout(font, it) }
+
+//                println("Hyphenating '${box.text.toReadable()}' at $cutPoint px -> ${hyphHead.text.toReadable()} ${hyphTail.text.toReadable()}")
 
                 if (hyphTail.text.isEmpty())
                     return Triple(Double.POSITIVE_INFINITY, 2147483647, null)
 
                 // add the hyphHead to the slug copy
                 val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
-                slug.add(Block(nextPosX, hyphHead))
+                slug.add(Block(nextPosX, hyphHead)) // now ends with 'word-'
 
-                var slugWidth = slugWidth + hyphHead.width - unindentSize
-                if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangable.contains(slug.last().block.penultimateCharOrNull))
-                    slugWidth -= hangWidth
-                else if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangableFW.contains(slug.last().block.penultimateCharOrNull))
-                    slugWidth -= hangWidthFW
+                val slugWidth1 = slug.last().getEndPos() - unindentSize - hyphenWidth
 
-                val difference = (paperWidth - slugWidth)
+                val difference = paperWidth - slugWidth1
                 val badness = penaliseHyphenation(difference.absoluteValue, availableGlues.toDouble())
 
                 return Triple(badness, difference, hyphHead to hyphTail)
@@ -280,7 +289,8 @@ class MovableType(
                                 box,
                                 box.width - slugWidthForOverflowCalc,
                                 initialGlueCount,
-                                slugUnindent
+                                slugUnindent,
+                                slugWidthForOverflowCalc + box.width
                             ) // widthDeltaH can be anything
 
                             badnessT -= 0.1 // try to break even
@@ -450,6 +460,7 @@ class MovableType(
         private val hangable = (listOf(0x2E, 0x2C, 0x2D, 0x3A, 0x3B, 0x22, 0x27) + (0x2018..0x201f)).toSortedSet()
         private val hangableFW = listOf(0x3001, 0x3002, 0xff0c, 0xff0e).toSortedSet()
         private const val hangWidth = 6
+        private const val hyphenWidth = 6
         private const val hangWidthFW = 16
 
         private fun CodePoint.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
