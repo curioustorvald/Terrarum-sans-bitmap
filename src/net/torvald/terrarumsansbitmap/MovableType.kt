@@ -278,7 +278,7 @@ class MovableType(
                             var (badnessW, widthDeltaW, _) = getBadnessW(
                                 box,
                                 initialGlueCount,
-                                slugWidthForOverflowCalc
+                                slugUnindent
                             ) // widthDeltaW is always positive
                             var (badnessT, widthDeltaT, _) = getBadnessT(
                                 box,
