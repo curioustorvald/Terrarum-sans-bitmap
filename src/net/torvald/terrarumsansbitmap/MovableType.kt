@@ -179,17 +179,26 @@ class MovableType(
 
                 if (box.isNotGlue()) {
                     // deal with the hangables
-                    val slugWidthForOverflowCalc = if (box.penultimateCharOrNull == null)
-                        slugWidth
-                    else if (hangable.contains(box.penultimateCharOrNull))
-                        slugWidth - hangWidth
-                    else if (hangableFW.contains(box.penultimateCharOrNull))
-                        slugWidth - hangWidthFW
-                    else
-                        slugWidth
+                    val slugWidthForOverflowCalc = when (strategy) {
+                        TypesettingStrategy.JUSTIFIED -> if (box.penultimateCharOrNull == null)
+                            slugWidth
+                        else if (hangable.contains(box.penultimateCharOrNull))
+                            slugWidth - hangWidth
+                        else if (hangableFW.contains(box.penultimateCharOrNull))
+                            slugWidth - hangWidthFW
+                        else
+                            slugWidth
+
+                        TypesettingStrategy.RAGGED_RIGHT -> slugWidth
+                    }
+
+                    val truePaperWidth = when (strategy) {
+                        TypesettingStrategy.JUSTIFIED -> paperWidth
+                        TypesettingStrategy.RAGGED_RIGHT -> paperWidth + 2
+                    }
 
                     // if adding the box would cause overflow
-                    if (slugWidthForOverflowCalc + box.width > paperWidth) {
+                    if (slugWidthForOverflowCalc + box.width > truePaperWidth) {
                         // if adding the box would cause overflow (justified)
                         if (strategy == TypesettingStrategy.JUSTIFIED) {
                             // text overflow occured; set the width to the max value
