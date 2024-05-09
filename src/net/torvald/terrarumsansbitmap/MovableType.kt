@@ -12,7 +12,7 @@ import kotlin.math.*
 import kotlin.properties.Delegates
 
 enum class TypesettingStrategy {
-    JUSTIFIED, RAGGED_RIGHT
+    JUSTIFIED, RAGGED_RIGHT, RAGGED_LEFT, CENTRED
 }
 
 /**
@@ -92,9 +92,46 @@ class MovableType(
 
                 width = maxOf(width, nextPosX + box.width)
             }
-            fun dispatchSlug() {
-//                typesettedSlugs.add(slug)
-                typesettedSlugs.add(slug.freezeIntoCodepointSequence(font))
+            fun dispatchSlug(align: TypesettingStrategy) {
+                val frozen = slug.freezeIntoCodepointSequence(font)
+
+                // insert empty blocks to the left
+                if (align == TypesettingStrategy.RAGGED_LEFT) {
+                    // has hangables?
+                    val penult = frozen.penultimateOrNull()
+                    val hang = if (penult == null)
+                        0
+                    else if (hangable.contains(penult))
+                        hangWidth
+                    else if (hangableFW.contains(penult))
+                        hangWidthFW
+                    else
+                        0
+
+                    val diff = paperWidth - (font.getWidthNormalised(frozen) - hang)
+                    if (diff != 0) {
+                        frozen.addAll(0, diff.glueSizeToGlueChars())
+                    }
+                }
+                else if (align == TypesettingStrategy.CENTRED) {
+                    // has hangables?
+                    val penult = frozen.penultimateOrNull()
+                    val hang = if (penult == null)
+                        0
+                    else if (hangable.contains(penult))
+                        hangWidth / 2
+                    else if (hangableFW.contains(penult))
+                        hangWidthFW / 2
+                    else
+                        0
+
+                    val diff = (paperWidth - (font.getWidthNormalised(frozen)) - hang) / 2
+                    if (diff != 0) {
+                        frozen.addAll(0, diff.glueSizeToGlueChars())
+                    }
+                }
+
+                typesettedSlugs.add(frozen)
 
                 slug = ArrayList()
                 slugWidth = 0
@@ -180,21 +217,25 @@ class MovableType(
                 if (box.isNotGlue()) {
                     // deal with the hangables
                     val slugWidthForOverflowCalc = when (strategy) {
-                        TypesettingStrategy.JUSTIFIED -> if (box.penultimateCharOrNull == null)
-                            slugWidth
-                        else if (hangable.contains(box.penultimateCharOrNull))
-                            slugWidth - hangWidth
-                        else if (hangableFW.contains(box.penultimateCharOrNull))
-                            slugWidth - hangWidthFW
-                        else
-                            slugWidth
+                        TypesettingStrategy.JUSTIFIED -> {
+                            val penult = box.penultimateCharOrNull
 
-                        TypesettingStrategy.RAGGED_RIGHT -> slugWidth
+                            if (penult == null)
+                                slugWidth
+                            else if (hangable.contains(penult))
+                                slugWidth - hangWidth
+                            else if (hangableFW.contains(penult))
+                                slugWidth - hangWidthFW
+                            else
+                                slugWidth
+                        }
+
+                        TypesettingStrategy.RAGGED_RIGHT, TypesettingStrategy.RAGGED_LEFT, TypesettingStrategy.CENTRED -> slugWidth
                     }
 
                     val truePaperWidth = when (strategy) {
                         TypesettingStrategy.JUSTIFIED -> paperWidth
-                        TypesettingStrategy.RAGGED_RIGHT -> paperWidth + 2
+                        TypesettingStrategy.RAGGED_RIGHT, TypesettingStrategy.RAGGED_LEFT, TypesettingStrategy.CENTRED -> paperWidth + 2
                     }
 
                     // if adding the box would cause overflow
@@ -324,10 +365,10 @@ class MovableType(
                             }
 
 //                        println("  > Line ${typesettedSlugs.size + 1} Final Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
-                            dispatchSlug()
+                            dispatchSlug(strategy)
                         }
-                        // if adding the box would cause overflow (ragged right)
-                        else if (strategy == TypesettingStrategy.RAGGED_RIGHT) {
+                        // if adding the box would cause overflow (ragged-something, centred)
+                        else {
                             // remove trailing glues
                             while (slug.lastOrNull()?.block?.isGlue() == true) {
                                 slug.removeLast()
@@ -335,10 +376,7 @@ class MovableType(
 
                             addHyphenatedTail(box)
 
-                            dispatchSlug()
-                        }
-                        else {
-                            throw UnsupportedOperationException("Unknown typesetting strategy: ${strategy.name}")
+                            dispatchSlug(strategy)
                         }
                     }
                     // typeset the boxes normally
@@ -353,7 +391,7 @@ class MovableType(
 
             if (!ignoreThisLine) {
 //                println("  > Line ${typesettedSlugs.size + 1} Final Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
-                dispatchSlug()
+                dispatchSlug(strategy)
             }
         } // end of lines.forEach
 
@@ -735,6 +773,9 @@ class MovableType(
 
         private fun <E> java.util.ArrayList<E>.penultimate(): E {
             return this[this.size - 2]
+        }
+        private fun <E> java.util.ArrayList<E>.penultimateOrNull(): E? {
+            return this.getOrNull(this.size - 2)
         }
 
         private fun penaliseWidening(score: Int, availableGlues: Double): Double =
