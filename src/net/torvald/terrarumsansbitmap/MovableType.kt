@@ -92,7 +92,7 @@ class MovableType(
 
                 width = maxOf(width, nextPosX + box.width)
             }
-            fun dispatchSlug(align: TypesettingStrategy) {
+            fun dispatchSlug(align: TypesettingStrategy, unindent: Int) {
                 val frozen = slug.freezeIntoCodepointSequence(font)
 
                 // insert empty blocks to the left
@@ -131,6 +131,10 @@ class MovableType(
                     }
                 }
 
+                if (unindent != 0) {
+                    frozen.addAll(0, (-unindent).glueSizeToGlueChars())
+                }
+
                 typesettedSlugs.add(frozen)
 
                 slug = ArrayList()
@@ -140,7 +144,7 @@ class MovableType(
             ///////////////////////////////////////////////////////////////////////////////////////////////
 
             // the slug is likely end with a glue, must take care of it (but don't modify the slug itself)
-            fun getBadnessW(box: NoTexGlyphLayout, availableGlues: Int): Triple<Double, Int, Any?> {
+            fun getBadnessW(box: NoTexGlyphLayout, availableGlues: Int, unindentSize: Int): Triple<Double, Int, Any?> {
                 val slug = slug.toMutableList()
 
                 // remove the trailing glue(s?) in the slug copy
@@ -148,7 +152,7 @@ class MovableType(
                     slug.removeLastOrNull()
                 }
 
-                var slugWidth = slug.lastOrNull()?.getEndPos() ?: 0
+                var slugWidth = (slug.lastOrNull()?.getEndPos() ?: 0) - unindentSize
                 if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangable.contains(slug.last().block.penultimateCharOrNull))
                     slugWidth -= hangWidth
                 else if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangableFW.contains(slug.last().block.penultimateCharOrNull))
@@ -160,14 +164,14 @@ class MovableType(
                 return Triple(badness, difference, null)
             }
 
-            fun getBadnessT(box: NoTexGlyphLayout, availableGlues: Int): Triple<Double, Int, Any?> {
+            fun getBadnessT(box: NoTexGlyphLayout, availableGlues: Int, unindentSize: Int): Triple<Double, Int, Any?> {
                 val slug = slug.toMutableList()
 
                 // add the box to the slug copy
                 val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
                 slug.add(Block(nextPosX, box))
 
-                var slugWidth = slugWidth + box.width
+                var slugWidth = slugWidth + box.width - unindentSize
                 if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangable.contains(slug.last().block.penultimateCharOrNull))
                     slugWidth -= hangWidth
                 else if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangableFW.contains(slug.last().block.penultimateCharOrNull))
@@ -179,7 +183,7 @@ class MovableType(
                 return Triple(badness, difference, null)
             }
 
-            fun getBadnessH(box: NoTexGlyphLayout, diff: Int, availableGlues: Int): Triple<Double, Int, Any?> {
+            fun getBadnessH(box: NoTexGlyphLayout, diff: Int, availableGlues: Int, unindentSize: Int): Triple<Double, Int, Any?> {
                 // don't hyphenate if:
                 // - the word is too short (5 chars or less)
                 // - the word is pre-hyphenated (ends with hyphen-null)
@@ -197,7 +201,7 @@ class MovableType(
                 val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
                 slug.add(Block(nextPosX, hyphHead))
 
-                var slugWidth = slugWidth + hyphHead.width
+                var slugWidth = slugWidth + hyphHead.width - unindentSize
                 if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangable.contains(slug.last().block.penultimateCharOrNull))
                     slugWidth -= hangWidth
                 else if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangableFW.contains(slug.last().block.penultimateCharOrNull))
@@ -216,21 +220,34 @@ class MovableType(
 
                 if (box.isNotGlue()) {
                     // deal with the hangables
+                    val firstChar = slug.firstOrNull()?.block?.secondCharOrNull
+                    val lastChar = box.penultimateCharOrNull
+                    val slugUnindent = when (strategy) {
+                        TypesettingStrategy.JUSTIFIED -> {
+                            if (firstChar == null)
+                                0
+                            else if (hangable.contains(firstChar))
+                                hangWidth
+                            else
+                                0
+                        }
+                        else -> 0
+                    }
+
+//                    if (slugUnindent != 0) println("Slug unindentation $slugUnindent on text ${slug.joinToString(" ") { it.block.text.toReadable() }}")
+
                     val slugWidthForOverflowCalc = when (strategy) {
                         TypesettingStrategy.JUSTIFIED -> {
-                            val penult = box.penultimateCharOrNull
-
-                            if (penult == null)
-                                slugWidth
-                            else if (hangable.contains(penult))
-                                slugWidth - hangWidth
-                            else if (hangableFW.contains(penult))
-                                slugWidth - hangWidthFW
+                            if (lastChar == null)
+                                slugWidth - slugUnindent
+                            else if (hangable.contains(lastChar))
+                                slugWidth - hangWidth - slugUnindent
+                            else if (hangableFW.contains(lastChar))
+                                slugWidth - hangWidthFW - slugUnindent
                             else
-                                slugWidth
+                                slugWidth - slugUnindent
                         }
-
-                        TypesettingStrategy.RAGGED_RIGHT, TypesettingStrategy.RAGGED_LEFT, TypesettingStrategy.CENTRED -> slugWidth
+                        else -> slugWidth
                     }
 
                     val truePaperWidth = when (strategy) {
@@ -251,16 +268,19 @@ class MovableType(
                             // widthDelta: can be positive or negative
                             var (badnessW, widthDeltaW, _) = getBadnessW(
                                 box,
-                                initialGlueCount
+                                initialGlueCount,
+                                slugWidthForOverflowCalc
                             ) // widthDeltaW is always positive
                             var (badnessT, widthDeltaT, _) = getBadnessT(
                                 box,
-                                initialGlueCount
+                                initialGlueCount,
+                                slugUnindent
                             ) // widthDeltaT is always positive
                             var (badnessH, widthDeltaH, hyph) = getBadnessH(
                                 box,
                                 box.width - slugWidthForOverflowCalc,
-                                initialGlueCount
+                                initialGlueCount,
+                                slugUnindent
                             ) // widthDeltaH can be anything
 
                             badnessT -= 0.1 // try to break even
@@ -365,7 +385,7 @@ class MovableType(
                             }
 
 //                        println("  > Line ${typesettedSlugs.size + 1} Final Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
-                            dispatchSlug(strategy)
+                            dispatchSlug(strategy, slugUnindent)
                         }
                         // if adding the box would cause overflow (ragged-something, centred)
                         else {
@@ -376,7 +396,7 @@ class MovableType(
 
                             addHyphenatedTail(box)
 
-                            dispatchSlug(strategy)
+                            dispatchSlug(strategy, slugUnindent)
                         }
                     }
                     // typeset the boxes normally
@@ -391,7 +411,7 @@ class MovableType(
 
             if (!ignoreThisLine) {
 //                println("  > Line ${typesettedSlugs.size + 1} Final Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
-                dispatchSlug(strategy)
+                dispatchSlug(strategy, 0)
             }
         } // end of lines.forEach
 
@@ -1080,6 +1100,8 @@ class MovableType(
         data class NoTexGlyphLayout(val text: CodepointSequence, val width: Int) {
             val penultimateCharOrNull: CodePoint?
                 get() = text.getOrNull(text.size - 2)
+            val secondCharOrNull: CodePoint?
+                get() = text.getOrNull(1)
         }
 
         private fun createGlyphLayout(font: TerrarumSansBitmap, str: CodepointSequence): NoTexGlyphLayout {
