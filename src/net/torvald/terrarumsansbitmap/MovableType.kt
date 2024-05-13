@@ -212,9 +212,10 @@ class MovableType(
 
                 // add the hyphHead to the slug copy
                 val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
-                slug.add(Block(nextPosX, hyphHead)) // now ends with 'word-'
+                slug.add(Block(nextPosX, hyphHead)) // now ends with 'word-' (but not in Hangul)
+                val hasHyphen = hyphHead.penultimateCharOrNull == 0x2D
 
-                val slugWidth1 = slug.last().getEndPos() - exdentSize - hyphenWidth
+                val slugWidth1 = slug.last().getEndPos() - exdentSize - hyphenWidth * hasHyphen.toInt()
 
                 val difference = paperWidth - slugWidth1
                 val badness = penaliseHyphenation(difference.absoluteValue, availableGlues.toDouble())
@@ -1137,7 +1138,8 @@ class MovableType(
             return out
         }
 
+        inline fun Boolean.toInt(shift: Int = 0) = if (this) 1.shl(shift) else 0
+
     } // end of companion object
 }
-
 
