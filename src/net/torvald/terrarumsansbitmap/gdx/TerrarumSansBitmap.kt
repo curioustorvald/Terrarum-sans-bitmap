@@ -387,7 +387,150 @@ class TerrarumSansBitmap(
         return null
     }
 
+    fun drawToPixmap(pixmap: Pixmap, string: String, x: Int, y: Int) {
+        drawNormalisedToPixmap(pixmap, string.toCodePoints(), x, y)
+    }
+
+    fun drawNormalisedToPixmap(pixmap: Pixmap, codepoints: CodepointSequence, x: Int, y: Int) {
+        val charSeqNotBlank = codepoints.size > 0 // determine emptiness BEFORE you hack a null chars in
+
+        if (charSeqNotBlank) {
+            val (linotypePixmap, _) = createLinotypePixmap(codepoints, false)
+            linotypePixmap.filter = Pixmap.Filter.NearestNeighbour
+
+            val linotypeScaleOffsetX = -linotypePaddingX * (scale - 1)
+            val linotypeScaleOffsetY = -linotypePaddingY * (scale - 1) * (if (flipY) -1 else 1)
+
+            pixmap.drawPixmap(linotypePixmap,
+                0, 0, linotypePixmap.width, linotypePixmap.height,
+                (x - linotypePaddingX) + linotypeScaleOffsetX,
+                (y - linotypePaddingY) + linotypeScaleOffsetY + (if (flipY) (linotypePixmap.height) else 0) * scale,
+                linotypePixmap.width * scale,
+                (linotypePixmap.height) * (if (flipY) -1 else 1) * scale
+            )
+
+            linotypePixmap.dispose()
+        }
+    }
+
+    internal fun createLinotypePixmap(newCodepoints: CodepointSequence, touchTheFlag: Boolean): Pair<Pixmap, Int> {
+        fun Int.flipY() = this * if (flipY) 1 else -1
+
+        var renderCol = -1 // subject to change with the colour code
+
+        val textBuffer = newCodepoints
+
+        val posmap = buildPosMap(textBuffer)
+
+        if (touchTheFlag)
+            flagFirstRun = false
+
+        //dbgprn("text not in buffer: $charSeq")
+
+
+        //textBuffer.forEach { print("${it.toHex()} ") }
+        //dbgprn()
+
+
+//                resetHash(charSeq, x.toFloat(), y.toFloat())
+
+        val textWidth = posmap.width
+        val _pw = textWidth + (linotypePaddingX * 2)
+        val _ph = H + (linotypePaddingY * 2)
+        if (_pw < 0 || _ph < 0) throw RuntimeException("Illegal linotype dimension (w: $_pw, h: $_ph)")
+        val linotypePixmap = Pixmap(_pw, _ph, Pixmap.Format.RGBA8888)
+
+
+        var index = 0
+        while (index <= textBuffer.lastIndex) {
+            try {
+                var c = textBuffer[index]
+                val sheetID = getSheetType(c)
+
+                val (sheetX, sheetY) =
+                    if (index == 0) getSheetwisePosition(0, c)
+                    else getSheetwisePosition(textBuffer[index - 1], c)
+                val hash = getHash(c) // to be used with Bad Transmission Modifier
+
+                if (isColourCode(c)) {
+                    if (c == 0x100000) {
+                        renderCol = -1
+                    }
+                    else {
+                        renderCol = getColour(c)
+                    }
+                }
+                else if (sheetID == SHEET_HANGUL) {
+                    // Flookahead for {I, P, F}
+
+                    val cNext = if (index + 1 < textBuffer.size) textBuffer[index + 1] else 0
+                    val cNextNext = if (index + 2 < textBuffer.size) textBuffer[index + 2] else 0
+
+                    val hangulLength = if (isHangulJongseong(cNextNext) && isHangulJungseong(cNext))
+                        3
+                    else if (isHangulJungseong(cNext))
+                        2
+                    else
+                        1
+
+                    val (indices, rows) = toHangulIndexAndRow(c, cNext, cNextNext)
+
+                    val (indexCho, indexJung, indexJong) = indices
+                    val (choRow, jungRow, jongRow) = rows
+                    val hangulSheet = sheets[SHEET_HANGUL]
+
+
+
+                    val choTex = hangulSheet.get(indexCho, choRow)
+                    val jungTex = hangulSheet.get(indexJung, jungRow)
+                    val jongTex = hangulSheet.get(indexJong, jongRow)
+
+                    linotypePixmap.drawPixmap(choTex,  posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                    linotypePixmap.drawPixmap(jungTex, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                    linotypePixmap.drawPixmap(jongTex, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+
+
+                    index += hangulLength - 1
+
+                }
+                else {
+                    try {
+                        val posY = posmap.y[index].flipY() +
+                                if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                    offsetUnihan
+                                else if (sheetID == SHEET_CUSTOM_SYM)
+                                    offsetCustomSym
+                                else 0
+
+                        val posX = posmap.x[index]
+                        val texture = sheets[sheetID].get(sheetX, sheetY)
+
+                        linotypePixmap.drawPixmap(texture, posX + linotypePaddingX, posY + linotypePaddingY, renderCol)
+
+
+                    }
+                    catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
+                    }
+                }
+
+
+                index++
+            }
+            catch (e: NullPointerException) {
+                System.err.println("Shit hit the multithreaded fan")
+                e.printStackTrace()
+                break
+            }
+        }
+
+
+        makeShadow(linotypePixmap)
+
+        return linotypePixmap to textWidth
+    }
+
     internal fun createTextCache(newCodepoints: CodepointSequence): TextCacheObj {
+        // look, I know it sounds absurd, but having this code NOT duplicated (by moving it into a separate function) will cause most of the text to turn into a black rectange
         fun Int.flipY() = this * if (flipY) 1 else -1
 
         var renderCol = -1 // subject to change with the colour code
@@ -498,6 +641,8 @@ class TerrarumSansBitmap(
 
 
         makeShadow(linotypePixmap)
+        // end of duplicated code
+        //val (linotypePixmap, textWidth) = createLinotypePixmap(newCodepoints, true)
 
         val tempLinotype = Texture(linotypePixmap)
         tempLinotype.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)

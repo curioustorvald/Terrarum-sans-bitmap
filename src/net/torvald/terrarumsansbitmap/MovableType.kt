@@ -1,7 +1,8 @@
 package net.torvald.terrarumsansbitmap
 
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.g2d.Batch
+import com.badlogic.gdx.graphics.Pixmap
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.Disposable
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
@@ -429,24 +430,32 @@ class MovableType(
         height = typesettedSlugs.size
     } }
 
-    fun draw(batch: Batch, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT) =
+    fun draw(batch: SpriteBatch, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT) =
         draw(batch, x.toFloat(), y.toFloat(), lineStart, linesToDraw, lineHeight)
 
-    fun draw(batch: Batch, x: Int, y: Int) =
+    fun draw(batch: SpriteBatch, x: Int, y: Int) =
         draw(batch, x.toFloat(), y.toFloat(), 0, 2147483647, TerrarumSansBitmap.LINE_HEIGHT)
 
-    fun draw(batch: Batch, x: Float, y: Float) =
+    fun draw(batch: SpriteBatch, x: Float, y: Float) =
         draw(batch, x, y, 0, 2147483647, TerrarumSansBitmap.LINE_HEIGHT)
 
     /**
      * @param drawJobs Draw call for specific lines (absolute line). This takes the form of Map from linnumber to draw function,
      * which has three arguments: (line's top-left position-x, line's top-left position-y, absolute line number)
      */
-    fun draw(batch: Batch, x: Float, y: Float, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT) {
+    fun draw(batch: SpriteBatch, x: Float, y: Float, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT) {
         if (isNull) return
 
         typesettedSlugs.subList(lineStart, minOf(typesettedSlugs.size, lineStart + linesToDraw)).forEachIndexed { lineNum, text ->
             font.drawNormalised(batch, text, x, y + lineNum * lineHeight * font.scale)
+        }
+    }
+
+    fun drawToPixmap(pixmap: Pixmap, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT) {
+        if (isNull) return
+
+        typesettedSlugs.subList(lineStart, minOf(typesettedSlugs.size, lineStart + linesToDraw)).forEachIndexed { lineNum, text ->
+            font.drawNormalisedToPixmap(pixmap, text, x, y + lineNum * lineHeight * font.scale)
         }
     }
 
