@@ -987,19 +987,19 @@ class MovableType(
         private val parenOpen = listOf(0x28,0x5B,0x7B).toSortedSet().also { it.addAll(cjparenStarts) }
         private val parenClose = listOf(0x29,0x5D,0x7D).toSortedSet().also { it.addAll(cjparenEnds) }
 
-        private const val ZWSP = 0x200B
-        private const val SHY = 0xAD
-        private const val NBSP = 0xA0
-        private const val GLUE_POSITIVE_ONE = 0xFFFF0
-        private const val GLUE_POSITIVE_SIXTEEN = 0xFFFFF
-        private const val GLUE_NEGATIVE_ONE = 0xFFFE0
-        private const val GLUE_NEGATIVE_SIXTEEN = 0xFFFEF
+        const val ZWSP = 0x200B
+        const val SHY = 0xAD
+        const val NBSP = 0xA0
+        const val GLUE_POSITIVE_ONE = 0xFFFF0
+        const val GLUE_POSITIVE_SIXTEEN = 0xFFFFF
+        const val GLUE_NEGATIVE_ONE = 0xFFFE0
+        const val GLUE_NEGATIVE_SIXTEEN = 0xFFFEF
 
         private fun CharArray.toSurrogatedString(): String = if (this.size == 1) "${this[0]}" else "${this[0]}${this[1]}"
 
         private inline fun Int.codepointToString() = Character.toChars(this).toSurrogatedString()
 
-        private fun CodepointSequence.toReadable() = this.joinToString("") {
+        fun CodepointSequence.toReadable() = this.joinToString("") {
             if (it in 0x00..0x1f)
                 "${(0x2400 + it).toChar()}"
             else if (it == 0x20 || it == 0xF0520)

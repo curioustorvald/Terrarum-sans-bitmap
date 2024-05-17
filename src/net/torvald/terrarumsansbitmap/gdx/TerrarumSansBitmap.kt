@@ -2355,9 +2355,9 @@ class TerrarumSansBitmap(
         internal const val CHARSET_OVERRIDE_SR_SR = 0xFFFC2
         internal const val CHARSET_OVERRIDE_CODESTYLE = 0xFFFC3
 
-        internal const val FIXED_BLOCK_1 = 0xFFFD0
-        internal const val MOVABLE_BLOCK_M1 = 0xFFFE0
-        internal const val MOVABLE_BLOCK_1 = 0xFFFF0
+        const val FIXED_BLOCK_1 = 0xFFFD0
+        const val MOVABLE_BLOCK_M1 = 0xFFFE0
+        const val MOVABLE_BLOCK_1 = 0xFFFF0
 
 
         private val autoShiftDownOnLowercase = arrayOf(
