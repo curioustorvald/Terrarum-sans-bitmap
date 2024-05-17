@@ -149,7 +149,7 @@ class MovableType(
                 val slug = slug.toMutableList()
 
                 // remove the trailing glue(s?) in the slug copy
-                while (slug.lastOrNull()?.block?.isGlue() == true) {
+                while (slug.lastOrNull()?.block?.isWhiteBox() == true) {
                     slug.removeLastOrNull()
                 }
 
@@ -167,6 +167,11 @@ class MovableType(
 
             fun getBadnessT(box: NoTexGlyphLayout, availableGlues: Int, exdentSize: Int): Triple<Double, Int, Any?> {
                 val slug = slug.toMutableList()
+
+                // remove the trailing glue(s?) in the slug copy
+                /*while (slug.lastOrNull()?.block?.isWhiteBox() == true) {
+                    slug.removeLastOrNull()
+                }*/
 
                 // add the box to the slug copy
                 val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
@@ -197,6 +202,11 @@ class MovableType(
                     return Triple(Double.POSITIVE_INFINITY, 2147483647, null)
 
                 val slug = slug.toMutableList() // ends with a glue
+
+                // remove the trailing glue(s?) in the slug copy
+                /*while (slug.lastOrNull()?.block?.isWhiteBox() == true) {
+                    slug.removeLastOrNull()
+                }*/
 
                 // calculate new slug width which contains the given box
                 val slugWidth = slugWidth + box.width - exdentSize
@@ -229,7 +239,7 @@ class MovableType(
             while (boxes.isNotEmpty()) {
                 val box = dequeue()
 
-                if (box.isNotGlue()) {
+                if (box.isNotWhiteBox()) {
                     // deal with the hangables
                     val firstChar = slug.firstOrNull()?.block?.secondCharOrNull
                     val lastChar = box.penultimateCharOrNull
@@ -990,6 +1000,7 @@ class MovableType(
         const val ZWSP = 0x200B
         const val SHY = 0xAD
         const val NBSP = 0xA0
+        const val OBJ = 0xFFFC
         const val GLUE_POSITIVE_ONE = 0xFFFF0
         const val GLUE_POSITIVE_SIXTEEN = 0xFFFFF
         const val GLUE_NEGATIVE_ONE = 0xFFFE0
@@ -1010,22 +1021,36 @@ class MovableType(
                 "{SHY}"
             else if (it == ZWSP)
                 "{ZWSP}"
+            else if (it == OBJ)
+                "{OBJ:"
             else if (it in FIXED_BLOCK_1..FIXED_BLOCK_1+15)
                 " <block ${it - FIXED_BLOCK_1 + 1}>"
             else if (it in GLUE_NEGATIVE_ONE..GLUE_POSITIVE_SIXTEEN)
                 " <glue ${it.glueCharToGlueSize()}> "
-            else if (it in 0xF0541..0xF055A) {
+            else if (it == 0x100000)
+                "{CC:null}"
+            else if (it in 0x10F000..0x10FFFF) {
+                val r = ((it and 0xF00) ushr 8).toString(16).toUpperCase()
+                val g = ((it and 0x0F0) ushr 4).toString(16).toUpperCase()
+                val b = ((it and 0x00F) ushr 0).toString(16).toUpperCase()
+                "{CC:#$r$g$b}"
+            }
+            else if (it in 0xFFF70..0xFFF79)
+                (it - 0xFFF70 + 0x30).codepointToString()
+            else if (it == 0xFFF7D)
+                "-"
+            else if (it in 0xFFF80..0xFFF9A)
+                (it - 0xFFF80 + 0x40).codepointToString()
+            else if (it == 0xFFF9F)
+                "}"
+            else if (it in 0xF0541..0xF055A)
                 (it - 0xF0541 + 0x1D670).codepointToString()
-            }
-            else if (it in 0xF0561..0xF057A) {
+            else if (it in 0xF0561..0xF057A)
                 (it - 0xF0561 + 0x1D68A).codepointToString()
-            }
-            else if (it in 0xF0530..0xF0539) {
+            else if (it in 0xF0530..0xF0539)
                 (it - 0xF0530 + 0x1D7F6).codepointToString()
-            }
-            else if (it in 0xF0520..0xF057F) {
+            else if (it in 0xF0520..0xF057F)
                 (it - 0xF0520 + 0x20).codepointToString()
-            }
             else if (it >= 0xF0000)
                 it.toHex() + " "
             else
@@ -1119,6 +1144,17 @@ class MovableType(
         }
 
         data class NoTexGlyphLayout(val text: CodepointSequence, val width: Int) {
+            /**
+             * This function differs from `isNotGlue()` in a way that a word-block containing internal representations only
+             * (e.g. ␀{CC:#000}{CC:#03B}{OBJ:HREF@ESNHK38DN79DFM8Y}␀) is considered as "White Box"
+             */
+            fun isNotWhiteBox(): Boolean {
+                if (text.isGlue()) return false
+                return (text.count { it in 32 until 0xFFF70 && it != OBJ && it != ZWSP && it != SHY }) > 0
+            }
+
+            fun isWhiteBox() = !isNotWhiteBox()
+
             val penultimateCharOrNull: CodePoint?
                 get() = text.getOrNull(text.size - 2)
             val secondCharOrNull: CodePoint?
