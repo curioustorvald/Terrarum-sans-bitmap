@@ -992,6 +992,9 @@ class MovableType(
         private val controlOuts = listOf(0xFFFBF, 0xFFFC0).toSortedSet()
         private val whitespaceGlues = hashMapOf(
             0x20 to 4,
+            0x2009 to 2,
+            0x200A to 1,
+            0x200B to 0,
             0x3000 to 16,
             0xF0520 to 7, // why????
         )
