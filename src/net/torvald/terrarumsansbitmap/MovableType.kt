@@ -488,6 +488,13 @@ class MovableType(
         private fun moveSlugsToFitTheWidth(operation: Int, slug: ArrayList<Block>, selectedWidthDelta: Int) {
             var gluesInfo = slug.mapIndexed { index, block -> block to index }.filter { (block, index) ->
                 block.block.isGlue()
+            }.let {
+                // if number of glue > 2, remove the last glue
+                if (it.size > 2)
+                    it.dropLast(1)
+                // else, pass as-is
+                else
+                    it
             }.map { (block, index) ->
                 val prevBlockEndsWith = if (index == 0) null else slug[index - 1].block.penultimateCharOrNull // last() will just return {NUL}
                 Triple(block, index, prevBlockEndsWith)
@@ -1146,11 +1153,12 @@ class MovableType(
         data class NoTexGlyphLayout(val text: CodepointSequence, val width: Int) {
             /**
              * This function differs from `isNotGlue()` in a way that a word-block containing internal representations only
-             * (e.g. ␀{CC:#000}{CC:#03B}{OBJ:HREF@ESNHK38DN79DFM8Y}␀) is considered as "White Box"
+             * (e.g. ␀{CC:#000}{CC:#03B}{OBJ:HREF@ESNHK38DN79DFM8Y}␀) is considered as "White Box" but
+             * (e.g. ␀{CC:#000}{CC:#03B}{OBJ:HREF@ESNHK38DN79DFM8Y} <Block n>␀) is not
              */
             fun isNotWhiteBox(): Boolean {
                 if (text.isGlue()) return false
-                return (text.count { it in 32 until 0xFFF70 && it != OBJ && it != ZWSP && it != SHY }) > 0
+                return (text.count { (it in 32 until 0xFFF70 || it in 0xFFFD0..0xFFFDF) && it != OBJ && it != ZWSP && it != SHY }) > 0
             }
 
             fun isWhiteBox() = !isNotWhiteBox()
