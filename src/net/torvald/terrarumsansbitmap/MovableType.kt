@@ -528,6 +528,7 @@ class MovableType(
             val operations = HashMap<Int, Int>() // key: index, value: number of hits
             var operationsSize = 0
 
+            var shuffleCnt = 0
             while (operationsSize < moveAmount) {
                 val li = gluesInfo.sortedBy { (block, index, thisWordEnd) ->
                     val priority = if (thisWordEnd == null)
@@ -541,7 +542,9 @@ class MovableType(
                     else
                         255
 
-                    (Math.random() * 65535).toInt().or(priority.shl(16))
+                    shuffleCnt = (shuffleCnt + (Math.random() * 65536)).toInt() and 0xFFFF
+
+                    (block.block.text.getHash() + shuffleCnt).toInt().or(priority.shl(16))
                 }
                 var c = 0
                 while (operationsSize < moveAmount && c < li.size) {
