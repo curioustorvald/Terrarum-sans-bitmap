@@ -7,10 +7,21 @@ import com.badlogic.gdx.utils.Disposable
 import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.EMSP
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.ENSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.FIXED_BLOCK_1
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.FSP
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.HSP
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.MQSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.NBSP
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.NQSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.OBJ
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.PSP
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.QUARTER_EMSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.SHY
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.SIX_PER_EMSP
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.THREE_PER_EMSP
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.THSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.ZWSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.glueCharToGlueSize
@@ -986,8 +997,17 @@ class MovableType(
         private val controlOuts = listOf(0xFFFBF, 0xFFFC0).toSortedSet()
         private val whitespaceGlues = hashMapOf(
             0x20 to 5, // this is deliberately 1 px wider!
-            0x2009 to 2,
-            0x200A to 1,
+            NQSP to 7,
+            MQSP to 13,
+            ENSP to 7,
+            EMSP to 13,
+            THREE_PER_EMSP to 5,
+            QUARTER_EMSP to 4,
+            SIX_PER_EMSP to 3,
+            FSP to 9,
+            PSP to 6,
+            THSP to 2,
+            HSP to 1,
             ZWSP to 0,
             0x3000 to 16,
             0xF0520 to 7, // why????

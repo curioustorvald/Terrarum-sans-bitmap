@@ -47,6 +47,7 @@ import java.io.FileOutputStream
 import java.util.*
 import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
+import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
@@ -1029,6 +1030,8 @@ class TerrarumSansBitmap(
 
     }
 
+    private fun Int.halveWidth() = this / 2 + 1
+
     private fun buildWidthTableInternal() {
         for (i in 0 until 16) {
             glyphProps[i] = GlyphProps(0)
@@ -1046,9 +1049,25 @@ class TerrarumSansBitmap(
             glyphProps[i] = GlyphProps(0)
         }
 
+        val figWidth = glyphProps[0x30]!!.width // 9 by default
+        val punctWidth = glyphProps[0x2E]!!.width // 6 by default
+        val em = 12 + 1
+
+        glyphProps[NQSP] = GlyphProps(em.halveWidth()) // 7
+        glyphProps[MQSP] = GlyphProps(em) // 13
+        glyphProps[ENSP] = GlyphProps(em.halveWidth()) // 7
+        glyphProps[EMSP] = GlyphProps(em) // 13
+        glyphProps[THREE_PER_EMSP] = GlyphProps(em / 3 + 1) // 5
+        glyphProps[QUARTER_EMSP] = GlyphProps(em / 4 + 1) // 4
+        glyphProps[SIX_PER_EMSP] = GlyphProps(em / 6 + 1) // 3
+        glyphProps[FSP] = GlyphProps(figWidth) // 9
+        glyphProps[PSP] = GlyphProps(punctWidth) // 6
+        glyphProps[THSP] = GlyphProps(2)
+        glyphProps[HSP] = GlyphProps(1)
+        glyphProps[ZWSP] = GlyphProps(0)
         glyphProps[ZWNJ] = GlyphProps(0)
         glyphProps[ZWJ] = GlyphProps(0)
-        glyphProps[ZWSP] = GlyphProps(0)
+
         glyphProps[SHY] = GlyphProps(0)
         glyphProps[OBJ] = GlyphProps(0)
     }
@@ -2620,9 +2639,20 @@ class TerrarumSansBitmap(
 
         internal fun Int.charInfo() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}: ${Character.getName(this)}"
 
+        const val NQSP = 0x2000
+        const val MQSP = 0x2001
+        const val ENSP = 0x2002
+        const val EMSP = 0x2003
+        const val THREE_PER_EMSP = 0x2004
+        const val QUARTER_EMSP = 0x2005
+        const val SIX_PER_EMSP = 0x2006
+        const val FSP = 0x2007
+        const val PSP = 0x2008
+        const val THSP = 0x2009
+        const val HSP = 0x200A
+        const val ZWSP = 0x200B
         const val ZWNJ = 0x200C
         const val ZWJ = 0x200D
-        const val ZWSP = 0x200B
         const val SHY = 0xAD
         const val NBSP = 0xA0
         const val OBJ = 0xFFFC
