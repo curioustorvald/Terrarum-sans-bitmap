@@ -985,7 +985,7 @@ class MovableType(
         private val controlIns = listOf(0xFFFA2, 0xFFFA3, 0xFFFC1, 0xFFFC2).toSortedSet()
         private val controlOuts = listOf(0xFFFBF, 0xFFFC0).toSortedSet()
         private val whitespaceGlues = hashMapOf(
-            0x20 to 4,
+            0x20 to 5, // this is deliberately 1 px wider!
             0x2009 to 2,
             0x200A to 1,
             ZWSP to 0,

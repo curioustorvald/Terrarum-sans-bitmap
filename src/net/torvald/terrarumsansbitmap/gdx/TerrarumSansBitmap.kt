@@ -50,7 +50,7 @@ import java.util.zip.GZIPInputStream
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
-class CodepointSequence {
+class CodepointSequence: MutableList<CodePoint> {
     private val data = ArrayList<CodePoint>()
 
     constructor()
@@ -59,7 +59,7 @@ class CodepointSequence {
         data.addAll(chars)
     }
 
-    val size; get() = data.size
+    override val size; get() = data.size
     val indices; get() = data.indices
     val lastIndex; get() = data.lastIndex
 
@@ -76,25 +76,40 @@ class CodepointSequence {
     fun last(predicate: (CodePoint) -> Boolean) = data.last(predicate)
     fun lastOrNull(predicate: (CodePoint) -> Boolean) = data.lastOrNull(predicate)
     fun filter(predicate: (CodePoint) -> Boolean) = data.filter(predicate)
-    fun add(index: Int, char: CodePoint) = data.add(index, char)
-    operator fun set(index: Int, char: CodePoint) {
-        data[index] = char
-    }
-    fun add(char: CodePoint) = data.add(char)
-    fun addAll(chars: Collection<CodePoint>) = data.addAll(chars)
+    override fun add(index: Int, char: CodePoint) = data.add(index, char)
+    override operator fun set(index: Int, char: CodePoint) = data.set(index, char)
+    override fun add(char: CodePoint) = data.add(char)
+    override fun addAll(chars: Collection<CodePoint>) = data.addAll(chars)
     fun addAll(cs: CodepointSequence) = data.addAll(cs.data)
-    fun removeAt(index: Int) = data.removeAt(index)
-    fun remove(char: CodePoint) = data.remove(char)
-    operator fun get(index: Int) = data[index]
+    override fun removeAt(index: Int) = data.removeAt(index)
+    override fun retainAll(elements: Collection<CodePoint>) = data.retainAll(elements)
+    override fun remove(char: CodePoint) = data.remove(char)
+    override operator fun get(index: Int) = data[index]
+    override fun indexOf(element: CodePoint) = data.indexOf(element)
     fun getOrNull(index: Int) = data.getOrNull(index)
     fun getOrElse(index: Int, action: (Int) -> CodePoint) = data.getOrElse(index, action)
-    fun isEmpty() = data.isEmpty()
+    override fun isEmpty() = data.isEmpty()
+    override fun iterator() = data.iterator()
+    override fun listIterator() = data.listIterator()
+    override fun listIterator(index: Int) = data.listIterator()
+    override fun lastIndexOf(element: CodePoint) = data.lastIndexOf(element)
     fun isNotEmpty() = data.isNotEmpty()
     fun count(predicate: (CodePoint) -> Boolean) = data.count(predicate)
-    fun addAll(index: Int, elements: Collection<CodePoint>) = data.addAll(index, elements)
+    fun all(predicate: (CodePoint) -> Boolean) = data.all(predicate)
+    fun any(predicate: (CodePoint) -> Boolean) = data.any(predicate)
+    fun none(predicate: (CodePoint) -> Boolean) = data.none(predicate)
+    override fun contains(char: CodePoint) = data.contains(char)
+    fun removeIf(predicate: (CodePoint) -> Boolean) = data.removeIf(predicate)
+    fun spliterator() = data.spliterator()
+    fun stream() = data.stream()
+    fun parallelStream() = data.parallelStream()
+    override fun removeAll(elements: Collection<CodePoint>) = data.removeAll(elements)
+    override fun addAll(index: Int, elements: Collection<CodePoint>) = data.addAll(index, elements)
     fun addAll(index: Int, elements: CodepointSequence) = data.addAll(index, elements.data)
-    fun subList(fromIndex: Int, toIndex: Int) = data.subList(fromIndex, toIndex)
+    override fun subList(fromIndex: Int, toIndex: Int) = data.subList(fromIndex, toIndex)
     fun slice(indices: IntRange) = data.slice(indices)
+    override fun clear() = data.clear()
+    override fun containsAll(elements: Collection<CodePoint>) = data.containsAll(elements)
 
     fun penultimate() = data[data.size - 2]
     fun penultimateOrNull() = data.getOrNull(data.size - 2)
