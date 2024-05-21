@@ -33,18 +33,133 @@ import com.badlogic.gdx.utils.GdxRuntimeException
 import net.torvald.terrarumsansbitmap.DiacriticsAnchor
 import net.torvald.terrarumsansbitmap.GlyphProps
 import net.torvald.terrarumsansbitmap.MovableType
+import net.torvald.terrarumsansbitmap.MovableType.Companion.GLUE_NEGATIVE_ONE
+import net.torvald.terrarumsansbitmap.MovableType.Companion.GLUE_POSITIVE_SIXTEEN
 import net.torvald.terrarumsansbitmap.TypesettingStrategy
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.FIXED_BLOCK_1
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.NBSP
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.OBJ
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.SHY
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.ZWSP
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.glueCharToGlueSize
 import java.io.BufferedOutputStream
 import java.io.FileOutputStream
 import java.util.*
 import java.util.zip.CRC32
 import java.util.zip.GZIPInputStream
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
-typealias CodepointSequence = ArrayList<CodePoint>
+class CodepointSequence {
+    private val data = ArrayList<CodePoint>()
+
+    constructor()
+
+    constructor(chars: Collection<CodePoint>) {
+        data.addAll(chars)
+    }
+
+    val size; get() = data.size
+    val indices; get() = data.indices
+    val lastIndex; get() = data.lastIndex
+
+    fun forEach(action: (CodePoint) -> Unit) = data.forEach(action)
+    fun forEachIndexed(action: (Int, CodePoint) -> Unit) = data.forEachIndexed(action)
+    fun map(action: (CodePoint) -> Any?) = data.map(action)
+    fun mapInxeded(action: (Int, CodePoint) -> Any?) = data.mapIndexed(action)
+    fun first() = data.first()
+    fun firstOrNull() = data.firstOrNull()
+    fun first(predicate: (CodePoint) -> Boolean) = data.first(predicate)
+    fun firstOrNull(predicate: (CodePoint) -> Boolean) = data.firstOrNull(predicate)
+    fun last() = data.last()
+    fun lastOrNull() = data.lastOrNull()
+    fun last(predicate: (CodePoint) -> Boolean) = data.last(predicate)
+    fun lastOrNull(predicate: (CodePoint) -> Boolean) = data.lastOrNull(predicate)
+    fun filter(predicate: (CodePoint) -> Boolean) = data.filter(predicate)
+    fun add(index: Int, char: CodePoint) = data.add(index, char)
+    operator fun set(index: Int, char: CodePoint) {
+        data[index] = char
+    }
+    fun add(char: CodePoint) = data.add(char)
+    fun addAll(chars: Collection<CodePoint>) = data.addAll(chars)
+    fun addAll(cs: CodepointSequence) = data.addAll(cs.data)
+    fun removeAt(index: Int) = data.removeAt(index)
+    fun remove(char: CodePoint) = data.remove(char)
+    operator fun get(index: Int) = data[index]
+    fun getOrNull(index: Int) = data.getOrNull(index)
+    fun getOrElse(index: Int, action: (Int) -> CodePoint) = data.getOrElse(index, action)
+    fun isEmpty() = data.isEmpty()
+    fun isNotEmpty() = data.isNotEmpty()
+    fun count(predicate: (CodePoint) -> Boolean) = data.count(predicate)
+    fun addAll(index: Int, elements: Collection<CodePoint>) = data.addAll(index, elements)
+    fun addAll(index: Int, elements: CodepointSequence) = data.addAll(index, elements.data)
+    fun subList(fromIndex: Int, toIndex: Int) = data.subList(fromIndex, toIndex)
+    fun slice(indices: IntRange) = data.slice(indices)
+
+    fun penultimate() = data[data.size - 2]
+    fun penultimateOrNull() = data.getOrNull(data.size - 2)
+
+    fun toArray() = data.toArray()
+    fun toList() = data.toList()
+
+
+    fun isGlue() = data.size == 1 && (data[0] == ZWSP || data[0] in 0xFFFE0..0xFFFFF)
+    fun isNotGlue() = !isGlue()
+    fun isZeroGlue() = data.size == 1 && (data[0] == ZWSP)
+
+    private fun CharArray.toSurrogatedString(): String = if (this.size == 1) "${this[0]}" else "${this[0]}${this[1]}"
+    private inline fun Int.codepointToString() = Character.toChars(this).toSurrogatedString()
+    private fun CodePoint.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
+
+    fun toHexes() = data.joinToString(" ") { it.toHex() }
+
+    fun toReadable() = data.joinToString("") {
+        if (it in 0x00..0x1f)
+            "${(0x2400 + it).toChar()}"
+        else if (it == 0x20 || it == 0xF0520)
+            "\u2423"
+        else if (it == NBSP)
+            "{NBSP}"
+        else if (it == SHY)
+            "{SHY}"
+        else if (it == ZWSP)
+            "{ZWSP}"
+        else if (it == OBJ)
+            "{OBJ:"
+        else if (it in FIXED_BLOCK_1..FIXED_BLOCK_1 +15)
+            " <block ${it - FIXED_BLOCK_1 + 1}>"
+        else if (it in GLUE_NEGATIVE_ONE..GLUE_POSITIVE_SIXTEEN)
+            " <glue ${it.glueCharToGlueSize()}> "
+        else if (it == 0x100000)
+            "{CC:null}"
+        else if (it in 0x10F000..0x10FFFF) {
+            val r = ((it and 0xF00) ushr 8).toString(16).toUpperCase()
+            val g = ((it and 0x0F0) ushr 4).toString(16).toUpperCase()
+            val b = ((it and 0x00F) ushr 0).toString(16).toUpperCase()
+            "{CC:#$r$g$b}"
+        }
+        else if (it in 0xFFF70..0xFFF79)
+            (it - 0xFFF70 + 0x30).codepointToString()
+        else if (it == 0xFFF7D)
+            "-"
+        else if (it in 0xFFF80..0xFFF9A)
+            (it - 0xFFF80 + 0x40).codepointToString()
+        else if (it == 0xFFF9F)
+            "}"
+        else if (it in 0xF0541..0xF055A)
+            (it - 0xF0541 + 0x1D670).codepointToString()
+        else if (it in 0xF0561..0xF057A)
+            (it - 0xF0561 + 0x1D68A).codepointToString()
+        else if (it in 0xF0530..0xF0539)
+            (it - 0xF0530 + 0x1D7F6).codepointToString()
+        else if (it in 0xF0520..0xF057F)
+            (it - 0xF0520 + 0x20).codepointToString()
+        else if (it >= 0xF0000)
+            it.toHex() + " "
+        else
+            Character.toString(it.toChar())
+    }
+}
 internal typealias CodePoint = Int
 internal typealias ARGB8888 = Int
 internal typealias Hash = Long
@@ -330,7 +445,7 @@ class TerrarumSansBitmap(
     private val offsetCustomSym = (H - SIZE_CUSTOM_SYM) / 2
 
     private var flagFirstRun = true
-    private var textBuffer = CodepointSequence(256)
+    private var textBuffer = CodepointSequence()
 
     private lateinit var tempLinotype: Texture
 
@@ -918,19 +1033,38 @@ class TerrarumSansBitmap(
         for (i in 0xFFF70..0xFFF9F) {
             glyphProps[i] = GlyphProps(0)
         }
+
+        glyphProps[ZWNJ] = GlyphProps(0)
+        glyphProps[ZWJ] = GlyphProps(0)
+        glyphProps[ZWSP] = GlyphProps(0)
+        glyphProps[SHY] = GlyphProps(0)
+        glyphProps[OBJ] = GlyphProps(0)
     }
 
     private fun setupDynamicTextReplacer() {
         // replace NBSP into a block of same width
         val spaceWidth = glyphProps[32]?.width ?: throw IllegalStateException()
         if (spaceWidth > 16) throw InternalError("Space (U+0020) character is too wide ($spaceWidth)")
-        textReplaces[0xA0] = FIXED_BLOCK_1 + (spaceWidth - 1)
+        textReplaces[NBSP] = FIXED_BLOCK_1 + (spaceWidth - 1)
     }
 
     fun getWidth(text: String) = getWidthNormalised(text.toCodePoints())
     fun getWidth(s: CodepointSequence) = getWidthNormalised(s.normalise())
 
     fun getWidthNormalised(s: CodepointSequence): Int {
+        if (s.isEmpty())
+            return 0
+
+        if (s.size == 1) {
+            return glyphProps[s.first()]?.width ?: (
+                    if (errorOnUnknownChar)
+                        throw InternalError("No GlyphProps for char '${s.first().toHex()}' " +
+                                "(${s.first().charInfo()})")
+                    else
+                        0
+                    )
+        }
+
         val cacheObj = getCache(s.getHash())
 
         if (cacheObj != null) {
@@ -949,7 +1083,7 @@ class TerrarumSansBitmap(
      * @return Pair of X-positions and Y-positions, of which the X-position's size is greater than the string
      * and the last element marks the width of entire string.
      */
-    private fun buildPosMap(str: List<Int>): Posmap {
+    private fun buildPosMap(str: CodepointSequence): Posmap {
         val posXbuffer = IntArray(str.size + 1) { 0 }
         val posYbuffer = IntArray(str.size) { 0 }
 
@@ -1130,7 +1264,7 @@ class TerrarumSansBitmap(
                 val penultCharProp = glyphProps[str[nonDiacriticCounter]] ?:
                 (if (errorOnUnknownChar) throw throw InternalError("No GlyphProps for char '${str[nonDiacriticCounter]}' " +
                         "(${str[nonDiacriticCounter].charInfo()})") else nullProp)
-                posXbuffer[posXbuffer.lastIndex] = 1 + posXbuffer[posXbuffer.lastIndex - 1] + // adding 1 to house the shadow
+                posXbuffer[posXbuffer.lastIndex] = posXbuffer[posXbuffer.lastIndex - 1] + // DON'T add 1 to house the shadow, it totally breaks stuffs
                         if (lastCharProp != null && lastCharProp.writeOnTop >= 0) {
                             val realDiacriticWidth = if (lastCharProp.alignWhere == GlyphProps.ALIGN_CENTRE) {
                                 (lastCharProp.width).div(2) + penultCharProp.diacriticsAnchors[0].x
@@ -2221,6 +2355,13 @@ class TerrarumSansBitmap(
 
     companion object {
 
+        internal fun CodePoint.glueCharToGlueSize() = when (this) {
+            ZWSP -> 0
+            in 0xFFFE0..0xFFFEF -> -(this - 0xFFFE0 + 1)
+            in 0xFFFF0..0xFFFFF -> this - 0xFFFF0 + 1
+            else -> throw IllegalArgumentException()
+        }
+
         const internal val linotypePaddingX = 16
         const internal val linotypePaddingY = 10
 
@@ -2467,8 +2608,12 @@ class TerrarumSansBitmap(
 
         internal fun Int.charInfo() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}: ${Character.getName(this)}"
 
-        private const val ZWNJ = 0x200C
-        private const val ZWJ = 0x200D
+        const val ZWNJ = 0x200C
+        const val ZWJ = 0x200D
+        const val ZWSP = 0x200B
+        const val SHY = 0xAD
+        const val NBSP = 0xA0
+        const val OBJ = 0xFFFC
 
         private val tamilLigatingConsonants = listOf('க','ங','ச','ஞ','ட','ண','த','ந','ன','ப','ம','ய','ர','ற','ல','ள','ழ','வ').map { it.toInt() }.toIntArray() // this is the only thing that .indexOf() is called against, so NO HASHSET
         private const val TAMIL_KSSA = 0xF00ED

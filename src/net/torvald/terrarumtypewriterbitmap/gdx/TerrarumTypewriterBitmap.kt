@@ -278,7 +278,7 @@ class TerrarumTypewriterBitmap(
     private val pixmapOffsetY = 10
     private val linotypePad = 16
     private var flagFirstRun = true
-    private @Volatile var textBuffer = CodepointSequence(256)
+    private @Volatile var textBuffer = CodepointSequence()
     private @Volatile lateinit var tempLinotype: Texture
     private var nullProp = GlyphProps(15)
 
@@ -395,6 +395,8 @@ class TerrarumTypewriterBitmap(
         return null
     }
 
+
+    private fun buildPosMap(str: CodepointSequence) = buildPosMap(str.toList())
 
     /**
      * posXbuffer's size is greater than the string, last element marks the width of entire string.

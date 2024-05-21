@@ -8,7 +8,12 @@ import net.torvald.terrarumsansbitmap.gdx.CodePoint
 import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.FIXED_BLOCK_1
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.NBSP
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.OBJ
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.SHY
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.ZWSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.glueCharToGlueSize
 import kotlin.math.*
 import kotlin.properties.Delegates
 
@@ -87,7 +92,7 @@ class MovableType(
             fun dequeue() = boxes.removeFirst()
             fun addHyphenatedTail(box: NoTexGlyphLayout) = boxes.add(0, box)
             fun addToSlug(box: NoTexGlyphLayout) {
-                val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
+                val nextPosX = slug.getSlugEndPos()
                 slug.add(Block(nextPosX, box))
                 slugWidth += box.width
 
@@ -140,6 +145,9 @@ class MovableType(
 
                 slug = ArrayList()
                 slugWidth = 0
+
+
+//                println("Frozen slug: ${frozen.toReadable()}")
             }
 
             ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +161,7 @@ class MovableType(
                     slug.removeLastOrNull()
                 }
 
-                var slugWidth = (slug.lastOrNull()?.getEndPos() ?: 0) - exdentSize
+                var slugWidth = slug.getSlugEndPos() - exdentSize
                 if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangable.contains(slug.last().block.penultimateCharOrNull))
                     slugWidth -= hangWidth
                 else if (slug.isNotEmpty() && slug.last().block.penultimateCharOrNull != null && hangableFW.contains(slug.last().block.penultimateCharOrNull))
@@ -174,7 +182,7 @@ class MovableType(
                 }*/
 
                 // add the box to the slug copy
-                val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
+                val nextPosX = slug.getSlugEndPos()
                 slug.add(Block(nextPosX, box))
 
                 var slugWidth = slugWidth + box.width - exdentSize
@@ -198,7 +206,7 @@ class MovableType(
                 // - the word is too short (5 chars or less)
                 // - the word is pre-hyphenated (ends with hyphen-null)
                 val glyphCount = box.text.count { it in 32..0xFFF6F && it !in 0xFFF0..0xFFFF }
-                if (glyphCount <= (if (paperWidth < 350) 4 else if (paperWidth < 480) 5 else 6) || box.text.penultimate() == 0x2D)
+                if (glyphCount <= (if (paperWidth < 350) 3 else if (paperWidth < 480) 4 else 5) || box.text.penultimate() == 0x2D)
                     return Triple(Double.POSITIVE_INFINITY, 2147483647, null)
 
                 val slug = slug.toMutableList() // ends with a glue
@@ -222,7 +230,7 @@ class MovableType(
                     return Triple(Double.POSITIVE_INFINITY, 2147483647, null)
 
                 // add the hyphHead to the slug copy
-                val nextPosX = (slug.lastOrNull()?.getEndPos() ?: 0)
+                val nextPosX = slug.getSlugEndPos()
                 slug.add(Block(nextPosX, hyphHead)) // now ends with 'word-' (but not in Hangul)
                 val hasHyphen = hyphHead.penultimateCharOrNull == 0x2D
 
@@ -322,7 +330,7 @@ class MovableType(
 
                             if (badnessH.isInfinite() && badnessW.isInfinite() && badnessT.isInfinite()) {
                                 throw Error(
-                                    "Typesetting failed: badness of all three strategies diverged to infinity\ntext (${slug.size} tokens): ${
+                                    "Typesetting failed: badness of all three strategies diverged to infinity. Try adding white spaces to the text.\nThe text (${slug.size} tokens): ${
                                         slug.map { it.block.text }.filter { it.isNotGlue() }
                                             .joinToString(" ") { it.toReadable() }
                                     }"
@@ -586,9 +594,9 @@ class MovableType(
             var cM: CodePoint? = null
             var glue = 0
 
-            fun getControlHeader(row: Int, word: Int): CodepointSequence {
+            fun getControlHeader(row: Int, word: Int): List<Int> {
                 val index = row * 65536 or word
-                val ret = CodepointSequence(controlCharList.filter { index > it.second }.map { it.first })
+                val ret = controlCharList.filter { index > it.second }.map { it.first }
                 return ret
             }
 
@@ -832,13 +840,6 @@ class MovableType(
             return lines
         }
 
-        private fun <E> java.util.ArrayList<E>.penultimate(): E {
-            return this[this.size - 2]
-        }
-        private fun <E> java.util.ArrayList<E>.penultimateOrNull(): E? {
-            return this.getOrNull(this.size - 2)
-        }
-
         private fun penaliseWidening(score: Int, availableGlues: Double): Double =
             100.0 * (score / availableGlues).pow(3.0)
 //            pow(score.toDouble(), 2.0)
@@ -873,16 +874,6 @@ class MovableType(
         private fun CodePoint?.isThaiConso() = if (this == null) false else this in 0x0E01..0x0E2F
         private fun CodePoint?.isThaiVowel() = if (this == null) false else (this in 0x0E30..0x0E3E || this in 0x0E40..0x0E4E)
 
-        private fun CodepointSequence.isGlue() = this.size == 1 && (this[0] == ZWSP || this[0] in 0xFFFE0..0xFFFFF)
-        private fun CodepointSequence.isNotGlue() = !this.isGlue()
-        private fun CodepointSequence.isZeroGlue() = this.size == 1 && (this[0] == ZWSP)
-        private fun CodePoint.glueCharToGlueSize() = when (this) {
-            ZWSP -> 0
-            in 0xFFFE0..0xFFFEF -> -(this - 0xFFFE0 + 1)
-            in 0xFFFF0..0xFFFFF -> this - 0xFFFF0 + 1
-            else -> throw IllegalArgumentException()
-        }
-
         private fun CodePoint?.isWesternPunctOrQuotes() = if (this == null) false else (westernPuncts.contains(this) || quots.contains(this))
         private fun CodePoint?.isParens() = if (this == null) false else parens.contains(this)
         private fun CodePoint?.isParenOpen() = if (this == null) false else parenOpen.contains(this)
@@ -893,7 +884,7 @@ class MovableType(
 
         /**
          * Hyphenates the word at the middle ("paragraph" -> "para-graph")
-         * 
+         *
          * @return left word ("para-"), right word ("graph")
          */
         private fun CodepointSequence.hyphenate(font: TerrarumSansBitmap, optimalCuttingPointInPx: Int): Pair<CodepointSequence, CodepointSequence> {
@@ -997,7 +988,7 @@ class MovableType(
             0x20 to 4,
             0x2009 to 2,
             0x200A to 1,
-            0x200B to 0,
+            ZWSP to 0,
             0x3000 to 16,
             0xF0520 to 7, // why????
         )
@@ -1010,10 +1001,6 @@ class MovableType(
         private val parenOpen = listOf(0x28,0x5B,0x7B).toSortedSet().also { it.addAll(cjparenStarts) }
         private val parenClose = listOf(0x29,0x5D,0x7D).toSortedSet().also { it.addAll(cjparenEnds) }
 
-        const val ZWSP = 0x200B
-        const val SHY = 0xAD
-        const val NBSP = 0xA0
-        const val OBJ = 0xFFFC
         const val GLUE_POSITIVE_ONE = 0xFFFF0
         const val GLUE_POSITIVE_SIXTEEN = 0xFFFFF
         const val GLUE_NEGATIVE_ONE = 0xFFFE0
@@ -1022,54 +1009,6 @@ class MovableType(
         private fun CharArray.toSurrogatedString(): String = if (this.size == 1) "${this[0]}" else "${this[0]}${this[1]}"
 
         private inline fun Int.codepointToString() = Character.toChars(this).toSurrogatedString()
-
-        fun CodepointSequence.toReadable() = this.joinToString("") {
-            if (it in 0x00..0x1f)
-                "${(0x2400 + it).toChar()}"
-            else if (it == 0x20 || it == 0xF0520)
-                "\u2423"
-            else if (it == NBSP)
-                "{NBSP}"
-            else if (it == SHY)
-                "{SHY}"
-            else if (it == ZWSP)
-                "{ZWSP}"
-            else if (it == OBJ)
-                "{OBJ:"
-            else if (it in FIXED_BLOCK_1..FIXED_BLOCK_1+15)
-                " <block ${it - FIXED_BLOCK_1 + 1}>"
-            else if (it in GLUE_NEGATIVE_ONE..GLUE_POSITIVE_SIXTEEN)
-                " <glue ${it.glueCharToGlueSize()}> "
-            else if (it == 0x100000)
-                "{CC:null}"
-            else if (it in 0x10F000..0x10FFFF) {
-                val r = ((it and 0xF00) ushr 8).toString(16).toUpperCase()
-                val g = ((it and 0x0F0) ushr 4).toString(16).toUpperCase()
-                val b = ((it and 0x00F) ushr 0).toString(16).toUpperCase()
-                "{CC:#$r$g$b}"
-            }
-            else if (it in 0xFFF70..0xFFF79)
-                (it - 0xFFF70 + 0x30).codepointToString()
-            else if (it == 0xFFF7D)
-                "-"
-            else if (it in 0xFFF80..0xFFF9A)
-                (it - 0xFFF80 + 0x40).codepointToString()
-            else if (it == 0xFFF9F)
-                "}"
-            else if (it in 0xF0541..0xF055A)
-                (it - 0xF0541 + 0x1D670).codepointToString()
-            else if (it in 0xF0561..0xF057A)
-                (it - 0xF0561 + 0x1D68A).codepointToString()
-            else if (it in 0xF0530..0xF0539)
-                (it - 0xF0530 + 0x1D7F6).codepointToString()
-            else if (it in 0xF0520..0xF057F)
-                (it - 0xF0520 + 0x20).codepointToString()
-            else if (it >= 0xF0000)
-                it.toHex() + " "
-            else
-                Character.toString(it.toChar())
-        }
-
 
         private fun List<ArrayList<CodepointSequence>>.debugprint() {
             println("Tokenised (${this.size} lines):")
@@ -1139,13 +1078,15 @@ class MovableType(
             val input = this.filter { it.block.text.isNotGlue() }
             if (input.isEmpty()) return out
 
+//            println("freezeIntoCodepointSequence ${input.joinToString { "${it.posX}..${it.getEndPos()}" }}")
+
             // process line indents
             if (input.first().posX > 0)
                 out.addAll(input.first().posX.glueSizeToGlueChars())
 
             // process blocks
             input.forEachIndexed { index, it ->
-                val posX = it.posX + 1 - font.interchar * 2
+                val posX = it.posX - font.interchar * 2
                 val prevEndPos = if (index == 0) 0 else input[index-1].getEndPos()
                 if (index > 0 && posX != prevEndPos) {
                     out.addAll((posX - prevEndPos).glueSizeToGlueChars())
@@ -1187,7 +1128,7 @@ class MovableType(
 
             // process blocks
             input.forEachIndexed { index, it ->
-                val posX = it.posX + 1 - font.interchar * 2
+                val posX = it.posX - font.interchar * 2
                 val prevEndPos = if (index == 0) 0 else input[index-1].getEndPos()
                 if (index > 0 && posX != prevEndPos) {
                     out += posX - prevEndPos
@@ -1199,6 +1140,10 @@ class MovableType(
 
         inline fun Boolean.toInt(shift: Int = 0) = if (this) 1.shl(shift) else 0
 
+        private fun List<Block>.getSlugEndPos(): Int {
+            return this.lastOrNull()?.getEndPos() ?: 0
+        }
     } // end of companion object
 }
+
 
