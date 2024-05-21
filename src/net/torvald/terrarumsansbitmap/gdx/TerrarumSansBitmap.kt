@@ -1071,13 +1071,13 @@ class TerrarumSansBitmap(
             return 0
 
         if (s.size == 1) {
-            return glyphProps[s.first()]?.width ?: (
+            return scale * (glyphProps[s.first()]?.width ?: (
                     if (errorOnUnknownChar)
                         throw InternalError("No GlyphProps for char '${s.first().toHex()}' " +
                                 "(${s.first().charInfo()})")
                     else
                         0
-                    )
+                    ))
         }
 
         val cacheObj = getCache(s.getHash())

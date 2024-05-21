@@ -1086,7 +1086,7 @@ class MovableType(
 
             // process blocks
             input.forEachIndexed { index, it ->
-                val posX = it.posX - font.interchar * 2
+                val posX = it.posX
                 val prevEndPos = if (index == 0) 0 else input[index-1].getEndPos()
                 if (index > 0 && posX != prevEndPos) {
                     out.addAll((posX - prevEndPos).glueSizeToGlueChars())
@@ -1128,7 +1128,7 @@ class MovableType(
 
             // process blocks
             input.forEachIndexed { index, it ->
-                val posX = it.posX - font.interchar * 2
+                val posX = it.posX
                 val prevEndPos = if (index == 0) 0 else input[index-1].getEndPos()
                 if (index > 0 && posX != prevEndPos) {
                     out += posX - prevEndPos
