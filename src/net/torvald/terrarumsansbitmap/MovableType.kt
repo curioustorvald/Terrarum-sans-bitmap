@@ -324,8 +324,8 @@ class MovableType(
                                 slugWidthForOverflowCalc + box.width
                             ) // widthDeltaH can be anything
 
-                            badnessT -= 0.1 // try to break even
-                            badnessH -= 0.01 // try to break even
+                            badnessW -= 0.001 // try to break even
+                            badnessT -= 0.01 // try to break even
                             val disableHyphThre = 5.0
 
                             // disable hyphenation if badness of others is lower than the threshold
@@ -852,10 +852,10 @@ class MovableType(
         }
 
         private fun penaliseWidening(score: Int, availableGlues: Double): Double =
-            100.0 * (score / availableGlues).pow(3.0)
+            100.0 * (score / availableGlues.plus(score)).pow(3.0)
 //            pow(score.toDouble(), 2.0)
         private fun penaliseTightening(score: Int, availableGlues: Double): Double =
-            100.0 * (score / availableGlues).pow(3.0)
+            100.0 * (score / availableGlues.minus(score).coerceAtLeast(0.0)).pow(3.0)
 //            pow(score.toDouble(), 2.0)
         private fun penaliseHyphenation(score: Int, availableGlues: Double): Double =
             100.0 * (score / availableGlues).pow(3.0)
@@ -996,7 +996,7 @@ class MovableType(
         private val controlIns = listOf(0xFFFA2, 0xFFFA3, 0xFFFC1, 0xFFFC2).toSortedSet()
         private val controlOuts = listOf(0xFFFBF, 0xFFFC0).toSortedSet()
         private val whitespaceGlues = hashMapOf(
-            0x20 to 5, // this is deliberately 1 px wider!
+            0x20 to 4, // this is deliberately 1 px wider!
             NQSP to 7,
             MQSP to 13,
             ENSP to 7,
