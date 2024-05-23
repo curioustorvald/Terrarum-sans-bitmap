@@ -89,7 +89,7 @@ class MovableType(
 
 //        println("Paper width: $paperWidth")
 
-        val lines = inputText.tokenise()
+        val lines = inputText.tokenise(font)
 //        lines.debugprint()
 
         lines.forEachIndexed { linenum, it ->
@@ -592,7 +592,7 @@ class MovableType(
          *
          * Inner list (ArrayList) contains the boxes for the single line.
          */
-        private fun CodepointSequence.tokenise(): List<ArrayList<CodepointSequence>> {
+        private fun CodepointSequence.tokenise(font: TerrarumSansBitmap): List<ArrayList<CodepointSequence>> {
             val lines = ArrayList<ArrayList<CodepointSequence>>()
             var tokens = ArrayList<CodepointSequence>()
             var boxBuffer = ArrayList<CodePoint>()
@@ -657,7 +657,9 @@ class MovableType(
             }
 
             fun appendGlue(char: CodePoint) {
-                glue += whitespaceGlues[char] ?: throw NullPointerException("${char.toHex()} is not a whitespace")
+                glue += (whitespaceGlues[char] ?: throw NullPointerException("${char.toHex()} is not a whitespace")).let {
+                    if (it == 0) it else it + font.interchar
+                }
             }
 
             fun appendZeroGlue() {

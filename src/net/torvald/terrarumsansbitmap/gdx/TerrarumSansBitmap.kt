@@ -1182,7 +1182,7 @@ class TerrarumSansBitmap(
                     // is this glyph NOT a diacritic?
                     else if (thisProp.writeOnTop < 0) {
                         // apply interchar only if this character is NOT a control char
-                        val thisInterchar = if (thisChar.isLetter() || Character.isWhitespace(thisChar)) interchar else 0
+                        val thisInterchar = if (thisChar.isLetter()) interchar else 0
 
                         posXbuffer[charIndex] = -thisProp.nudgeX +
                                 when (itsProp.alignWhere) {
