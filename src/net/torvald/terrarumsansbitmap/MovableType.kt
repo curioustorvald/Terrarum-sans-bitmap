@@ -1098,8 +1098,6 @@ class MovableType(
             val input = this.filter { it.block.text.isNotGlue() }
             if (input.isEmpty()) return out
 
-//            println("freezeIntoCodepointSequence ${input.joinToString { "${it.posX}..${it.getEndPos()}" }}")
-
             // process line indents
             if (input.first().posX > 0)
                 out.addAll(input.first().posX.glueSizeToGlueChars())
@@ -1112,6 +1110,24 @@ class MovableType(
                     out.addAll((posX - prevEndPos).glueSizeToGlueChars())
                 }
                 out.addAll(it.block.text)
+            }
+
+            return out
+        }
+
+        private fun List<Block>.getGlueSizeSum(font: TerrarumSansBitmap): Int {
+            var out = 0
+
+            val input = this.filter { it.block.text.isNotGlue() }
+            if (input.isEmpty()) return 0
+
+            // process blocks
+            input.forEachIndexed { index, it ->
+                val posX = it.posX
+                val prevEndPos = if (index == 0) 0 else input[index-1].getEndPos()
+                if (index > 0 && posX != prevEndPos) {
+                    out += posX - prevEndPos
+                }
             }
 
             return out
@@ -1138,24 +1154,6 @@ class MovableType(
 
         private fun createGlyphLayout(font: TerrarumSansBitmap, str: CodepointSequence): NoTexGlyphLayout {
             return NoTexGlyphLayout(str, font.getWidthNormalised(str).div(font.scale))
-        }
-
-        private fun List<Block>.getGlueSizeSum(font: TerrarumSansBitmap): Int {
-            var out = 0
-
-            val input = this.filter { it.block.text.isNotGlue() }
-            if (input.isEmpty()) return 0
-
-            // process blocks
-            input.forEachIndexed { index, it ->
-                val posX = it.posX
-                val prevEndPos = if (index == 0) 0 else input[index-1].getEndPos()
-                if (index > 0 && posX != prevEndPos) {
-                    out += posX - prevEndPos
-                }
-            }
-
-            return out
         }
 
         inline fun Boolean.toInt(shift: Int = 0) = if (this) 1.shl(shift) else 0

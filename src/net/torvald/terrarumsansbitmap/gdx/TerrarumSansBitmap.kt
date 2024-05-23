@@ -1181,14 +1181,17 @@ class TerrarumSansBitmap(
                     }
                     // is this glyph NOT a diacritic?
                     else if (thisProp.writeOnTop < 0) {
+                        // apply interchar only if this character is NOT a control char
+                        val thisInterchar = if (thisChar.isLetter() || Character.isWhitespace(thisChar)) interchar else 0
+
                         posXbuffer[charIndex] = -thisProp.nudgeX +
                                 when (itsProp.alignWhere) {
                                     GlyphProps.ALIGN_RIGHT ->
-                                        posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + interchar + kerning + extraWidth
+                                        posXbuffer[nonDiacriticCounter] + W_VAR_INIT + alignmentOffset + thisInterchar + kerning + extraWidth
                                     GlyphProps.ALIGN_CENTRE ->
-                                        posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
+                                        posXbuffer[nonDiacriticCounter] + HALF_VAR_INIT + itsProp.width + alignmentOffset + thisInterchar + kerning + extraWidth
                                     else ->
-                                        posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + interchar + kerning + extraWidth
+                                        posXbuffer[nonDiacriticCounter] + itsProp.width + alignmentOffset + thisInterchar + kerning + extraWidth
                                 }
                         posYbuffer[charIndex] = -thisProp.nudgeY
 
@@ -2766,6 +2769,8 @@ class TerrarumSansBitmap(
             return 0xFFE20 + tone1 * 5 + tone2
         }
 
+        // If this letter is a candidate to be influenced by the interchar property (i.e. is this character visible or whitespace and not a control character)
+        fun CodePoint.isLetter() = (Character.isLetterOrDigit(this) || Character.isWhitespace(this) || this in 0xF0000 until 0xFFF70)
 
         private fun Int.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
 
