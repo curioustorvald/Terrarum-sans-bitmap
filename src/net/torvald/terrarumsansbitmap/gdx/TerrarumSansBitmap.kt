@@ -890,6 +890,7 @@ class TerrarumSansBitmap(
             SHEET_SUNDANESE_VARW -> sundaneseIndexY(ch)
             SHEET_DEVANAGARI2_INTERNAL_VARW -> devanagari2IndexY(ch)
             SHEET_CODESTYLE_ASCII_VARW -> codestyleAsciiIndexY(ch)
+            SHEET_ALPHABETIC_PRESENTATION_FORMS -> alphabeticPresentationFormsY(ch)
             else -> ch / 16
         }
 
@@ -1357,13 +1358,14 @@ class TerrarumSansBitmap(
         return seq
     }
 
-    internal fun normaliseStringForMovableType(s: CharSequence) = s.toCodePoints(2)
+    internal fun normaliseStringForMovableType(s: CharSequence) = s.toCodePoints(2, 2)
 
     // basically an Unicode NFD with some additional flavours
     /**
      * @param normaliseOption 1-full, 2-omit null filling
+     * @param ligaturesOption 0-none, 1-{ff, fi, fl, ffi, ffl, ſt, st, մն, մե, մի, վն, մխ}, 2-{ff, fi, fl, ffi, ffl, մն, մե, մի, վն, մխ}
      */
-    private fun CodepointSequence.normalise(normaliseOption: Int = 1): CodepointSequence {
+    private fun CodepointSequence.normalise(normaliseOption: Int = 1, ligaturesOption: Int = 0): CodepointSequence {
         val seq0 = CodepointSequence()
         val seq = CodepointSequence()
         val seq2 = CodepointSequence()
@@ -1874,11 +1876,48 @@ class TerrarumSansBitmap(
         var charsetOverride = 0
         while (i < seq4.size) {
             val c = seq4[i]
+            val cNext = seq4.getOrNull(i + 1)
+            val cNext2 = seq4.getOrNull(i + 2)
             if (isCharsetOverride(c))
                 charsetOverride = c - CHARSET_OVERRIDE_DEFAULT
-            else {
+            else if (charsetOverride > 0) {
                 if (c in altCharsetCodepointDomains[charsetOverride])
                     seq5.add(c + altCharsetCodepointOffsets[charsetOverride])
+            }
+            else {
+                // apply ligatures
+                // s-t ligs
+                if (ligaturesOption == 1) {
+                    if (c == 0x17F && cNext == 0x74) {
+                        seq5.add(0xFB05); i++
+                    } else if (c == 0x73 && cNext == 0x74) {
+                        seq5.add(0xFB06); i++
+                    }
+                } else if (ligaturesOption > 0) {
+                    if (c == 0x66 && cNext == 0x66 && cNext2 == 0x69) {
+                        seq5.add(0xFB03); i += 2
+                    } else if (c == 0x66 && cNext == 0x66 && cNext2 == 0x6C) {
+                        seq5.add(0xFB04); i += 2
+                    } else if (c == 0x66 && cNext == 0x66) {
+                        seq5.add(0xFB00); i++
+                    } else if (c == 0x66 && cNext == 0x69) {
+                        seq5.add(0xFB01); i++
+                    } else if (c == 0x66 && cNext == 0x6C) {
+                        seq5.add(0xFB02); i++
+                    } else if (c == 0x574 && cNext == 0x576) {
+                        seq5.add(0xFB13); i++
+                    } else if (c == 0x574 && cNext == 0x565) {
+                        seq5.add(0xFB14); i++
+                    } else if (c == 0x574 && cNext == 0x56B) {
+                        seq5.add(0xFB15); i++
+                    } else if (c == 0x57E && cNext == 0x576) {
+                        seq5.add(0xFB16); i++
+                    } else if (c == 0x574 && cNext == 0x56D) {
+                        seq5.add(0xFB17); i++
+                    }
+                    else
+                        seq5.add(c)
+                }
                 else
                     seq5.add(c)
             }
@@ -1942,13 +1981,13 @@ class TerrarumSansBitmap(
      *
      * @param normaliseOption 0-don't, 1-full, 2-omit null filling
      */
-    private fun CharSequence.toCodePoints(normaliseOption: Int = 1): CodepointSequence {
+    private fun CharSequence.toCodePoints(normaliseOption: Int = 1, ligaturesOption: Int = 0): CodepointSequence {
         val seq = CodepointSequence()
         this.forEach { seq.add(it.toInt()) }
 
         return when (normaliseOption) {
             0 -> seq
-            else -> seq.normalise(normaliseOption)
+            else -> seq.normalise(normaliseOption, ligaturesOption)
         }
     }
 
@@ -2514,6 +2553,7 @@ class TerrarumSansBitmap(
         internal const val SHEET_SUNDANESE_VARW = 35
         internal const val SHEET_DEVANAGARI2_INTERNAL_VARW = 36
         internal const val SHEET_CODESTYLE_ASCII_VARW = 37
+        internal const val SHEET_ALPHABETIC_PRESENTATION_FORMS = 38
 
         internal const val SHEET_UNKNOWN = 254
 
@@ -2578,6 +2618,7 @@ class TerrarumSansBitmap(
             "sundanese_variable.tga",
             "devanagari_internal_extrawide_variable.tga",
             "pua_codestyle_ascii_variable.tga",
+            "alphabetic_presentation_forms_extrawide_variable.tga",
         )
         internal val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -2618,6 +2659,7 @@ class TerrarumSansBitmap(
             (0x1B80..0x1BBF) + (0x1CC0..0x1CCF) + (0xF0500..0xF050F), // SHEET_SUNDANESE_VARW
             0xF0110..0xF012F, // SHEET_DEVANAGARI2_INTERNAL_VARW
             0xF0520..0xF057F, // SHEET_CODESTYLE_ASCII_VARW
+            0xFB00..0xFB17, // SHEET_ALPHABETIC_PRESENTATION_FORMS
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -2960,6 +3002,7 @@ class TerrarumSansBitmap(
         private fun sundaneseIndexY(c: CodePoint) = (if (c >= 0xF0500) (c - 0xF04B0) else if (c < 0x1BC0) (c - 0x1B80) else (c - 0x1C80)) / 16
         private fun devanagari2IndexY(c: CodePoint) = (c - 0xF0110) / 16
         private fun codestyleAsciiIndexY(c: CodePoint) = (c - 0xF0520) / 16
+        private fun alphabeticPresentationFormsY(c: CodePoint) = (c - 0xFB00) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
