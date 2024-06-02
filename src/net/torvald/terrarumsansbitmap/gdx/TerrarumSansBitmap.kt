@@ -1358,7 +1358,8 @@ class TerrarumSansBitmap(
         return seq
     }
 
-    internal fun normaliseStringForMovableType(s: CharSequence) = s.toCodePoints(2, 2)
+    internal fun normaliseStringForMovableType(s: CharSequence) =
+        s.toCodePoints(2, if (interchar == 0) 2 else 0)
 
     // basically an Unicode NFD with some additional flavours
     /**
