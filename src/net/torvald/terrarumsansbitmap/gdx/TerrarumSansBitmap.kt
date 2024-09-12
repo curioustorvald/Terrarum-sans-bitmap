@@ -1884,6 +1884,8 @@ class TerrarumSansBitmap(
             else if (charsetOverride > 0) {
                 if (c in altCharsetCodepointDomains[charsetOverride])
                     seq5.add(c + altCharsetCodepointOffsets[charsetOverride])
+                else
+                    seq5.add(c)
             }
             else {
                 // apply ligatures
