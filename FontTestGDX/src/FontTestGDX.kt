@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer
 import com.badlogic.gdx.utils.ScreenUtils
 import com.badlogic.gdx.utils.StreamUtils
 import net.torvald.terrarumsansbitmap.MovableType
+import net.torvald.terrarumsansbitmap.gdx.CodepointSequence
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap
 import java.io.File
 import java.io.IOException
@@ -29,7 +30,7 @@ class FontTestGDX : Game() {
 
     lateinit var camera: OrthographicCamera
 
-    private val testing = true
+    private val testing = false
 
     private val demotextName = if (testing) "testtext.txt" else "demotext_unaligned.txt"
     private val outimageName = if (testing) "testing.PNG" else "demo.PNG"
@@ -45,6 +46,8 @@ class FontTestGDX : Game() {
 
     override fun create() {
         font = TerrarumSansBitmap("./assets", debug = true, flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.5f) // must test for two flipY cases
+//        font.scale = 2
+//        font.interchar = 1
 
         testtex = TextureRegion(Texture("./testtex.tga"))
 
@@ -72,6 +75,19 @@ class FontTestGDX : Game() {
 
         Gdx.input.inputProcessor = Navigator(this)
 
+
+        println(font.charsetOverrideCodestyle)
+        println(font.charsetOverrideDefault)
+
+        val cs1 = CodepointSequence(listOf(0, 65, 0))
+        val cs2 = CodepointSequence(listOf(0, 65))
+        val cs3 = CodepointSequence(listOf(65, 0))
+        val cs4 = CodepointSequence(listOf(65))
+        println("w1: ${font.getWidthNormalised(cs1)}; ${font.getWidth(cs1)}")
+        println("w2: ${font.getWidthNormalised(cs2)}; ${font.getWidth(cs2)}")
+        println("w3: ${font.getWidthNormalised(cs3)}; ${font.getWidth(cs3)}")
+        println("w4: ${font.getWidthNormalised(cs4)}; ${font.getWidth(cs4)}")
+        println("These four numbers must match, even with interchar > 0")
 
         layout = font.typesetParagraph(batch, inputText, TEXW - 48)
     }
@@ -332,7 +348,7 @@ class FlippingSpriteBatch(size: Int = 1000) : SpriteBatch(size) {
 }
 
 lateinit var appConfig: Lwjgl3ApplicationConfiguration
-const val TEXW = 480 + 48
+const val TEXW = 800
 const val TEXH = 24 * 170
 
 const val WIDTH = TEXW

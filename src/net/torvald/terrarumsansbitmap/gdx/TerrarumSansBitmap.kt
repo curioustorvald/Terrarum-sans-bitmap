@@ -891,6 +891,7 @@ class TerrarumSansBitmap(
             SHEET_DEVANAGARI2_INTERNAL_VARW -> devanagari2IndexY(ch)
             SHEET_CODESTYLE_ASCII_VARW -> codestyleAsciiIndexY(ch)
             SHEET_ALPHABETIC_PRESENTATION_FORMS -> alphabeticPresentationFormsY(ch)
+            SHEET_HENTAIGANA_VARW -> hentaiganaIndexY(ch)
             else -> ch / 16
         }
 
@@ -2557,6 +2558,7 @@ class TerrarumSansBitmap(
         internal const val SHEET_DEVANAGARI2_INTERNAL_VARW = 36
         internal const val SHEET_CODESTYLE_ASCII_VARW = 37
         internal const val SHEET_ALPHABETIC_PRESENTATION_FORMS = 38
+        internal const val SHEET_HENTAIGANA_VARW = 39
 
         internal const val SHEET_UNKNOWN = 254
 
@@ -2622,13 +2624,14 @@ class TerrarumSansBitmap(
             "devanagari_internal_extrawide_variable.tga",
             "pua_codestyle_ascii_variable.tga",
             "alphabetic_presentation_forms_extrawide_variable.tga",
+            "hentaigana_variable.tga",
         )
         internal val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
             (0x1100..0x11FF) + (0xA960..0xA97F) + (0xD7B0..0xD7FF), // SHEET_HANGUL, because Hangul Syllables are disassembled prior to the render
             0x100..0x17F, // SHEET_EXTA_VARW
             0x180..0x24F, // SHEET_EXTB_VARW
-            (0x3040..0x30FF) + (0x31F0..0x31FF) + (0x1B000..0x1B001), // SHEET_KANA
+            (0x3040..0x30FF) + (0x31F0..0x31FF), // SHEET_KANA
             0x3000..0x303F, // SHEET_CJK_PUNCT
             0x3400..0x9FFF, // SHEET_UNIHAN
             0x400..0x52F, // SHEET_CYRILIC_VARW
@@ -2663,6 +2666,7 @@ class TerrarumSansBitmap(
             0xF0110..0xF012F, // SHEET_DEVANAGARI2_INTERNAL_VARW
             0xF0520..0xF057F, // SHEET_CODESTYLE_ASCII_VARW
             0xFB00..0xFB17, // SHEET_ALPHABETIC_PRESENTATION_FORMS
+            0x1B000..0x1B16F, // SHEET_HENTAIGANA_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -2971,7 +2975,6 @@ class TerrarumSansBitmap(
         private fun runicIndexY(c: CodePoint) = (c - 0x16A0) / 16
         private fun kanaIndexY(c: CodePoint) =
             if (c in 0x31F0..0x31FF) 12
-            else if (c in 0x1B000..0x1B00F) 13
             else (c - 0x3040) / 16
         private fun cjkPunctIndexY(c: CodePoint) = (c - 0x3000) / 16
         private fun cyrilicIndexY(c: CodePoint) = (c - 0x400) / 16
@@ -3006,6 +3009,7 @@ class TerrarumSansBitmap(
         private fun devanagari2IndexY(c: CodePoint) = (c - 0xF0110) / 16
         private fun codestyleAsciiIndexY(c: CodePoint) = (c - 0xF0520) / 16
         private fun alphabeticPresentationFormsY(c: CodePoint) = (c - 0xFB00) / 16
+        private fun hentaiganaIndexY(c: CodePoint) = (c - 0x1B000) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()

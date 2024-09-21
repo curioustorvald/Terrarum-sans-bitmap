@@ -18,11 +18,16 @@ import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.NQSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.OBJ
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.PSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.QUARTER_EMSP
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.SHEET_BRAILLE_VARW
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.SHEET_CUSTOM_SYM
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.SHEET_HENTAIGANA_VARW
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.SHEET_TSALAGI_VARW
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.SHY
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.SIX_PER_EMSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.THREE_PER_EMSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.THSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.ZWSP
+import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.codeRange
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.getHash
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.glueCharToGlueSize
 import kotlin.math.*
@@ -101,7 +106,10 @@ class MovableType(
             var ignoreThisLine = false
 
             fun dequeue() = boxes.removeFirst()
-            fun addHyphenatedTail(box: NoTexGlyphLayout) = boxes.add(0, box)
+            fun addHyphenatedTail(box: NoTexGlyphLayout) {
+//                println("addHyphenatedTail ${box.text.toReadable()}")
+                boxes.add(0, box)
+            }
             fun addToSlug(box: NoTexGlyphLayout) {
                 val nextPosX = slug.getSlugEndPos()
                 slug.add(Block(nextPosX, box))
@@ -393,6 +401,7 @@ class MovableType(
                                         }
                                     }
 
+                                    if (slug.isNotEmpty())
                                     moveSlugsToFitTheWidth(operation, slug, selectedWidthDelta.absoluteValue)
 
                                     // put the trailing word back into the upcoming words
@@ -418,6 +427,7 @@ class MovableType(
                                     // insert hyphHead into the slug
                                     addToSlug(hyphHead)
 
+                                    if (slug.isNotEmpty())
                                     moveSlugsToFitTheWidth(operation, slug, selectedWidthDelta.absoluteValue)
 
                                     // put the tail into the upcoming words
@@ -454,10 +464,11 @@ class MovableType(
 //                println("  > Line ${typesettedSlugs.size + 1} Final Slug: [ ${slug.map { it.block.text.toReadable() }.joinToString(" | ")} ]")
                 dispatchSlug(strategy, 0)
             }
+
         } // end of lines.forEach
 
         height = typesettedSlugs.size
-    } }
+    } } // end of INIT
 
     fun draw(batch: SpriteBatch, x: Int, y: Int, lineStart: Int = 0, linesToDraw: Int = 2147483647, lineHeight: Int = TerrarumSansBitmap.LINE_HEIGHT) =
         draw(batch, x.toFloat(), y.toFloat(), lineStart, linesToDraw, lineHeight)
@@ -505,6 +516,8 @@ class MovableType(
         private fun CodePoint.toHex() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}"
 
         private fun moveSlugsToFitTheWidth(operation: Int, slug: ArrayList<Block>, selectedWidthDelta: Int) {
+//            if (slug.isEmpty()) return
+
             var gluesInfo = slug.mapIndexed { index, block -> block to index }.filter { (block, index) ->
                 block.block.isGlue()
             }.let {
@@ -518,6 +531,7 @@ class MovableType(
                 val prevBlockEndsWith = if (index == 0) null else slug[index - 1].block.penultimateCharOrNull // last() will just return {NUL}
                 Triple(block, index, prevBlockEndsWith)
             }.filter { it.third != null }
+
             // if there are no glues, put spaces between all characters
             if (gluesInfo.isEmpty()) {
                 gluesInfo = slug.subList(1, slug.size).mapIndexed { index, block ->
@@ -819,6 +833,11 @@ class MovableType(
                     sendoutBox()
                     appendToBuffer(c0)
                 }
+                else if (c0.isSymbol()) {
+                    if (glue > 0) sendoutGlue()
+                    sendoutBox()
+                    appendToBuffer(c0)
+                }
                 else {
                     if (!isHangulPK(c0) && !c0.isWesternPunctOrQuotes() && !c0.isCJpunct() && !c0.isParens() && isHangulPK(cM ?: 0)) {
                         sendoutBox()
@@ -894,6 +913,8 @@ class MovableType(
 
         private fun CodePoint?.isMajuscule() = if (this == null) false else Character.isUpperCase(this)
         private fun CodePoint?.isMiniscule() = if (this == null) false else Character.isLowerCase(this)
+
+        private fun CodePoint?.isSymbol() = if (this == null) false else uniSymbolTable.contains(this)
 
         /**
          * Hyphenates the word at the middle ("paragraph" -> "para-graph")
@@ -1163,6 +1184,212 @@ class MovableType(
         private fun List<Block>.getSlugEndPos(): Int {
             return this.lastOrNull()?.getEndPos() ?: 0
         }
+
+        private val uniSymbolTable = ( 0x0024..0x002b step 7) +
+                ( 0x003c..0x003e) +
+                ( 0x005e..0x0060 step 2) +
+                ( 0x007c..0x007e step 2) +
+                ( 0x00a2..0x00a6) +
+                ( 0x00a8..0x00a9) +
+                ( 0x00ac..0x00ae step 2) +
+                ( 0x00af..0x00b1) +
+                ( 0x00b4..0x00b8 step 4) +
+                ( 0x00d7..0x00f7 step 32) +
+                ( 0x02c2..0x02c5) +
+                ( 0x02d2..0x02df) +
+                ( 0x02e5..0x02eb) +
+                ( 0x02ed..0x02ef step 2) +
+                ( 0x02f0..0x02ff) +
+                ( 0x0375..0x0384 step 15) +
+                ( 0x0385..0x03f6 step 113) +
+                ( 0x0482..0x058d step 267) +
+                ( 0x058e..0x058f) +
+                ( 0x0606..0x0608) +
+                ( 0x060b..0x060e step 3) +
+                ( 0x060f..0x06de step 207) +
+                ( 0x06e9..0x06fd step 20) +
+                ( 0x06fe..0x07f6 step 248) +
+                ( 0x07fe..0x07ff) +
+                ( 0x0888..0x09f2 step 362) +
+                ( 0x09f3..0x09fa step 7) +
+                ( 0x09fb..0x0af1 step 246) +
+                ( 0x0b70..0x0bf3 step 131) +
+                ( 0x0bf4..0x0bfa) +
+                ( 0x0c7f..0x0d4f step 208) +
+                ( 0x0d79..0x0e3f step 198) +
+                ( 0x0f01..0x0f03) +
+                ( 0x0f13..0x0f15 step 2) +
+                ( 0x0f16..0x0f17) +
+                ( 0x0f1a..0x0f1f) +
+                ( 0x0f34..0x0f38 step 2) +
+                ( 0x0fbe..0x0fc5) +
+                ( 0x0fc7..0x0fcc) +
+                ( 0x0fce..0x0fcf) +
+                ( 0x0fd5..0x0fd8) +
+                ( 0x109e..0x109f) +
+                ( 0x1390..0x1399) +
+                ( 0x166d..0x17db step 366) +
+                ( 0x1940..0x19de step 158) +
+                ( 0x19df..0x19ff) +
+                ( 0x1b61..0x1b6a) +
+                ( 0x1b74..0x1b7c) +
+                ( 0x1fbd..0x1fbf step 2) +
+                ( 0x1fc0..0x1fc1) +
+                ( 0x1fcd..0x1fcf) +
+                ( 0x1fdd..0x1fdf) +
+                ( 0x1fed..0x1fef) +
+                ( 0x1ffd..0x1ffe) +
+                ( 0x2044..0x2052 step 14) +
+                ( 0x207a..0x207c) +
+                ( 0x208a..0x208c) +
+                ( 0x20a0..0x20c0) +
+                ( 0x2100..0x2101) +
+                ( 0x2103..0x2106) +
+                ( 0x2108..0x2109) +
+                ( 0x2114..0x2116 step 2) +
+                ( 0x2117..0x2118) +
+                ( 0x211e..0x2123) +
+                ( 0x2125..0x2129 step 2) +
+                ( 0x212e..0x213a step 12) +
+                ( 0x213b..0x2140 step 5) +
+                ( 0x2141..0x2144) +
+                ( 0x214a..0x214d) +
+                ( 0x214f..0x218a step 59) +
+                ( 0x218b..0x2190 step 5) +
+                ( 0x2191..0x2307) +
+                ( 0x230c..0x2328) +
+                ( 0x232b..0x2426) +
+                ( 0x2440..0x244a) +
+                ( 0x249c..0x24e9) +
+                ( 0x2500..0x2767) +
+                ( 0x2794..0x27c4) +
+                ( 0x27c7..0x27e5) +
+                ( 0x27f0..0x2982) +
+                ( 0x2999..0x29d7) +
+                ( 0x29dc..0x29fb) +
+                ( 0x29fe..0x2b73) +
+                ( 0x2b76..0x2b95) +
+                ( 0x2b97..0x2bff) +
+                ( 0x2ce5..0x2cea) +
+                ( 0x2e50..0x2e51) +
+                ( 0x2e80..0x2e99) +
+                ( 0x2e9b..0x2ef3) +
+                ( 0x2f00..0x2fd5) +
+                ( 0x2ff0..0x2ffb) +
+                ( 0x3004..0x3012 step 14) +
+                ( 0x3013..0x3020 step 13) +
+                ( 0x3036..0x3037) +
+                ( 0x303e..0x303f) +
+                ( 0x309b..0x309c) +
+                ( 0x3190..0x3191) +
+                ( 0x3196..0x319f) +
+                ( 0x31c0..0x31e3) +
+                ( 0x3200..0x321e) +
+                ( 0x322a..0x3247) +
+                ( 0x3250..0x3260 step 16) +
+                ( 0x3261..0x327f) +
+                ( 0x328a..0x32b0) +
+                ( 0x32c0..0x33ff) +
+                ( 0x4dc0..0x4dff) +
+                ( 0xa490..0xa4c6) +
+                ( 0xa700..0xa716) +
+                ( 0xa720..0xa721) +
+                ( 0xa789..0xa78a) +
+                ( 0xa828..0xa82b) +
+                ( 0xa836..0xa839) +
+                ( 0xaa77..0xaa79) +
+                ( 0xab5b..0xab6a step 15) +
+                ( 0xab6b..0xfb29 step 20414) +
+                ( 0xfbb2..0xfbc2) +
+                ( 0xfd40..0xfd4f) +
+                ( 0xfdcf..0xfdfc step 45) +
+                ( 0xfdfd..0xfdff) +
+                ( 0xfe62..0xfe64 step 2) +
+                ( 0xfe65..0xfe66) +
+                ( 0xfe69..0xff04 step 155) +
+                ( 0xff0b..0xff1c step 17) +
+                ( 0xff1d..0xff1e) +
+                ( 0xff3e..0xff40 step 2) +
+                ( 0xff5c..0xff5e step 2) +
+                ( 0xffe0..0xffe6) +
+                ( 0xffe8..0xffee) +
+                ( 0xfffc..0xfffd) +
+                (0x10137..0x1013f) +
+                (0x10179..0x10189) +
+                (0x1018c..0x1018e) +
+                (0x10190..0x1019c) +
+                (0x101a0..0x101d0 step 48) +
+                (0x101d1..0x101fc) +
+                (0x10877..0x10878) +
+                (0x10ac8..0x1173f step 3191) +
+                (0x11fd5..0x11ff1) +
+                (0x16b3c..0x16b3f) +
+                (0x16b45..0x1bc9c step 20823) +
+                (0x1cf50..0x1cfc3) +
+                (0x1d000..0x1d0f5) +
+                (0x1d100..0x1d126) +
+                (0x1d129..0x1d164) +
+                (0x1d16a..0x1d16c) +
+                (0x1d183..0x1d184) +
+                (0x1d18c..0x1d1a9) +
+                (0x1d1ae..0x1d1ea) +
+                (0x1d200..0x1d241) +
+                (0x1d245..0x1d300 step 187) +
+                (0x1d301..0x1d356) +
+                (0x1d6c1..0x1d6db step 26) +
+                (0x1d6fb..0x1d715 step 26) +
+                (0x1d735..0x1d74f step 26) +
+                (0x1d76f..0x1d789 step 26) +
+                (0x1d7a9..0x1d7c3 step 26) +
+                (0x1d800..0x1d9ff) +
+                (0x1da37..0x1da3a) +
+                (0x1da6d..0x1da74) +
+                (0x1da76..0x1da83) +
+                (0x1da85..0x1da86) +
+                (0x1e14f..0x1e2ff step 432) +
+                (0x1ecac..0x1ecb0 step 4) +
+                (0x1ed2e..0x1eef0 step 450) +
+                (0x1eef1..0x1f000 step 271) +
+                (0x1f001..0x1f02b) +
+                (0x1f030..0x1f093) +
+                (0x1f0a0..0x1f0ae) +
+                (0x1f0b1..0x1f0bf) +
+                (0x1f0c1..0x1f0cf) +
+                (0x1f0d1..0x1f0f5) +
+                (0x1f10d..0x1f1ad) +
+                (0x1f1e6..0x1f202) +
+                (0x1f210..0x1f23b) +
+                (0x1f240..0x1f248) +
+                (0x1f250..0x1f251) +
+                (0x1f260..0x1f265) +
+                (0x1f300..0x1f6d7) +
+                (0x1f6dc..0x1f6ec) +
+                (0x1f6f0..0x1f6fc) +
+                (0x1f700..0x1f776) +
+                (0x1f77b..0x1f7d9) +
+                (0x1f7e0..0x1f7eb) +
+                (0x1f7f0..0x1f800 step 16) +
+                (0x1f801..0x1f80b) +
+                (0x1f810..0x1f847) +
+                (0x1f850..0x1f859) +
+                (0x1f860..0x1f887) +
+                (0x1f890..0x1f8ad) +
+                (0x1f8b0..0x1f8b1) +
+                (0x1f900..0x1fa53) +
+                (0x1fa60..0x1fa6d) +
+                (0x1fa70..0x1fa7c) +
+                (0x1fa80..0x1fa88) +
+                (0x1fa90..0x1fabd) +
+                (0x1fabf..0x1fac5) +
+                (0x1face..0x1fadb) +
+                (0x1fae0..0x1fae8) +
+                (0x1faf0..0x1faf8) +
+                (0x1fb00..0x1fb92) +
+                (0x1fb94..0x1fbca) +
+                codeRange[SHEET_BRAILLE_VARW] +
+                codeRange[SHEET_CUSTOM_SYM] +
+                codeRange[SHEET_TSALAGI_VARW] +
+                codeRange[SHEET_HENTAIGANA_VARW]
     } // end of companion object
 }
 

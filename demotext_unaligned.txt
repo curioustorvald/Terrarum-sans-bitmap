@@ -100,6 +100,10 @@ How multilingual? Real multilingual!
 
 􎳌‣ Full support for Old Korean/Jeju dialect orthography􀀀
 
+􏻬𛀆𛄆𛂦𛂌𛂻𛂶𛁻𛁦𛃶𛂑𛃺𛄚𛄋𛀙𛃫𛁟𛄀𛁛𛁫𛂗𛂁𛃭𛃑𛀋𛂜𛀕𛀬𛃟𛃅𛀴𛂱𛀸𛀁𛁲𛀄𛀿𛀣𛃥𛃔𛃎𛁈ゑ𛂯𛃙𛁕𛁏𛄝􀀀
+
+􎳌‣ Full support for Archaic Kana/Hentaigana􀀀
+
 􏃯Supported Unicode Blocks:􀀀
 
 ⁃ Basic Latin
