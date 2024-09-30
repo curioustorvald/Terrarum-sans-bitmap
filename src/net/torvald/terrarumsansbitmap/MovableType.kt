@@ -743,13 +743,15 @@ class MovableType(
                     appendToBuffer(c0)
                 }
                 else if (c0.isParenOpen()) {
-                    sendoutBox()
-
                     if (glue > 0) sendoutGlue()
+
+                    sendoutBox()
 
                     appendToBuffer(c0)
                 }
                 else if (c0.isCJparenEnd()) {
+                    if (glue > 0) sendoutGlue()
+
                     appendToBuffer(c0)
                     sendoutBox()
 
@@ -757,10 +759,10 @@ class MovableType(
                     sendoutGlue()
                 }
                 else if (c0.isParenClose()) {
+                    if (glue > 0) sendoutGlue()
+
                     appendToBuffer(c0)
                     sendoutBox()
-
-                    if (glue > 0) sendoutGlue()
                 }
                 else if (c0.isCJpunct()) {
                     if (cM.isWhiteSpace()) sendoutGlue()

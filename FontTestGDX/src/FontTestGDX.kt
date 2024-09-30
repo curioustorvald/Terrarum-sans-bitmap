@@ -349,7 +349,7 @@ class FlippingSpriteBatch(size: Int = 1000) : SpriteBatch(size) {
 
 lateinit var appConfig: Lwjgl3ApplicationConfiguration
 const val TEXW = 800
-const val TEXH = 24 * 170
+const val TEXH = 24 * 171
 
 const val WIDTH = TEXW
 const val HEIGHT = 768
