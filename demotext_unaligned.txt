@@ -40,7 +40,7 @@ How multilingual? Real multilingual!
 􏻬トリナクコヱス ユメサマセ ミヨアケワタル ヒンカシヲ ソライロハエテ オキツヘニ ホフネムレヰヌ モヤノウチ􀀀
 􏻬田居に出で 菜摘むわれをぞ 君召すと 求食り追ひゆく 山城の 打酔へる子ら 藻葉干せよ え舟繋けぬ􀀀
 􏻬정 참판 양반댁 규수 큰 교자 타고 혼례 치른 날　　찦차를 타고 온 펲시맨과 쑛다리 똠방각하􀀀
-􏻬쾅 ᄒᆞ는 소리 헨, “아이구 베락 털어져ᇝ인가?” 영 걷어진 쥥은 몰르곡 경헨 ᄇᆞᆰ도록 ᄌᆞᆷ ᄒᆞᆫᄌᆞᆷ들 안 잣수다􀀀
+􏻬쾅 ᄒᆞ는 소리 헨 “아이구 베락 털어져ᇝ인가?” 영 걷어진 쥥은 몰르곡 경헨 ᄇᆞᆰ도록 ᄌᆞᆷ ᄒᆞᆫᄌᆞᆷ들 안 잣수다􀀀
 􏻬Četri psihi faķīri vēlu vakarā zāģēja guļbūvei durvis, fonā šņācot mežam􀀀
 􏻬Įlinkdama fechtuotojo špaga sublykčiojusi pragręžė apvalų arbūzą􀀀
 􏻬Ѕидарски пејзаж: шугав билмез со чудење џвака ќофте и кељ на туѓ цех􀀀
@@ -63,7 +63,7 @@ How multilingual? Real multilingual!
 
 􏃯Features:􀀀
 
-􏻬Ever heard of « Guillemets »? You speak „Nederlands” or „Deutsch“? ”suomi”? 「日本語」しゃべる？或《中文》？􀀀
+􏻬Heard of « Guillemets »? You speak „Nederlands” or „Deutsch“? ”suomi”? 「日本語」しゃべる？或《中文》？􀀀
 
 􎳌‣ Multilingual brackets; these are the most basic things, right?􀀀
 
@@ -93,10 +93,10 @@ How multilingual? Real multilingual!
 􏻬5¹⁹⁄₃₂ inch is 142.1 mm · (C₂F₄)ₙ is godly · Error = MoreCode²􀀀
 􏻬NOTE: we don’t do fractions. 142¹⁄₁₀ mm is illegal!􀀀
 
-􎳌‣ Unicode fractions aka super/subscripts fully supported􀀀
+􎳌‣ Unicode fractions, also known as super/subscripts􀀀
 
 􏻬ᄀᆞᄅᆞᇝ ᄀᆞᅀᅢ 자거늘 밀므리 사ᄋᆞ리로ᄃᆡ 나거ᅀᅡ ᄌᆞᄆᆞ니ᅌᅵ다 셤 안해 자시ᇙ 제 한비 사ᄋᆞ리로ᄃᆡ 뷔어ᅀᅡ ᄌᆞᄆᆞ니ᅌᅵ다􀀀
-􏻬쾅 ᄒᆞ는 소리 헨, “아이구, 베락 털어져ᇝ인가?” 영 걷어진 쥥은 몰르곡 경헨, 나왕 보고들랑 영헤연, ᄇᆞᆰ도록 ᄌᆞᆷ ᄒᆞᆫᄌᆞᆷ들 안 잣수다, 이 시간 동네 사람들.􀀀
+􏻬쾅 ᄒᆞ는 소리 헨 “아이구, 베락 털어져ᇝ인가?” 영 걷어진 쥥은 몰르곡 경헨 나왕 보고들랑 영헤연 ᄇᆞᆰ도록 ᄌᆞᆷ ᄒᆞᆫᄌᆞᆷ들 안 잣수다 이 시간 동네 사람들.􀀀
 
 􎳌‣ Full support for Old Korean/Jeju dialect orthography􀀀
 
@@ -151,8 +151,8 @@ How multilingual? Real multilingual!
 ⁃ Tamil
 ⁃ Thai
 
-  􏿆ᴭ􀀀  No support for archæic letters 􏿆ᴱ􀀀  No support for Coptic
-  􏿆ᶠⁱ􀀀  No support for ligatures 􏿆ჼ􀀀  Mkhedruli only
+  􏿆ᴭ􀀀  No support for archæic letters　　􏿆ᴱ􀀀  No support for Coptic
+  􏿆ᶠⁱ􀀀  No support for ligatures　　􏿆ჼ􀀀  Mkhedruli only
   􏿆⁶􀀀  􏿆⁷􀀀  􏿆⁹􀀀  􏿆¹²·¹􀀀  Up to the specified Unicode version
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀. You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make changes, and make a 􏽕pull request􀀀! I appreciate any and all supports.
