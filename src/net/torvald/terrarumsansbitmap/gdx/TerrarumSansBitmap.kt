@@ -1,7 +1,7 @@
 /*
  * Terrarum Sans Bitmap
  * 
- * Copyright (c) 2017-2024 see CONTRIBUTORS.txt
+ * Copyright (c) 2017-2026 see CONTRIBUTORS.txt
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -227,7 +227,6 @@ internal typealias Hash = Long
  * Created by minjaesong on 2017-06-15.
  */
 class TerrarumSansBitmap(
-    fontDir: String,
     val noShadow: Boolean = false,
     val flipY: Boolean = false,
     val invertShadow: Boolean = false,
@@ -240,7 +239,7 @@ class TerrarumSansBitmap(
 
     private fun dbgprn(i: Any) { if (debug) println("[${this.javaClass.simpleName}] $i") }
 
-    constructor(fontDir: String, noShadow: Boolean, flipY: Boolean, invertShadow: Boolean) : this(fontDir, noShadow, flipY, invertShadow, false, 256, false)
+    constructor(noShadow: Boolean, flipY: Boolean, invertShadow: Boolean) : this(noShadow, flipY, invertShadow, false, 256, false)
 
     /* This font is a collection of various subsystems, and thus contains copious amount of quick-and-dirty codes.
      *
@@ -318,7 +317,7 @@ class TerrarumSansBitmap(
 
 
     private val colourBuffer = HashMap<CodePoint, ARGB8888>()
-    private val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
+//    private val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
 
 
     /** Props of all printable Unicode points. */
@@ -354,11 +353,11 @@ class TerrarumSansBitmap(
 
 
             // unpack gz if applicable
-            if (it.endsWith(".gz")) {
+            /*if (it.endsWith(".gz")) {
                 val tmpFilePath = tempDir + "/tmp_${it.dropLast(7)}.tga"
 
                 try {
-                    val gzi = GZIPInputStream(Gdx.files.internal(fontParentDir + it).read(8192))
+                    val gzi = GZIPInputStream(Gdx.files.classpath(fontParentDir + it).read(8192))
                     val wholeFile = gzi.readBytes()
                     gzi.close()
                     val fos = BufferedOutputStream(FileOutputStream(tmpFilePath))
@@ -377,12 +376,12 @@ class TerrarumSansBitmap(
                 }
                 //File(tmpFileName).delete()
             }
-            else {
+            else {*/
                 try {
-                    pixmap = Pixmap(Gdx.files.internal(fontParentDir + it))
+                    pixmap = Pixmap(Gdx.files.classpath("assets/$it"))
                 }
-                catch (e: GdxRuntimeException) {
-                    //e.printStackTrace()
+                catch (e: Throwable) {
+                    e.printStackTrace()
                     dbgprn("said texture not found, skipping...")
 
                     // if non-ascii chart is missing, replace it with null sheet
@@ -393,7 +392,7 @@ class TerrarumSansBitmap(
                         System.exit(1)
                     }
                 }
-            }
+            //}
 
             if (isVariable) buildWidthTable(pixmap, codeRange[index], if (isExtraWide) 32 else 16)
             buildWidthTableFixed()

@@ -35,7 +35,6 @@ import kotlin.math.roundToInt
  * Created by minjaesong on 2021-11-04.
  */
 class TerrarumTypewriterBitmap(
-        fontDir: String,
         configFile: Reader,
         val flipY: Boolean = false,
         var errorOnUnknownChar: Boolean = false,
@@ -108,8 +107,6 @@ class TerrarumTypewriterBitmap(
     }
 
     init {
-        val fontParentDir = if (fontDir.endsWith('/') || fontDir.endsWith('\\')) fontDir else "$fontDir/"
-
         configFile.forEachLine {
             if (!it.startsWith("#")) {
                 val csv = it.split(',')
@@ -133,11 +130,11 @@ class TerrarumTypewriterBitmap(
             println("[TerrarumTypewriterBitmap] loading texture $filename [VARIABLE]")
 
             // unpack gz if applicable
-            if (filename.endsWith(".gz")) {
+            /*if (filename.endsWith(".gz")) {
                 val tmpFileName = "tmp_${filename.dropLast(7)}.tga"
 
                 try {
-                    val gzi = GZIPInputStream(Gdx.files.internal(fontParentDir + filename).read(8192))
+                    val gzi = GZIPInputStream(Gdx.files.classpath(filename).read(8192))
                     val wholeFile = gzi.readBytes()
                     gzi.close()
                     val fos = BufferedOutputStream(FileOutputStream(tmpFileName))
@@ -145,7 +142,7 @@ class TerrarumTypewriterBitmap(
                     fos.flush()
                     fos.close()
 
-                    pixmap = Pixmap(Gdx.files.internal(tmpFileName))
+                    pixmap = Pixmap(Gdx.files.classpath(tmpFileName))
                 }
                 catch (e: GdxRuntimeException) {
                     //e.printStackTrace()
@@ -155,16 +152,16 @@ class TerrarumTypewriterBitmap(
                 }
                 //File(tmpFileName).delete()
             }
-            else {
+            else {*/
                 pixmap = try {
-                    Pixmap(Gdx.files.internal(fontParentDir + filename))
+                    Pixmap(Gdx.files.classpath(filename))
                 } catch (e: GdxRuntimeException) {
                     //e.printStackTrace()
                     System.err.println("[TerrarumTypewriterBitmap] said texture not found, skipping...")
 
                     Pixmap(1, 1, Pixmap.Format.RGBA8888)
                 }
-            }
+            //}
 
             val cpstart = codepointStart[key]!!
             buildWidthTable(pixmap, cpstart until cpstart + 256, 16)

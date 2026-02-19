@@ -9,24 +9,77 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="">
+    <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="fix: characters not on overriden charset would not print">
+      <change beforePath="$PROJECT_DIR$/.idea/artifacts/TerrarumSansBitmap.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/TerrarumSansBitmap.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/KotlinJavaRuntime.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/KotlinJavaRuntime.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" beforeDir="false" afterPath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/cjkpunct.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/cjkpunct.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/currencies_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/currencies_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/futhark.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/futhark.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/latinExtC_variable.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/latinExtC_variable.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/richtext_furigana.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/richtext_furigana.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/typewriter_intl_qwerty.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/typewriter/typewriter_intl_qwerty.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/typewriter_ko_3set-390.tga" beforeDir="false" afterPath="$PROJECT_DIR$/assets/typewriter/typewriter_ko_3set-390.tga" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/wenquanyi.tga.gz" beforeDir="false" afterPath="$PROJECT_DIR$/assets/wenquanyi.tga.gz" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/font_drawing_template.png" beforeDir="false" afterPath="$PROJECT_DIR$/font_drawing_template.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/glyph_height_pos_annotation.png" beforeDir="false" afterPath="$PROJECT_DIR$/glyph_height_pos_annotation.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FontTestGDX/src/TypewriterGDX.kt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/src/TypewriterGDX.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LICENSE.md" beforeDir="false" afterPath="$PROJECT_DIR$/LICENSE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/alphabetic_presentation_forms_extrawide_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/ascii_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/bengali_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/braille_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/cjkpunct_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/control_pictures_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/currencies_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/cyrilic_bulgarian_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/cyrilic_serbian_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/cyrilic_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/devanagari_internal_extrawide_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/devanagari_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/diacritical_marks_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/enclosed_alphanumeric_supplement_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/futhark.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/greek_polytonic_xyswap_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/greek_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/halfwidth_fullwidth_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/hangul_johab.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/hayeren_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/hentaigana_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/internal_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/ipa_ext_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/kana_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/kartuli_allcaps_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/kartuli_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/latinExtA_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/latinExtB_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/latinExtC_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/latinExtD_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/latinExt_additional_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/letterlike_symbols_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/phonetic_extensions_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/pua_codestyle_ascii_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/puae000-e0ff.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/richtext_furigana.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/sundanese_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/tamil_extrawide_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/thai_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/tsalagi_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/cr0.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/cr1.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/cr2.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/cr3.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/cr4.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/cr5.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/crlf.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/deadkey.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/movingkey.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/shiftin.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/shiftout.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/space.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/typewriter_intl_qwerty.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/typewriter/typewriter_ko_3set-390.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/unipunct_variable.tga" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/wenquanyi.tga.gz" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/samples/wikipedia_x86.png" beforeDir="false" afterPath="$PROJECT_DIR$/samples/wikipedia_x86.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/TerrarumSansBitmap.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/TerrarumSansBitmap.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumtypewriterbitmap/gdx/TerrarumTypewriterBitmap.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumtypewriterbitmap/gdx/TerrarumTypewriterBitmap.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/terrarum_sans_cyrillic_2.png" beforeDir="false" afterPath="$PROJECT_DIR$/terrarum_sans_cyrillic_2.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testing.PNG" beforeDir="false" afterPath="$PROJECT_DIR$/testing.PNG" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testtext.txt" beforeDir="false" afterPath="$PROJECT_DIR$/testtext.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/width_bit_encoding_annotated.png" beforeDir="false" afterPath="$PROJECT_DIR$/width_bit_encoding_annotated.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/alphnum_glyphs_master.kra" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/alphnum_glyphs_master.kra" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/alphnum_glyphs_resized.kra" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/alphnum_glyphs_resized.kra" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/hangul_3set_glyphs_master.kra" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/hangul_3set_glyphs_master.kra" afterDir="false" />
@@ -43,13 +96,31 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Kotlin Class" />
         <option value="Interface" />
         <option value="Class" />
+        <option value="Kotlin Class" />
       </list>
     </option>
   </component>
   <component name="Git.Settings">
+    <excluded-from-favorite>
+      <branch-storage>
+        <map>
+          <entry type="LOCAL">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="master" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </excluded-from-favorite>
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="ttf-otf-build-system" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitSEFilterConfiguration">
@@ -60,9 +131,20 @@
       <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
     </file-type-list>
   </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="jar://$PROJECT_DIR$/lib/gdx-1.10.0-sources.jar!/com/badlogic/gdx/Input.java" root0="SKIP_INSPECTION" />
+    <setting file="jar://$PROJECT_DIR$/lib/gdx-1.10.0-sources.jar!/com/badlogic/gdx/graphics/g2d/BitmapFont.java" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="KotlinCompilerWorkspaceSettings">
+    <option name="preciseIncrementalEnabled" value="false" />
+  </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 2
+}</component>
   <component name="ProjectId" id="1aVE5t6KObkWt36lb07GBy1GY1S" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -70,13 +152,31 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;Kotlin.FontTestGDXKt.executor&quot;: &quot;Debug&quot;,
+    &quot;Kotlin.TypewriterGDXKt.executor&quot;: &quot;Debug&quot;,
+    &quot;RunOnceActivity.CodyAccountHistoryMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyAccountsIdsRefresh&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyAssignOrphanedChatsToActiveAccount&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyConvertUrlToCodebaseName&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyHistoryLlmMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyMigrateChatHistory-v2&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.CodyProjectSettingsMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ToggleCodyToolWindowAfterMigration&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/home/torvald/Documents/Terrarum-sans-bitmap&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Artifacts&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.20724516&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.kotlinCompiler&quot;
   }
 }</component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\minjaesong\Documents\Terrarum-sans-bitmap\" />
       <recent name="C:\Users\minjaesong\Documents\Terrarum-sans-bitmap" />
@@ -86,6 +186,15 @@
   <component name="RunManager" selected="Kotlin.FontTestGDXKt">
     <configuration default="true" type="Applet">
       <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType">
+      <module name="" />
+      <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -XX:MaxPermSize=250m -ea" />
+      <option name="PROGRAM_PARAMETERS" />
+      <predefined_log_file enabled="true" id="idea.log" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -133,6 +242,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="BuildJAR_TerrarumSansBitmap" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
       <option name="filePath" />
       <method v="2">
@@ -144,15 +259,6 @@
       <option name="WORKING_DIRECTORY" value="$MODULE_DIR$" />
       <properties />
       <listeners />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType">
-      <module name="" />
-      <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -XX:MaxPermSize=250m -ea" />
-      <option name="PROGRAM_PARAMETERS" />
-      <predefined_log_file enabled="true" id="idea.log" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -176,6 +282,23 @@
       <option name="presentableId" value="Default" />
       <updated>1497950823354</updated>
     </task>
+    <task id="LOCAL-00001" summary="Old hangul rendering fix">
+      <option name="closed" value="true" />
+      <created>1705647715000</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1705647715000</updated>
+    </task>
+    <task id="LOCAL-00002" summary="fix: characters not on overriden charset would not print">
+      <option name="closed" value="true" />
+      <created>1726151824465</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1726151824465</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TodoView">
@@ -197,6 +320,11 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Old hangul rendering fix" />
+    <MESSAGE value="fix: characters not on overriden charset would not print" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix: characters not on overriden charset would not print" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

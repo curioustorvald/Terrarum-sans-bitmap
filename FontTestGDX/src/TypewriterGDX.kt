@@ -39,7 +39,6 @@ class TypewriterGDX(val width: Int, val height: Int, val cols: Int, val hmargin:
 
     override fun create() {
         font = TerrarumTypewriterBitmap(
-            "./assets/typewriter",
             StringReader(
                 """ko_kr_3set-390_typewriter,typewriter_ko_3set-390.tga,16
                 |en_intl_qwerty_typewriter,typewriter_intl_qwerty.tga,0
@@ -61,17 +60,17 @@ class TypewriterGDX(val width: Int, val height: Int, val cols: Int, val hmargin:
         inputStrober = InputStrober(this)
 
         try {
-            sndMovingkey = Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/movingkey.wav"))
-            sndDeadkey = Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/deadkey.wav"))
-            sndShiftin = Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/shiftin.wav"))
-            sndShiftout = Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/shiftout.wav"))
-            sndSpace = Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/space.wav"))
+            sndMovingkey = Gdx.audio.newSound(Gdx.files.classpath("assets/typewriter/audio/movingkey.wav"))
+            sndDeadkey = Gdx.audio.newSound(Gdx.files.classpath("assets/typewriter/audio/deadkey.wav"))
+            sndShiftin = Gdx.audio.newSound(Gdx.files.classpath("assets/typewriter/audio/shiftin.wav"))
+            sndShiftout = Gdx.audio.newSound(Gdx.files.classpath("assets/typewriter/audio/shiftout.wav"))
+            sndSpace = Gdx.audio.newSound(Gdx.files.classpath("assets/typewriter/audio/space.wav"))
 
             sndCRs = Array(6) {
-                Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/cr$it.wav"))
+                Gdx.audio.newSound(Gdx.files.classpath("assets/typewriter/audio/cr$it.wav"))
             }
 
-            sndLF = Gdx.audio.newSound(Gdx.files.internal("assets/typewriter/audio/crlf.wav"))
+            sndLF = Gdx.audio.newSound(Gdx.files.classpath("assets/typewriter/audio/crlf.wav"))
         }
         catch (e: GdxRuntimeException) {
             e.printStackTrace()

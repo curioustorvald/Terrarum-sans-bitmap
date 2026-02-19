@@ -45,7 +45,7 @@ class FontTestGDX : Game() {
     private lateinit var testtex: TextureRegion
 
     override fun create() {
-        font = TerrarumSansBitmap("./assets", debug = true, flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.5f) // must test for two flipY cases
+        font = TerrarumSansBitmap(debug = true, flipY = false, errorOnUnknownChar = false, shadowAlpha = 0.5f) // must test for two flipY cases
 //        font.scale = 2
 //        font.interchar = 1
 
