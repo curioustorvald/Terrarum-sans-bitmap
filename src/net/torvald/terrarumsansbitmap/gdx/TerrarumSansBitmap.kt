@@ -191,7 +191,7 @@ internal typealias Hash = Long
  *  - LatinExtB_variable.tga
  *  - kana.tga
  *  - cjkpunct.tga
- *  - wenquanyi.tga.gz
+ *  - wenquanyi.tga
  *  - cyrillic_variable.tga
  *  - fullwidth_forms.tga
  *  - unipunct_variable.tga
@@ -2590,7 +2590,7 @@ class TerrarumSansBitmap(
             "latinExtB_variable.tga",
             "kana_variable.tga",
             "cjkpunct_variable.tga",
-            "wenquanyi.tga.gz",
+            "wenquanyi.tga",
             "cyrilic_variable.tga",
             "halfwidth_fullwidth_variable.tga",
             "unipunct_variable.tga",
