@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" filepath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" />
       <module fileurl="file://$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" filepath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" />
+      <module fileurl="file://$PROJECT_DIR$/OTFbuild/OTFbuild.iml" filepath="$PROJECT_DIR$/OTFbuild/OTFbuild.iml" />
     </modules>
   </component>
 </project>

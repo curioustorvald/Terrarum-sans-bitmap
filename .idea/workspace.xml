@@ -9,84 +9,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="fix: characters not on overriden charset would not print">
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/TerrarumSansBitmap.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/TerrarumSansBitmap.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/KotlinJavaRuntime.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/KotlinJavaRuntime.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="22c5bc80-996c-4846-b173-7dc8c2096fe3" name="Default" comment="why are you still looking for tga.gz">
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" beforeDir="false" afterPath="$PROJECT_DIR$/BuildJAR_TerrarumSansBitmap.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/FontTestGDX.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/src/FontTestGDX.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FontTestGDX/src/TypewriterGDX.kt" beforeDir="false" afterPath="$PROJECT_DIR$/FontTestGDX/src/TypewriterGDX.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LICENSE.md" beforeDir="false" afterPath="$PROJECT_DIR$/LICENSE.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/alphabetic_presentation_forms_extrawide_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/ascii_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/bengali_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/braille_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/cjkpunct_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/control_pictures_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/currencies_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/cyrilic_bulgarian_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/cyrilic_serbian_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/cyrilic_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/devanagari_internal_extrawide_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/devanagari_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/diacritical_marks_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/enclosed_alphanumeric_supplement_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/futhark.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/greek_polytonic_xyswap_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/greek_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/halfwidth_fullwidth_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/hangul_johab.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/hayeren_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/hentaigana_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/internal_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/ipa_ext_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/kana_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/kartuli_allcaps_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/kartuli_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/latinExtA_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/latinExtB_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/latinExtC_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/latinExtD_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/latinExt_additional_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/letterlike_symbols_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/phonetic_extensions_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/pua_codestyle_ascii_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/puae000-e0ff.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/richtext_furigana.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/sundanese_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/tamil_extrawide_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/thai_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/tsalagi_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/cr0.wav" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/cr1.wav" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/cr2.wav" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/cr3.wav" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/cr4.wav" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/cr5.wav" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/crlf.wav" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/deadkey.wav" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/movingkey.wav" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/shiftin.wav" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/shiftout.wav" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/audio/space.wav" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/typewriter_intl_qwerty.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/typewriter/typewriter_ko_3set-390.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/unipunct_variable.tga" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/wenquanyi.tga.gz" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/samples/wikipedia_x86.png" beforeDir="false" afterPath="$PROJECT_DIR$/samples/wikipedia_x86.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/TerrarumSansBitmap.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumsansbitmap/gdx/TerrarumSansBitmap.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/net/torvald/terrarumtypewriterbitmap/gdx/TerrarumTypewriterBitmap.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/torvald/terrarumtypewriterbitmap/gdx/TerrarumTypewriterBitmap.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/terrarum_sans_cyrillic_2.png" beforeDir="false" afterPath="$PROJECT_DIR$/terrarum_sans_cyrillic_2.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/alphnum_glyphs_master.kra" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/alphnum_glyphs_master.kra" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/alphnum_glyphs_resized.kra" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/alphnum_glyphs_resized.kra" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/hangul_3set_glyphs_master.kra" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/hangul_3set_glyphs_master.kra" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_input_template.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_input_template.psd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_intl_qwerty.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_intl_qwerty.psd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_ko_3set-390.psd" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_ko_3set-390.psd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_ko_3set_glyphs_resized.kra" beforeDir="false" afterPath="$PROJECT_DIR$/work_files/typewriter_input/typewriter_ko_3set_glyphs_resized.kra" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -242,12 +168,6 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="JetRunConfigurationType">
-      <module name="BuildJAR_TerrarumSansBitmap" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
       <option name="filePath" />
       <method v="2">
@@ -298,7 +218,23 @@
       <option name="project" value="LOCAL" />
       <updated>1726151824465</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="moving assets inside classpath">
+      <option name="closed" value="true" />
+      <created>1771460240293</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1771460240293</updated>
+    </task>
+    <task id="LOCAL-00004" summary="why are you still looking for tga.gz">
+      <option name="closed" value="true" />
+      <created>1771551906182</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1771551906182</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TodoView">
@@ -324,7 +260,9 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Old hangul rendering fix" />
     <MESSAGE value="fix: characters not on overriden charset would not print" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix: characters not on overriden charset would not print" />
+    <MESSAGE value="moving assets inside classpath" />
+    <MESSAGE value="why are you still looking for tga.gz" />
+    <option name="LAST_COMMIT_MESSAGE" value="why are you still looking for tga.gz" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

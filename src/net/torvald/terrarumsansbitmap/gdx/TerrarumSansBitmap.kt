@@ -3022,7 +3022,7 @@ class TerrarumSansBitmap(
 
 
 
-        // The "Keming" Machine //
+        // The Keming Machine //
 
         private val kemingBitMask: IntArray = intArrayOf(7,6,5,4,3,2,1,0,15,14).map { 1 shl it }.toIntArray()
 
