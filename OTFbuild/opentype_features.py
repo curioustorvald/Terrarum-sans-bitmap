@@ -789,7 +789,7 @@ def _generate_mark(glyphs, has):
     for mark_type, mark_list in sorted(mark_classes.items()):
         class_name = f"@mark_type{mark_type}"
         for cp, g in mark_list:
-            mark_x = (g.props.width * SC.SCALE) // 2
+            mark_x = ((g.props.width + 1) // 2) * SC.SCALE
             mark_y = SC.ASCENT
             lines.append(
                 f"markClass {glyph_name(cp)} <anchor {mark_x} {mark_y}> {class_name};"
