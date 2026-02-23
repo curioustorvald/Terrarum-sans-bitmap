@@ -191,16 +191,29 @@ def parse_variable_sheet(image, sheet_index, cell_w, cell_h, cols, is_xy_swapped
                         info |= (1 << y)
                 ext_info[x] = info
 
-        # Extract glyph bitmap: only pixels within the glyph's declared width.
-        # The tag column and any padding beyond width must be stripped.
-        bitmap_w = min(width, cell_w - 1) if width > 0 else 0
+        # Extract glyph bitmap: full cell minus the tag column.
+        # The Kotlin code draws the ENTIRE cell at a computed position;
+        # the tag column is the only thing excluded.
+        # Alignment and width only affect advance/positioning, not the bitmap.
+        max_w = cell_w - 1  # exclude tag column
+
         bitmap = []
         for row in range(cell_h):
             row_data = []
-            for col in range(bitmap_w):
+            for col in range(max_w):
                 px = image.get_pixel(cell_x + col, cell_y + row)
                 row_data.append(1 if (px & 0xFF) != 0 else 0)
             bitmap.append(row_data)
+
+        # Now strip the tag column pixels that may have leaked into
+        # the glyph area. Tag data lives at column (cell_w - 1) which
+        # we already excluded, but extInfo columns 0..6 at the LEFT
+        # edge of the cell also contain tag data for replacewith glyphs.
+        # Clean those columns if they were used for extInfo.
+        if ext_count > 0:
+            for col_idx in range(min(ext_count, max_w)):
+                for row in range(cell_h):
+                    bitmap[row][col_idx] = 0
 
         result[code] = ExtractedGlyph(code, props, bitmap)
 

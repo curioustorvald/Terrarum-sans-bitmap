@@ -77,15 +77,21 @@ def trace_bitmap(bitmap, glyph_width_px):
     return contours
 
 
-def draw_glyph_to_pen(contours, pen):
+def draw_glyph_to_pen(contours, pen, x_offset=0, y_offset=0):
     """
     Draw rectangle contours to a TTGlyphPen or similar pen.
     Each rectangle is drawn as a clockwise closed contour (4 on-curve points).
+
+    x_offset/y_offset shift all contours (used for alignment positioning).
     """
     for x0, y0, x1, y1 in contours:
+        ax0 = x0 + x_offset
+        ax1 = x1 + x_offset
+        ay0 = y0 + y_offset
+        ay1 = y1 + y_offset
         # Clockwise: bottom-left -> top-left -> top-right -> bottom-right
-        pen.moveTo((x0, y0))
-        pen.lineTo((x0, y1))
-        pen.lineTo((x1, y1))
-        pen.lineTo((x1, y0))
+        pen.moveTo((ax0, ay0))
+        pen.lineTo((ax0, ay1))
+        pen.lineTo((ax1, ay1))
+        pen.lineTo((ax1, ay0))
         pen.closePath()

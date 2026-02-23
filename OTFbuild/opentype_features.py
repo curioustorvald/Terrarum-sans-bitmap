@@ -398,59 +398,103 @@ def _generate_locl(glyphs, has):
 
 
 def _generate_devanagari(glyphs, has):
-    """Generate Devanagari GSUB features: nukt, akhn, half, vatu, pres, blws, rphf."""
+    """Generate Devanagari GSUB features: ccmp (consonant mapping), nukt, akhn, half, vatu, pres, blws, rphf."""
     features = []
 
+    # --- ccmp: Map Unicode consonants to internal PUA presentation forms ---
+    # This is the critical first step: U+0915-0939 have width=0 in the sheet,
+    # the actual glyph bitmaps live at their PUA forms (0xF0140+).
+    # This mirrors the Kotlin normalise() pass 0.
+    ccmp_subs = []
+    for uni_cp in range(0x0915, 0x093A):
+        internal = SC.to_deva_internal(uni_cp)
+        if has(uni_cp) and has(internal):
+            ccmp_subs.append(
+                f"    sub {glyph_name(uni_cp)} by {glyph_name(internal)};"
+            )
+    # Also map nukta-forms U+0958-095F to their PUA equivalents
+    for uni_cp in range(0x0958, 0x0960):
+        try:
+            internal = SC.to_deva_internal(uni_cp)
+            if has(uni_cp) and has(internal):
+                ccmp_subs.append(
+                    f"    sub {glyph_name(uni_cp)} by {glyph_name(internal)};"
+                )
+        except ValueError:
+            pass
+    if ccmp_subs:
+        features.append(
+            "feature ccmp {\n    script dev2;\n"
+            "    lookup DevaConsonantMap {\n"
+            + '\n'.join("    " + s for s in ccmp_subs)
+            + "\n    } DevaConsonantMap;\n} ccmp;"
+        )
+
     # --- nukt: consonant + nukta -> nukta form ---
+    # Now operates on PUA forms (after ccmp)
     nukt_subs = []
     for uni_cp in range(0x0915, 0x093A):
         internal = SC.to_deva_internal(uni_cp)
         nukta_form = internal + 48
-        if has(uni_cp) and has(0x093C) and has(nukta_form):
+        if has(internal) and has(0x093C) and has(nukta_form):
             nukt_subs.append(
-                f"    sub {glyph_name(uni_cp)} {glyph_name(0x093C)} by {glyph_name(nukta_form)};"
+                f"    sub {glyph_name(internal)} {glyph_name(0x093C)} by {glyph_name(nukta_form)};"
             )
     if nukt_subs:
         features.append("feature nukt {\n    script dev2;\n" + '\n'.join(nukt_subs) + "\n} nukt;")
 
     # --- akhn: akhand ligatures ---
+    # Must reference PUA forms after ccmp
     akhn_subs = []
-    if has(0x0915) and has(SC.DEVANAGARI_VIRAMA) and has(0x0937) and has(SC.DEVANAGARI_LIG_K_SS):
+    ka_int = SC.to_deva_internal(0x0915)
+    ssa_int = SC.to_deva_internal(0x0937)
+    ja_int = SC.to_deva_internal(0x091C)
+    nya_int = SC.to_deva_internal(0x091E)
+    if has(ka_int) and has(SC.DEVANAGARI_VIRAMA) and has(ssa_int) and has(SC.DEVANAGARI_LIG_K_SS):
         akhn_subs.append(
-            f"    sub {glyph_name(0x0915)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(0x0937)} by {glyph_name(SC.DEVANAGARI_LIG_K_SS)};"
+            f"    sub {glyph_name(ka_int)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(ssa_int)} by {glyph_name(SC.DEVANAGARI_LIG_K_SS)};"
         )
-    if has(0x091C) and has(SC.DEVANAGARI_VIRAMA) and has(0x091E) and has(SC.DEVANAGARI_LIG_J_NY):
+    if has(ja_int) and has(SC.DEVANAGARI_VIRAMA) and has(nya_int) and has(SC.DEVANAGARI_LIG_J_NY):
         akhn_subs.append(
-            f"    sub {glyph_name(0x091C)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(0x091E)} by {glyph_name(SC.DEVANAGARI_LIG_J_NY)};"
+            f"    sub {glyph_name(ja_int)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(nya_int)} by {glyph_name(SC.DEVANAGARI_LIG_J_NY)};"
         )
     if akhn_subs:
         features.append("feature akhn {\n    script dev2;\n" + '\n'.join(akhn_subs) + "\n} akhn;")
 
-    # --- half: consonant + virama -> half form ---
+    # --- half: consonant (PUA) + virama -> half form ---
+    # After ccmp, consonants are in PUA form, so reference PUA here
     half_subs = []
     for uni_cp in range(0x0915, 0x093A):
         internal = SC.to_deva_internal(uni_cp)
         half_form = internal + 240
-        if has(uni_cp) and has(SC.DEVANAGARI_VIRAMA) and has(half_form):
+        if has(internal) and has(SC.DEVANAGARI_VIRAMA) and has(half_form):
             half_subs.append(
-                f"    sub {glyph_name(uni_cp)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(half_form)};"
+                f"    sub {glyph_name(internal)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(half_form)};"
             )
     if half_subs:
         features.append("feature half {\n    script dev2;\n" + '\n'.join(half_subs) + "\n} half;")
 
-    # --- vatu: consonant + virama + RA -> RA-appended form ---
+    # --- vatu: consonant (PUA) + virama + RA (PUA) -> RA-appended form ---
+    ra_int = SC.to_deva_internal(0x0930)
     vatu_subs = []
     for uni_cp in range(0x0915, 0x093A):
         internal = SC.to_deva_internal(uni_cp)
         ra_form = internal + 480
-        if has(uni_cp) and has(SC.DEVANAGARI_VIRAMA) and has(0x0930) and has(ra_form):
+        if has(internal) and has(SC.DEVANAGARI_VIRAMA) and has(ra_int) and has(ra_form):
             vatu_subs.append(
-                f"    sub {glyph_name(uni_cp)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(0x0930)} by {glyph_name(ra_form)};"
+                f"    sub {glyph_name(internal)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(ra_int)} by {glyph_name(ra_form)};"
             )
     if vatu_subs:
         features.append("feature vatu {\n    script dev2;\n" + '\n'.join(vatu_subs) + "\n} vatu;")
 
-    # --- pres: named conjunct ligatures ---
+    # --- pres: named conjunct ligatures (using PUA forms) ---
+    def _di(u):
+        """Convert Unicode Devanagari consonant to internal PUA form."""
+        try:
+            return SC.to_deva_internal(u)
+        except ValueError:
+            return u  # already PUA or non-consonant
+
     pres_subs = []
     _conjuncts = [
         (0x0915, 0x0924, SC.DEVANAGARI_LIG_K_T, "K.T"),
@@ -494,7 +538,9 @@ def _generate_devanagari(glyphs, has):
         (0x0939, 0x0932, 0xF01CA, "H.L"),
         (0x0939, 0x0935, 0xF01CB, "H.V"),
     ]
-    for c1, c2, result, name in _conjuncts:
+    for c1_uni, c2_uni, result, name in _conjuncts:
+        c1 = _di(c1_uni)
+        c2 = _di(c2_uni)
         if has(c1) and has(SC.DEVANAGARI_VIRAMA) and has(c2) and has(result):
             pres_subs.append(
                 f"    sub {glyph_name(c1)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(c2)} by {glyph_name(result)}; # {name}"
@@ -502,15 +548,15 @@ def _generate_devanagari(glyphs, has):
     if pres_subs:
         features.append("feature pres {\n    script dev2;\n" + '\n'.join(pres_subs) + "\n} pres;")
 
-    # --- blws: RA/RRA/HA + U/UU -> special syllables ---
+    # --- blws: RA/RRA/HA (PUA) + U/UU -> special syllables ---
     blws_subs = []
     _blws_rules = [
-        (0x0930, SC.DEVANAGARI_U, SC.DEVANAGARI_SYLL_RU, "Ru"),
-        (0x0930, SC.DEVANAGARI_UU, SC.DEVANAGARI_SYLL_RUU, "Ruu"),
-        (0x0931, SC.DEVANAGARI_U, SC.DEVANAGARI_SYLL_RRU, "RRu"),
-        (0x0931, SC.DEVANAGARI_UU, SC.DEVANAGARI_SYLL_RRUU, "RRuu"),
-        (0x0939, SC.DEVANAGARI_U, SC.DEVANAGARI_SYLL_HU, "Hu"),
-        (0x0939, SC.DEVANAGARI_UU, SC.DEVANAGARI_SYLL_HUU, "Huu"),
+        (_di(0x0930), SC.DEVANAGARI_U, SC.DEVANAGARI_SYLL_RU, "Ru"),
+        (_di(0x0930), SC.DEVANAGARI_UU, SC.DEVANAGARI_SYLL_RUU, "Ruu"),
+        (_di(0x0931), SC.DEVANAGARI_U, SC.DEVANAGARI_SYLL_RRU, "RRu"),
+        (_di(0x0931), SC.DEVANAGARI_UU, SC.DEVANAGARI_SYLL_RRUU, "RRuu"),
+        (_di(0x0939), SC.DEVANAGARI_U, SC.DEVANAGARI_SYLL_HU, "Hu"),
+        (_di(0x0939), SC.DEVANAGARI_UU, SC.DEVANAGARI_SYLL_HUU, "Huu"),
     ]
     for c1, c2, result, name in _blws_rules:
         if has(c1) and has(c2) and has(result):
@@ -520,12 +566,12 @@ def _generate_devanagari(glyphs, has):
     if blws_subs:
         features.append("feature blws {\n    script dev2;\n" + '\n'.join(blws_subs) + "\n} blws;")
 
-    # --- rphf: RA + virama -> reph ---
-    if has(0x0930) and has(SC.DEVANAGARI_VIRAMA) and has(SC.DEVANAGARI_RA_SUPER):
+    # --- rphf: RA (PUA) + virama -> reph ---
+    if has(ra_int) and has(SC.DEVANAGARI_VIRAMA) and has(SC.DEVANAGARI_RA_SUPER):
         rphf_code = (
             f"feature rphf {{\n"
             f"    script dev2;\n"
-            f"    sub {glyph_name(0x0930)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(SC.DEVANAGARI_RA_SUPER)};\n"
+            f"    sub {glyph_name(ra_int)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(SC.DEVANAGARI_RA_SUPER)};\n"
             f"}} rphf;"
         )
         features.append(rphf_code)

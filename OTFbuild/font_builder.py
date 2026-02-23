@@ -168,11 +168,28 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
             continue
 
         advance = g.props.width * SCALE
+
+        # Compute alignment offset (lsb shift).
+        # The Kotlin code draws the full cell at an offset position:
+        #   ALIGN_LEFT: offset = 0
+        #   ALIGN_RIGHT: offset = width - W_VAR_INIT (negative)
+        #   ALIGN_CENTRE: offset = ceil((width - W_VAR_INIT) / 2) (negative)
+        #   ALIGN_BEFORE: offset = 0
+        # The bitmap cell width depends on the sheet type.
+        import math
+        bm_cols = len(g.bitmap[0]) if g.bitmap and g.bitmap[0] else 0
+        if g.props.align_where == SC.ALIGN_RIGHT:
+            x_offset = (g.props.width - bm_cols) * SCALE
+        elif g.props.align_where == SC.ALIGN_CENTRE:
+            x_offset = math.ceil((g.props.width - bm_cols) / 2) * SCALE
+        else:
+            x_offset = 0
+
         contours = trace_bitmap(g.bitmap, g.props.width)
 
         pen = T2CharStringPen(advance, None)
         if contours:
-            draw_glyph_to_pen(contours, pen)
+            draw_glyph_to_pen(contours, pen, x_offset=x_offset)
             traced_count += 1
         charstrings[name] = pen.getCharString()
 
