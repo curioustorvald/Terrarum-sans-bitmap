@@ -6,7 +6,7 @@ Builds a TTF font with both vector-traced outlines (TrueType glyf)
 and embedded bitmap strike (EBDT/EBLC) from TGA sprite sheets.
 
 Usage:
-    python3 OTFbuild/build_font.py src/assets -o OTFbuild/TerrarumSansBitmap.ttf
+    python3 OTFbuild/build_font.py src/assets -o OTFbuild/TerrarumSansBitmap.otf
 
 Options:
     --no-bitmap     Skip EBDT/EBLC bitmap strike

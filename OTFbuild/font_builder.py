@@ -102,10 +102,85 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
     glyphs.update(hangul_glyphs)
     print(f"  Total glyphs after Hangul: {len(glyphs)}")
 
+    # Step 2b: Copy PUA consonant glyphs to Unicode positions
+    # In the bitmap font, consonants U+0915-0939 have width=0 and empty bitmaps
+    # because the engine normalises them to PUA forms (0xF0140+) before rendering.
+    # For OTF, we need the Unicode positions to have actual outlines so that
+    # consonants render even without GSUB shaping.
+    print("Step 2b: Populating Devanagari consonant glyphs from PUA forms...")
+    deva_copied = 0
+    for uni_cp in range(0x0915, 0x093A):
+        try:
+            pua_cp = SC.to_deva_internal(uni_cp)
+        except ValueError:
+            continue
+        if pua_cp in glyphs and uni_cp in glyphs:
+            pua_g = glyphs[pua_cp]
+            uni_g = glyphs[uni_cp]
+            if uni_g.props.width == 0 and pua_g.props.width > 0:
+                uni_g.props.width = pua_g.props.width
+                uni_g.bitmap = pua_g.bitmap
+                deva_copied += 1
+    # Also copy nukta consonant forms U+0958-095F
+    for uni_cp in range(0x0958, 0x0960):
+        try:
+            pua_cp = SC.to_deva_internal(uni_cp)
+        except ValueError:
+            continue
+        if pua_cp in glyphs and uni_cp in glyphs:
+            pua_g = glyphs[pua_cp]
+            uni_g = glyphs[uni_cp]
+            if uni_g.props.width == 0 and pua_g.props.width > 0:
+                uni_g.props.width = pua_g.props.width
+                uni_g.bitmap = pua_g.bitmap
+                deva_copied += 1
+    print(f"  Copied {deva_copied} consonant glyphs from PUA forms")
+
     # Step 3: Expand replacewith directives
     print("Step 3: Processing replacewith directives...")
     replacewith_subs = _expand_replacewith(glyphs)
     print(f"  Found {len(replacewith_subs)} replacewith substitutions")
+
+    # Step 3b: Compose fallback bitmaps for replacewith glyphs
+    # Glyphs with replacewith directives have width=0 and no bitmap; they
+    # rely on GSUB ccmp to expand into their target sequence.  Renderers
+    # without GSUB support would show whitespace.  Build a composite
+    # bitmap by concatenating the target glyphs' bitmaps side by side.
+    print("Step 3b: Composing fallback bitmaps for replacewith glyphs...")
+    composed = 0
+    for src_cp, target_cps in replacewith_subs:
+        src_g = glyphs.get(src_cp)
+        if src_g is None or src_g.props.width > 0:
+            continue  # already has content (e.g. Deva consonants fixed above)
+        # Resolve target glyphs
+        target_gs = [glyphs.get(t) for t in target_cps]
+        if not all(target_gs):
+            continue
+        # Compute total advance and composite height
+        total_width = sum(g.props.width for g in target_gs)
+        if total_width == 0:
+            continue
+        bm_height = max((len(g.bitmap) for g in target_gs if g.bitmap), default=SC.H)
+        # Build composite bitmap
+        composite = [[0] * total_width for _ in range(bm_height)]
+        x = 0
+        for tg in target_gs:
+            if not tg.bitmap:
+                x += tg.props.width
+                continue
+            cols = min(tg.props.width, len(tg.bitmap[0])) if tg.props.width > 0 else len(tg.bitmap[0])
+            for row in range(min(len(tg.bitmap), bm_height)):
+                for col in range(cols):
+                    dst_col = x + col
+                    if dst_col < total_width and tg.bitmap[row][col]:
+                        composite[row][dst_col] = 1
+            if tg.props.width > 0:
+                x += tg.props.width
+            # Zero-width targets (combining marks) overlay at current position
+        src_g.props.width = total_width
+        src_g.bitmap = composite
+        composed += 1
+    print(f"  Composed {composed} fallback bitmaps")
 
     # Step 4: Create glyph order and cmap
     print("Step 4: Building glyph order and cmap...")

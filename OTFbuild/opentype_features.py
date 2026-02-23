@@ -73,7 +73,7 @@ def generate_features(glyphs, kern_pairs, font_glyph_set,
         parts.append(locl_code)
 
     # Devanagari features
-    deva_code = _generate_devanagari(glyphs, has)
+    deva_code = _generate_devanagari(glyphs, has, replacewith_subs or [])
     if deva_code:
         parts.append(deva_code)
 
@@ -397,13 +397,11 @@ def _generate_locl(glyphs, has):
     return '\n'.join(lines)
 
 
-def _generate_devanagari(glyphs, has):
-    """Generate Devanagari GSUB features: ccmp (consonant mapping), nukt, akhn, half, vatu, pres, blws, rphf."""
+def _generate_devanagari(glyphs, has, replacewith_subs=None):
+    """Generate Devanagari GSUB features: ccmp (consonant mapping + vowel decomposition), nukt, akhn, half, vatu, pres, blws, rphf."""
     features = []
 
     # --- ccmp: Map Unicode consonants to internal PUA presentation forms ---
-    # This is the critical first step: U+0915-0939 have width=0 in the sheet,
-    # the actual glyph bitmaps live at their PUA forms (0xF0140+).
     # This mirrors the Kotlin normalise() pass 0.
     ccmp_subs = []
     for uni_cp in range(0x0915, 0x093A):
@@ -422,13 +420,42 @@ def _generate_devanagari(glyphs, has):
                 )
         except ValueError:
             pass
-    if ccmp_subs:
-        features.append(
-            "feature ccmp {\n    script dev2;\n"
-            "    lookup DevaConsonantMap {\n"
-            + '\n'.join("    " + s for s in ccmp_subs)
-            + "\n    } DevaConsonantMap;\n} ccmp;"
-        )
+
+    # --- ccmp: Devanagari vowel decompositions ---
+    # Independent vowels like U+0910 (AI) decompose into base + matra.
+    # These must be in the dev2 ccmp so HarfBuzz applies them during
+    # Devanagari shaping (DFLT ccmp is not used when dev2 is present).
+    vowel_decomp_subs = []
+    if replacewith_subs:
+        for src_cp, target_cps in replacewith_subs:
+            if not (0x0900 <= src_cp <= 0x097F):
+                continue
+            # Skip consonants (already handled above as single subs)
+            if 0x0915 <= src_cp <= 0x0939 or 0x0958 <= src_cp <= 0x095F:
+                continue
+            if len(target_cps) < 2:
+                continue
+            if not has(src_cp):
+                continue
+            if not all(has(t) for t in target_cps):
+                continue
+            targets = ' '.join(glyph_name(t) for t in target_cps)
+            vowel_decomp_subs.append(
+                f"    sub {glyph_name(src_cp)} by {targets};"
+            )
+
+    if ccmp_subs or vowel_decomp_subs:
+        ccmp_parts = ["feature ccmp {", "    script dev2;"]
+        if ccmp_subs:
+            ccmp_parts.append("    lookup DevaConsonantMap {")
+            ccmp_parts.extend("    " + s for s in ccmp_subs)
+            ccmp_parts.append("    } DevaConsonantMap;")
+        if vowel_decomp_subs:
+            ccmp_parts.append("    lookup DevaVowelDecomp {")
+            ccmp_parts.extend("    " + s for s in vowel_decomp_subs)
+            ccmp_parts.append("    } DevaVowelDecomp;")
+        ccmp_parts.append("} ccmp;")
+        features.append('\n'.join(ccmp_parts))
 
     # --- nukt: consonant + nukta -> nukta form ---
     # Now operates on PUA forms (after ccmp)
