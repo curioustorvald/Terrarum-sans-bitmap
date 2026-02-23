@@ -182,6 +182,19 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         composed += 1
     print(f"  Composed {composed} fallback bitmaps")
 
+    # Step 3c: Identify combining marks for zero advance width
+    # Glyphs with write_on_top >= 0 are combining marks positioned via
+    # GPOS mark-to-base.  In OpenType they must have zero advance width;
+    # otherwise the cursor advances past the base and diacritics appear
+    # shifted to the right.  We record them here but keep props.width
+    # intact so the mark anchor calculation can use the original width.
+    mark_cps = set()
+    for cp, g in glyphs.items():
+        if g.props.write_on_top >= 0 and g.props.width > 0:
+            mark_cps.add(cp)
+    if mark_cps:
+        print(f"Step 3c: Found {len(mark_cps)} combining marks to zero in hmtx")
+
     # Step 4: Create glyph order and cmap
     print("Step 4: Building glyph order and cmap...")
     glyph_order = [".notdef"]
@@ -242,7 +255,7 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         if name == ".notdef" or name not in glyph_set:
             continue
 
-        advance = g.props.width * SCALE
+        advance = 0 if cp in mark_cps else g.props.width * SCALE
 
         # Compute alignment offset (lsb shift).
         # The Kotlin code draws the full cell at an offset position:
@@ -289,7 +302,7 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         name = glyph_name(cp)
         if name == ".notdef" or name not in glyph_set:
             continue
-        advance = g.props.width * SCALE
+        advance = 0 if cp in mark_cps else g.props.width * SCALE
         metrics[name] = (advance, 0)
 
     fb.setupHorizontalMetrics(metrics)

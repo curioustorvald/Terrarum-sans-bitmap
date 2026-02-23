@@ -299,21 +299,76 @@ def _generate_hangul_gsub(glyphs, has, jamo_data):
 
 
 def _generate_kern(kern_pairs, has):
-    """Generate kern feature from pair positioning data."""
+    """Generate kern feature using class-based pair positioning.
+
+    Left glyphs with identical kerning patterns are grouped into
+    classes, producing one compact PairPosFormat2 lookup per class.
+    This avoids the 16-bit PairSetOffset overflow that occurs when
+    a single PairPosFormat1 subtable exceeds 65 536 bytes (which
+    happens with ~855 left glyphs × ~855 right glyphs per set).
+    """
     if not kern_pairs:
         return ""
 
-    lines = ["feature kern {"]
-    count = 0
-    for (left_cp, right_cp), value in sorted(kern_pairs.items()):
-        if has(left_cp) and has(right_cp):
-            lines.append(f"    pos {glyph_name(left_cp)} {glyph_name(right_cp)} {value};")
-            count += 1
+    from collections import defaultdict
 
-    if count == 0:
+    # Filter to valid pairs and group by left glyph
+    by_left = {}
+    for (left_cp, right_cp), value in kern_pairs.items():
+        if has(left_cp) and has(right_cp):
+            by_left.setdefault(left_cp, []).append((right_cp, value))
+
+    if not by_left:
         return ""
-    lines.append("} kern;")
-    return '\n'.join(lines)
+
+    # Group left glyphs by their complete kerning signature
+    # (the full set of right-glyph + value pairs)
+    sig_to_lefts = defaultdict(list)
+    for left_cp, pairs in by_left.items():
+        sig = frozenset(pairs)
+        sig_to_lefts[sig].append(left_cp)
+
+    print(f"  [kern] {len(sig_to_lefts)} unique left-glyph classes "
+          f"from {len(by_left)} left glyphs")
+
+    # Build class definitions (outside feature block) and lookups
+    class_defs = []
+    lookup_defs = []
+    lookup_names = []
+
+    for i, (sig, left_cps) in enumerate(
+        sorted(sig_to_lefts.items(), key=lambda x: min(x[1]))
+    ):
+        left_name = f"@kL{i}"
+        left_glyphs = ' '.join(glyph_name(cp) for cp in sorted(left_cps))
+        class_defs.append(f"{left_name} = [{left_glyphs}];")
+
+        # Group right glyphs by kern value
+        val_to_rights = defaultdict(list)
+        for right_cp, value in sig:
+            val_to_rights[value].append(right_cp)
+
+        lk_name = f"kern_{i}"
+        lk_lines = [f"lookup {lk_name} {{"]
+        lk_lines.append("    lookupflag IgnoreMarks;")
+
+        for value, right_cps in sorted(val_to_rights.items()):
+            right_name = f"@kR{i}v{abs(value)}"
+            right_glyphs = ' '.join(glyph_name(cp) for cp in sorted(right_cps))
+            class_defs.append(f"{right_name} = [{right_glyphs}];")
+            lk_lines.append(f"    pos {left_name} {right_name} {value};")
+
+        lk_lines.append(f"}} {lk_name};")
+        lookup_defs.append('\n'.join(lk_lines))
+        lookup_names.append(lk_name)
+
+    # Feature block references all lookups
+    feat_lines = ["feature kern {"]
+    for ln in lookup_names:
+        feat_lines.append(f"    lookup {ln};")
+    feat_lines.append("} kern;")
+
+    return '\n'.join(class_defs + [""] + lookup_defs + [""] + feat_lines)
 
 
 def _generate_liga(has):
@@ -501,18 +556,42 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     if half_subs:
         features.append("feature half {\n    script dev2;\n" + '\n'.join(half_subs) + "\n} half;")
 
-    # --- vatu: consonant (PUA) + virama + RA (PUA) -> RA-appended form ---
+    # --- blwf: virama + RA -> below-base RA (rakaar) ---
+    # This serves two purposes:
+    # 1. Tells HarfBuzz that RA can be below-base during base detection
+    #    (HarfBuzz tests would_substitute([virama, RA], blwf) with ORIGINAL
+    #    Unicode glyphs, before ccmp has run)
+    # 2. Actually substitutes virama + RA -> rakaar mark during shaping
+    #    (after ccmp, RA is in PUA form)
     ra_int = SC.to_deva_internal(0x0930)
-    vatu_subs = []
+    ra_sub = SC.DEVANAGARI_RA_SUB
+    blwf_subs = []
+    # Unicode form (for base detection before ccmp)
+    if has(SC.DEVANAGARI_VIRAMA) and has(0x0930) and has(ra_sub):
+        blwf_subs.append(
+            f"    sub {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(0x0930)} by {glyph_name(ra_sub)};"
+        )
+    # PUA form (for actual substitution after ccmp)
+    if has(SC.DEVANAGARI_VIRAMA) and has(ra_int) and has(ra_sub):
+        blwf_subs.append(
+            f"    sub {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(ra_int)} by {glyph_name(ra_sub)};"
+        )
+    if blwf_subs:
+        features.append("feature blwf {\n    script dev2;\n" + '\n'.join(blwf_subs) + "\n} blwf;")
+
+    # --- cjct: consonant (PUA) + below-base RA -> RA-appended form ---
+    # After blwf converts virama+RA to rakaar mark, cjct combines it
+    # with the preceding consonant to produce the ra-appended glyph.
+    cjct_subs = []
     for uni_cp in range(0x0915, 0x093A):
         internal = SC.to_deva_internal(uni_cp)
         ra_form = internal + 480
-        if has(internal) and has(SC.DEVANAGARI_VIRAMA) and has(ra_int) and has(ra_form):
-            vatu_subs.append(
-                f"    sub {glyph_name(internal)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(ra_int)} by {glyph_name(ra_form)};"
+        if has(internal) and has(ra_sub) and has(ra_form):
+            cjct_subs.append(
+                f"    sub {glyph_name(internal)} {glyph_name(ra_sub)} by {glyph_name(ra_form)};"
             )
-    if vatu_subs:
-        features.append("feature vatu {\n    script dev2;\n" + '\n'.join(vatu_subs) + "\n} vatu;")
+    if cjct_subs:
+        features.append("feature cjct {\n    script dev2;\n" + '\n'.join(cjct_subs) + "\n} cjct;")
 
     # --- pres: named conjunct ligatures (using PUA forms) ---
     def _di(u):
@@ -716,23 +795,39 @@ def _generate_mark(glyphs, has):
                 f"markClass {glyph_name(cp)} <anchor {mark_x} {mark_y}> {class_name};"
             )
 
-    lines.append("")
-    lines.append("feature mark {")
-
+    # Define lookups at top level so they can be referenced from
+    # multiple script registrations in the mark feature.
+    lookup_names = []
     for mark_type, mark_list in sorted(mark_classes.items()):
         class_name = f"@mark_type{mark_type}"
         lookup_name = f"mark_type{mark_type}"
-        lines.append(f"    lookup {lookup_name} {{")
+        lines.append(f"lookup {lookup_name} {{")
 
         for cp, g in sorted(bases_with_anchors.items()):
             anchor = g.props.diacritics_anchors[mark_type] if mark_type < 6 else None
             if anchor and (anchor.x_used or anchor.y_used):
                 ax = anchor.x * SC.SCALE
                 ay = (SC.ASCENT // SC.SCALE - anchor.y) * SC.SCALE
-                lines.append(f"        pos base {glyph_name(cp)} <anchor {ax} {ay}> mark {class_name};")
+                lines.append(f"    pos base {glyph_name(cp)} <anchor {ax} {ay}> mark {class_name};")
 
-        lines.append(f"    }} {lookup_name};")
+        lines.append(f"}} {lookup_name};")
+        lines.append("")
+        lookup_names.append(lookup_name)
 
+    # Register mark lookups under DFLT (for Latin, etc.)
+    lines.append("feature mark {")
+    for ln in lookup_names:
+        lines.append(f"    lookup {ln};")
     lines.append("} mark;")
+
+    # For Devanagari, HarfBuzz's Indic v2 shaper uses abvm/blwm
+    # features for mark positioning, not the generic 'mark' feature.
+    # Register the same lookups under abvm for dev2 script.
+    lines.append("")
+    lines.append("feature abvm {")
+    lines.append("    script dev2;")
+    for ln in lookup_names:
+        lines.append(f"    lookup {ln};")
+    lines.append("} abvm;")
 
     return '\n'.join(lines)
