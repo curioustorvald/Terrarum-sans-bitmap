@@ -1,0 +1,449 @@
+"""
+Generate OpenType feature code (feaLib syntax) for GSUB/GPOS tables.
+
+Features implemented:
+- kern: GPOS pair positioning from KemingMachine
+- liga: Standard ligatures (Alphabetic Presentation Forms)
+- locl: Bulgarian/Serbian Cyrillic variants
+- Devanagari GSUB: nukt, akhn, half, vatu, pres, blws, rphf
+- Tamil GSUB: consonant+vowel ligatures, KSSA, SHRII
+- Sundanese GSUB: diacritic combinations
+- mark: GPOS mark-to-base positioning (diacritics anchors)
+"""
+
+from typing import Dict, List, Set, Tuple
+
+from glyph_parser import ExtractedGlyph
+import sheet_config as SC
+
+
+def glyph_name(cp):
+    """Generate standard glyph name for a codepoint."""
+    if cp == 0:
+        return ".notdef"
+    if cp == 0x20:
+        return "space"
+    if cp <= 0xFFFF:
+        return f"uni{cp:04X}"
+    return f"u{cp:05X}" if cp <= 0xFFFFF else f"u{cp:06X}"
+
+
+def generate_features(glyphs, kern_pairs, font_glyph_set):
+    """
+    Generate complete OpenType feature code string.
+
+    Args:
+        glyphs: dict of codepoint -> ExtractedGlyph
+        kern_pairs: dict of (left_cp, right_cp) -> kern_value_in_font_units
+        font_glyph_set: set of glyph names actually present in the font
+    Returns:
+        Feature code string for feaLib compilation.
+    """
+    parts = []
+
+    def has(cp):
+        return glyph_name(cp) in font_glyph_set
+
+    # kern feature
+    kern_code = _generate_kern(kern_pairs, has)
+    if kern_code:
+        parts.append(kern_code)
+
+    # liga feature
+    liga_code = _generate_liga(has)
+    if liga_code:
+        parts.append(liga_code)
+
+    # locl feature (Bulgarian/Serbian)
+    locl_code = _generate_locl(glyphs, has)
+    if locl_code:
+        parts.append(locl_code)
+
+    # Devanagari features
+    deva_code = _generate_devanagari(glyphs, has)
+    if deva_code:
+        parts.append(deva_code)
+
+    # Tamil features
+    tamil_code = _generate_tamil(glyphs, has)
+    if tamil_code:
+        parts.append(tamil_code)
+
+    # Sundanese features
+    sund_code = _generate_sundanese(glyphs, has)
+    if sund_code:
+        parts.append(sund_code)
+
+    # mark feature
+    mark_code = _generate_mark(glyphs, has)
+    if mark_code:
+        parts.append(mark_code)
+
+    return '\n\n'.join(parts)
+
+
+def _generate_kern(kern_pairs, has):
+    """Generate kern feature from pair positioning data."""
+    if not kern_pairs:
+        return ""
+
+    lines = ["feature kern {"]
+    count = 0
+    for (left_cp, right_cp), value in sorted(kern_pairs.items()):
+        if has(left_cp) and has(right_cp):
+            lines.append(f"    pos {glyph_name(left_cp)} {glyph_name(right_cp)} {value};")
+            count += 1
+
+    if count == 0:
+        return ""
+    lines.append("} kern;")
+    return '\n'.join(lines)
+
+
+def _generate_liga(has):
+    """Generate liga feature for Alphabetic Presentation Forms."""
+    subs = []
+
+    _liga_rules = [
+        ([0x66, 0x66, 0x69], 0xFB03, "ffi"),
+        ([0x66, 0x66, 0x6C], 0xFB04, "ffl"),
+        ([0x66, 0x66], 0xFB00, "ff"),
+        ([0x66, 0x69], 0xFB01, "fi"),
+        ([0x66, 0x6C], 0xFB02, "fl"),
+        ([0x17F, 0x74], 0xFB05, "long-s t"),
+        ([0x73, 0x74], 0xFB06, "st"),
+    ]
+
+    for seq, result_cp, name in _liga_rules:
+        if all(has(c) for c in seq) and has(result_cp):
+            seq_names = ' '.join(glyph_name(c) for c in seq)
+            subs.append(f"    sub {seq_names} by {glyph_name(result_cp)}; # {name}")
+
+    _armenian_rules = [
+        ([0x574, 0x576], 0xFB13, "men now"),
+        ([0x574, 0x565], 0xFB14, "men ech"),
+        ([0x574, 0x56B], 0xFB15, "men ini"),
+        ([0x57E, 0x576], 0xFB16, "vew now"),
+        ([0x574, 0x56D], 0xFB17, "men xeh"),
+    ]
+
+    for seq, result_cp, name in _armenian_rules:
+        if all(has(c) for c in seq) and has(result_cp):
+            seq_names = ' '.join(glyph_name(c) for c in seq)
+            subs.append(f"    sub {seq_names} by {glyph_name(result_cp)}; # Armenian {name}")
+
+    if not subs:
+        return ""
+
+    lines = ["feature liga {"]
+    lines.extend(subs)
+    lines.append("} liga;")
+    return '\n'.join(lines)
+
+
+def _generate_locl(glyphs, has):
+    """Generate locl feature for Bulgarian and Serbian Cyrillic variants."""
+    bg_subs = []
+    sr_subs = []
+
+    for pua in range(0xF0000, 0xF0060):
+        cyrillic = pua - 0xF0000 + 0x0400
+        if has(pua) and has(cyrillic):
+            pua_bm = glyphs[pua].bitmap
+            cyr_bm = glyphs[cyrillic].bitmap
+            if pua_bm != cyr_bm:
+                bg_subs.append(f"        sub {glyph_name(cyrillic)} by {glyph_name(pua)};")
+
+    for pua in range(0xF0060, 0xF00C0):
+        cyrillic = pua - 0xF0060 + 0x0400
+        if has(pua) and has(cyrillic):
+            pua_bm = glyphs[pua].bitmap
+            cyr_bm = glyphs[cyrillic].bitmap
+            if pua_bm != cyr_bm:
+                sr_subs.append(f"        sub {glyph_name(cyrillic)} by {glyph_name(pua)};")
+
+    if not bg_subs and not sr_subs:
+        return ""
+
+    lines = ["feature locl {"]
+    lines.append("    script cyrl;")
+    if bg_subs:
+        lines.append("    language BGR;")
+        lines.append("    lookup BulgarianForms {")
+        lines.extend(bg_subs)
+        lines.append("    } BulgarianForms;")
+    if sr_subs:
+        lines.append("    language SRB;")
+        lines.append("    lookup SerbianForms {")
+        lines.extend(sr_subs)
+        lines.append("    } SerbianForms;")
+    lines.append("} locl;")
+    return '\n'.join(lines)
+
+
+def _generate_devanagari(glyphs, has):
+    """Generate Devanagari GSUB features: nukt, akhn, half, vatu, pres, blws, rphf."""
+    features = []
+
+    # --- nukt: consonant + nukta -> nukta form ---
+    nukt_subs = []
+    for uni_cp in range(0x0915, 0x093A):
+        internal = SC.to_deva_internal(uni_cp)
+        nukta_form = internal + 48
+        if has(uni_cp) and has(0x093C) and has(nukta_form):
+            nukt_subs.append(
+                f"    sub {glyph_name(uni_cp)} {glyph_name(0x093C)} by {glyph_name(nukta_form)};"
+            )
+    if nukt_subs:
+        features.append("feature nukt {\n    script dev2;\n" + '\n'.join(nukt_subs) + "\n} nukt;")
+
+    # --- akhn: akhand ligatures ---
+    akhn_subs = []
+    if has(0x0915) and has(SC.DEVANAGARI_VIRAMA) and has(0x0937) and has(SC.DEVANAGARI_LIG_K_SS):
+        akhn_subs.append(
+            f"    sub {glyph_name(0x0915)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(0x0937)} by {glyph_name(SC.DEVANAGARI_LIG_K_SS)};"
+        )
+    if has(0x091C) and has(SC.DEVANAGARI_VIRAMA) and has(0x091E) and has(SC.DEVANAGARI_LIG_J_NY):
+        akhn_subs.append(
+            f"    sub {glyph_name(0x091C)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(0x091E)} by {glyph_name(SC.DEVANAGARI_LIG_J_NY)};"
+        )
+    if akhn_subs:
+        features.append("feature akhn {\n    script dev2;\n" + '\n'.join(akhn_subs) + "\n} akhn;")
+
+    # --- half: consonant + virama -> half form ---
+    half_subs = []
+    for uni_cp in range(0x0915, 0x093A):
+        internal = SC.to_deva_internal(uni_cp)
+        half_form = internal + 240
+        if has(uni_cp) and has(SC.DEVANAGARI_VIRAMA) and has(half_form):
+            half_subs.append(
+                f"    sub {glyph_name(uni_cp)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(half_form)};"
+            )
+    if half_subs:
+        features.append("feature half {\n    script dev2;\n" + '\n'.join(half_subs) + "\n} half;")
+
+    # --- vatu: consonant + virama + RA -> RA-appended form ---
+    vatu_subs = []
+    for uni_cp in range(0x0915, 0x093A):
+        internal = SC.to_deva_internal(uni_cp)
+        ra_form = internal + 480
+        if has(uni_cp) and has(SC.DEVANAGARI_VIRAMA) and has(0x0930) and has(ra_form):
+            vatu_subs.append(
+                f"    sub {glyph_name(uni_cp)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(0x0930)} by {glyph_name(ra_form)};"
+            )
+    if vatu_subs:
+        features.append("feature vatu {\n    script dev2;\n" + '\n'.join(vatu_subs) + "\n} vatu;")
+
+    # --- pres: named conjunct ligatures ---
+    pres_subs = []
+    _conjuncts = [
+        (0x0915, 0x0924, SC.DEVANAGARI_LIG_K_T, "K.T"),
+        (0x0924, 0x0924, SC.DEVANAGARI_LIG_T_T, "T.T"),
+        (0x0928, 0x0924, SC.DEVANAGARI_LIG_N_T, "N.T"),
+        (0x0928, 0x0928, SC.DEVANAGARI_LIG_N_N, "N.N"),
+        (0x0926, 0x0917, 0xF01B0, "D.G"),
+        (0x0926, 0x0918, 0xF01B1, "D.GH"),
+        (0x0926, 0x0926, 0xF01B2, "D.D"),
+        (0x0926, 0x0927, 0xF01B3, "D.DH"),
+        (0x0926, 0x0928, 0xF01B4, "D.N"),
+        (0x0926, 0x092C, 0xF01B5, "D.B"),
+        (0x0926, 0x092D, 0xF01B6, "D.BH"),
+        (0x0926, 0x092E, 0xF01B7, "D.M"),
+        (0x0926, 0x092F, 0xF01B8, "D.Y"),
+        (0x0926, 0x0935, 0xF01B9, "D.V"),
+        (0x0938, 0x0935, SC.DEVANAGARI_LIG_S_V, "S.V"),
+        (0x0937, 0x092A, SC.DEVANAGARI_LIG_SS_P, "SS.P"),
+        (0x0936, 0x091A, SC.DEVANAGARI_LIG_SH_C, "SH.C"),
+        (0x0936, 0x0928, SC.DEVANAGARI_LIG_SH_N, "SH.N"),
+        (0x0936, 0x0935, SC.DEVANAGARI_LIG_SH_V, "SH.V"),
+        (0x0918, 0x091F, 0xF01BD, "GH.TT"),
+        (0x0918, 0x0920, 0xF01BE, "GH.TTH"),
+        (0x0918, 0x0922, 0xF01BF, "GH.DDH"),
+        (0x091F, 0x091F, 0xF01D6, "TT.TT"),
+        (0x091F, 0x0920, 0xF01D7, "TT.TTH"),
+        (0x0920, 0x0920, 0xF01D9, "TTH.TTH"),
+        (0x0921, 0x0921, 0xF01DB, "DD.DD"),
+        (0x0921, 0x0922, 0xF01DC, "DD.DDH"),
+        (0x0922, 0x0922, 0xF01DE, "DDH.DDH"),
+        (0x092A, 0x091F, 0xF01C0, "P.TT"),
+        (0x092A, 0x0920, 0xF01C1, "P.TTH"),
+        (0x092A, 0x0922, 0xF01C2, "P.DDH"),
+        (0x0937, 0x091F, 0xF01C3, "SS.TT"),
+        (0x0937, 0x0920, 0xF01C4, "SS.TTH"),
+        (0x0937, 0x0922, 0xF01C5, "SS.DDH"),
+        (0x0939, 0x0923, 0xF01C6, "H.NN"),
+        (0x0939, 0x0928, 0xF01C7, "H.N"),
+        (0x0939, 0x092E, 0xF01C8, "H.M"),
+        (0x0939, 0x092F, 0xF01C9, "H.Y"),
+        (0x0939, 0x0932, 0xF01CA, "H.L"),
+        (0x0939, 0x0935, 0xF01CB, "H.V"),
+    ]
+    for c1, c2, result, name in _conjuncts:
+        if has(c1) and has(SC.DEVANAGARI_VIRAMA) and has(c2) and has(result):
+            pres_subs.append(
+                f"    sub {glyph_name(c1)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(c2)} by {glyph_name(result)}; # {name}"
+            )
+    if pres_subs:
+        features.append("feature pres {\n    script dev2;\n" + '\n'.join(pres_subs) + "\n} pres;")
+
+    # --- blws: RA/RRA/HA + U/UU -> special syllables ---
+    blws_subs = []
+    _blws_rules = [
+        (0x0930, SC.DEVANAGARI_U, SC.DEVANAGARI_SYLL_RU, "Ru"),
+        (0x0930, SC.DEVANAGARI_UU, SC.DEVANAGARI_SYLL_RUU, "Ruu"),
+        (0x0931, SC.DEVANAGARI_U, SC.DEVANAGARI_SYLL_RRU, "RRu"),
+        (0x0931, SC.DEVANAGARI_UU, SC.DEVANAGARI_SYLL_RRUU, "RRuu"),
+        (0x0939, SC.DEVANAGARI_U, SC.DEVANAGARI_SYLL_HU, "Hu"),
+        (0x0939, SC.DEVANAGARI_UU, SC.DEVANAGARI_SYLL_HUU, "Huu"),
+    ]
+    for c1, c2, result, name in _blws_rules:
+        if has(c1) and has(c2) and has(result):
+            blws_subs.append(
+                f"    sub {glyph_name(c1)} {glyph_name(c2)} by {glyph_name(result)}; # {name}"
+            )
+    if blws_subs:
+        features.append("feature blws {\n    script dev2;\n" + '\n'.join(blws_subs) + "\n} blws;")
+
+    # --- rphf: RA + virama -> reph ---
+    if has(0x0930) and has(SC.DEVANAGARI_VIRAMA) and has(SC.DEVANAGARI_RA_SUPER):
+        rphf_code = (
+            f"feature rphf {{\n"
+            f"    script dev2;\n"
+            f"    sub {glyph_name(0x0930)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(SC.DEVANAGARI_RA_SUPER)};\n"
+            f"}} rphf;"
+        )
+        features.append(rphf_code)
+
+    if not features:
+        return ""
+    return '\n\n'.join(features)
+
+
+def _generate_tamil(glyphs, has):
+    """Generate Tamil GSUB features."""
+    subs = []
+
+    _tamil_i_rules = [
+        (0x0B99, 0xF00F0, "nga+i"),
+        (0x0BAA, 0xF00F1, "pa+i"),
+        (0x0BAF, 0xF00F2, "ya+i"),
+        (0x0BB2, 0xF00F3, "la+i"),
+        (0x0BB5, 0xF00F4, "va+i"),
+        (0x0BB8, 0xF00F5, "sa+i"),
+    ]
+    for cons, result, name in _tamil_i_rules:
+        if has(cons) and has(SC.TAMIL_I) and has(result):
+            subs.append(f"    sub {glyph_name(cons)} {glyph_name(SC.TAMIL_I)} by {glyph_name(result)}; # {name}")
+
+    if has(0x0B9F) and has(0x0BBF) and has(0xF00C0):
+        subs.append(f"    sub {glyph_name(0x0B9F)} {glyph_name(0x0BBF)} by {glyph_name(0xF00C0)}; # tta+i")
+    if has(0x0B9F) and has(0x0BC0) and has(0xF00C1):
+        subs.append(f"    sub {glyph_name(0x0B9F)} {glyph_name(0x0BC0)} by {glyph_name(0xF00C1)}; # tta+ii")
+
+    for idx, cons in enumerate(SC.TAMIL_LIGATING_CONSONANTS):
+        u_form = 0xF00C2 + idx
+        uu_form = 0xF00D4 + idx
+        if has(cons) and has(0x0BC1) and has(u_form):
+            subs.append(f"    sub {glyph_name(cons)} {glyph_name(0x0BC1)} by {glyph_name(u_form)};")
+        if has(cons) and has(0x0BC2) and has(uu_form):
+            subs.append(f"    sub {glyph_name(cons)} {glyph_name(0x0BC2)} by {glyph_name(uu_form)};")
+
+    if has(0x0B95) and has(0x0BCD) and has(0x0BB7) and has(SC.TAMIL_KSSA):
+        subs.append(f"    sub {glyph_name(0x0B95)} {glyph_name(0x0BCD)} {glyph_name(0x0BB7)} by {glyph_name(SC.TAMIL_KSSA)}; # KSSA")
+
+    if has(0x0BB6) and has(0x0BCD) and has(0x0BB0) and has(0x0BC0) and has(SC.TAMIL_SHRII):
+        subs.append(f"    sub {glyph_name(0x0BB6)} {glyph_name(0x0BCD)} {glyph_name(0x0BB0)} {glyph_name(0x0BC0)} by {glyph_name(SC.TAMIL_SHRII)}; # SHRII (sha)")
+    if has(0x0BB8) and has(0x0BCD) and has(0x0BB0) and has(0x0BC0) and has(SC.TAMIL_SHRII):
+        subs.append(f"    sub {glyph_name(0x0BB8)} {glyph_name(0x0BCD)} {glyph_name(0x0BB0)} {glyph_name(0x0BC0)} by {glyph_name(SC.TAMIL_SHRII)}; # SHRII (sa)")
+
+    if not subs:
+        return ""
+
+    lines = ["feature pres {", "    script tml2;"]
+    lines.extend(subs)
+    lines.append("} pres;")
+    return '\n'.join(lines)
+
+
+def _generate_sundanese(glyphs, has):
+    """Generate Sundanese GSUB feature for diacritic combinations."""
+    subs = []
+    _rules = [
+        (0x1BA4, 0x1B80, SC.SUNDANESE_ING, "panghulu+panyecek=ing"),
+        (0x1BA8, 0x1B80, SC.SUNDANESE_ENG, "pamepet+panyecek=eng"),
+        (0x1BA9, 0x1B80, SC.SUNDANESE_EUNG, "paneuleung+panyecek=eung"),
+        (0x1BA4, 0x1B81, SC.SUNDANESE_IR, "panghulu+panglayar=ir"),
+        (0x1BA8, 0x1B81, SC.SUNDANESE_ER, "pamepet+panglayar=er"),
+        (0x1BA9, 0x1B81, SC.SUNDANESE_EUR, "paneuleung+panglayar=eur"),
+        (0x1BA3, 0x1BA5, SC.SUNDANESE_LU, "panyuku+panglayar=lu"),
+    ]
+    for c1, c2, result, name in _rules:
+        if has(c1) and has(c2) and has(result):
+            subs.append(f"    sub {glyph_name(c1)} {glyph_name(c2)} by {glyph_name(result)}; # {name}")
+
+    if not subs:
+        return ""
+
+    lines = ["feature pres {", "    script sund;"]
+    lines.extend(subs)
+    lines.append("} pres;")
+    return '\n'.join(lines)
+
+
+def _generate_mark(glyphs, has):
+    """
+    Generate GPOS mark-to-base positioning using diacritics anchors from tag column.
+    """
+    bases_with_anchors = {}
+    marks = {}
+
+    for cp, g in glyphs.items():
+        if not has(cp):
+            continue
+        if g.props.write_on_top >= 0:
+            marks[cp] = g
+        elif any(a.x_used or a.y_used for a in g.props.diacritics_anchors):
+            bases_with_anchors[cp] = g
+
+    if not bases_with_anchors or not marks:
+        return ""
+
+    lines = []
+
+    # Group marks by writeOnTop type
+    mark_classes = {}
+    for cp, g in marks.items():
+        mark_type = g.props.write_on_top
+        if mark_type not in mark_classes:
+            mark_classes[mark_type] = []
+        mark_classes[mark_type].append((cp, g))
+
+    for mark_type, mark_list in sorted(mark_classes.items()):
+        class_name = f"@mark_type{mark_type}"
+        for cp, g in mark_list:
+            mark_x = (g.props.width * SC.SCALE) // 2
+            mark_y = SC.ASCENT
+            lines.append(
+                f"markClass {glyph_name(cp)} <anchor {mark_x} {mark_y}> {class_name};"
+            )
+
+    lines.append("")
+    lines.append("feature mark {")
+
+    for mark_type, mark_list in sorted(mark_classes.items()):
+        class_name = f"@mark_type{mark_type}"
+        lookup_name = f"mark_type{mark_type}"
+        lines.append(f"    lookup {lookup_name} {{")
+
+        for cp, g in sorted(bases_with_anchors.items()):
+            anchor = g.props.diacritics_anchors[mark_type] if mark_type < 6 else None
+            if anchor and (anchor.x_used or anchor.y_used):
+                ax = anchor.x * SC.SCALE
+                ay = (SC.ASCENT // SC.SCALE - anchor.y) * SC.SCALE
+                lines.append(f"        pos base {glyph_name(cp)} <anchor {ax} {ay}> mark {class_name};")
+
+        lines.append(f"    }} {lookup_name};")
+
+    lines.append("} mark;")
+
+    return '\n'.join(lines)
