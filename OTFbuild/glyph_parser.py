@@ -191,8 +191,9 @@ def parse_variable_sheet(image, sheet_index, cell_w, cell_h, cols, is_xy_swapped
                         info |= (1 << y)
                 ext_info[x] = info
 
-        # Extract glyph bitmap (all pixels except tag column)
-        bitmap_w = cell_w - 1
+        # Extract glyph bitmap: only pixels within the glyph's declared width.
+        # The tag column and any padding beyond width must be stripped.
+        bitmap_w = min(width, cell_w - 1) if width > 0 else 0
         bitmap = []
         for row in range(cell_h):
             row_data = []
@@ -206,14 +207,98 @@ def parse_variable_sheet(image, sheet_index, cell_w, cell_h, cols, is_xy_swapped
     return result
 
 
+def _read_hangul_cell(image, column, row, cell_w=SC.W_HANGUL_BASE, cell_h=SC.H):
+    """Read a single cell from the Hangul johab sheet at (column, row)."""
+    cell_x = column * cell_w
+    cell_y = row * cell_h
+    bitmap = []
+    for r in range(cell_h):
+        row_data = []
+        for c in range(cell_w):
+            px = image.get_pixel(cell_x + c, cell_y + r)
+            row_data.append(1 if (px & 0xFF) != 0 else 0)
+        bitmap.append(row_data)
+    return bitmap
+
+
+def parse_hangul_jamo_sheet(image, cell_w, cell_h):
+    """
+    Parse the Hangul Jamo sheet with correct row/column mapping.
+
+    Layout in hangul_johab.tga:
+      - Choseong (U+1100-U+115E): column = choseongIndex, row = 1
+      - Jungseong (U+1161-U+11A7): column = jungseongIndex+1, row = 15
+        (column 0 is filler U+1160, stored at row 15 col 0)
+      - Jongseong (U+11A8-U+11FF): column = jongseongIndex, row = 17
+        (index starts at 1 for 11A8)
+      - Extended Choseong (U+A960-U+A97F): column = 96+offset, row = 1
+      - Extended Jungseong (U+D7B0-U+D7C6): column = 72+offset, row = 15
+      - Extended Jongseong (U+D7CB-U+D7FB): column = 89+offset, row = 17
+
+    Each jamo gets a default-row bitmap. Multiple variant rows exist for
+    syllable composition (handled separately by hangul.py / GSUB).
+    """
+    result = {}
+
+    # U+1160 (Hangul Jungseong Filler) — column 0, row 15
+    bm = _read_hangul_cell(image, 0, 15, cell_w, cell_h)
+    result[0x1160] = ExtractedGlyph(0x1160, GlyphProps(width=cell_w), bm)
+
+    # Choseong: U+1100-U+115E → column = cp - 0x1100, row = 1
+    for cp in range(0x1100, 0x115F):
+        col = cp - 0x1100
+        bm = _read_hangul_cell(image, col, 1, cell_w, cell_h)
+        result[cp] = ExtractedGlyph(cp, GlyphProps(width=cell_w), bm)
+
+    # U+115F (Hangul Choseong Filler)
+    col = 0x115F - 0x1100
+    bm = _read_hangul_cell(image, col, 1, cell_w, cell_h)
+    result[0x115F] = ExtractedGlyph(0x115F, GlyphProps(width=cell_w), bm)
+
+    # Jungseong: U+1161-U+11A7 → column = (cp - 0x1160), row = 15
+    for cp in range(0x1161, 0x11A8):
+        col = cp - 0x1160
+        bm = _read_hangul_cell(image, col, 15, cell_w, cell_h)
+        result[cp] = ExtractedGlyph(cp, GlyphProps(width=cell_w), bm)
+
+    # Jongseong: U+11A8-U+11FF → column = (cp - 0x11A8 + 1), row = 17
+    for cp in range(0x11A8, 0x1200):
+        col = cp - 0x11A8 + 1
+        bm = _read_hangul_cell(image, col, 17, cell_w, cell_h)
+        result[cp] = ExtractedGlyph(cp, GlyphProps(width=cell_w), bm)
+
+    # Extended Choseong: U+A960-U+A97F → column = (cp - 0xA960 + 96), row = 1
+    for cp in range(0xA960, 0xA980):
+        col = cp - 0xA960 + 96
+        bm = _read_hangul_cell(image, col, 1, cell_w, cell_h)
+        result[cp] = ExtractedGlyph(cp, GlyphProps(width=cell_w), bm)
+
+    # Extended Jungseong: U+D7B0-U+D7C6 → column = (cp - 0xD7B0 + 72), row = 15
+    for cp in range(0xD7B0, 0xD7C7):
+        col = cp - 0xD7B0 + 72
+        bm = _read_hangul_cell(image, col, 15, cell_w, cell_h)
+        result[cp] = ExtractedGlyph(cp, GlyphProps(width=cell_w), bm)
+
+    # Extended Jongseong: U+D7CB-U+D7FB → column = (cp - 0xD7CB + 88 + 1), row = 17
+    for cp in range(0xD7CB, 0xD7FC):
+        col = cp - 0xD7CB + 88 + 1
+        bm = _read_hangul_cell(image, col, 17, cell_w, cell_h)
+        result[cp] = ExtractedGlyph(cp, GlyphProps(width=cell_w), bm)
+
+    return result
+
+
 def parse_fixed_sheet(image, sheet_index, cell_w, cell_h, cols):
     """Parse a fixed-width sheet (Hangul, Unihan, Runic, Custom Sym)."""
+    # Hangul Jamo sheet has special layout — handled separately
+    if sheet_index == SC.SHEET_HANGUL:
+        return parse_hangul_jamo_sheet(image, cell_w, cell_h)
+
     code_range = SC.CODE_RANGE[sheet_index]
     result = {}
 
     fixed_width = {
         SC.SHEET_CUSTOM_SYM: 20,
-        SC.SHEET_HANGUL: SC.W_HANGUL_BASE,
         SC.SHEET_RUNIC: 9,
         SC.SHEET_UNIHAN: SC.W_UNIHAN,
     }.get(sheet_index, cell_w)
@@ -301,7 +386,7 @@ def _add_fixed_width_overrides(result):
 def get_hangul_jamo_bitmaps(assets_dir):
     """
     Extract raw Hangul jamo bitmaps from the Hangul sheet for composition.
-    Returns a function: (index, row) -> bitmap (list of list of int)
+    Returns a function: (column_index, row) -> bitmap (list of list of int)
     """
     filename = SC.FILE_LIST[SC.SHEET_HANGUL]
     filepath = os.path.join(assets_dir, filename)
@@ -326,3 +411,41 @@ def get_hangul_jamo_bitmaps(assets_dir):
         return bitmap
 
     return get_bitmap
+
+
+def extract_hangul_jamo_variants(assets_dir):
+    """
+    Extract ALL Hangul jamo variant bitmaps from hangul_johab.tga.
+    Returns dict of (column, row) -> bitmap for every non-empty cell.
+    Used by hangul.py to store variants in PUA for GSUB assembly.
+
+    Layout:
+      Row 0: Hangul Compatibility Jamo (U+3130-U+318F)
+      Rows 1-14: Choseong variants (row depends on jungseong context)
+      Rows 15-16: Jungseong variants (15=no final, 16=with final)
+      Rows 17-18: Jongseong variants (17=normal, 18=rightie jungseong)
+      Rows 19-24: Additional choseong variants (giyeok remapping)
+    """
+    filename = SC.FILE_LIST[SC.SHEET_HANGUL]
+    filepath = os.path.join(assets_dir, filename)
+    if not os.path.exists(filepath):
+        return {}
+
+    image = read_tga(filepath)
+    cell_w = SC.W_HANGUL_BASE
+    cell_h = SC.H
+
+    variants = {}
+    # Scan all rows that contain jamo data
+    # Rows 0-24 at minimum, checking up to image height
+    max_row = image.height // cell_h
+    max_col = image.width // cell_w
+
+    for row in range(max_row):
+        for col in range(max_col):
+            bm = _read_hangul_cell(image, col, row, cell_w, cell_h)
+            # Check if non-empty
+            if any(px for r in bm for px in r):
+                variants[(col, row)] = bm
+
+    return variants

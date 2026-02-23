@@ -1,14 +1,23 @@
 """
 Compose 11,172 Hangul syllables (U+AC00-U+D7A3) from jamo sprite pieces.
 Also composes Hangul Compatibility Jamo (U+3130-U+318F).
+Also stores all jamo variant bitmaps in PUA for GSUB-based jamo assembly.
 
 Ported from HangulCompositor.kt and TerrarumSansBitmap.kt.
 """
 
 from typing import Dict, List, Tuple
 
-from glyph_parser import ExtractedGlyph, GlyphProps, get_hangul_jamo_bitmaps
+from glyph_parser import (
+    ExtractedGlyph, GlyphProps, get_hangul_jamo_bitmaps,
+    extract_hangul_jamo_variants, _read_hangul_cell, _empty_bitmap,
+)
 import sheet_config as SC
+
+# PUA range for Hangul jamo variant storage.
+# We need space for: max_col * max_row variants.
+# Using 0xF0600-0xF0FFF (2560 slots, more than enough).
+HANGUL_PUA_BASE = 0xF0600
 
 
 def _compose_bitmaps(a, b, w, h):
@@ -32,9 +41,15 @@ def _compose_bitmap_into(target, source, w, h):
                 target[row][col] = 1
 
 
+def _pua_for_jamo_variant(col, row):
+    """Get PUA codepoint for a jamo variant at (column, row) in the sheet."""
+    # Encode as base + row * 256 + col (supports up to 256 columns per row)
+    return HANGUL_PUA_BASE + row * 256 + col
+
+
 def compose_hangul(assets_dir) -> Dict[int, ExtractedGlyph]:
     """
-    Compose all Hangul syllables and compatibility jamo.
+    Compose all Hangul syllables, compatibility jamo, and jamo variants.
     Returns a dict of codepoint -> ExtractedGlyph.
     """
     get_jamo = get_hangul_jamo_bitmaps(assets_dir)
@@ -94,5 +109,39 @@ def compose_hangul(assets_dir) -> Dict[int, ExtractedGlyph]:
         props = GlyphProps(width=advance_width)
         result[c] = ExtractedGlyph(c, props, composed)
 
-    print(f"  Hangul composition done: {len(result)} glyphs")
+    print(f"  Hangul syllable composition done: {len(result)} glyphs")
+
+    # Store jamo variant bitmaps in PUA for GSUB assembly
+    print("  Extracting jamo variants for GSUB...")
+    variants = extract_hangul_jamo_variants(assets_dir)
+    variant_count = 0
+    for (col, row), bm in variants.items():
+        pua = _pua_for_jamo_variant(col, row)
+        if pua not in result:
+            result[pua] = ExtractedGlyph(pua, GlyphProps(width=cell_w), bm)
+            variant_count += 1
+
+    print(f"  Stored {variant_count} jamo variant glyphs in PUA (0x{HANGUL_PUA_BASE:05X}+)")
+    print(f"  Total Hangul glyphs: {len(result)}")
     return result
+
+
+def get_jamo_gsub_data():
+    """
+    Generate the data needed for Hangul jamo GSUB lookups.
+
+    Returns a dict with:
+      - 'cho_rows': dict mapping (i_jung, has_jong) -> row for choseong
+      - 'jung_rows': dict mapping has_jong -> row for jungseong
+      - 'jong_rows': dict mapping is_rightie -> row for jongseong
+      - 'pua_fn': function(col, row) -> PUA codepoint
+
+    These are the row-selection rules from the Kotlin code:
+      Choseong row = getHanInitialRow(i_cho, i_jung, i_jong)
+      Jungseong row = 15 if no final, else 16
+      Jongseong row = 17 if jungseong is not rightie, else 18
+    """
+    return {
+        'pua_fn': _pua_for_jamo_variant,
+        'pua_base': HANGUL_PUA_BASE,
+    }

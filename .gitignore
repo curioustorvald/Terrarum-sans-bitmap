@@ -13,3 +13,7 @@ tmp_*
 *.bak
 *-autosave.kra
 .directory
+
+*/__pycache__
+OTFbuild/*.ttf
+OTFbuild/*.otf

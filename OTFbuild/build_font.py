@@ -33,8 +33,8 @@ def main():
     )
     parser.add_argument(
         "-o", "--output",
-        default="OTFbuild/TerrarumSansBitmap.ttf",
-        help="Output TTF file path (default: OTFbuild/TerrarumSansBitmap.ttf)"
+        default="OTFbuild/TerrarumSansBitmap.otf",
+        help="Output OTF file path (default: OTFbuild/TerrarumSansBitmap.otf)"
     )
     parser.add_argument(
         "--no-bitmap",

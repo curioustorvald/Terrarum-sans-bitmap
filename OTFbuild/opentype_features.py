@@ -28,7 +28,8 @@ def glyph_name(cp):
     return f"u{cp:05X}" if cp <= 0xFFFFF else f"u{cp:06X}"
 
 
-def generate_features(glyphs, kern_pairs, font_glyph_set):
+def generate_features(glyphs, kern_pairs, font_glyph_set,
+                      replacewith_subs=None, jamo_data=None):
     """
     Generate complete OpenType feature code string.
 
@@ -36,6 +37,8 @@ def generate_features(glyphs, kern_pairs, font_glyph_set):
         glyphs: dict of codepoint -> ExtractedGlyph
         kern_pairs: dict of (left_cp, right_cp) -> kern_value_in_font_units
         font_glyph_set: set of glyph names actually present in the font
+        replacewith_subs: list of (source_cp, [target_cp, ...]) for ccmp
+        jamo_data: dict with Hangul jamo GSUB data
     Returns:
         Feature code string for feaLib compilation.
     """
@@ -43,6 +46,16 @@ def generate_features(glyphs, kern_pairs, font_glyph_set):
 
     def has(cp):
         return glyph_name(cp) in font_glyph_set
+
+    # ccmp feature (replacewith directives + Hangul jamo decomposition)
+    ccmp_code = _generate_ccmp(replacewith_subs or [], has)
+    if ccmp_code:
+        parts.append(ccmp_code)
+
+    # Hangul jamo GSUB assembly
+    hangul_code = _generate_hangul_gsub(glyphs, has, jamo_data)
+    if hangul_code:
+        parts.append(hangul_code)
 
     # kern feature
     kern_code = _generate_kern(kern_pairs, has)
@@ -80,6 +93,209 @@ def generate_features(glyphs, kern_pairs, font_glyph_set):
         parts.append(mark_code)
 
     return '\n\n'.join(parts)
+
+
+def _generate_ccmp(replacewith_subs, has):
+    """Generate ccmp feature for replacewith directives (multiple substitution)."""
+    if not replacewith_subs:
+        return ""
+
+    subs = []
+    for src_cp, target_cps in replacewith_subs:
+        if not has(src_cp):
+            continue
+        if not all(has(t) for t in target_cps):
+            continue
+        src = glyph_name(src_cp)
+        targets = ' '.join(glyph_name(t) for t in target_cps)
+        subs.append(f"    sub {src} by {targets};")
+
+    if not subs:
+        return ""
+
+    lines = ["feature ccmp {", "    lookup ReplacewithExpansion {"]
+    lines.extend(subs)
+    lines.append("    } ReplacewithExpansion;")
+    lines.append("} ccmp;")
+    return '\n'.join(lines)
+
+
+def _generate_hangul_gsub(glyphs, has, jamo_data):
+    """
+    Generate Hangul jamo GSUB lookups for syllable assembly.
+
+    When a shaping engine encounters consecutive Hangul Jamo (Choseong +
+    Jungseong + optional Jongseong), these lookups substitute each jamo
+    with the correct positional variant from the PUA area.
+
+    The row selection logic mirrors the Kotlin code:
+      - Choseong row depends on which jungseong follows and whether jongseong exists
+      - Jungseong row is 15 (no final) or 16 (with final)
+      - Jongseong row is 17 (normal) or 18 (rightie jungseong)
+    """
+    if not jamo_data:
+        return ""
+
+    pua_fn = jamo_data['pua_fn']
+
+    # Build contextual substitution lookups
+    # Strategy: use ljmo/vjmo/tjmo features (standard Hangul OpenType features)
+    #
+    # ljmo: choseong → positional variant (depends on following jungseong)
+    # vjmo: jungseong → positional variant (depends on whether jongseong follows)
+    # tjmo: jongseong → positional variant (depends on preceding jungseong)
+
+    lines = []
+
+    # --- ljmo: Choseong variant selection ---
+    # For each choseong, we need variants for different jungseong contexts.
+    # Row 1 is the default (basic vowels like ㅏ).
+    # We use contextual alternates: choseong' lookup X jungseong
+    ljmo_lookups = []
+
+    # Group jungseong indices by which choseong row they select
+    # From getHanInitialRow: the row depends on jungseong index (p) and has-final (f)
+    # For GSUB, we pre-compute for f=0 (no final) since we can't know yet
+    row_to_jung_indices = {}
+    for p in range(96):  # all possible jungseong indices
+        # Without jongseong first; use i=1 to avoid giyeok edge cases
+        try:
+            row_nf = SC.get_han_initial_row(1, p, 0)
+        except (ValueError, KeyError):
+            continue
+        if row_nf not in row_to_jung_indices:
+            row_to_jung_indices[row_nf] = []
+        row_to_jung_indices[row_nf].append(p)
+
+    # For each unique choseong row, create a lookup that substitutes
+    # the default choseong glyph with the variant at that row
+    for cho_row, jung_indices in sorted(row_to_jung_indices.items()):
+        if cho_row == 1:
+            continue  # row 1 is the default, no substitution needed
+
+        lookup_name = f"ljmo_row{cho_row}"
+        subs = []
+
+        # For standard choseong (U+1100-U+115E)
+        for cho_cp in range(0x1100, 0x115F):
+            col = cho_cp - 0x1100
+            variant_pua = pua_fn(col, cho_row)
+            if has(cho_cp) and has(variant_pua):
+                subs.append(f"        sub {glyph_name(cho_cp)} by {glyph_name(variant_pua)};")
+
+        if subs:
+            lines.append(f"lookup {lookup_name} {{")
+            lines.extend(subs)
+            lines.append(f"}} {lookup_name};")
+            ljmo_lookups.append((lookup_name, jung_indices))
+
+    # --- vjmo: Jungseong variant selection ---
+    # Row 15 = no jongseong following, Row 16 = jongseong follows
+    # We need two lookups
+    vjmo_subs_16 = []  # with-final variant (row 16)
+    for jung_cp in range(0x1161, 0x11A8):
+        col = jung_cp - 0x1160
+        variant_pua = pua_fn(col, 16)
+        if has(jung_cp) and has(variant_pua):
+            vjmo_subs_16.append(f"    sub {glyph_name(jung_cp)} by {glyph_name(variant_pua)};")
+
+    if vjmo_subs_16:
+        lines.append("lookup vjmo_withfinal {")
+        lines.extend(vjmo_subs_16)
+        lines.append("} vjmo_withfinal;")
+
+    # --- tjmo: Jongseong variant selection ---
+    # Row 17 = normal, Row 18 = after rightie jungseong
+    tjmo_subs_18 = []
+    for jong_cp in range(0x11A8, 0x1200):
+        col = jong_cp - 0x11A8 + 1
+        variant_pua = pua_fn(col, 18)
+        if has(jong_cp) and has(variant_pua):
+            tjmo_subs_18.append(f"    sub {glyph_name(jong_cp)} by {glyph_name(variant_pua)};")
+
+    if tjmo_subs_18:
+        lines.append("lookup tjmo_rightie {")
+        lines.extend(tjmo_subs_18)
+        lines.append("} tjmo_rightie;")
+
+    # --- Build the actual features using contextual substitution ---
+
+    # Jungseong class definitions for contextual rules
+    # Build classes of jungseong glyphs that trigger specific choseong rows
+    feature_lines = []
+
+    # ljmo feature: contextual choseong substitution
+    if ljmo_lookups:
+        feature_lines.append("feature ljmo {")
+        feature_lines.append("    script hang;")
+        for lookup_name, jung_indices in ljmo_lookups:
+            # Build jungseong class for this row
+            jung_glyphs = []
+            for idx in jung_indices:
+                cp = 0x1160 + idx
+                if has(cp):
+                    jung_glyphs.append(glyph_name(cp))
+            if not jung_glyphs:
+                continue
+            class_name = f"@jung_for_{lookup_name}"
+            feature_lines.append(f"    {class_name} = [{' '.join(jung_glyphs)}];")
+
+        # Contextual rules: choseong' [lookup X] jungseong
+        # For each choseong, if followed by a jungseong in the right class,
+        # apply the variant lookup
+        for lookup_name, jung_indices in ljmo_lookups:
+            jung_glyphs = []
+            for idx in jung_indices:
+                cp = 0x1160 + idx
+                if has(cp):
+                    jung_glyphs.append(glyph_name(cp))
+            if not jung_glyphs:
+                continue
+            class_name = f"@jung_for_{lookup_name}"
+            # Build choseong class
+            cho_glyphs = [glyph_name(cp) for cp in range(0x1100, 0x115F) if has(cp)]
+            if cho_glyphs:
+                feature_lines.append(f"    @choseong = [{' '.join(cho_glyphs)}];")
+                feature_lines.append(f"    sub @choseong' lookup {lookup_name} {class_name};")
+
+        feature_lines.append("} ljmo;")
+
+    # vjmo feature: jungseong gets row 16 variant when followed by jongseong
+    if vjmo_subs_16:
+        jong_glyphs = [glyph_name(cp) for cp in range(0x11A8, 0x1200) if has(cp)]
+        if jong_glyphs:
+            feature_lines.append("feature vjmo {")
+            feature_lines.append("    script hang;")
+            jung_glyphs = [glyph_name(cp) for cp in range(0x1161, 0x11A8) if has(cp)]
+            feature_lines.append(f"    @jongseong = [{' '.join(jong_glyphs)}];")
+            feature_lines.append(f"    @jungseong = [{' '.join(jung_glyphs)}];")
+            feature_lines.append(f"    sub @jungseong' lookup vjmo_withfinal @jongseong;")
+            feature_lines.append("} vjmo;")
+
+    # tjmo feature: jongseong gets row 18 variant when after rightie jungseong
+    if tjmo_subs_18:
+        rightie_glyphs = []
+        for idx in sorted(SC.JUNGSEONG_RIGHTIE):
+            cp = 0x1160 + idx
+            if has(cp):
+                rightie_glyphs.append(glyph_name(cp))
+            # Also check PUA variants (row 16)
+            pua16 = pua_fn(idx, 16)
+            if has(pua16):
+                rightie_glyphs.append(glyph_name(pua16))
+        if rightie_glyphs:
+            feature_lines.append("feature tjmo {")
+            feature_lines.append("    script hang;")
+            feature_lines.append(f"    @rightie_jung = [{' '.join(rightie_glyphs)}];")
+            jong_glyphs = [glyph_name(cp) for cp in range(0x11A8, 0x1200) if has(cp)]
+            feature_lines.append(f"    @jongseong_all = [{' '.join(jong_glyphs)}];")
+            feature_lines.append(f"    sub @rightie_jung @jongseong_all' lookup tjmo_rightie;")
+            feature_lines.append("} tjmo;")
+
+    if not lines and not feature_lines:
+        return ""
+
+    return '\n'.join(lines + [''] + feature_lines)
 
 
 def _generate_kern(kern_pairs, has):

@@ -3,25 +3,26 @@ Orchestrate fonttools TTFont assembly.
 
 1. Parse all sheets -> glyphs dict
 2. Compose Hangul -> add to dict
-3. Create glyph order and cmap
-4. Trace all bitmaps -> glyf table
-5. Set hmtx, hhea, OS/2, head, name, post
-6. Generate and compile OpenType features via feaLib
-7. Add EBDT/EBLC bitmap strike at ppem=20
-8. Save TTF
+3. Expand replacewith directives
+4. Create glyph order and cmap
+5. Trace all bitmaps -> CFF charstrings
+6. Set hmtx, hhea, OS/2, head, name, post
+7. Generate and compile OpenType features via feaLib
+8. Add EBDT/EBLC bitmap strike at ppem=20
+9. Save OTF
 """
 
 import time
 from typing import Dict
 
 from fontTools.fontBuilder import FontBuilder
-from fontTools.pens.ttGlyphPen import TTGlyphPen
+from fontTools.pens.t2CharStringPen import T2CharStringPen
 from fontTools.feaLib.builder import addOpenTypeFeatures
 from fontTools.ttLib import TTFont
 import io
 
-from glyph_parser import ExtractedGlyph, parse_all_sheets
-from hangul import compose_hangul
+from glyph_parser import ExtractedGlyph, GlyphProps, parse_all_sheets
+from hangul import compose_hangul, get_jamo_gsub_data, HANGUL_PUA_BASE
 from bitmap_tracer import trace_bitmap, draw_glyph_to_pen, SCALE, BASELINE_ROW
 from keming_machine import generate_kerning_pairs
 from opentype_features import generate_features, glyph_name
@@ -30,12 +31,6 @@ import sheet_config as SC
 
 # Codepoints that get cmap entries (user-visible)
 # PUA forms used internally by GSUB get glyphs but NO cmap entries
-_PUA_CMAP_RANGES = [
-    range(0xE000, 0xE100),   # Custom symbols
-    range(0xF0520, 0xF0580), # Codestyle ASCII
-]
-
-
 def _should_have_cmap(cp):
     """Determine if a codepoint should have a cmap entry."""
     # Standard Unicode characters always get cmap entries
@@ -61,9 +56,8 @@ def _should_have_cmap(cp):
     # Everything in standard Unicode ranges (up to 0xFFFF plus SMP)
     if cp <= 0xFFFF:
         return True
-    # Internal PUA forms (Devanagari, Tamil, Sundanese, Bulgarian, Serbian internals)
-    # These are GSUB-only and should NOT have cmap entries
-    if 0xF0000 <= cp <= 0xF051F:
+    # Internal PUA forms — GSUB-only, no cmap
+    if 0xF0000 <= cp <= 0xF0FFF:
         return False
     # Internal control characters
     if 0xFFE00 <= cp <= 0xFFFFF:
@@ -71,8 +65,30 @@ def _should_have_cmap(cp):
     return True
 
 
+def _expand_replacewith(glyphs):
+    """
+    Find glyphs with 'replacewith' directive and generate GSUB multiple
+    substitution data. Returns list of (source_cp, [target_cp, ...]).
+
+    A replacewith glyph's extInfo contains up to 7 codepoints that the
+    glyph expands to (e.g. U+01C7 "LJ" → [0x4C, 0x4A]).
+    """
+    replacements = []
+    for cp, g in glyphs.items():
+        if g.props.is_pragma("replacewith"):
+            targets = []
+            count = g.props.required_ext_info_count()
+            for i in range(count):
+                val = g.props.ext_info[i]
+                if val != 0:
+                    targets.append(val)
+            if targets:
+                replacements.append((cp, targets))
+    return replacements
+
+
 def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
-    """Build the complete TTF font."""
+    """Build the complete OTF font."""
     t0 = time.time()
 
     # Step 1: Parse all sheets
@@ -86,8 +102,13 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
     glyphs.update(hangul_glyphs)
     print(f"  Total glyphs after Hangul: {len(glyphs)}")
 
-    # Step 3: Create glyph order and cmap
-    print("Step 3: Building glyph order and cmap...")
+    # Step 3: Expand replacewith directives
+    print("Step 3: Processing replacewith directives...")
+    replacewith_subs = _expand_replacewith(glyphs)
+    print(f"  Found {len(replacewith_subs)} replacewith substitutions")
+
+    # Step 4: Create glyph order and cmap
+    print("Step 4: Building glyph order and cmap...")
     glyph_order = [".notdef"]
     cmap = {}
     glyph_set = set()
@@ -111,34 +132,31 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
 
     print(f"  Glyph order: {len(glyph_order)} glyphs, cmap: {len(cmap)} entries")
 
-    # Step 4: Build font with fonttools
-    print("Step 4: Building font tables...")
-    fb = FontBuilder(SC.UNITS_PER_EM, isTTF=True)
+    # Step 5: Build font with fonttools (CFF/OTF)
+    print("Step 5: Building font tables...")
+    fb = FontBuilder(SC.UNITS_PER_EM, isTTF=False)
     fb.setupGlyphOrder(glyph_order)
-
-    # Build cmap
     fb.setupCharacterMap(cmap)
 
-    # Step 5: Trace bitmaps -> glyf table
-    print("Step 5: Tracing bitmaps to outlines...")
-    glyph_table = {}
+    # Step 6: Trace bitmaps -> CFF charstrings
+    print("Step 6: Tracing bitmaps to CFF outlines...")
 
-    pen = TTGlyphPen(None)
+    charstrings = {}
 
     # .notdef glyph (empty box)
+    pen = T2CharStringPen(SC.UNITS_PER_EM // 2, None)
     pen.moveTo((0, 0))
     pen.lineTo((0, SC.ASCENT))
     pen.lineTo((SC.UNITS_PER_EM // 2, SC.ASCENT))
     pen.lineTo((SC.UNITS_PER_EM // 2, 0))
     pen.closePath()
-    # Inner box
     _m = 2 * SCALE
     pen.moveTo((_m, _m))
     pen.lineTo((SC.UNITS_PER_EM // 2 - _m, _m))
     pen.lineTo((SC.UNITS_PER_EM // 2 - _m, SC.ASCENT - _m))
     pen.lineTo((_m, SC.ASCENT - _m))
     pen.closePath()
-    glyph_table[".notdef"] = pen.glyph()
+    charstrings[".notdef"] = pen.getCharString()
 
     traced_count = 0
     for cp in sorted_cps:
@@ -149,25 +167,26 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         if name == ".notdef" or name not in glyph_set:
             continue
 
+        advance = g.props.width * SCALE
         contours = trace_bitmap(g.bitmap, g.props.width)
 
-        pen = TTGlyphPen(None)
+        pen = T2CharStringPen(advance, None)
         if contours:
             draw_glyph_to_pen(contours, pen)
-            glyph_table[name] = pen.glyph()
             traced_count += 1
-        else:
-            # Empty glyph (space, zero-width, etc.)
-            pen.moveTo((0, 0))
-            pen.endPath()
-            glyph_table[name] = pen.glyph()
+        charstrings[name] = pen.getCharString()
 
     print(f"  Traced {traced_count} glyphs with outlines")
 
-    fb.setupGlyf(glyph_table)
+    fb.setupCFF(
+        psName="TerrarumSansBitmap-Regular",
+        fontInfo={},
+        charStringsDict=charstrings,
+        privateDict={},
+    )
 
-    # Step 6: Set metrics
-    print("Step 6: Setting font metrics...")
+    # Step 7: Set metrics
+    print("Step 7: Setting font metrics...")
     metrics = {}
     metrics[".notdef"] = (SC.UNITS_PER_EM // 2, 0)
 
@@ -179,7 +198,7 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         if name == ".notdef" or name not in glyph_set:
             continue
         advance = g.props.width * SCALE
-        metrics[name] = (advance, 0)  # (advance_width, lsb)
+        metrics[name] = (advance, 0)
 
     fb.setupHorizontalMetrics(metrics)
     fb.setupHorizontalHeader(
@@ -200,7 +219,7 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         usWinDescent=SC.DESCENT,
         sxHeight=SC.X_HEIGHT,
         sCapHeight=SC.CAP_HEIGHT,
-        fsType=0,  # Installable embedding
+        fsType=0,
     )
 
     fb.setupPost()
@@ -208,13 +227,16 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
 
     font = fb.font
 
-    # Step 7: Generate and compile OpenType features
+    # Step 8: Generate and compile OpenType features
     if not no_features:
-        print("Step 7: Generating OpenType features...")
+        print("Step 8: Generating OpenType features...")
         kern_pairs = generate_kerning_pairs(glyphs)
         print(f"  {len(kern_pairs)} kerning pairs")
 
-        fea_code = generate_features(glyphs, kern_pairs, glyph_set)
+        jamo_data = get_jamo_gsub_data()
+        fea_code = generate_features(glyphs, kern_pairs, glyph_set,
+                                     replacewith_subs=replacewith_subs,
+                                     jamo_data=jamo_data)
 
         if fea_code.strip():
             print("  Compiling features with feaLib...")
@@ -228,14 +250,14 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         else:
             print("  No features to compile")
     else:
-        print("Step 7: Skipping OpenType features (--no-features)")
+        print("Step 8: Skipping OpenType features (--no-features)")
 
-    # Step 8: Add bitmap strike (EBDT/EBLC)
+    # Step 9: Add bitmap strike (EBDT/EBLC)
     if not no_bitmap:
-        print("Step 8: Adding bitmap strike...")
+        print("Step 9: Adding bitmap strike...")
         _add_bitmap_strike(font, glyphs, glyph_order, glyph_set)
     else:
-        print("Step 8: Skipping bitmap strike (--no-bitmap)")
+        print("Step 9: Skipping bitmap strike (--no-bitmap)")
 
     # Save
     print(f"Saving to {output_path}...")
@@ -254,7 +276,6 @@ def _add_bitmap_strike(font, glyphs, glyph_order, glyph_set):
     ppem = 20
     name_to_id = {name: idx for idx, name in enumerate(glyph_order)}
 
-    # Collect bitmap data — only glyphs with actual pixels
     bitmap_entries = []
     for name in glyph_order:
         if name == ".notdef":
@@ -272,7 +293,6 @@ def _add_bitmap_strike(font, glyphs, glyph_order, glyph_set):
         if w == 0 or h == 0:
             continue
 
-        # Pack rows into hex
         hex_rows = []
         for row in bitmap:
             row_bytes = bytearray()
@@ -298,12 +318,9 @@ def _add_bitmap_strike(font, glyphs, glyph_order, glyph_set):
         print("  No bitmap data to embed")
         return
 
-    # Split into contiguous GID runs for separate index subtables
-    # This avoids the empty-name problem for gaps
     gid_sorted = sorted(bitmap_entries, key=lambda e: e['gid'])
-    gid_to_entry = {e['gid']: e for e in gid_sorted}
 
-    runs = []  # list of lists of entries
+    runs = []
     current_run = [gid_sorted[0]]
     for i in range(1, len(gid_sorted)):
         if gid_sorted[i]['gid'] == gid_sorted[i-1]['gid'] + 1:
@@ -313,7 +330,6 @@ def _add_bitmap_strike(font, glyphs, glyph_order, glyph_set):
             current_run = [gid_sorted[i]]
     runs.append(current_run)
 
-    # Build TTX XML for EBDT
     ebdt_xml = ['<EBDT>', '<header version="2.0"/>', '<strikedata index="0">']
     for entry in gid_sorted:
         ebdt_xml.append(f'  <cbdt_bitmap_format_1 name="{entry["name"]}">')
@@ -332,7 +348,6 @@ def _add_bitmap_strike(font, glyphs, glyph_order, glyph_set):
     ebdt_xml.append('</strikedata>')
     ebdt_xml.append('</EBDT>')
 
-    # Build TTX XML for EBLC
     all_gids = [e['gid'] for e in gid_sorted]
     desc = -(SC.H - BASELINE_ROW)
 
@@ -371,8 +386,6 @@ def _add_bitmap_strike(font, glyphs, glyph_order, glyph_set):
         '  </bitmapSizeTable>',
     ])
 
-    # One index subtable per contiguous run — no gaps
-    # Use format 1 (32-bit offsets) to avoid 16-bit overflow
     for run in runs:
         first_gid = run[0]['gid']
         last_gid = run[-1]['gid']
