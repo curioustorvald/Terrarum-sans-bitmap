@@ -1237,7 +1237,10 @@ class TerrarumSansBitmap(
                                         if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
                                             posXbuffer[nonDiacriticCounter] + anchorPoint + (itsProp.width + 1).div(2)
                                         } else {
-                                            posXbuffer[nonDiacriticCounter] + anchorPoint - HALF_VAR_INIT
+                                            if (thisChar in 0x900..0x902)
+                                                posXbuffer[nonDiacriticCounter] + anchorPoint - (W_VAR_INIT + 1) / 2
+                                            else
+                                                posXbuffer[nonDiacriticCounter] + anchorPoint - HALF_VAR_INIT
                                         }
                                     }
                                     else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
