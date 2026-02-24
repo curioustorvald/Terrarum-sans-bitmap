@@ -5,7 +5,7 @@ Features implemented:
 - kern: GPOS pair positioning from KemingMachine
 - liga: Standard ligatures (Alphabetic Presentation Forms)
 - locl: Bulgarian/Serbian Cyrillic variants
-- Devanagari GSUB: nukt, akhn, half, vatu, pres, blws, rphf
+- Devanagari GSUB: nukt, akhn (+ conjuncts), half, blwf, cjct, blws, rphf, abvs
 - Tamil GSUB: consonant+vowel ligatures, KSSA, SHRII
 - Sundanese GSUB: diacritic combinations
 - mark: GPOS mark-to-base positioning (diacritics anchors)
@@ -453,7 +453,7 @@ def _generate_locl(glyphs, has):
 
 
 def _generate_devanagari(glyphs, has, replacewith_subs=None):
-    """Generate Devanagari GSUB features: ccmp (consonant mapping + vowel decomposition), nukt, akhn, half, vatu, pres, blws, rphf."""
+    """Generate Devanagari GSUB features: ccmp (consonant mapping + vowel decomposition), nukt, akhn (+ conjuncts), half, blwf, cjct, blws, rphf, abvs."""
     features = []
 
     # --- ccmp: Map Unicode consonants to internal PUA presentation forms ---
@@ -525,8 +525,21 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     if nukt_subs:
         features.append("feature nukt {\n    script dev2;\n" + '\n'.join(nukt_subs) + "\n} nukt;")
 
-    # --- akhn: akhand ligatures ---
-    # Must reference PUA forms after ccmp
+    # --- akhn: akhand ligatures + conjuncts ---
+    # All conjunct ligatures (C1 + virama + C2 → ligature) go in akhn
+    # because HarfBuzz applies akhn with F_GLOBAL masking (all glyphs
+    # in the syllable can trigger the lookup).  The half feature uses
+    # per-glyph masking (only pre-base consonants), which prevents
+    # 3-glyph conjuncts from matching across the pre-base/base boundary.
+    # akhn also runs before half, so conjuncts take priority over
+    # half-forms when both could match.
+    def _di(u):
+        """Convert Unicode Devanagari consonant to internal PUA form."""
+        try:
+            return SC.to_deva_internal(u)
+        except ValueError:
+            return u  # already PUA or non-consonant
+
     akhn_subs = []
     ka_int = SC.to_deva_internal(0x0915)
     ssa_int = SC.to_deva_internal(0x0937)
@@ -540,11 +553,81 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
         akhn_subs.append(
             f"    sub {glyph_name(ja_int)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(nya_int)} by {glyph_name(SC.DEVANAGARI_LIG_J_NY)};"
         )
+
+    _conjuncts = [
+        (0x0915, 0x0924, SC.DEVANAGARI_LIG_K_T, "K.T"),
+        (0x0918, 0x091F, 0xF01BD, "GH.TT"),
+        (0x0918, 0x0920, 0xF01BE, "GH.TTH"),
+        (0x0918, 0x0922, 0xF01BF, "GH.DDH"),
+        (0x0919, 0x0915, 0xF01CE, "NG.K"),
+        (0x0919, 0x0916, 0xF01CF, "NG.KH"),
+        (0x0919, 0x0917, 0xF01D2, "NG.G"),
+        (0x0919, 0x0918, 0xF01D3, "NG.GH"),
+        (0x0919, 0x0928, 0xF01CD, "NG.N"),
+        (0x0919, 0x092E, 0xF01D4, "NG.M"),
+        (0x091B, 0x0935, 0xF01D5, "CH.V"),
+        (0x091C, 0x092F, SC.DEVANAGARI_LIG_J_Y, "J.Y"),
+        (0x091F, 0x0915, 0xF01E0, "TT.K"),
+        (0x091F, 0x091F, 0xF01D6, "TT.TT"),
+        (0x091F, 0x0920, 0xF01D7, "TT.TTH"),
+        (0x091F, 0x092A, 0xF01E1, "TT.P"),
+        (0x091F, 0x0935, 0xF01D8, "TT.V"),
+        (0x091F, 0x0936, 0xF01E2, "TT.SH"),
+        (0x091F, 0x0938, 0xF01E3, "TT.S"),
+        (0x0920, 0x0920, 0xF01D9, "TTH.TTH"),
+        (0x0920, 0x0935, 0xF01DA, "TTH.V"),
+        (0x0921, 0x0917, 0xF01D0, "DD.G"),
+        (0x0921, 0x0921, 0xF01DB, "DD.DD"),
+        (0x0921, 0x0922, 0xF01DC, "DD.DDH"),
+        (0x0921, 0x092D, 0xF01D1, "DD.BH"),
+        (0x0921, 0x0935, 0xF01DD, "DD.V"),
+        (0x0922, 0x0922, 0xF01DE, "DDH.DDH"),
+        (0x0922, 0x0935, 0xF01DF, "DDH.V"),
+        (0x0924, 0x0924, SC.DEVANAGARI_LIG_T_T, "T.T"),
+        (0x0926, 0x0917, 0xF01B0, "D.G"),
+        (0x0926, 0x0918, 0xF01B1, "D.GH"),
+        (0x0926, 0x0926, 0xF01B2, "D.D"),
+        (0x0926, 0x0927, 0xF01B3, "D.DH"),
+        (0x0926, 0x0928, 0xF01B4, "D.N"),
+        (0x0926, 0x092C, 0xF01B5, "D.B"),
+        (0x0926, 0x092D, 0xF01B6, "D.BH"),
+        (0x0926, 0x092E, 0xF01B7, "D.M"),
+        (0x0926, 0x092F, 0xF01B8, "D.Y"),
+        (0x0926, 0x0935, 0xF01B9, "D.V"),
+        (0x0928, 0x0924, SC.DEVANAGARI_LIG_N_T, "N.T"),
+        (0x0928, 0x0928, SC.DEVANAGARI_LIG_N_N, "N.N"),
+        (0x092A, 0x091F, 0xF01C0, "P.TT"),
+        (0x092A, 0x0920, 0xF01C1, "P.TTH"),
+        (0x092A, 0x0922, 0xF01C2, "P.DDH"),
+        (0x0936, 0x091A, SC.DEVANAGARI_LIG_SH_C, "SH.C"),
+        (0x0936, 0x0928, SC.DEVANAGARI_LIG_SH_N, "SH.N"),
+        (0x0936, 0x0935, SC.DEVANAGARI_LIG_SH_V, "SH.V"),
+        (0x0937, 0x091F, 0xF01C3, "SS.TT"),
+        (0x0937, 0x0920, 0xF01C4, "SS.TTH"),
+        (0x0937, 0x0922, 0xF01C5, "SS.DDH"),
+        (0x0937, 0x092A, SC.DEVANAGARI_LIG_SS_P, "SS.P"),
+        (0x0938, 0x0935, SC.DEVANAGARI_LIG_S_V, "S.V"),
+        (0x0939, 0x0923, 0xF01C6, "H.NN"),
+        (0x0939, 0x0928, 0xF01C7, "H.N"),
+        (0x0939, 0x092E, 0xF01C8, "H.M"),
+        (0x0939, 0x092F, 0xF01C9, "H.Y"),
+        (0x0939, 0x0932, 0xF01CA, "H.L"),
+        (0x0939, 0x0935, 0xF01CB, "H.V"),
+    ]
+    for c1_uni, c2_uni, result, name in _conjuncts:
+        c1 = _di(c1_uni)
+        c2 = _di(c2_uni)
+        if has(c1) and has(SC.DEVANAGARI_VIRAMA) and has(c2) and has(result):
+            akhn_subs.append(
+                f"    sub {glyph_name(c1)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(c2)} by {glyph_name(result)}; # {name}"
+            )
     if akhn_subs:
         features.append("feature akhn {\n    script dev2;\n" + '\n'.join(akhn_subs) + "\n} akhn;")
 
     # --- half: consonant (PUA) + virama -> half form ---
-    # After ccmp, consonants are in PUA form, so reference PUA here
+    # After ccmp, consonants are in PUA form, so reference PUA here.
+    # Conjuncts are NOT here because half uses per-glyph masking (only
+    # pre-base consonants), preventing 3-glyph matches across the base.
     half_subs = []
     for uni_cp in range(0x0915, 0x093A):
         internal = SC.to_deva_internal(uni_cp)
@@ -593,67 +676,6 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     if cjct_subs:
         features.append("feature cjct {\n    script dev2;\n" + '\n'.join(cjct_subs) + "\n} cjct;")
 
-    # --- pres: named conjunct ligatures (using PUA forms) ---
-    def _di(u):
-        """Convert Unicode Devanagari consonant to internal PUA form."""
-        try:
-            return SC.to_deva_internal(u)
-        except ValueError:
-            return u  # already PUA or non-consonant
-
-    pres_subs = []
-    _conjuncts = [
-        (0x0915, 0x0924, SC.DEVANAGARI_LIG_K_T, "K.T"),
-        (0x0924, 0x0924, SC.DEVANAGARI_LIG_T_T, "T.T"),
-        (0x0928, 0x0924, SC.DEVANAGARI_LIG_N_T, "N.T"),
-        (0x0928, 0x0928, SC.DEVANAGARI_LIG_N_N, "N.N"),
-        (0x0926, 0x0917, 0xF01B0, "D.G"),
-        (0x0926, 0x0918, 0xF01B1, "D.GH"),
-        (0x0926, 0x0926, 0xF01B2, "D.D"),
-        (0x0926, 0x0927, 0xF01B3, "D.DH"),
-        (0x0926, 0x0928, 0xF01B4, "D.N"),
-        (0x0926, 0x092C, 0xF01B5, "D.B"),
-        (0x0926, 0x092D, 0xF01B6, "D.BH"),
-        (0x0926, 0x092E, 0xF01B7, "D.M"),
-        (0x0926, 0x092F, 0xF01B8, "D.Y"),
-        (0x0926, 0x0935, 0xF01B9, "D.V"),
-        (0x0938, 0x0935, SC.DEVANAGARI_LIG_S_V, "S.V"),
-        (0x0937, 0x092A, SC.DEVANAGARI_LIG_SS_P, "SS.P"),
-        (0x0936, 0x091A, SC.DEVANAGARI_LIG_SH_C, "SH.C"),
-        (0x0936, 0x0928, SC.DEVANAGARI_LIG_SH_N, "SH.N"),
-        (0x0936, 0x0935, SC.DEVANAGARI_LIG_SH_V, "SH.V"),
-        (0x0918, 0x091F, 0xF01BD, "GH.TT"),
-        (0x0918, 0x0920, 0xF01BE, "GH.TTH"),
-        (0x0918, 0x0922, 0xF01BF, "GH.DDH"),
-        (0x091F, 0x091F, 0xF01D6, "TT.TT"),
-        (0x091F, 0x0920, 0xF01D7, "TT.TTH"),
-        (0x0920, 0x0920, 0xF01D9, "TTH.TTH"),
-        (0x0921, 0x0921, 0xF01DB, "DD.DD"),
-        (0x0921, 0x0922, 0xF01DC, "DD.DDH"),
-        (0x0922, 0x0922, 0xF01DE, "DDH.DDH"),
-        (0x092A, 0x091F, 0xF01C0, "P.TT"),
-        (0x092A, 0x0920, 0xF01C1, "P.TTH"),
-        (0x092A, 0x0922, 0xF01C2, "P.DDH"),
-        (0x0937, 0x091F, 0xF01C3, "SS.TT"),
-        (0x0937, 0x0920, 0xF01C4, "SS.TTH"),
-        (0x0937, 0x0922, 0xF01C5, "SS.DDH"),
-        (0x0939, 0x0923, 0xF01C6, "H.NN"),
-        (0x0939, 0x0928, 0xF01C7, "H.N"),
-        (0x0939, 0x092E, 0xF01C8, "H.M"),
-        (0x0939, 0x092F, 0xF01C9, "H.Y"),
-        (0x0939, 0x0932, 0xF01CA, "H.L"),
-        (0x0939, 0x0935, 0xF01CB, "H.V"),
-    ]
-    for c1_uni, c2_uni, result, name in _conjuncts:
-        c1 = _di(c1_uni)
-        c2 = _di(c2_uni)
-        if has(c1) and has(SC.DEVANAGARI_VIRAMA) and has(c2) and has(result):
-            pres_subs.append(
-                f"    sub {glyph_name(c1)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(c2)} by {glyph_name(result)}; # {name}"
-            )
-    if pres_subs:
-        features.append("feature pres {\n    script dev2;\n" + '\n'.join(pres_subs) + "\n} pres;")
-
     # --- blws: RA/RRA/HA (PUA) + U/UU -> special syllables ---
     blws_subs = []
     _blws_rules = [
@@ -681,6 +703,61 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             f"}} rphf;"
         )
         features.append(rphf_code)
+
+    # --- abvs: complex reph substitution ---
+    # The Kotlin engine uses complex reph (U+F010D) when a
+    # devanagariSuperscript mark precedes reph, or any vowel matra
+    # (e.g. i-matra) exists in the syllable.
+    # After dev2 reordering, glyph order is:
+    #   [pre-base matras] + [base] + [below-base] + [above-base] + [reph]
+    # We use chaining contextual substitution to detect these conditions.
+    if has(SC.DEVANAGARI_RA_SUPER) and has(SC.DEVANAGARI_RA_SUPER_COMPLEX):
+        # Trigger class: union of devanagariVowels and devanagariSuperscripts
+        trigger_cps = (
+            list(range(0x0900, 0x0903)) +
+            list(range(0x093A, 0x093D)) +
+            list(range(0x093E, 0x094D)) +
+            [0x094E, 0x094F, 0x0951] +
+            list(range(0x0953, 0x0956))
+        )
+        trigger_glyphs = [glyph_name(cp) for cp in trigger_cps if has(cp)]
+
+        # Broad Devanagari class for context gaps between i-matra and reph
+        deva_any_cps = (
+            list(range(0xF0140, 0xF0165)) +  # PUA consonants
+            list(range(0xF0170, 0xF0195)) +  # nukta forms
+            list(range(0xF0230, 0xF0255)) +  # half forms
+            list(range(0xF0320, 0xF0405)) +  # RA-appended forms
+            list(range(0x093A, 0x094D)) +     # vowel signs/matras
+            list(range(0x0900, 0x0903)) +     # signs
+            [0x094E, 0x094F, 0x0951] +
+            list(range(0x0953, 0x0956)) +
+            [SC.DEVANAGARI_RA_SUB] +          # below-base RA
+            [r for _, _, r, _ in _conjuncts]  # conjunct result glyphs
+        )
+        deva_any_glyphs = [glyph_name(cp) for cp in sorted(set(deva_any_cps)) if has(cp)]
+
+        if trigger_glyphs and deva_any_glyphs:
+            reph = glyph_name(SC.DEVANAGARI_RA_SUPER)
+            complex_reph = glyph_name(SC.DEVANAGARI_RA_SUPER_COMPLEX)
+
+            abvs_lines = []
+            abvs_lines.append(f"lookup ComplexReph {{")
+            abvs_lines.append(f"    sub {reph} by {complex_reph};")
+            abvs_lines.append(f"}} ComplexReph;")
+            abvs_lines.append("")
+            abvs_lines.append("feature abvs {")
+            abvs_lines.append("    script dev2;")
+            abvs_lines.append(f"    @complexRephTriggers = [{' '.join(trigger_glyphs)}];")
+            abvs_lines.append(f"    @devaAny = [{' '.join(deva_any_glyphs)}];")
+            # Rule 1: trigger mark/vowel immediately before reph
+            abvs_lines.append(f"    sub @complexRephTriggers {reph}' lookup ComplexReph;")
+            # Rules 2-4: i-matra separated from reph by 1-3 intervening glyphs
+            abvs_lines.append(f"    sub {glyph_name(0x093F)} @devaAny {reph}' lookup ComplexReph;")
+            abvs_lines.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny {reph}' lookup ComplexReph;")
+            abvs_lines.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny @devaAny {reph}' lookup ComplexReph;")
+            abvs_lines.append("} abvs;")
+            features.append('\n'.join(abvs_lines))
 
     if not features:
         return ""
