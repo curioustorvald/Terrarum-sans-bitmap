@@ -759,9 +759,240 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             abvs_lines.append("} abvs;")
             features.append('\n'.join(abvs_lines))
 
+    # --- psts: I-matra and II-matra length variants ---
+    # Must run AFTER abvs because abvs uses uni093F as context for complex
+    # reph substitution.  If I-matra were substituted before abvs, those
+    # contextual rules would break.
+    #
+    # HarfBuzz dev2 feature order: init → pres → abvs → blws → psts → haln
+    # psts has F_GLOBAL_MANUAL_JOINERS masking → applied to ALL glyphs in the
+    # syllable, so it works for both pre-base I-matra and post-base II-matra.
+    psts_code = _generate_psts_matra_variants(glyphs, has, _conjuncts)
+    if psts_code:
+        features.append(psts_code)
+
     if not features:
         return ""
     return '\n\n'.join(features)
+
+
+def _generate_psts_matra_variants(glyphs, has, conjuncts):
+    """Generate psts feature for I-matra and II-matra length variant selection.
+
+    The bitmap font has 16 length variants for each of I-matra (U+093F) and
+    II-matra (U+0940), mapped to PUA U+F0110-F011F and U+F0120-F012F.
+    The variant is selected based on the consonant's stem position (anchor[0].x)
+    and width, mirroring the Kotlin engine logic.
+    """
+    from collections import defaultdict
+
+    if not has(0x093F) and not has(0x0940):
+        return ""
+
+    # Check that at least some variant glyphs exist
+    has_i_variants = any(has(0xF0110 + i) for i in range(16))
+    has_ii_variants = any(has(0xF0120 + i) for i in range(16))
+    if not has_i_variants and not has_ii_variants:
+        return ""
+
+    def anchor_x(cp):
+        """Get anchor[0].x for a glyph, defaulting to 0."""
+        if cp not in glyphs:
+            return 0
+        a = glyphs[cp].props.diacritics_anchors[0]
+        return a.x if a.x_used else 0
+
+    def glyph_width(cp):
+        """Get glyph width."""
+        if cp not in glyphs:
+            return 0
+        return glyphs[cp].props.width
+
+    # Collect base consonants (full forms that can serve as syllable base)
+    # Includes: presentation consonants, nukta forms, conjuncts, RA-appended forms
+    base_cps = set()
+    for cp in SC.DEVANAGARI_PRESENTATION_CONSONANTS:
+        if has(cp):
+            base_cps.add(cp)
+    for cp in SC.DEVANAGARI_PRESENTATION_CONSONANTS_WITH_RA:
+        if has(cp):
+            base_cps.add(cp)
+    # Add conjunct result glyphs (they are also full consonants)
+    for _, _, result, _ in conjuncts:
+        if has(result):
+            base_cps.add(result)
+
+    # Collect half consonants
+    half_cps = set()
+    for cp in SC.DEVANAGARI_PRESENTATION_CONSONANTS_HALF:
+        if has(cp):
+            half_cps.add(cp)
+    for cp in SC.DEVANAGARI_PRESENTATION_CONSONANTS_WITH_RA_HALF:
+        if has(cp):
+            half_cps.add(cp)
+
+    if not base_cps:
+        return ""
+
+    lines = []
+
+    # ===== I-matra variant lookups and rules =====
+    if has(0x093F) and has_i_variants:
+        # Create 16 single-substitution lookups
+        for var in range(16):
+            target = 0xF0110 + var
+            if has(target):
+                lines.append(f"lookup IMatraVar{var} {{")
+                lines.append(f"    sub {glyph_name(0x093F)} by {glyph_name(target)};")
+                lines.append(f"}} IMatraVar{var};")
+
+        # --- Group base consonants by I-matra variant index ---
+        # Formula: var_idx = clamp(anchor_x + 2, 6, 21) - 6
+        i_base_groups = defaultdict(set)  # var_idx -> set of base cps
+        for cp in sorted(base_cps):
+            ax = anchor_x(cp)
+            var_idx = min(max(ax + 2, 6), 21) - 6
+            i_base_groups[var_idx].add(cp)
+
+        # --- Group half consonants by width ---
+        # Half consonants only contribute their width to the variant calc,
+        # so we can group them into width-classes to avoid O(n^2) rule explosion.
+        half_by_width = defaultdict(set)  # width -> set of half cps
+        for half_cp in half_cps:
+            hw = glyph_width(half_cp)
+            half_by_width[hw].add(half_cp)
+
+        # --- Group (half_width, base) pairs by variant index ---
+        # For half+base: var_idx = clamp(half_width + anchor_x + 2, 6, 21) - 6
+        # Key: (half_width, var_idx) -> set of base cps
+        i_hw_base = defaultdict(lambda: defaultdict(set))
+        for hw, _ in sorted(half_by_width.items()):
+            for cp in base_cps:
+                ax = anchor_x(cp)
+                var_idx = min(max(hw + ax + 2, 6), 21) - 6
+                i_hw_base[hw][var_idx].add(cp)
+
+        # --- Group (half_width1, half_width2, base) by variant index ---
+        # For half+half+base: var_idx = clamp(hw1 + hw2 + anchor_x + 2, 6, 21) - 6
+        i_hww_base = defaultdict(lambda: defaultdict(set))
+        half_widths = sorted(half_by_width.keys())
+        for hw1 in half_widths:
+            for hw2 in half_widths:
+                for cp in base_cps:
+                    ax = anchor_x(cp)
+                    var_idx = min(max(hw1 + hw2 + ax + 2, 6), 21) - 6
+                    i_hww_base[(hw1, hw2)][var_idx].add(cp)
+
+        # Build psts feature rules
+        # Rules must be ordered longest-context-first (first match wins)
+        psts_i_lines = []
+
+        # Case C: half + half + base (4-glyph context)
+        # Use width-class groups: @halfW{w} for half consonants of width w
+        hh_class_idx = 0
+        for (hw1, hw2), var_groups in sorted(i_hww_base.items()):
+            for var_idx, bases in sorted(var_groups.items()):
+                if not has(0xF0110 + var_idx):
+                    continue
+                base_names = ' '.join(glyph_name(cp) for cp in sorted(bases))
+                h1_names = ' '.join(glyph_name(cp) for cp in sorted(half_by_width[hw1]))
+                h2_names = ' '.join(glyph_name(cp) for cp in sorted(half_by_width[hw2]))
+                cls_b = f"@iHH{hh_class_idx}"
+                cls_h1 = f"@iHH1_{hh_class_idx}"
+                cls_h2 = f"@iHH2_{hh_class_idx}"
+                psts_i_lines.append(f"    {cls_b} = [{base_names}];")
+                psts_i_lines.append(f"    {cls_h1} = [{h1_names}];")
+                psts_i_lines.append(f"    {cls_h2} = [{h2_names}];")
+                psts_i_lines.append(
+                    f"    sub {glyph_name(0x093F)}' lookup IMatraVar{var_idx} "
+                    f"{cls_h1} {cls_h2} {cls_b};"
+                )
+                hh_class_idx += 1
+
+        # Case B: half + base (3-glyph context)
+        hb_class_idx = 0
+        for hw, var_groups in sorted(i_hw_base.items()):
+            for var_idx, bases in sorted(var_groups.items()):
+                if not has(0xF0110 + var_idx):
+                    continue
+                base_names = ' '.join(glyph_name(cp) for cp in sorted(bases))
+                h_names = ' '.join(glyph_name(cp) for cp in sorted(half_by_width[hw]))
+                cls_b = f"@iHB{hb_class_idx}"
+                cls_h = f"@iH{hb_class_idx}"
+                psts_i_lines.append(f"    {cls_b} = [{base_names}];")
+                psts_i_lines.append(f"    {cls_h} = [{h_names}];")
+                psts_i_lines.append(
+                    f"    sub {glyph_name(0x093F)}' lookup IMatraVar{var_idx} "
+                    f"{cls_h} {cls_b};"
+                )
+                hb_class_idx += 1
+
+        # Case A: base only (2-glyph context)
+        for var_idx, bases in sorted(i_base_groups.items()):
+            if not has(0xF0110 + var_idx):
+                continue
+            base_names = ' '.join(glyph_name(cp) for cp in sorted(bases))
+            cls = f"@iB{var_idx}"
+            psts_i_lines.append(f"    {cls} = [{base_names}];")
+            psts_i_lines.append(
+                f"    sub {glyph_name(0x093F)}' lookup IMatraVar{var_idx} {cls};"
+            )
+
+    else:
+        psts_i_lines = []
+
+    # ===== II-matra variant lookups and rules =====
+    if has(0x0940) and has_ii_variants:
+        # Create 16 single-substitution lookups
+        for var in range(16):
+            target = 0xF0120 + var
+            if has(target):
+                lines.append(f"lookup IIMatraVar{var} {{")
+                lines.append(f"    sub {glyph_name(0x0940)} by {glyph_name(target)};")
+                lines.append(f"}} IIMatraVar{var};")
+
+        # Group base consonants by II-matra variant index
+        # Formula: var_idx = 15 - (clamp(width - anchor_x + 1, 4, 19) - 4)
+        # (0xF012F - result gives the codepoint, so var_idx 0 = 0xF012F,
+        #  var_idx 15 = 0xF0120; we reverse so var_idx 0 maps to 0xF0120)
+        # Actually from the plan: 0xF012F - (clamp(w+1, 4, 19) - 4)
+        # where w = width - anchor_x
+        # So the PUA codepoint = 0xF012F - (clamp(w+1, 4, 19) - 4)
+        # If we define var_idx as offset from 0xF0120:
+        #   pua = 0xF0120 + var_idx
+        #   var_idx = 0xF012F - (clamp(w+1, 4, 19) - 4) - 0xF0120
+        #           = 15 - (clamp(w+1, 4, 19) - 4)
+        ii_base_groups = defaultdict(set)
+        for cp in sorted(base_cps):
+            w = glyph_width(cp) - anchor_x(cp)
+            clamped = min(max(w + 1, 4), 19) - 4
+            var_idx = 15 - clamped  # 0xF012F - clamped → offset from 0xF0120
+            ii_base_groups[var_idx].add(cp)
+
+        psts_ii_lines = []
+        for var_idx, bases in sorted(ii_base_groups.items()):
+            target = 0xF0120 + var_idx
+            if not has(target):
+                continue
+            base_names = ' '.join(glyph_name(cp) for cp in sorted(bases))
+            cls = f"@iiB{var_idx}"
+            psts_ii_lines.append(f"    {cls} = [{base_names}];")
+            psts_ii_lines.append(
+                f"    sub {cls} {glyph_name(0x0940)}' lookup IIMatraVar{var_idx};"
+            )
+    else:
+        psts_ii_lines = []
+
+    if not psts_i_lines and not psts_ii_lines:
+        return ""
+
+    # Assemble the feature block
+    feat = ["feature psts {", "    script dev2;"]
+    feat.extend(psts_i_lines)
+    feat.extend(psts_ii_lines)
+    feat.append("} psts;")
+
+    return '\n'.join(lines + [''] + feat)
 
 
 def _generate_tamil(glyphs, has):
