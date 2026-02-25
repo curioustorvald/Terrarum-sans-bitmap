@@ -666,9 +666,10 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     # --- cjct: consonant (PUA) + below-base RA -> RA-appended form ---
     # After blwf converts virama+RA to rakaar mark, cjct combines it
     # with the preceding consonant to produce the ra-appended glyph.
+    # Covers all PUA consonants: basic, nukta forms, AND conjuncts
+    # (e.g. DD.G + rakaar -> DD.G.RA).
     cjct_subs = []
-    for uni_cp in range(0x0915, 0x093A):
-        internal = SC.to_deva_internal(uni_cp)
+    for internal in SC.DEVANAGARI_PRESENTATION_CONSONANTS:
         ra_form = internal + 480
         if has(internal) and has(ra_sub) and has(ra_form):
             cjct_subs.append(
