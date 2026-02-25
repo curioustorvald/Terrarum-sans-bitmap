@@ -281,11 +281,13 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         if advance == 0:
             x_offset -= g.props.nudge_x * SCALE
 
+        y_offset = -g.props.nudge_y * SCALE
+
         contours = trace_bitmap(g.bitmap, g.props.width)
 
         pen = T2CharStringPen(advance, None)
         if contours:
-            draw_glyph_to_pen(contours, pen, x_offset=x_offset)
+            draw_glyph_to_pen(contours, pen, x_offset=x_offset, y_offset=y_offset)
             traced_count += 1
         charstrings[name] = pen.getCharString()
 
