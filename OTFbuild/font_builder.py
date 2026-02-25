@@ -264,6 +264,12 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         #   ALIGN_CENTRE: offset = ceil((width - W_VAR_INIT) / 2) (negative)
         #   ALIGN_BEFORE: offset = 0
         # The bitmap cell width depends on the sheet type.
+        # nudge_x shifts the glyph left by that many pixels in the
+        # bitmap engine.  For zero-advance glyphs (marks and width-0
+        # non-marks like U+0361) this is a pure visual shift that must
+        # be baked into the contours.  For positive-advance glyphs the
+        # bitmap engine's nudge/extraWidth mechanism already maps to
+        # the OTF advance, so we must NOT shift contours.
         import math
         bm_cols = len(g.bitmap[0]) if g.bitmap and g.bitmap[0] else 0
         if g.props.align_where == SC.ALIGN_RIGHT:
@@ -272,6 +278,8 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
             x_offset = math.ceil((g.props.width - bm_cols) / 2) * SCALE
         else:
             x_offset = 0
+        if advance == 0:
+            x_offset -= g.props.nudge_x * SCALE
 
         contours = trace_bitmap(g.bitmap, g.props.width)
 

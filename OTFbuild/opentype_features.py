@@ -11,6 +11,7 @@ Features implemented:
 - mark: GPOS mark-to-base positioning (diacritics anchors)
 """
 
+import math
 from typing import Dict, List, Set, Tuple
 
 from glyph_parser import ExtractedGlyph
@@ -1097,7 +1098,22 @@ def _generate_mark(glyphs, has):
     for mark_type, mark_list in sorted(mark_classes.items()):
         class_name = f"@mark_type{mark_type}"
         for cp, g in mark_list:
-            mark_x = ((g.props.width + 1) // 2) * SC.SCALE
+            if g.props.align_where == SC.ALIGN_CENTRE:
+                # Match Kotlin: anchorPoint - HALF_VAR_INIT centres the
+                # cell on the anchor.  For U+0900-0902 the Kotlin engine
+                # uses (W_VAR_INIT + 1) / 2 instead (1 px nudge left).
+                # mark_x must match font_builder's total x_offset
+                # (alignment + nudge) so column `half` sits on the anchor.
+                bm_cols = len(g.bitmap[0]) if g.bitmap and g.bitmap[0] else 0
+                if 0x0900 <= cp <= 0x0902:
+                    half = (SC.W_VAR_INIT + 1) // 2
+                else:
+                    half = (SC.W_VAR_INIT - 1) // 2
+                x_offset = math.ceil((g.props.width - bm_cols) / 2) * SC.SCALE
+                x_offset -= g.props.nudge_x * SC.SCALE
+                mark_x = x_offset + half * SC.SCALE
+            else:
+                mark_x = ((g.props.width + 1) // 2) * SC.SCALE
             mark_y = SC.ASCENT
             lines.append(
                 f"markClass {glyph_name(cp)} <anchor {mark_x} {mark_y}> {class_name};"
@@ -1114,7 +1130,8 @@ def _generate_mark(glyphs, has):
         for cp, g in sorted(bases_with_anchors.items()):
             anchor = g.props.diacritics_anchors[mark_type] if mark_type < 6 else None
             if anchor and (anchor.x_used or anchor.y_used):
-                ax = anchor.x * SC.SCALE
+                # Match Kotlin: when x_used is false, default to width / 2
+                ax = (anchor.x if anchor.x_used else g.props.width // 2) * SC.SCALE
                 ay = (SC.ASCENT // SC.SCALE - anchor.y) * SC.SCALE
                 lines.append(f"    pos base {glyph_name(cp)} <anchor {ax} {ay}> mark {class_name};")
 
