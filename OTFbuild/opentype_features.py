@@ -627,11 +627,13 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
 
     # --- half: consonant (PUA) + virama -> half form ---
     # After ccmp, consonants are in PUA form, so reference PUA here.
-    # Conjuncts are NOT here because half uses per-glyph masking (only
-    # pre-base consonants), preventing 3-glyph matches across the base.
+    # Covers all PUA consonants including conjuncts produced by akhn
+    # (e.g. DD.G + virama -> half-DD.G).  The half feature uses
+    # per-glyph masking (only pre-base consonants get the mask), so
+    # conjunct glyphs formed by akhn inherit the pre-base mask and
+    # their following virama also has the pre-base mask.
     half_subs = []
-    for uni_cp in range(0x0915, 0x093A):
-        internal = SC.to_deva_internal(uni_cp)
+    for internal in SC.DEVANAGARI_PRESENTATION_CONSONANTS:
         half_form = internal + 240
         if has(internal) and has(SC.DEVANAGARI_VIRAMA) and has(half_form):
             half_subs.append(
@@ -668,15 +670,39 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     # with the preceding consonant to produce the ra-appended glyph.
     # Covers all PUA consonants: basic, nukta forms, AND conjuncts
     # (e.g. DD.G + rakaar -> DD.G.RA).
-    cjct_subs = []
+    #
+    # A second lookup converts RA-appended + virama -> RA-appended half,
+    # since the half feature has already run before cjct.
+    cjct_lines = []
+
+    # Lookup 1: consonant + rakaar -> RA-appended form
+    ra_append_subs = []
     for internal in SC.DEVANAGARI_PRESENTATION_CONSONANTS:
         ra_form = internal + 480
         if has(internal) and has(ra_sub) and has(ra_form):
-            cjct_subs.append(
-                f"    sub {glyph_name(internal)} {glyph_name(ra_sub)} by {glyph_name(ra_form)};"
+            ra_append_subs.append(
+                f"        sub {glyph_name(internal)} {glyph_name(ra_sub)} by {glyph_name(ra_form)};"
             )
-    if cjct_subs:
-        features.append("feature cjct {\n    script dev2;\n" + '\n'.join(cjct_subs) + "\n} cjct;")
+    if ra_append_subs:
+        cjct_lines.append("    lookup CjctRaAppend {")
+        cjct_lines.extend(ra_append_subs)
+        cjct_lines.append("    } CjctRaAppend;")
+
+    # Lookup 2: RA-appended + virama -> RA-appended half form
+    ra_half_subs = []
+    for ra_form in SC.DEVANAGARI_PRESENTATION_CONSONANTS_WITH_RA:
+        ra_half = ra_form + 240  # +240 from RA-appended = +720 from base
+        if has(ra_form) and has(SC.DEVANAGARI_VIRAMA) and has(ra_half):
+            ra_half_subs.append(
+                f"        sub {glyph_name(ra_form)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(ra_half)};"
+            )
+    if ra_half_subs:
+        cjct_lines.append("    lookup CjctRaHalf {")
+        cjct_lines.extend(ra_half_subs)
+        cjct_lines.append("    } CjctRaHalf;")
+
+    if cjct_lines:
+        features.append("feature cjct {\n    script dev2;\n" + '\n'.join(cjct_lines) + "\n} cjct;")
 
     # --- blws: RA/RRA/HA (PUA) + U/UU -> special syllables ---
     blws_subs = []

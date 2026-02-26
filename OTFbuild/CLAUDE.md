@@ -141,6 +141,7 @@ The bitmap font engine normalises Devanagari consonants to internal PUA forms be
 | U+0915-0939 +48 | 0xF0170-0xF0194 | Nukta forms (consonant + U+093C) |
 | U+0915-0939 +240 | 0xF0230-0xF0254 | Half forms (consonant + virama) |
 | U+0915-0939 +480 | 0xF0320-0xF0404 | RA-appended forms (consonant + virama + RA) |
+| U+0915-0939 +720 | 0xF0410-0xF04F4 | RA-appended half forms (consonant + virama + RA + virama) |
 
 Mapping formula: `to_deva_internal(c)` = `c - 0x0915 + 0xF0140` for U+0915-0939.
 
