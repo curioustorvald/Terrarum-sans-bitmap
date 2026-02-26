@@ -281,7 +281,13 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         if advance == 0:
             x_offset -= g.props.nudge_x * SCALE
 
-        y_offset = -g.props.nudge_y * SCALE
+        # For STACK_DOWN marks (below-base diacritics), negative nudge_y
+        # means "shift content down to below baseline".  The sign convention
+        # is opposite to non-marks where positive nudge_y means shift down.
+        if g.props.stack_where == SC.STACK_DOWN and g.props.write_on_top >= 0:
+            y_offset = g.props.nudge_y * SCALE
+        else:
+            y_offset = -g.props.nudge_y * SCALE
 
         contours = trace_bitmap(g.bitmap, g.props.width)
 

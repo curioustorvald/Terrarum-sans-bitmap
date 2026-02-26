@@ -1250,7 +1250,7 @@ class TerrarumSansBitmap(
                         // set Y pos according to diacritics position
                         when (thisProp.stackWhere) {
                             GlyphProps.STACK_DOWN -> {
-                                posYbuffer[charIndex] = -thisProp.nudgeY + (H_DIACRITICS * stackDownwardCounter + -thisProp.nudgeY) * flipY.toSign()
+                                posYbuffer[charIndex] = (-thisProp.nudgeY + H_DIACRITICS * stackDownwardCounter) * flipY.toSign()
                                 stackDownwardCounter++
                             }
                             GlyphProps.STACK_UP -> {
@@ -1272,11 +1272,11 @@ class TerrarumSansBitmap(
 //                                    dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.charInfo()}; stack counter: $stackUpwardCounter")
                             }
                             GlyphProps.STACK_UP_N_DOWN -> {
-                                posYbuffer[charIndex] = -thisProp.nudgeY + (H_DIACRITICS * stackDownwardCounter + -thisProp.nudgeY) * flipY.toSign()
+                                posYbuffer[charIndex] = (-thisProp.nudgeY + H_DIACRITICS * stackDownwardCounter) * flipY.toSign()
                                 stackDownwardCounter++
 
 
-                                posYbuffer[charIndex] = -thisProp.nudgeY + (-H_DIACRITICS * stackUpwardCounter + -thisProp.nudgeY) * flipY.toSign()
+                                posYbuffer[charIndex] = (-thisProp.nudgeY + -H_DIACRITICS * stackUpwardCounter) * flipY.toSign()
                                 // shift down on lowercase if applicable
                                 if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
                                     lastNonDiacriticChar.isLowHeight()) {
