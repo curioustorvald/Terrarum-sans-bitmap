@@ -542,6 +542,16 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             return u  # already PUA or non-consonant
 
     akhn_subs = []
+
+    # ISCII: RA + ZWJ + virama + YA -> RYA (uF0106)
+    ra_int = SC.to_deva_internal(0x0930)
+    ya_int = SC.to_deva_internal(0x092F)
+    RYA = 0xF0106
+    if has(ra_int) and has(0x200D) and has(SC.DEVANAGARI_VIRAMA) and has(ya_int) and has(RYA):
+        akhn_subs.append(
+            f"    sub {glyph_name(ra_int)} {glyph_name(0x200D)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(ya_int)} by {glyph_name(RYA)}; # RYA"
+        )
+
     ka_int = SC.to_deva_internal(0x0915)
     ssa_int = SC.to_deva_internal(0x0937)
     ja_int = SC.to_deva_internal(0x091C)
@@ -639,6 +649,12 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             half_subs.append(
                 f"    sub {glyph_name(internal)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(half_form)};"
             )
+    # RYA (uF0106) has a special half form (uF0107), not at +240
+    HALF_RYA = 0xF0107
+    if has(RYA) and has(SC.DEVANAGARI_VIRAMA) and has(HALF_RYA):
+        half_subs.append(
+            f"    sub {glyph_name(RYA)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(HALF_RYA)};"
+        )
     if half_subs:
         features.append("feature half {\n    script dev2;\n" + '\n'.join(half_subs) + "\n} half;")
 
@@ -787,7 +803,7 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             abvs_lines.append("} abvs;")
             features.append('\n'.join(abvs_lines))
 
-    # --- psts: I-matra and II-matra length variants ---
+    # --- psts: I-matra/II-matra length variants + open Ya ---
     # Must run AFTER abvs because abvs uses uni093F as context for complex
     # reph substitution.  If I-matra were substituted before abvs, those
     # contextual rules would break.
@@ -795,9 +811,15 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     # HarfBuzz dev2 feature order: init → pres → abvs → blws → psts → haln
     # psts has F_GLOBAL_MANUAL_JOINERS masking → applied to ALL glyphs in the
     # syllable, so it works for both pre-base I-matra and post-base II-matra.
-    psts_code = _generate_psts_matra_variants(glyphs, has, _conjuncts)
-    if psts_code:
-        features.append(psts_code)
+    matra_lookups, matra_body = _generate_psts_matra_variants(glyphs, has, _conjuncts)
+    ya_lookups, ya_body = _generate_psts_open_ya(glyphs, has)
+    all_lookups = matra_lookups + ya_lookups
+    all_body = matra_body + ya_body
+    if all_body:
+        feat = ["feature psts {", "    script dev2;"]
+        feat.extend(all_body)
+        feat.append("} psts;")
+        features.append('\n'.join(all_lookups + [''] + feat))
 
     if not features:
         return ""
@@ -1012,15 +1034,73 @@ def _generate_psts_matra_variants(glyphs, has, conjuncts):
         psts_ii_lines = []
 
     if not psts_i_lines and not psts_ii_lines:
-        return ""
+        return [], []
 
-    # Assemble the feature block
-    feat = ["feature psts {", "    script dev2;"]
-    feat.extend(psts_i_lines)
-    feat.extend(psts_ii_lines)
-    feat.append("} psts;")
+    return lines, psts_i_lines + psts_ii_lines
 
-    return '\n'.join(lines + [''] + feat)
+
+def _generate_psts_open_ya(glyphs, has):
+    """Generate psts rules for open Ya substitution.
+
+    In the bitmap font, Ya (uF015A) uses an "open" variant (uF0108) when it
+    follows certain half-form consonants.  Half-Ya (uF024A) similarly becomes
+    open-half-Ya (uF0109).
+
+    Returns (lookup_lines, feature_body_lines) like _generate_psts_matra_variants.
+    """
+    OPEN_YA = 0xF0108
+    OPEN_HALF_YA = 0xF0109
+    YA_INT = 0xF015A       # 0x092F.toDevaInternal()
+    HALF_YA = YA_INT + 240  # 0xF024A
+
+    if not has(OPEN_YA) or not has(YA_INT):
+        return [], []
+
+    # Consonants whose half forms trigger open Ya (from Kotlin ligateIndicConsonants):
+    # 1. Basic consonants: KA, NGA, CHA, TTA, TTH, DD, DDH
+    open_ya_full = {
+        SC.to_deva_internal(cp)
+        for cp in [0x0915, 0x0919, 0x091B, 0x091F, 0x0920, 0x0921, 0x0922]
+    }
+    # 2. D.RA
+    open_ya_full.add(0xF0331)
+    # 3. Conjuncts in 0xF01B0..0xF01DF
+    for cp in range(0xF01B0, 0xF01E0):
+        if has(cp):
+            open_ya_full.add(cp)
+    # 4. RA-appended conjuncts in 0xF0390..0xF03BF
+    for cp in range(0xF0390, 0xF03C0):
+        if has(cp):
+            open_ya_full.add(cp)
+
+    # Collect the HALF forms of all these consonants
+    open_ya_halfs = set()
+    for cp in open_ya_full:
+        half = cp + 240
+        if has(half):
+            open_ya_halfs.add(half)
+
+    if not open_ya_halfs:
+        return [], []
+
+    lookups = []
+    lookups.append(f"lookup OpenYa {{")
+    lookups.append(f"    sub {glyph_name(YA_INT)} by {glyph_name(OPEN_YA)};")
+    lookups.append(f"}} OpenYa;")
+
+    if has(OPEN_HALF_YA) and has(HALF_YA):
+        lookups.append(f"lookup OpenHalfYa {{")
+        lookups.append(f"    sub {glyph_name(HALF_YA)} by {glyph_name(OPEN_HALF_YA)};")
+        lookups.append(f"}} OpenHalfYa;")
+
+    body = []
+    half_names = ' '.join(glyph_name(cp) for cp in sorted(open_ya_halfs))
+    body.append(f"    @openYaHalfs = [{half_names}];")
+    body.append(f"    sub @openYaHalfs {glyph_name(YA_INT)}' lookup OpenYa;")
+    if has(OPEN_HALF_YA) and has(HALF_YA):
+        body.append(f"    sub @openYaHalfs {glyph_name(HALF_YA)}' lookup OpenHalfYa;")
+
+    return lookups, body
 
 
 def _generate_tamil(glyphs, has):
