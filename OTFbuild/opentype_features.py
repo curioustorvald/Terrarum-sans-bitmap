@@ -552,6 +552,18 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             f"    sub {glyph_name(ra_int)} {glyph_name(0x200D)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(ya_int)} by {glyph_name(RYA)}; # RYA"
         )
 
+    # ISCII eyelash-RA: RRA + virama -> eyelash-RA, RA + virama + ZWJ -> eyelash-RA
+    rra_int = SC.to_deva_internal(0x0931)
+    EYELASH_RA = 0xF010B
+    if has(ra_int) and has(0x200D) and has(SC.DEVANAGARI_VIRAMA) and has(EYELASH_RA):
+        akhn_subs.append(
+            f"    sub {glyph_name(ra_int)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(0x200D)} by {glyph_name(EYELASH_RA)}; # eyelash-RA (RA+H+ZWJ)"
+        )
+    if has(rra_int) and has(SC.DEVANAGARI_VIRAMA) and has(EYELASH_RA):
+        akhn_subs.append(
+            f"    sub {glyph_name(rra_int)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(EYELASH_RA)}; # eyelash-RA (RRA+H)"
+        )
+
     ka_int = SC.to_deva_internal(0x0915)
     ssa_int = SC.to_deva_internal(0x0937)
     ja_int = SC.to_deva_internal(0x091C)
@@ -654,6 +666,11 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     if has(RYA) and has(SC.DEVANAGARI_VIRAMA) and has(HALF_RYA):
         half_subs.append(
             f"    sub {glyph_name(RYA)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(HALF_RYA)};"
+        )
+    # Eyelash-RA's half form is itself
+    if has(EYELASH_RA) and has(SC.DEVANAGARI_VIRAMA):
+        half_subs.append(
+            f"    sub {glyph_name(EYELASH_RA)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(EYELASH_RA)};"
         )
     if half_subs:
         features.append("feature half {\n    script dev2;\n" + '\n'.join(half_subs) + "\n} half;")
