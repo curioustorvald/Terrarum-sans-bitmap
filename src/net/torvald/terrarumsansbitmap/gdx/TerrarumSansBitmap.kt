@@ -1401,6 +1401,10 @@ class TerrarumSansBitmap(
                 else {
                     seq0.add(c.toDevaInternal())
                 }
+            // Contextual Visarga: use interword variant when followed by a Devanagari character
+            else if (c == 0x0903 && (cNext in 0x0904..0x0939 || cNext in 0x0958..0x097F)) {
+                seq0.add(DEVANAGARI_INTERWORD_VISARGA)
+            }
             // re-order Sundanese diacritics
             else if ((c == 0x1BA1 || c == 0x1BA2) && cNext == 0x1BA5) {
                 seq0.add(cNext); seq0.add(c); i += 1
@@ -2744,6 +2748,8 @@ class TerrarumSansBitmap(
         private const val DEVANAGARI_EYELASH_RA = 0xF010B
         private const val DEVANAGARI_RA_SUPER = 0xF010C
         private const val DEVANAGARI_RA_SUPER_COMPLEX = 0xF010D
+        private const val DEVANAGARI_INTERWORD_VISARGA = 0xF010A
+
 
         private const val MARWARI_DD = 0x978
 

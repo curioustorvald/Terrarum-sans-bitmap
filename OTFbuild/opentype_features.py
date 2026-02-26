@@ -856,6 +856,38 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
         feat.append("} psts;")
         features.append('\n'.join(all_lookups + [''] + feat))
 
+    # --- calt: contextual Visarga ---
+    # When Visarga (U+0903) is followed by a Devanagari character (mid-word),
+    # substitute with interword variant (uF010A).  calt is applied globally
+    # across syllable boundaries, unlike psts which is per-syllable.
+    INTERWORD_VISARGA = 0xF010A
+    visarga = 0x0903
+    if has(visarga) and has(INTERWORD_VISARGA):
+        # Build class of Devanagari characters that can follow Visarga mid-word:
+        # PUA consonants (full, half, RA-appended, RA-appended half) + independent vowels
+        deva_following_cps = (
+            list(SC.DEVANAGARI_PRESENTATION_CONSONANTS) +
+            list(range(0xF0230, 0xF0320)) +   # half forms
+            list(SC.DEVANAGARI_PRESENTATION_CONSONANTS_WITH_RA) +
+            list(range(0xF0410, 0xF0500)) +   # RA-appended half forms
+            list(range(0x0904, 0x0915)) +      # independent vowels
+            list(range(0x0915, 0x093A)) +      # Unicode consonants (before ccmp)
+            list(range(0x0958, 0x0962))         # nukta consonants
+        )
+        deva_following = [glyph_name(cp) for cp in sorted(set(deva_following_cps)) if has(cp)]
+        if deva_following:
+            calt_lines = []
+            calt_lines.append(f"lookup InterwordVisarga {{")
+            calt_lines.append(f"    sub {glyph_name(visarga)} by {glyph_name(INTERWORD_VISARGA)};")
+            calt_lines.append(f"}} InterwordVisarga;")
+            calt_lines.append("")
+            calt_lines.append("feature calt {")
+            calt_lines.append("    script dev2;")
+            calt_lines.append(f"    @devaFollowing = [{' '.join(deva_following)}];")
+            calt_lines.append(f"    sub {glyph_name(visarga)}' lookup InterwordVisarga @devaFollowing;")
+            calt_lines.append("} calt;")
+            features.append('\n'.join(calt_lines))
+
     if not features:
         return ""
     return '\n\n'.join(features)

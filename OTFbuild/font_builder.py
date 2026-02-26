@@ -371,6 +371,9 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
             try:
                 fea_stream = io.StringIO(fea_code)
                 addOpenTypeFeatures(font, fea_stream)
+                # Obtain raw .fea text for debugging
+                # with open("debugout_features.fea", "w") as text_file:
+                    # text_file.write(fea_code)
                 print("  Features compiled successfully")
             except Exception as e:
                 print(f"  [WARNING] Feature compilation failed: {e}")
