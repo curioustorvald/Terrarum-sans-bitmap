@@ -748,6 +748,24 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
         )
         features.append(rphf_code)
 
+    # --- pres: alternate half-SHA before LA ---
+    # SHA+virama+LA uses a special half-SHA form (uF010F) instead of the
+    # regular half form (uF0251).  half has already run at this point.
+    ALT_HALF_SHA = 0xF010F
+    half_sha = SC.to_deva_internal(0x0936) + 240  # 0xF0251
+    la_int = SC.to_deva_internal(0x0932)           # 0xF015D
+    if has(half_sha) and has(la_int) and has(ALT_HALF_SHA):
+        pres_lines = []
+        pres_lines.append(f"lookup AltHalfSha {{")
+        pres_lines.append(f"    sub {glyph_name(half_sha)} by {glyph_name(ALT_HALF_SHA)};")
+        pres_lines.append(f"}} AltHalfSha;")
+        pres_lines.append("")
+        pres_lines.append("feature pres {")
+        pres_lines.append("    script dev2;")
+        pres_lines.append(f"    sub {glyph_name(half_sha)}' lookup AltHalfSha {glyph_name(la_int)};")
+        pres_lines.append("} pres;")
+        features.append('\n'.join(pres_lines))
+
     # --- abvs: complex reph substitution ---
     # The Kotlin engine uses complex reph (U+F010D) when a
     # devanagariSuperscript mark precedes reph, or any vowel matra
