@@ -246,6 +246,8 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
     pen.closePath()
     charstrings[".notdef"] = pen.getCharString()
 
+    _unihan_cps = set(SC.CODE_RANGE[SC.SHEET_UNIHAN])
+
     traced_count = 0
     for cp in sorted_cps:
         g = glyphs[cp]
@@ -288,6 +290,11 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
             y_offset = g.props.nudge_y * SCALE
         else:
             y_offset = -g.props.nudge_y * SCALE
+
+        # Unihan glyphs are 16px tall in a 20px cell; the bitmap engine
+        # centres them vertically with offsetUnihan = (H - H_UNIHAN) / 2.
+        if cp in _unihan_cps:
+            y_offset -= ((SC.H - SC.H_UNIHAN) // 2) * SCALE
 
         contours = trace_bitmap(g.bitmap, g.props.width)
 
