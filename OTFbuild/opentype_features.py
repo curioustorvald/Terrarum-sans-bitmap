@@ -1278,7 +1278,9 @@ def _generate_mark(glyphs, has):
                 # uses (W_VAR_INIT + 1) / 2 instead (1 px nudge left).
                 # mark_x must match font_builder's total x_offset
                 # (alignment + nudge) so column `half` sits on the anchor.
-                bm_cols = len(g.bitmap[0]) if g.bitmap and g.bitmap[0] else 0
+                # The Kotlin engine always uses W_VAR_INIT for alignment,
+                # even for EXTRAWIDE sheets.
+                bm_cols = SC.W_VAR_INIT
                 if 0x0900 <= cp <= 0x0902:
                     half = (SC.W_VAR_INIT + 1) // 2
                 else:

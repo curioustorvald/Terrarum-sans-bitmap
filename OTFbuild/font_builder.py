@@ -267,21 +267,22 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         #   ALIGN_BEFORE: offset = 0
         # The bitmap cell width depends on the sheet type.
         # nudge_x shifts the glyph left by that many pixels in the
-        # bitmap engine.  For zero-advance glyphs (marks and width-0
-        # non-marks like U+0361) this is a pure visual shift that must
-        # be baked into the contours.  For positive-advance glyphs the
-        # bitmap engine's nudge/extraWidth mechanism already maps to
-        # the OTF advance, so we must NOT shift contours.
+        # bitmap engine.  The Kotlin engine always applies nudge_x to
+        # the drawing position (posXbuffer = -nudgeX + ...) and the
+        # next glyph compensates via extraWidth, so the effective
+        # origin-to-origin advance stays at `width`.  We must bake
+        # the same leftward shift into the contour x_offset.
         import math
-        bm_cols = len(g.bitmap[0]) if g.bitmap and g.bitmap[0] else 0
+        # The Kotlin engine always uses W_VAR_INIT for alignment calculations,
+        # even for EXTRAWIDE sheets.  Use W_VAR_INIT here to match.
+        bm_cols = SC.W_VAR_INIT
         if g.props.align_where == SC.ALIGN_RIGHT:
             x_offset = (g.props.width - bm_cols) * SCALE
         elif g.props.align_where == SC.ALIGN_CENTRE:
             x_offset = math.ceil((g.props.width - bm_cols) / 2) * SCALE
         else:
             x_offset = 0
-        if advance == 0:
-            x_offset -= g.props.nudge_x * SCALE
+        x_offset -= g.props.nudge_x * SCALE
 
         # For STACK_DOWN marks (below-base diacritics), negative nudge_y
         # means "shift content down to below baseline".  The sign convention
