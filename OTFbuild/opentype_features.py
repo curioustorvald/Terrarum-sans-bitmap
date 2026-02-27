@@ -1244,8 +1244,22 @@ def _generate_sundanese(glyphs, has):
 def _generate_mark(glyphs, has):
     """
     Generate GPOS mark-to-base positioning using diacritics anchors from tag column.
+
+    Marks are grouped by (writeOnTop, alignment) into separate mark classes
+    and lookups.  Different alignments need different default base anchor
+    positions to match the Kotlin engine's fallback behaviour:
+      - ALIGN_CENTRE: base anchor at width/2
+      - ALIGN_RIGHT:  base anchor at width
+      - ALIGN_LEFT/BEFORE: base anchor at 0 (mark sits at base origin)
     """
-    bases_with_anchors = {}
+    # Collect ALL non-mark glyphs as potential bases (excluding CJK
+    # ideographs and Braille which are unlikely to receive combining marks
+    # and would bloat the GPOS table).
+    _EXCLUDE_RANGES = (
+        range(0x3400, 0xA000),   # CJK Unified Ideographs (Ext A + main)
+        range(0x2800, 0x2900),   # Braille
+    )
+    all_bases = {}
     marks = {}
 
     for cp, g in glyphs.items():
@@ -1253,33 +1267,37 @@ def _generate_mark(glyphs, has):
             continue
         if g.props.write_on_top >= 0:
             marks[cp] = g
-        elif any(a.x_used or a.y_used for a in g.props.diacritics_anchors):
-            bases_with_anchors[cp] = g
+        elif g.bitmap and g.props.width > 0:
+            if not any(cp in r for r in _EXCLUDE_RANGES):
+                all_bases[cp] = g
 
-    if not bases_with_anchors or not marks:
+    if not all_bases or not marks:
         return ""
 
     lines = []
 
-    # Group marks by writeOnTop type
-    mark_classes = {}
-    for cp, g in marks.items():
-        mark_type = g.props.write_on_top
-        if mark_type not in mark_classes:
-            mark_classes[mark_type] = []
-        mark_classes[mark_type].append((cp, g))
+    _align_suffix = {
+        SC.ALIGN_LEFT: 'l',
+        SC.ALIGN_RIGHT: 'r',
+        SC.ALIGN_CENTRE: 'c',
+        SC.ALIGN_BEFORE: 'b',
+    }
 
-    for mark_type, mark_list in sorted(mark_classes.items()):
-        class_name = f"@mark_type{mark_type}"
+    # Group marks by (writeOnTop, alignment) for separate mark classes.
+    mark_groups = {}  # (mark_type, align) -> [(cp, g), ...]
+    for cp, g in marks.items():
+        key = (g.props.write_on_top, g.props.align_where)
+        mark_groups.setdefault(key, []).append((cp, g))
+
+    # Emit markClass definitions
+    for (mark_type, align), mark_list in sorted(mark_groups.items()):
+        suffix = _align_suffix.get(align, 'x')
+        class_name = f"@mark_t{mark_type}_{suffix}"
         for cp, g in mark_list:
-            if g.props.align_where == SC.ALIGN_CENTRE:
+            if align == SC.ALIGN_CENTRE:
                 # Match Kotlin: anchorPoint - HALF_VAR_INIT centres the
                 # cell on the anchor.  For U+0900-0902 the Kotlin engine
                 # uses (W_VAR_INIT + 1) / 2 instead (1 px nudge left).
-                # mark_x must match font_builder's total x_offset
-                # (alignment + nudge) so column `half` sits on the anchor.
-                # The Kotlin engine always uses W_VAR_INIT for alignment,
-                # even for EXTRAWIDE sheets.
                 bm_cols = SC.W_VAR_INIT
                 if 0x0900 <= cp <= 0x0902:
                     half = (SC.W_VAR_INIT + 1) // 2
@@ -1288,28 +1306,57 @@ def _generate_mark(glyphs, has):
                 x_offset = math.ceil((g.props.width - bm_cols) / 2) * SC.SCALE
                 x_offset -= g.props.nudge_x * SC.SCALE
                 mark_x = x_offset + half * SC.SCALE
+            elif align == SC.ALIGN_RIGHT:
+                # Match Kotlin: mark at base anchor - W_VAR_INIT.
+                # The contour x_offset already includes (width - W_VAR_INIT),
+                # so mark_x just needs the nudge_x component.
+                mark_x = g.props.nudge_x * SC.SCALE
             else:
-                mark_x = ((g.props.width + 1) // 2) * SC.SCALE
+                # ALIGN_LEFT / ALIGN_BEFORE: mark sits at base origin.
+                mark_x = 0
             mark_y = SC.ASCENT
             lines.append(
                 f"markClass {glyph_name(cp)} <anchor {mark_x} {mark_y}> {class_name};"
             )
 
-    # Define lookups at top level so they can be referenced from
-    # multiple script registrations in the mark feature.
+    # Generate one lookup per (mark_type, align) group.
     lookup_names = []
-    for mark_type, mark_list in sorted(mark_classes.items()):
-        class_name = f"@mark_type{mark_type}"
-        lookup_name = f"mark_type{mark_type}"
+    for (mark_type, align), mark_list in sorted(mark_groups.items()):
+        suffix = _align_suffix.get(align, 'x')
+        class_name = f"@mark_t{mark_type}_{suffix}"
+        lookup_name = f"mark_t{mark_type}_{suffix}"
         lines.append(f"lookup {lookup_name} {{")
 
-        for cp, g in sorted(bases_with_anchors.items()):
-            anchor = g.props.diacritics_anchors[mark_type] if mark_type < 6 else None
-            if anchor and (anchor.x_used or anchor.y_used):
-                # Match Kotlin: when x_used is false, default to width / 2
-                ax = (anchor.x if anchor.x_used else g.props.width // 2) * SC.SCALE
-                ay = (SC.ASCENT // SC.SCALE - anchor.y) * SC.SCALE
-                lines.append(f"    pos base {glyph_name(cp)} <anchor {ax} {ay}> mark {class_name};")
+        for cp, g in sorted(all_bases.items()):
+            anchor = (g.props.diacritics_anchors[mark_type]
+                      if mark_type < len(g.props.diacritics_anchors)
+                      else None)
+            has_explicit = anchor and (anchor.x_used or anchor.y_used)
+
+            if align in (SC.ALIGN_LEFT, SC.ALIGN_BEFORE):
+                # Kotlin ignores base anchors for these alignments;
+                # the mark always sits at posX[base].
+                ax = 0
+                ay = SC.ASCENT
+            elif has_explicit:
+                ax = (anchor.x if anchor.x_used
+                      else g.props.width // 2) * SC.SCALE
+                ay = ((SC.ASCENT // SC.SCALE - anchor.y) * SC.SCALE
+                      if anchor.y_used else SC.ASCENT)
+            elif align == SC.ALIGN_CENTRE:
+                ax = (g.props.width // 2) * SC.SCALE
+                ay = SC.ASCENT
+            elif align == SC.ALIGN_RIGHT:
+                ax = g.props.width * SC.SCALE
+                ay = SC.ASCENT
+            else:
+                ax = 0
+                ay = SC.ASCENT
+
+            lines.append(
+                f"    pos base {glyph_name(cp)}"
+                f" <anchor {ax} {ay}> mark {class_name};"
+            )
 
         lines.append(f"}} {lookup_name};")
         lines.append("")
