@@ -636,6 +636,11 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
         (0x0939, 0x092F, 0xF01C9, "H.Y"),
         (0x0939, 0x0932, 0xF01CA, "H.L"),
         (0x0939, 0x0935, 0xF01CB, "H.V"),
+        # Marwari DD (U+0978) — not mapped to PUA by ccmp, so _di(0x0978)
+        # returns 0x0978 unchanged.  C2 uses standard Unicode (→ PUA via _di).
+        (0x0978, 0x0978, SC.MARWARI_LIG_DD_DD,  "mDD.DD"),
+        (0x0978, 0x0922, SC.MARWARI_LIG_DD_DDH, "mDD.DDH"),
+        (0x0978, 0x092F, SC.MARWARI_LIG_DD_Y,   "mDD.Y"),
     ]
     for c1_uni, c2_uni, result, name in _conjuncts:
         c1 = _di(c1_uni)
@@ -671,6 +676,11 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     if has(EYELASH_RA) and has(SC.DEVANAGARI_VIRAMA):
         half_subs.append(
             f"    sub {glyph_name(EYELASH_RA)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(EYELASH_RA)};"
+        )
+    # Marwari DD.Y (uF016E) has special half form (uF016F), not at +240
+    if has(SC.MARWARI_LIG_DD_Y) and has(SC.DEVANAGARI_VIRAMA) and has(SC.MARWARI_HALFLIG_DD_Y):
+        half_subs.append(
+            f"    sub {glyph_name(SC.MARWARI_LIG_DD_Y)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(SC.MARWARI_HALFLIG_DD_Y)};"
         )
     if half_subs:
         features.append("feature half {\n    script dev2;\n" + '\n'.join(half_subs) + "\n} half;")
@@ -716,6 +726,11 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             ra_append_subs.append(
                 f"        sub {glyph_name(internal)} {glyph_name(ra_sub)} by {glyph_name(ra_form)};"
             )
+    # Marwari DD + rakaar -> DD.R (DD stays as uni0978, not PUA)
+    if has(SC.MARWARI_DD) and has(ra_sub) and has(SC.MARWARI_LIG_DD_R):
+        ra_append_subs.append(
+            f"        sub {glyph_name(SC.MARWARI_DD)} {glyph_name(ra_sub)} by {glyph_name(SC.MARWARI_LIG_DD_R)};"
+        )
     if ra_append_subs:
         cjct_lines.append("    lookup CjctRaAppend {")
         cjct_lines.extend(ra_append_subs)
