@@ -791,12 +791,16 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     #   [pre-base matras] + [base] + [below-base] + [above-base] + [reph]
     # We use chaining contextual substitution to detect these conditions.
     if has(SC.DEVANAGARI_RA_SUPER) and has(SC.DEVANAGARI_RA_SUPER_COMPLEX):
-        # Trigger class: union of devanagariVowels and devanagariSuperscripts
+        # Trigger class: must match Kotlin's devanagariSuperscripts exactly.
+        # Does NOT include non-superscript vowels (AA 093E, below-base
+        # 0941-0944, nukta 093C) or I-matra 093F (handled separately
+        # via the sawLeftI / i-matra context rules below).
         trigger_cps = (
             list(range(0x0900, 0x0903)) +
-            list(range(0x093A, 0x093D)) +
-            list(range(0x093E, 0x094D)) +
-            [0x094E, 0x094F, 0x0951] +
+            list(range(0x093A, 0x093C)) +    # 093A-093B only (not 093C)
+            [0x0940] +                       # II-matra
+            list(range(0x0945, 0x094D)) +    # candra E .. AU (not 0941-0944)
+            [0x094F, 0x0951] +
             list(range(0x0953, 0x0956))
         )
         trigger_glyphs = [glyph_name(cp) for cp in trigger_cps if has(cp)]
@@ -1333,25 +1337,41 @@ def _generate_mark(glyphs, has):
                       else None)
             has_explicit = anchor and (anchor.x_used or anchor.y_used)
 
+            # Determine the anchor x for this mark_type
+            anchor_x = (anchor.x if (has_explicit and anchor.x_used)
+                        else g.props.width // 2)
+            ay = ((SC.ASCENT // SC.SCALE - anchor.y) * SC.SCALE
+                  if (has_explicit and anchor.y_used) else SC.ASCENT)
+
+            W = g.props.width
+            ba = g.props.align_where
+
             if align in (SC.ALIGN_LEFT, SC.ALIGN_BEFORE):
                 # Kotlin ignores base anchors for these alignments;
                 # the mark always sits at posX[base].
                 ax = 0
                 ay = SC.ASCENT
-            elif has_explicit:
-                ax = (anchor.x if anchor.x_used
-                      else g.props.width // 2) * SC.SCALE
-                ay = ((SC.ASCENT // SC.SCALE - anchor.y) * SC.SCALE
-                      if anchor.y_used else SC.ASCENT)
             elif align == SC.ALIGN_CENTRE:
-                ax = (g.props.width // 2) * SC.SCALE
-                ay = SC.ASCENT
+                # Kotlin uses different formulas depending on whether
+                # the base is ALIGN_RIGHT or not (line 1237 vs 1243).
+                if ba == SC.ALIGN_RIGHT:
+                    # posX[mark] = posX[base] + anchorX + (W+1)//2
+                    ax = (anchor_x + W + (W + 1) // 2
+                          - SC.W_VAR_INIT
+                          + (SC.W_VAR_INIT - 1) // 2) * SC.SCALE
+                elif ba == SC.ALIGN_CENTRE:
+                    ax = (anchor_x
+                          + math.ceil((W - SC.W_VAR_INIT) / 2)
+                          ) * SC.SCALE
+                else:
+                    # ALIGN_LEFT / ALIGN_BEFORE
+                    ax = anchor_x * SC.SCALE
             elif align == SC.ALIGN_RIGHT:
-                ax = g.props.width * SC.SCALE
-                ay = SC.ASCENT
-            else:
-                ax = 0
-                ay = SC.ASCENT
+                if not has_explicit:
+                    ax = W * SC.SCALE
+                else:
+                    ax = (anchor.x if anchor.x_used
+                          else W) * SC.SCALE
 
             lines.append(
                 f"    pos base {glyph_name(cp)}"
