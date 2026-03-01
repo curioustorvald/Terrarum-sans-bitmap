@@ -1258,8 +1258,11 @@ class TerrarumSansBitmap(
                             val effectivePrev = if (hasReph) str.getOrElse(charIndex - 2) { -1 } else prev
                             if (effectivePrev == 0x094F || hasComplexReph) {
                                 posXbuffer[charIndex] += 3
-                            } else if (effectivePrev in intArrayOf(0x093A, 0x0948, 0x094C) || hasSimpleReph) {
+                            } else if (effectivePrev in intArrayOf(0x0948, 0x094C) || hasSimpleReph) {
                                 posXbuffer[charIndex] += 2
+                            } else if (effectivePrev == 0x093A) {
+                                posXbuffer[charIndex] += 2
+                                posYbuffer[charIndex] += 2 // float up by two pixels. This is a hack
                             }
                         }
 
@@ -1896,7 +1899,7 @@ class TerrarumSansBitmap(
                 // 094E (prishthamatra) is reordered before the consonant cluster,
                 // so scan backward to find it
                 val hasPrishthamatra = (1..5).any { j -> seq4.getOrElse(i - j) { -1 } == 0x094E }
-                if (effectivePrev in intArrayOf(0x093E, 0x0948, 0x094C, 0x094F) || hasPrishthamatra || hasReph) {
+                if (effectivePrev in intArrayOf(0x093A, 0x093E, 0x0948, 0x094C, 0x094F) || hasPrishthamatra || hasReph) {
                     seq4[i] = DEVANAGARI_ANUSVARA_LOWER
                 }
             }

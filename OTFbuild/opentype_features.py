@@ -1197,7 +1197,7 @@ def _generate_psts_anusvara(glyphs, has, conjuncts):
                 )
 
     # Direct predecessor triggers
-    for cp in [0x093E, 0x0948, 0x094C, 0x094F]:
+    for cp in [0x093A, 0x093E, 0x0948, 0x094C, 0x094F]:
         if has(cp):
             body.append(
                 f"    sub {glyph_name(cp)}"
@@ -1537,10 +1537,13 @@ def _generate_anusvara_gpos(glyphs, has):
     shift3_triggers = [cp for cp in [0x094F, SC.DEVANAGARI_RA_SUPER_COMPLEX]
                        if has(cp)]
     # +2px triggers: uni0948, uni094C, simple reph
-    shift2_triggers = [cp for cp in [0x093A, 0x0948, 0x094C, SC.DEVANAGARI_RA_SUPER]
+    shift2_triggers = [cp for cp in [0x0948, 0x094C, SC.DEVANAGARI_RA_SUPER]
                        if has(cp)]
 
-    if not shift3_triggers and not shift2_triggers:
+    shift2_up2_triggers = [cp for cp in [0x093A]
+                       if has(cp)]
+
+    if not shift3_triggers and not shift2_triggers and not shift2_up2_triggers:
         return ""
 
     lines = []
@@ -1549,6 +1552,11 @@ def _generate_anusvara_gpos(glyphs, has):
         lines.append(f"lookup AnusvaraShift2 {{")
         lines.append(f"    pos {glyph_name(anusvara_lower)} <100 0 0 0>;")
         lines.append(f"}} AnusvaraShift2;")
+
+    if shift2_up2_triggers:
+        lines.append(f"lookup AnusvaraShift2Up2 {{")
+        lines.append(f"    pos {glyph_name(anusvara_lower)} <100 100 0 0>;") # float up by two pixels. This is a hack
+        lines.append(f"}} AnusvaraShift2Up2;")
 
     if shift3_triggers:
         lines.append(f"lookup AnusvaraShift3 {{")
@@ -1567,6 +1575,11 @@ def _generate_anusvara_gpos(glyphs, has):
         lines.append(
             f"    pos {glyph_name(cp)}"
             f" {glyph_name(anusvara_lower)}' lookup AnusvaraShift2;"
+        )
+    for cp in shift2_up2_triggers:
+        lines.append(
+            f"    pos {glyph_name(cp)}"
+            f" {glyph_name(anusvara_lower)}' lookup AnusvaraShift2Up2;"
         )
     lines.append("} abvm;")
 
