@@ -29,7 +29,6 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.*
-import com.badlogic.gdx.utils.GdxRuntimeException
 import net.torvald.terrarumsansbitmap.DiacriticsAnchor
 import net.torvald.terrarumsansbitmap.GlyphProps
 import net.torvald.terrarumsansbitmap.MovableType
@@ -42,12 +41,8 @@ import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.OBJ
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.SHY
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.ZWSP
 import net.torvald.terrarumsansbitmap.gdx.TerrarumSansBitmap.Companion.glueCharToGlueSize
-import java.io.BufferedOutputStream
-import java.io.FileOutputStream
 import java.util.*
 import java.util.zip.CRC32
-import java.util.zip.GZIPInputStream
-import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
@@ -1249,20 +1244,31 @@ class TerrarumSansBitmap(
                                     else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
                                 }
 
-                        // Lower Anusvara: shift right when after certain vowels or reph
-                        if (thisChar == DEVANAGARI_ANUSVARA_LOWER) {
+                        // Upper Anusvara: shift right when after certain vowels or reph
+                        if (thisChar == DEVANAGARI_ANUSVARA_UPPER) {
                             val prev = str.getOrElse(charIndex - 1) { -1 }
                             val hasSimpleReph = prev == DEVANAGARI_RA_SUPER
                             val hasComplexReph = prev == DEVANAGARI_RA_SUPER_COMPLEX
                             val hasReph = hasSimpleReph || hasComplexReph
                             val effectivePrev = if (hasReph) str.getOrElse(charIndex - 2) { -1 } else prev
-                            if (effectivePrev == 0x094F || hasComplexReph) {
+                            if (hasComplexReph) { // Reph can appear regardless of Anusvara state, requiring dupe codes
                                 posXbuffer[charIndex] += 3
-                            } else if (effectivePrev in intArrayOf(0x0948, 0x094C) || hasSimpleReph) {
+                                posYbuffer[charIndex] -= 2
+                            } else if (effectivePrev == 0x094F) {
+                                posXbuffer[charIndex] += 3
+                            } else if (effectivePrev in intArrayOf(0x093A, 0x0948, 0x094C)) {
                                 posXbuffer[charIndex] += 2
-                            } else if (effectivePrev == 0x093A) {
+                            }
+                        }
+                        else if (thisChar == 0x0902) {
+                            val prev = str.getOrElse(charIndex - 1) { -1 }
+                            val hasSimpleReph = prev == DEVANAGARI_RA_SUPER
+                            val hasComplexReph = prev == DEVANAGARI_RA_SUPER_COMPLEX
+                            if (hasComplexReph) { // Reph can appear regardless of Anusvara state, requiring dupe codes
+                                posXbuffer[charIndex] += 3
+                                posYbuffer[charIndex] -= 2
+                            } else if (hasSimpleReph) {
                                 posXbuffer[charIndex] += 2
-                                posYbuffer[charIndex] += 2 // float up by two pixels. This is a hack
                             }
                         }
 
@@ -1609,6 +1615,17 @@ class TerrarumSansBitmap(
                 seq.add(DEVANAGARI_EYELASH_RA)
                 i += 1
             }
+            // Contextual Anusvara: use upper variant after certain vowels/reph
+            else if (c == 0x0902) {
+                if (cPrev in intArrayOf(0x093A, 0x093B, 0x093F, 0x0940, 0x0945, 0x0946, 0x0947,
+                        0x0948, 0x0949, 0x094A, 0x094B, 0x094C, 0x094F) ||
+                    cPrev in 0xF0110..0xF012F) {
+
+                    seq.add(DEVANAGARI_ANUSVARA_UPPER)
+                }
+                else
+                    seq.add(0x0902)
+            }
             // END of devanagari string replacer
             // rearrange {letter, before-and-after diacritics} as {before-diacritics, letter, after-diacritics}
             else if (glyphProps[c]?.stackWhere == GlyphProps.STACK_BEFORE_N_AFTER) {
@@ -1892,15 +1909,6 @@ class TerrarumSansBitmap(
 
                 seq4[i] = 0xF012F - ((w+1).coerceIn(4,19) - 4)
             }
-            // Contextual Anusvara: use lower variant after certain vowels/reph
-            else if (c == 0x0902) {
-                val hasReph = cPrev == DEVANAGARI_RA_SUPER || cPrev == DEVANAGARI_RA_SUPER_COMPLEX
-                val effectivePrev = if (hasReph) seq4.getOrElse(i - 2) { -1 } else cPrev
-                if (effectivePrev in intArrayOf(0x093A, 0x0948, 0x094C, 0x094F) || hasReph) {
-                    seq4[i] = DEVANAGARI_ANUSVARA_LOWER
-                }
-            }
-
 
             i++
         }
@@ -2802,7 +2810,7 @@ class TerrarumSansBitmap(
         private const val MARWARI_HALFLIG_DD_Y = 0xF016F
         private const val MARWARI_LIG_DD_R = 0xF010E
 
-        private const val DEVANAGARI_ANUSVARA_LOWER = 0xF016C
+        private const val DEVANAGARI_ANUSVARA_UPPER = 0xF016C
 
         private const val SUNDANESE_ING = 0xF0500
         private const val SUNDANESE_ENG = 0xF0501
