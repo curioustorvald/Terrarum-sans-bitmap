@@ -1377,10 +1377,10 @@ def _generate_mark(glyphs, has):
                 x_offset -= g.props.nudge_x * SC.SCALE
                 mark_x = x_offset + half * SC.SCALE
             elif align == SC.ALIGN_RIGHT:
-                # Match Kotlin: mark at base anchor - W_VAR_INIT.
-                # The contour x_offset already includes (width - W_VAR_INIT),
-                # so mark_x just needs the nudge_x component.
-                mark_x = g.props.nudge_x * SC.SCALE
+                # nudge_x is already baked into the CFF contour x_offset
+                # (font_builder.py line 286).  Setting mark_x = 0 means
+                # the nudge is applied once (via the contour), not twice.
+                mark_x = 0
             else:
                 # ALIGN_LEFT / ALIGN_BEFORE: mark sits at base origin.
                 mark_x = 0
