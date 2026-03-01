@@ -150,7 +150,7 @@ To implement those, this two extra code points are needed, which are provided in
 
 For working examples, take a note at the bengali sprite sheet.
 
-This tag can be used as a general "replace this with these" directive, as long as you're replacing it into two letters. This directive is exploited to construct dutch ligature "IJ" (U+0132 and U+0133), in the sheet LatinExtA.
+This tag might be exploited as a general "replace this with these" directive, as long as you're replacing it into two letters. Such construction is FORBIDDEN due to diacritics incompatibility. Use Compiler Directives for such purposes.
 
 Also note that the font compiler will not "stack" these diacritics.
 
@@ -170,7 +170,7 @@ Keming Machine Tags define the rough shape of the glyph. Please read `keming_mac
 ## Technical Limitations
 
 - Each spritesheet is 4096x4096 maximum, which is a size of 4K Texture. However it is recommended to be smaller or equal to 1024x1024.
-- Glyphs exceeding 15px of width needs to be broken down with 2 or more characters. Wider sheets WILL NOT BE IMPLEMENTED, can't waste much pixels just for few superwide glyphs.
+- Glyphs exceeding 15px of width needs to be broken down with 2 or more characters, or use EXTRAWIDE spritesheets.
 - Due to how the compiler is coded, actual glyph must have alpha value of 255, the tags must have alpha values LESS THAN 255 (and obviously greater than zero). RGB plane of the TGA image doesn't do anything, keep it as #FFFFFF white.
 
 ## Implementation of the Korean writing system

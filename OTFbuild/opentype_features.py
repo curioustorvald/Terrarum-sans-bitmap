@@ -88,6 +88,11 @@ def generate_features(glyphs, kern_pairs, font_glyph_set,
     if sund_code:
         parts.append(sund_code)
 
+    # IPA tone bar graphs
+    tone_code = _generate_tone_bars(has)
+    if tone_code:
+        parts.append(tone_code)
+
     # mark feature
     mark_code = _generate_mark(glyphs, has)
     if mark_code:
@@ -1597,5 +1602,94 @@ def _generate_anusvara_gpos(glyphs, has):
             )
 
     lines.append("} abvm;")
+
+    return '\n'.join(lines)
+
+
+def _generate_tone_bars(has):
+    """
+    Generate GSUB lookups for IPA tone bar graphs (U+02E5-U+02E9).
+
+    When two or more modifier letter tone bars appear consecutively,
+    they are ligated into graph glyphs:
+    - Each pair produces: hairspace (U+200A) + graph glyph (U+FFE20 + tone1*5 + tone2)
+    - The final tone bar in a sequence becomes an end cap (U+FFE39)
+    - Lone tone bars are left unchanged.
+    """
+    tone_bars = [0x02E5 + i for i in range(5)]
+    hairspace = 0x200A
+    endcap = 0xFFE39
+
+    # Check required glyphs exist
+    if not all(has(tb) for tb in tone_bars):
+        return ""
+    if not has(hairspace) or not has(endcap):
+        return ""
+
+    lines = []
+
+    # Step 1: Multiple substitution lookups for each (tone1, tone2) pair.
+    # Each lookup maps one tone bar to hairspace + graph glyph.
+    # These are standalone lookups, only invoked via chaining context.
+    valid_pairs = []
+    for i in range(5):
+        for j in range(5):
+            graph_cp = 0xFFE20 + i * 5 + j
+            if has(graph_cp):
+                lookup_name = f"tone_{i}_{j}"
+                lines.append(f"lookup {lookup_name} {{")
+                lines.append(f"    sub {glyph_name(tone_bars[i])} by"
+                             f" {glyph_name(hairspace)} {glyph_name(graph_cp)};")
+                lines.append(f"}} {lookup_name};")
+                lines.append("")
+                valid_pairs.append((i, j))
+
+    if not valid_pairs:
+        return ""
+
+    # Step 2: End cap single substitution lookup.
+    # Replaces any tone bar with the end cap glyph.
+    lines.append("lookup tone_endcap {")
+    for i in range(5):
+        lines.append(f"    sub {glyph_name(tone_bars[i])} by {glyph_name(endcap)};")
+    lines.append("} tone_endcap;")
+    lines.append("")
+
+    # Step 3: Chaining contextual substitution for pairs.
+    # When tone_bar_i is followed by tone_bar_j, apply multisub to replace
+    # tone_bar_i with hairspace + graph(i,j). The following tone_bar_j is
+    # lookahead context only, so it remains for the next pair.
+    lines.append("lookup ToneBarPairs {")
+    for i, j in valid_pairs:
+        lines.append(f"    sub {glyph_name(tone_bars[i])}'"
+                     f" lookup tone_{i}_{j}"
+                     f" {glyph_name(tone_bars[j])};")
+    lines.append("} ToneBarPairs;")
+    lines.append("")
+
+    # Step 4: Chaining contextual substitution for end cap.
+    # After ToneBarPairs, the last tone bar in a sequence is preceded by
+    # a graph glyph. Replace it with the end cap.
+    graph_names = []
+    for cp in range(0xFFE20, 0xFFE39):
+        if has(cp):
+            graph_names.append(glyph_name(cp))
+
+    if graph_names:
+        lines.append(f"@tone_graph = [{' '.join(graph_names)}];")
+        lines.append("")
+        lines.append("lookup ToneBarEndCap {")
+        for i in range(5):
+            lines.append(f"    sub @tone_graph"
+                         f" {glyph_name(tone_bars[i])}' lookup tone_endcap;")
+        lines.append("} ToneBarEndCap;")
+        lines.append("")
+
+    # Register lookups in liga feature
+    lines.append("feature liga {")
+    lines.append("    lookup ToneBarPairs;")
+    if graph_names:
+        lines.append("    lookup ToneBarEndCap;")
+    lines.append("} liga;")
 
     return '\n'.join(lines)
