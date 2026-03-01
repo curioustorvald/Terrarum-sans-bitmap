@@ -1139,7 +1139,6 @@ def _generate_psts_anusvara(glyphs, has, conjuncts):
 
     Substitution triggers:
     - uni093E (AA-matra, directly before anusvara)
-    - uni094E (prishthamatra, reordered before consonant cluster)
     - uni0948 (AI-matra), uni094C (AU-matra), uni094F (AW-matra)
     - uF010C / uF010D (reph, directly before anusvara)
 
@@ -1158,46 +1157,8 @@ def _generate_psts_anusvara(glyphs, has, conjuncts):
 
     body = []
 
-    # 094E gap rules (longest-context-first).
-    # After dev2 reordering, 094E sits before the consonant cluster while
-    # anusvara sits at the end.  Need rules with 1-5 intervening glyphs.
-    if has(0x094E):
-        gap_cps = set()
-        for cp in SC.DEVANAGARI_PRESENTATION_CONSONANTS:
-            if has(cp): gap_cps.add(cp)
-        for cp in SC.DEVANAGARI_PRESENTATION_CONSONANTS_HALF:
-            if has(cp): gap_cps.add(cp)
-        for cp in SC.DEVANAGARI_PRESENTATION_CONSONANTS_WITH_RA:
-            if has(cp): gap_cps.add(cp)
-        for cp in SC.DEVANAGARI_PRESENTATION_CONSONANTS_WITH_RA_HALF:
-            if has(cp): gap_cps.add(cp)
-        for _, _, result, _ in conjuncts:
-            if has(result): gap_cps.add(result)
-        # Open Ya/Half Ya (substituted by earlier psts rules in same lookup)
-        for cp in [0xF0108, 0xF0109]:
-            if has(cp): gap_cps.add(cp)
-        # Reph forms and below-base RA
-        for cp in [SC.DEVANAGARI_RA_SUPER, SC.DEVANAGARI_RA_SUPER_COMPLEX,
-                   SC.DEVANAGARI_RA_SUB]:
-            if has(cp): gap_cps.add(cp)
-        # Signs and marks
-        for cp in (list(range(0x0900, 0x0903)) + [0x093C] +
-                   # list(range(0x093A, 0x094D)) +
-                   [0x094F, 0x0951] + list(range(0x0953, 0x0956))):
-            if has(cp): gap_cps.add(cp)
-
-        if gap_cps:
-            gap_names = ' '.join(glyph_name(cp) for cp in sorted(gap_cps))
-            body.append(f"    @anusGap = [{gap_names}];")
-            for n_gaps in range(5, 0, -1):
-                gaps = ' @anusGap' * n_gaps
-                body.append(
-                    f"    sub {glyph_name(0x094E)}{gaps}"
-                    f" {glyph_name(anusvara)}' lookup AnusvaraLower;"
-                )
-
     # Direct predecessor triggers
-    for cp in [0x093A, 0x093E, 0x0948, 0x094C, 0x094F]:
+    for cp in [0x093A, 0x0948, 0x094C, 0x094F]:
         if has(cp):
             body.append(
                 f"    sub {glyph_name(cp)}"
@@ -1369,6 +1330,7 @@ def _generate_mark(glyphs, has):
     # and would bloat the GPOS table).
     _EXCLUDE_RANGES = (
         range(0x3400, 0xA000),   # CJK Unified Ideographs (Ext A + main)
+        range(0xAC00, 0xD7FF),   # Hangul Syllables
         range(0x2800, 0x2900),   # Braille
     )
     all_bases = {}

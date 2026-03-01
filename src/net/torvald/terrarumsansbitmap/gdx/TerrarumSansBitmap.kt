@@ -1896,10 +1896,7 @@ class TerrarumSansBitmap(
             else if (c == 0x0902) {
                 val hasReph = cPrev == DEVANAGARI_RA_SUPER || cPrev == DEVANAGARI_RA_SUPER_COMPLEX
                 val effectivePrev = if (hasReph) seq4.getOrElse(i - 2) { -1 } else cPrev
-                // 094E (prishthamatra) is reordered before the consonant cluster,
-                // so scan backward to find it
-                val hasPrishthamatra = (1..5).any { j -> seq4.getOrElse(i - j) { -1 } == 0x094E }
-                if (effectivePrev in intArrayOf(0x093A, 0x093E, 0x0948, 0x094C, 0x094F) || hasPrishthamatra || hasReph) {
+                if (effectivePrev in intArrayOf(0x093A, 0x0948, 0x094C, 0x094F) || hasReph) {
                     seq4[i] = DEVANAGARI_ANUSVARA_LOWER
                 }
             }
