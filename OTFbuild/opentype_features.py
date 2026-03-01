@@ -93,6 +93,11 @@ def generate_features(glyphs, kern_pairs, font_glyph_set,
     if mark_code:
         parts.append(mark_code)
 
+    # Anusvara GPOS (must come AFTER mark so lookups are ordered correctly)
+    anus_gpos = _generate_anusvara_gpos(glyphs, has)
+    if anus_gpos:
+        parts.append(anus_gpos)
+
     return '\n\n'.join(parts)
 
 
@@ -867,8 +872,9 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     # syllable, so it works for both pre-base I-matra and post-base II-matra.
     matra_lookups, matra_body = _generate_psts_matra_variants(glyphs, has, _conjuncts)
     ya_lookups, ya_body = _generate_psts_open_ya(glyphs, has)
-    all_lookups = matra_lookups + ya_lookups
-    all_body = matra_body + ya_body
+    anus_lookups, anus_body = _generate_psts_anusvara(glyphs, has, _conjuncts)
+    all_lookups = matra_lookups + ya_lookups + anus_lookups
+    all_body = matra_body + ya_body + anus_body
     if all_body:
         feat = ["feature psts {", "    script dev2;"]
         feat.extend(all_body)
@@ -1125,6 +1131,93 @@ def _generate_psts_matra_variants(glyphs, has, conjuncts):
     return lines, psts_i_lines + psts_ii_lines
 
 
+def _generate_psts_anusvara(glyphs, has, conjuncts):
+    """Generate psts GSUB rules for contextual Anusvara lower variant.
+
+    When Anusvara (U+0902) is preceded by certain vowel signs or reph,
+    it is substituted with a lower variant (uF016C).
+
+    Substitution triggers:
+    - uni093E (AA-matra, directly before anusvara)
+    - uni094E (prishthamatra, reordered before consonant cluster)
+    - uni0948 (AI-matra), uni094C (AU-matra), uni094F (AW-matra)
+    - uF010C / uF010D (reph, directly before anusvara)
+
+    Returns (lookup_lines, feature_body_lines).
+    """
+    anusvara = 0x0902
+    anusvara_lower = SC.DEVANAGARI_ANUSVARA_LOWER
+
+    if not has(anusvara) or not has(anusvara_lower):
+        return [], []
+
+    lookups = []
+    lookups.append(f"lookup AnusvaraLower {{")
+    lookups.append(f"    sub {glyph_name(anusvara)} by {glyph_name(anusvara_lower)};")
+    lookups.append(f"}} AnusvaraLower;")
+
+    body = []
+
+    # 094E gap rules (longest-context-first).
+    # After dev2 reordering, 094E sits before the consonant cluster while
+    # anusvara sits at the end.  Need rules with 1-5 intervening glyphs.
+    if has(0x094E):
+        gap_cps = set()
+        for cp in SC.DEVANAGARI_PRESENTATION_CONSONANTS:
+            if has(cp): gap_cps.add(cp)
+        for cp in SC.DEVANAGARI_PRESENTATION_CONSONANTS_HALF:
+            if has(cp): gap_cps.add(cp)
+        for cp in SC.DEVANAGARI_PRESENTATION_CONSONANTS_WITH_RA:
+            if has(cp): gap_cps.add(cp)
+        for cp in SC.DEVANAGARI_PRESENTATION_CONSONANTS_WITH_RA_HALF:
+            if has(cp): gap_cps.add(cp)
+        for _, _, result, _ in conjuncts:
+            if has(result): gap_cps.add(result)
+        # Open Ya/Half Ya (substituted by earlier psts rules in same lookup)
+        for cp in [0xF0108, 0xF0109]:
+            if has(cp): gap_cps.add(cp)
+        # Reph forms and below-base RA
+        for cp in [SC.DEVANAGARI_RA_SUPER, SC.DEVANAGARI_RA_SUPER_COMPLEX,
+                   SC.DEVANAGARI_RA_SUB]:
+            if has(cp): gap_cps.add(cp)
+        # Signs and marks
+        for cp in (list(range(0x0900, 0x0903)) + [0x093C] +
+                   # list(range(0x093A, 0x094D)) +
+                   [0x094F, 0x0951] + list(range(0x0953, 0x0956))):
+            if has(cp): gap_cps.add(cp)
+
+        if gap_cps:
+            gap_names = ' '.join(glyph_name(cp) for cp in sorted(gap_cps))
+            body.append(f"    @anusGap = [{gap_names}];")
+            for n_gaps in range(5, 0, -1):
+                gaps = ' @anusGap' * n_gaps
+                body.append(
+                    f"    sub {glyph_name(0x094E)}{gaps}"
+                    f" {glyph_name(anusvara)}' lookup AnusvaraLower;"
+                )
+
+    # Direct predecessor triggers
+    for cp in [0x093E, 0x0948, 0x094C, 0x094F]:
+        if has(cp):
+            body.append(
+                f"    sub {glyph_name(cp)}"
+                f" {glyph_name(anusvara)}' lookup AnusvaraLower;"
+            )
+
+    # Reph triggers (directly before anusvara)
+    for reph_cp in [SC.DEVANAGARI_RA_SUPER, SC.DEVANAGARI_RA_SUPER_COMPLEX]:
+        if has(reph_cp):
+            body.append(
+                f"    sub {glyph_name(reph_cp)}"
+                f" {glyph_name(anusvara)}' lookup AnusvaraLower;"
+            )
+
+    if not body:
+        return [], []
+
+    return lookups, body
+
+
 def _generate_psts_open_ya(glyphs, has):
     """Generate psts rules for open Ya substitution.
 
@@ -1352,9 +1445,16 @@ def _generate_mark(glyphs, has):
                       else None)
             has_explicit = anchor and (anchor.x_used or anchor.y_used)
 
-            # Determine the anchor x for this mark_type
-            anchor_x = (anchor.x if (has_explicit and anchor.x_used)
-                        else g.props.width // 2)
+            # Determine the anchor x for this mark_type.
+            # Subtract nudge_x because in Kotlin the base position
+            # already includes -nudgeX (posX = -nudgeX + ...),
+            # so the anchor is relative to the shifted position.
+            # In OTF, nudge_x is baked into the contour x_offset
+            # but not the advance, so the base anchor must also
+            # account for it.
+            anchor_x = ((anchor.x if (has_explicit and anchor.x_used)
+                         else g.props.width // 2)
+                        - g.props.nudge_x)
             ay = ((SC.ASCENT // SC.SCALE - anchor.y) * SC.SCALE
                   if (has_explicit and anchor.y_used) else SC.ASCENT)
 
@@ -1411,6 +1511,63 @@ def _generate_mark(glyphs, has):
     lines.append("    script dev2;")
     for ln in lookup_names:
         lines.append(f"    lookup {ln};")
+    lines.append("} abvm;")
+
+    return '\n'.join(lines)
+
+
+def _generate_anusvara_gpos(glyphs, has):
+    """Generate GPOS contextual positioning for anusvara lower variant.
+
+    When uF016C (anusvara lower) follows certain vowels or reph, it is
+    shifted right:
+    - +3px (+150 units) after uni094F or uF010D (complex reph)
+    - +2px (+100 units) after uni0948, uni094C, or uF010C (simple reph)
+
+    This MUST be appended AFTER _generate_mark() output so its abvm lookups
+    come after mark-to-base lookups in the LookupList.  MarkToBase SETS the
+    mark offset; the subsequent SinglePos ADDS to it.
+    """
+    anusvara_lower = SC.DEVANAGARI_ANUSVARA_LOWER
+
+    if not has(anusvara_lower):
+        return ""
+
+    # +3px triggers: uni094F, complex reph
+    shift3_triggers = [cp for cp in [0x094F, SC.DEVANAGARI_RA_SUPER_COMPLEX]
+                       if has(cp)]
+    # +2px triggers: uni0948, uni094C, simple reph
+    shift2_triggers = [cp for cp in [0x093A, 0x0948, 0x094C, SC.DEVANAGARI_RA_SUPER]
+                       if has(cp)]
+
+    if not shift3_triggers and not shift2_triggers:
+        return ""
+
+    lines = []
+
+    if shift2_triggers:
+        lines.append(f"lookup AnusvaraShift2 {{")
+        lines.append(f"    pos {glyph_name(anusvara_lower)} <100 0 0 0>;")
+        lines.append(f"}} AnusvaraShift2;")
+
+    if shift3_triggers:
+        lines.append(f"lookup AnusvaraShift3 {{")
+        lines.append(f"    pos {glyph_name(anusvara_lower)} <150 0 0 0>;")
+        lines.append(f"}} AnusvaraShift3;")
+
+    lines.append("")
+    lines.append("feature abvm {")
+    lines.append("    script dev2;")
+    for cp in shift3_triggers:
+        lines.append(
+            f"    pos {glyph_name(cp)}"
+            f" {glyph_name(anusvara_lower)}' lookup AnusvaraShift3;"
+        )
+    for cp in shift2_triggers:
+        lines.append(
+            f"    pos {glyph_name(cp)}"
+            f" {glyph_name(anusvara_lower)}' lookup AnusvaraShift2;"
+        )
     lines.append("} abvm;")
 
     return '\n'.join(lines)

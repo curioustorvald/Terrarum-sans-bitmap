@@ -1235,7 +1235,10 @@ class TerrarumSansBitmap(
                                             if (!itsProp.diacriticsAnchors[diacriticsType].xUsed) itsProp.width.div(2) else itsProp.diacriticsAnchors[diacriticsType].x
 
                                         if (itsProp.alignWhere == GlyphProps.ALIGN_RIGHT) {
-                                            posXbuffer[nonDiacriticCounter] + anchorPoint + (itsProp.width + 1).div(2)
+                                            if (thisChar in 0x900..0x902)
+                                                posXbuffer[nonDiacriticCounter] + anchorPoint + (itsProp.width - 1).div(2)
+                                            else
+                                                posXbuffer[nonDiacriticCounter] + anchorPoint + (itsProp.width + 1).div(2)
                                         } else {
                                             if (thisChar in 0x900..0x902)
                                                 posXbuffer[nonDiacriticCounter] + anchorPoint - (W_VAR_INIT + 1) / 2
@@ -1246,6 +1249,19 @@ class TerrarumSansBitmap(
                                     else -> throw InternalError("Unsupported alignment: ${thisProp.alignWhere}")
                                 }
 
+                        // Lower Anusvara: shift right when after certain vowels or reph
+                        if (thisChar == DEVANAGARI_ANUSVARA_LOWER) {
+                            val prev = str.getOrElse(charIndex - 1) { -1 }
+                            val hasSimpleReph = prev == DEVANAGARI_RA_SUPER
+                            val hasComplexReph = prev == DEVANAGARI_RA_SUPER_COMPLEX
+                            val hasReph = hasSimpleReph || hasComplexReph
+                            val effectivePrev = if (hasReph) str.getOrElse(charIndex - 2) { -1 } else prev
+                            if (effectivePrev == 0x094F || hasComplexReph) {
+                                posXbuffer[charIndex] += 3
+                            } else if (effectivePrev in intArrayOf(0x093A, 0x0948, 0x094C) || hasSimpleReph) {
+                                posXbuffer[charIndex] += 2
+                            }
+                        }
 
                         // set Y pos according to diacritics position
                         when (thisProp.stackWhere) {
@@ -1872,6 +1888,17 @@ class TerrarumSansBitmap(
 //                println("length: $w")
 
                 seq4[i] = 0xF012F - ((w+1).coerceIn(4,19) - 4)
+            }
+            // Contextual Anusvara: use lower variant after certain vowels/reph
+            else if (c == 0x0902) {
+                val hasReph = cPrev == DEVANAGARI_RA_SUPER || cPrev == DEVANAGARI_RA_SUPER_COMPLEX
+                val effectivePrev = if (hasReph) seq4.getOrElse(i - 2) { -1 } else cPrev
+                // 094E (prishthamatra) is reordered before the consonant cluster,
+                // so scan backward to find it
+                val hasPrishthamatra = (1..5).any { j -> seq4.getOrElse(i - j) { -1 } == 0x094E }
+                if (effectivePrev in intArrayOf(0x093E, 0x0948, 0x094C, 0x094F) || hasPrishthamatra || hasReph) {
+                    seq4[i] = DEVANAGARI_ANUSVARA_LOWER
+                }
             }
 
 
@@ -2770,9 +2797,12 @@ class TerrarumSansBitmap(
 
         private const val MARWARI_LIG_DD_DD = 0xF01BA
         private const val MARWARI_LIG_DD_DDH = 0xF01BB
+        // F016D is assigned as MARWARI_HALF_DD, referenced by compiler directives for MARWARI_LIG_DD_Y and MARWARI_HALFLIG_DD_Y
         private const val MARWARI_LIG_DD_Y = 0xF016E
         private const val MARWARI_HALFLIG_DD_Y = 0xF016F
         private const val MARWARI_LIG_DD_R = 0xF010E
+
+        private const val DEVANAGARI_ANUSVARA_LOWER = 0xF016C
 
         private const val SUNDANESE_ING = 0xF0500
         private const val SUNDANESE_ENG = 0xF0501
