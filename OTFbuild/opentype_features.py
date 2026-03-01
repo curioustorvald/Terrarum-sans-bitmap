@@ -1349,16 +1349,20 @@ def _generate_mark(glyphs, has):
         SC.ALIGN_BEFORE: 'b',
     }
 
-    # Group marks by (writeOnTop, alignment) for separate mark classes.
-    mark_groups = {}  # (mark_type, align) -> [(cp, g), ...]
+    # Group marks by (writeOnTop, alignment, isDiacriticalMark).
+    # Diacritical marks (U+0300-036F) need separate classes because their
+    # base anchors are adjusted for lowheight bases (e.g. lowercase 'e').
+    # Type-0 (above): shift down 4px; Type-2 (overlay): shift down 2px.
+    mark_groups = {}  # (mark_type, align, is_dia) -> [(cp, g), ...]
     for cp, g in marks.items():
-        key = (g.props.write_on_top, g.props.align_where)
+        is_dia = (0x0300 <= cp <= 0x036F)
+        key = (g.props.write_on_top, g.props.align_where, is_dia)
         mark_groups.setdefault(key, []).append((cp, g))
 
     # Emit markClass definitions
-    for (mark_type, align), mark_list in sorted(mark_groups.items()):
+    for (mark_type, align, is_dia), mark_list in sorted(mark_groups.items()):
         suffix = _align_suffix.get(align, 'x')
-        class_name = f"@mark_t{mark_type}_{suffix}"
+        class_name = f"@mark_t{mark_type}_{suffix}" + ("_dia" if is_dia else "")
         for cp, g in mark_list:
             if align == SC.ALIGN_CENTRE:
                 # Match Kotlin: anchorPoint - HALF_VAR_INIT centres the
@@ -1385,12 +1389,12 @@ def _generate_mark(glyphs, has):
                 f"markClass {glyph_name(cp)} <anchor {mark_x} {mark_y}> {class_name};"
             )
 
-    # Generate one lookup per (mark_type, align) group.
+    # Generate one lookup per (mark_type, align, is_dia) group.
     lookup_names = []
-    for (mark_type, align), mark_list in sorted(mark_groups.items()):
+    for (mark_type, align, is_dia), mark_list in sorted(mark_groups.items()):
         suffix = _align_suffix.get(align, 'x')
-        class_name = f"@mark_t{mark_type}_{suffix}"
-        lookup_name = f"mark_t{mark_type}_{suffix}"
+        class_name = f"@mark_t{mark_type}_{suffix}" + ("_dia" if is_dia else "")
+        lookup_name = f"mark_t{mark_type}_{suffix}" + ("_dia" if is_dia else "")
         lines.append(f"lookup {lookup_name} {{")
 
         for cp, g in sorted(all_bases.items()):
@@ -1441,6 +1445,15 @@ def _generate_mark(glyphs, has):
                 else:
                     ax = (anchor.x if anchor.x_used
                           else W) * SC.SCALE
+
+            # Lowheight adjustment for combining diacritical marks:
+            # shift base anchor Y down so diacritics sit closer to
+            # the shorter base glyph.
+            if is_dia and g.props.is_low_height:
+                if mark_type == 2:  # overlay
+                    ay -= SC.H_OVERLAY_LOWERCASE_SHIFTDOWN * SC.SCALE
+                else:  # above (type 0)
+                    ay -= SC.H_STACKUP_LOWERCASE_SHIFTDOWN * SC.SCALE
 
             lines.append(
                 f"    pos base {glyph_name(cp)}"
