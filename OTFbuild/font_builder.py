@@ -298,6 +298,14 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         if cp in _unihan_cps:
             y_offset -= ((SC.H - SC.H_UNIHAN) // 2) * SCALE
 
+        # Hangul jungseong/jongseong PUA variants (rows 15-18) have zero
+        # advance and overlay the preceding choseong.  Shift their outlines
+        # left by one syllable cell width so they render at the same position.
+        if cp >= HANGUL_PUA_BASE:
+            _pua_row = (cp - HANGUL_PUA_BASE) // 256
+            if 15 <= _pua_row <= 18:
+                x_offset -= SC.W_HANGUL_BASE * SCALE
+
         contours = trace_bitmap(g.bitmap, g.props.width)
 
         pen = T2CharStringPen(advance, None)

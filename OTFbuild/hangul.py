@@ -118,7 +118,10 @@ def compose_hangul(assets_dir) -> Dict[int, ExtractedGlyph]:
     for (col, row), bm in variants.items():
         pua = _pua_for_jamo_variant(col, row)
         if pua not in result:
-            result[pua] = ExtractedGlyph(pua, GlyphProps(width=cell_w), bm)
+            # Jungseong (rows 15-16) and jongseong (rows 17-18) overlay the
+            # choseong, so they need zero advance width.
+            w = 0 if 15 <= row <= 18 else cell_w
+            result[pua] = ExtractedGlyph(pua, GlyphProps(width=w), bm)
             variant_count += 1
 
     print(f"  Stored {variant_count} jamo variant glyphs in PUA (0x{HANGUL_PUA_BASE:05X}+)")
