@@ -169,10 +169,11 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
                 x += tg.props.width
                 continue
             cols = min(tg.props.width, len(tg.bitmap[0])) if tg.props.width > 0 else len(tg.bitmap[0])
+            nudge = tg.props.nudge_x
             for row in range(min(len(tg.bitmap), bm_height)):
                 for col in range(cols):
-                    dst_col = x + col
-                    if dst_col < total_width and tg.bitmap[row][col]:
+                    dst_col = x + col - nudge
+                    if 0 <= dst_col < total_width and tg.bitmap[row][col]:
                         composite[row][dst_col] = 1
             if tg.props.width > 0:
                 x += tg.props.width
