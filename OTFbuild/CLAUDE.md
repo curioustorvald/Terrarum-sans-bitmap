@@ -118,7 +118,7 @@ print(f"{name}: advance={w}, has_outlines={has_outlines}")
 
 ### OpenType features generated (`opentype_features.py`)
 
-- **ccmp** — replacewith expansions (DFLT); consonant-to-PUA mapping + vowel decompositions (dev2)
+- **ccmp** — replacewith expansions (DFLT); consonant-to-PUA mapping + vowel decompositions + anusvara upper (dev2); vowel decompositions (tml2)
 - **kern** — pair positioning from `keming_machine.py`
 - **liga** — Latin ligatures (ff, fi, fl, ffi, ffl, st) and Armenian ligatures
 - **locl** — Bulgarian/Serbian Cyrillic alternates
@@ -127,6 +127,7 @@ print(f"{name}: advance={w}, has_outlines={has_outlines}")
 - **pres** (sund) — Sundanese diacritic combinations
 - **ljmo, vjmo, tjmo** — Hangul jamo positional variants
 - **mark** — GPOS mark-to-base diacritics positioning
+- **mkmk** — GPOS mark-to-mark diacritics stacking (successive marks shift by H_DIACRITICS)
 
 ### Devanagari PUA mapping
 
@@ -145,3 +146,58 @@ Mapping formula: `to_deva_internal(c)` = `c - 0x0915 + 0xF0140` for U+0915-0939.
 ### Script tag gotcha
 
 When a script-specific feature exists in GSUB (e.g. `ccmp` under `dev2`), HarfBuzz uses **only** the script-specific lookups and does **not** fall back to the DFLT script's lookups for that feature. Any substitutions needed for a specific script must be registered under that script's tag.
+
+### languagesystem and language records
+
+The `languagesystem` declarations in the preamble control which script/language records are created in the font tables. Key rules:
+
+- `languagesystem` declarations must be at the **top level** of the feature file, not inside any `feature` block. Putting them inside `feature aalt { }` is invalid feaLib syntax and causes silent compilation failure.
+- When a language-specific record exists (e.g. `dev2/MAR` from `languagesystem dev2 MAR;`), features registered under `script dev2;` only populate `dev2/dflt` — they are **not** automatically copied to `dev2/MAR`. The language record inherits only from DFLT, resulting in incomplete feature sets.
+- Only declare language-specific records when you have `locl` or other language-differentiated features. Otherwise, use only `languagesystem <script> dflt;` to avoid partial feature inheritance that breaks DirectWrite and CoreText.
+
+### Inspecting feature registration per script
+
+To verify that features are correctly registered under each script:
+
+```python
+from fontTools.ttLib import TTFont
+
+font = TTFont('OTFbuild/TerrarumSansBitmap.otf')
+gsub = font['GSUB']
+
+for sr in gsub.table.ScriptList.ScriptRecord:
+    tag = sr.ScriptTag
+    if sr.Script.DefaultLangSys:
+        feats = []
+        for idx in sr.Script.DefaultLangSys.FeatureIndex:
+            fr = gsub.table.FeatureList.FeatureRecord[idx]
+            feats.append(fr.FeatureTag)
+        print(f"{tag}/dflt: {' '.join(sorted(set(feats)))}")
+    for lsr in (sr.Script.LangSysRecord or []):
+        feats = []
+        for idx in lsr.LangSys.FeatureIndex:
+            fr = gsub.table.FeatureList.FeatureRecord[idx]
+            feats.append(fr.FeatureTag)
+        print(f"{tag}/{lsr.LangSysTag}: {' '.join(sorted(set(feats)))}")
+```
+
+Expected output for dev2: `dev2/dflt: abvs akhn blwf blws calt ccmp cjct half liga nukt pres psts rphf`. If language-specific records (e.g. `dev2/MAR`) appear with only `ccmp liga`, the language records have incomplete feature inheritance — remove the corresponding `languagesystem` declaration.
+
+### Debugging feature compilation failures
+
+The build writes `debugout_features.fea` with the raw feature code before compilation. When compilation fails, inspect this file to find syntax errors. Common issues:
+
+- **`languagesystem` inside a feature block** — must be at the top level
+- **Named lookup defined inside a feature block** — applies unconditionally to all input. Define the lookup outside the feature block and reference it via contextual rules inside.
+- **Glyph not in font** — a substitution references a glyph name that doesn't exist in the font's glyph order (e.g. a control character was removed)
+
+### HarfBuzz Indic shaper (dev2) feature order
+
+Understanding feature application order is critical for Devanagari debugging:
+
+1. **Pre-reordering** (Unicode order): `ccmp`
+2. **Reordering**: HarfBuzz reorders pre-base matras (e.g. I-matra U+093F moves before the consonant)
+3. **Post-reordering**: `nukt` → `akhn` → `rphf` → `half` → `blwf` → `cjct` → `pres` → `abvs` → `blws` → `psts` → `haln` → `calt`
+4. **GPOS**: `kern` → `mark`/`abvm` → `mkmk`
+
+Implication: GSUB rules that need to match pre-base matras adjacent to post-base marks (e.g. anusvara substitution triggered by I-matra) must go in `ccmp`, not `psts`, because reordering separates them.

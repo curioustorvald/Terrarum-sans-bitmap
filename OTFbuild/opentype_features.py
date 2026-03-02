@@ -48,7 +48,7 @@ def generate_features(glyphs, kern_pairs, font_glyph_set,
     def has(cp):
         return glyph_name(cp) in font_glyph_set
 
-    preamble = """feature aalt {
+    preamble = """\
 languagesystem DFLT dflt;
 languagesystem latn dflt;
 languagesystem cyrl dflt;
@@ -57,13 +57,9 @@ languagesystem hang KOR ;
 languagesystem hang KOH ;
 languagesystem cyrl SRB ;
 languagesystem cyrl BGR ;
-languagesystem dev2 MAR ;
-languagesystem dev2 NEP ;
-languagesystem dev2 SAN ;
-languagesystem dev2 SAT ;
-languagesystem tml2 TAM ;
-languagesystem sund SUN ;
-} aalt;
+languagesystem dev2 dflt;
+languagesystem tml2 dflt;
+languagesystem sund dflt;
 """
     if preamble:
         parts.append(preamble)
@@ -99,7 +95,7 @@ languagesystem sund SUN ;
         parts.append(deva_code)
 
     # Tamil features
-    tamil_code = _generate_tamil(glyphs, has)
+    tamil_code = _generate_tamil(glyphs, has, replacewith_subs or [])
     if tamil_code:
         parts.append(tamil_code)
 
@@ -127,12 +123,26 @@ languagesystem sund SUN ;
 
 
 def _generate_ccmp(replacewith_subs, has):
-    """Generate ccmp feature for replacewith directives (multiple substitution)."""
+    """Generate ccmp feature for replacewith directives (multiple substitution).
+
+    Devanagari (0x0900-097F) and Tamil (0x0B80-0BFF) source codepoints are
+    excluded here because their ccmp lookups must live under the script-
+    specific tags (dev2, tml2).  DirectWrite and CoreText do not fall back
+    from a script-specific ccmp to DFLT.
+    """
     if not replacewith_subs:
         return ""
 
+    # Ranges handled by script-specific ccmp features
+    _SCRIPT_RANGES = (
+        range(0x0900, 0x0980),  # Devanagari → dev2 ccmp
+        range(0x0B80, 0x0C00),  # Tamil → tml2 ccmp
+    )
+
     subs = []
     for src_cp, target_cps in replacewith_subs:
+        if any(src_cp in r for r in _SCRIPT_RANGES):
+            continue
         if not has(src_cp):
             continue
         if not all(has(t) for t in target_cps):
@@ -1399,8 +1409,28 @@ def _generate_psts_open_ya(glyphs, has):
     return lookups, body
 
 
-def _generate_tamil(glyphs, has):
-    """Generate Tamil GSUB features."""
+def _generate_tamil(glyphs, has, replacewith_subs=None):
+    """Generate Tamil GSUB features (ccmp + pres under tml2)."""
+    features = []
+
+    # --- tml2 ccmp: Tamil replacewith decompositions ---
+    # Must be under tml2 so DirectWrite/CoreText see them.
+    if replacewith_subs:
+        tamil_ccmp = []
+        for src_cp, target_cps in replacewith_subs:
+            if not (0x0B80 <= src_cp <= 0x0BFF):
+                continue
+            if not has(src_cp) or not all(has(t) for t in target_cps):
+                continue
+            src = glyph_name(src_cp)
+            targets = ' '.join(glyph_name(t) for t in target_cps)
+            tamil_ccmp.append(f"        sub {src} by {targets};")
+        if tamil_ccmp:
+            features.append("feature ccmp {\n    script tml2;\n"
+                            "    lookup TamilDecomp {\n"
+                            + '\n'.join(tamil_ccmp)
+                            + "\n    } TamilDecomp;\n} ccmp;")
+
     subs = []
 
     _tamil_i_rules = [
@@ -1436,13 +1466,13 @@ def _generate_tamil(glyphs, has):
     if has(0x0BB8) and has(0x0BCD) and has(0x0BB0) and has(0x0BC0) and has(SC.TAMIL_SHRII):
         subs.append(f"    sub {glyph_name(0x0BB8)} {glyph_name(0x0BCD)} {glyph_name(0x0BB0)} {glyph_name(0x0BC0)} by {glyph_name(SC.TAMIL_SHRII)}; # SHRII (sa)")
 
-    if not subs:
-        return ""
+    if subs:
+        lines = ["feature pres {", "    script tml2;"]
+        lines.extend(subs)
+        lines.append("} pres;")
+        features.append('\n'.join(lines))
 
-    lines = ["feature pres {", "    script tml2;"]
-    lines.extend(subs)
-    lines.append("} pres;")
-    return '\n'.join(lines)
+    return '\n\n'.join(features) if features else ""
 
 
 def _generate_sundanese(glyphs, has):
