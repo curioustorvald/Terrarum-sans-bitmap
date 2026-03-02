@@ -124,6 +124,16 @@ def compose_hangul(assets_dir) -> Dict[int, ExtractedGlyph]:
             result[pua] = ExtractedGlyph(pua, GlyphProps(width=w), bm)
             variant_count += 1
 
+    # Ensure jungseong filler PUA variants exist (col=0, rows 15-16).
+    # The filler has an empty bitmap so extract_hangul_jamo_variants skips
+    # it, but the vjmo GSUB lookup needs a PUA target to substitute to.
+    empty_bm = [[0] * cell_w for _ in range(cell_h)]
+    for row in [15, 16]:
+        pua = _pua_for_jamo_variant(0, row)
+        if pua not in result:
+            result[pua] = ExtractedGlyph(pua, GlyphProps(width=0), empty_bm)
+            variant_count += 1
+
     print(f"  Stored {variant_count} jamo variant glyphs in PUA (0x{HANGUL_PUA_BASE:05X}+)")
     print(f"  Total Hangul glyphs: {len(result)}")
     return result

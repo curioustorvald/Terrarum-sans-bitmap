@@ -20,3 +20,4 @@ OTFbuild/*.otf
 OTFbuild/*.woff
 OTFbuild/*.woff2
 *.fea
+*.xdp-*

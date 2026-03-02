@@ -153,7 +153,7 @@ def _generate_hangul_gsub(glyphs, has, jamo_data):
 
     # Build codepoint lists (standard + extended jamo ranges)
     cho_ranges = list(range(0x1100, 0x115F)) + list(range(0xA960, 0xA97C))
-    jung_ranges = list(range(0x1161, 0x11A8)) + list(range(0xD7B0, 0xD7C7))
+    jung_ranges = list(range(0x1160, 0x11A8)) + list(range(0xD7B0, 0xD7C7))
     jong_ranges = list(range(0x11A8, 0x1200)) + list(range(0xD7CB, 0xD7FC))
 
     cho_cps = [cp for cp in cho_ranges if has(cp)]
