@@ -1494,20 +1494,31 @@ def _generate_mark(glyphs, has):
         SC.ALIGN_BEFORE: 'b',
     }
 
-    # Group marks by (writeOnTop, alignment, isDiacriticalMark).
+    # Group marks by (writeOnTop, alignment, isDiacriticalMark, stackCat).
     # Diacritical marks (U+0300-036F) need separate classes because their
     # base anchors are adjusted for lowheight bases (e.g. lowercase 'e').
     # Type-0 (above): shift down 4px; Type-2 (overlay): shift down 2px.
-    mark_groups = {}  # (mark_type, align, is_dia) -> [(cp, g), ...]
+    # Stack category splits stacking marks from non-stacking ones so that
+    # MarkToMark only chains marks that actually stack together.
+    def _stack_cat(sw):
+        if sw in (SC.STACK_UP, SC.STACK_UP_N_DOWN):
+            return 'up'
+        elif sw == SC.STACK_DOWN:
+            return 'dn'
+        else:
+            return 'ns'
+
+    mark_groups = {}  # (mark_type, align, is_dia, stack_cat) -> [(cp, g), ...]
     for cp, g in marks.items():
         is_dia = (0x0300 <= cp <= 0x036F)
-        key = (g.props.write_on_top, g.props.align_where, is_dia)
+        sc = _stack_cat(g.props.stack_where)
+        key = (g.props.write_on_top, g.props.align_where, is_dia, sc)
         mark_groups.setdefault(key, []).append((cp, g))
 
     # Emit markClass definitions
-    for (mark_type, align, is_dia), mark_list in sorted(mark_groups.items()):
+    for (mark_type, align, is_dia, scat), mark_list in sorted(mark_groups.items()):
         suffix = _align_suffix.get(align, 'x')
-        class_name = f"@mark_t{mark_type}_{suffix}" + ("_dia" if is_dia else "")
+        class_name = f"@mark_t{mark_type}_{suffix}" + ("_dia" if is_dia else "") + f"_{scat}"
         for cp, g in mark_list:
             if align == SC.ALIGN_CENTRE:
                 # Match Kotlin: anchorPoint - HALF_VAR_INIT centres the
@@ -1535,12 +1546,12 @@ def _generate_mark(glyphs, has):
                 f"markClass {glyph_name(cp)} <anchor {mark_x} {mark_y}> {class_name};"
             )
 
-    # Generate one lookup per (mark_type, align, is_dia) group.
+    # Generate one lookup per (mark_type, align, is_dia, stack_cat) group.
     lookup_names = []
-    for (mark_type, align, is_dia), mark_list in sorted(mark_groups.items()):
+    for (mark_type, align, is_dia, scat), mark_list in sorted(mark_groups.items()):
         suffix = _align_suffix.get(align, 'x')
-        class_name = f"@mark_t{mark_type}_{suffix}" + ("_dia" if is_dia else "")
-        lookup_name = f"mark_t{mark_type}_{suffix}" + ("_dia" if is_dia else "")
+        class_name = f"@mark_t{mark_type}_{suffix}" + ("_dia" if is_dia else "") + f"_{scat}"
+        lookup_name = f"mark_t{mark_type}_{suffix}" + ("_dia" if is_dia else "") + f"_{scat}"
         lines.append(f"lookup {lookup_name} {{")
 
         for cp, g in sorted(all_bases.items()):
@@ -1614,26 +1625,25 @@ def _generate_mark(glyphs, has):
     # When multiple marks of the same type stack on a base, MarkToMark
     # positions each successive mark relative to the previous one,
     # shifted by H_DIACRITICS pixels in the stacking direction.
+    # Only 'up' and 'dn' groups participate; 'ns' (non-stacking) marks
+    # are excluded so they don't get repositioned by MarkToMark.
     mkmk_lookup_names = []
-    for (mark_type, align, is_dia), mark_list in sorted(mark_groups.items()):
-        stacking_marks = [(cp, g) for cp, g in mark_list
-                          if g.props.stack_where in (SC.STACK_UP,
-                                                     SC.STACK_DOWN,
-                                                     SC.STACK_UP_N_DOWN)]
-        if not stacking_marks:
+    for (mark_type, align, is_dia, scat), mark_list in sorted(mark_groups.items()):
+        if scat == 'ns':
             continue
 
         suffix = _align_suffix.get(align, 'x')
-        class_name = f"@mark_t{mark_type}_{suffix}" + ("_dia" if is_dia else "")
-        mkmk_name = f"mkmk_t{mark_type}_{suffix}" + ("_dia" if is_dia else "")
+        class_name = f"@mark_t{mark_type}_{suffix}" + ("_dia" if is_dia else "") + f"_{scat}"
+        mkmk_name = f"mkmk_t{mark_type}_{suffix}" + ("_dia" if is_dia else "") + f"_{scat}"
         lines.append(f"lookup {mkmk_name} {{")
 
-        for cp, g in stacking_marks:
+        if scat == 'up':
+            m2y = SC.ASCENT + SC.H_DIACRITICS * SC.SCALE
+        else:  # 'dn'
+            m2y = SC.ASCENT - SC.H_DIACRITICS * SC.SCALE
+
+        for cp, g in mark_list:
             mx = mark_anchors.get(cp, 0)
-            if g.props.stack_where in (SC.STACK_UP, SC.STACK_UP_N_DOWN):
-                m2y = SC.ASCENT + SC.H_DIACRITICS * SC.SCALE
-            else:  # STACK_DOWN
-                m2y = SC.ASCENT - SC.H_DIACRITICS * SC.SCALE
             lines.append(
                 f"    pos mark {glyph_name(cp)}"
                 f" <anchor {mx} {m2y}> mark {class_name};"
