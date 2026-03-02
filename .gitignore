@@ -17,3 +17,6 @@ tmp_*
 */__pycache__
 OTFbuild/*.ttf
 OTFbuild/*.otf
+OTFbuild/*.woff
+OTFbuild/*.woff2
+*.fea

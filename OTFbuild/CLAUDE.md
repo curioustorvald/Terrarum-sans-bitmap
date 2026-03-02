@@ -1,17 +1,13 @@
 # OTFbuild
 
-Python toolchain that builds an OpenType (CFF) font from the TGA sprite sheets used by the bitmap font engine.
+Python toolchain that builds an OpenType (CFF) and Web Open Font (WOFF2) font from the TGA sprite sheets used by the bitmap font engine.
 
 ## Building
 
 ```bash
-pip install fonttools
-python3 OTFbuild/build_font.py src/assets -o OTFbuild/TerrarumSansBitmap.otf
+# builds both OTF and WOFF2
+make all
 ```
-
-Options:
-- `--no-bitmap` — skip EBDT/EBLC bitmap strike (faster builds for iteration)
-- `--no-features` — skip GSUB/GPOS OpenType features
 
 ## Debugging with HarfBuzz
 
@@ -118,6 +114,7 @@ print(f"{name}: advance={w}, has_outlines={has_outlines}")
 | `opentype_features.py` | Generates GSUB/GPOS feature code for feaLib |
 | `keming_machine.py` | Generates kerning pairs from glyph kern masks |
 | `hangul.py` | Hangul syllable composition and jamo GSUB data |
+| `otf2woff2.py` | OTF to WOFF2 wrapper |
 
 ### OpenType features generated (`opentype_features.py`)
 
