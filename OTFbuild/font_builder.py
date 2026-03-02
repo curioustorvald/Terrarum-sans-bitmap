@@ -349,8 +349,15 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
     )
 
     fb.setupNameTable({
+        "copyright": "CuriousTorvald",
         "familyName": "Terrarum Sans Bitmap",
         "styleName": "Regular",
+        "uniqueFontIdentifier": "TerrarumSansBitmap-Regular-1.15",
+        "fullName": "Terrarum Sans Bitmap Regular",
+        "psName": "TerrarumSansBitmap-Regular",
+        "version": "1.15",
+        "licenseDescription": "SIL Open Font License, Version 1.1",
+        "licenseInfoURL": "http://scripts.sil.org/OFL"
     })
 
     fb.setupOS2(
@@ -364,8 +371,15 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         fsType=0,
     )
 
+    unix_ts = int(time.time())
+    opentype_ts = unix_ts + 2082844800
+
     fb.setupPost()
-    fb.setupHead(unitsPerEm=SC.UNITS_PER_EM)
+    fb.setupHead(
+        unitsPerEm=SC.UNITS_PER_EM,
+        created=opentype_ts,
+        modified=opentype_ts,
+    )
 
     font = fb.font
 
