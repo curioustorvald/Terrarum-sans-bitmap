@@ -1485,6 +1485,7 @@ def _generate_mark(glyphs, has):
         return ""
 
     lines = []
+    mark_anchors = {}  # cp -> mark_x, for MarkToMark mark2 anchor computation
 
     _align_suffix = {
         SC.ALIGN_LEFT: 'l',
@@ -1529,6 +1530,7 @@ def _generate_mark(glyphs, has):
                 # ALIGN_LEFT / ALIGN_BEFORE: mark sits at base origin.
                 mark_x = 0
             mark_y = SC.ASCENT
+            mark_anchors[cp] = mark_x
             lines.append(
                 f"markClass {glyph_name(cp)} <anchor {mark_x} {mark_y}> {class_name};"
             )
@@ -1608,11 +1610,52 @@ def _generate_mark(glyphs, has):
         lines.append("")
         lookup_names.append(lookup_name)
 
-    # Register mark lookups under DFLT (for Latin, etc.)
+    # --- MarkToMark lookups for diacritics stacking ---
+    # When multiple marks of the same type stack on a base, MarkToMark
+    # positions each successive mark relative to the previous one,
+    # shifted by H_DIACRITICS pixels in the stacking direction.
+    mkmk_lookup_names = []
+    for (mark_type, align, is_dia), mark_list in sorted(mark_groups.items()):
+        stacking_marks = [(cp, g) for cp, g in mark_list
+                          if g.props.stack_where in (SC.STACK_UP,
+                                                     SC.STACK_DOWN,
+                                                     SC.STACK_UP_N_DOWN)]
+        if not stacking_marks:
+            continue
+
+        suffix = _align_suffix.get(align, 'x')
+        class_name = f"@mark_t{mark_type}_{suffix}" + ("_dia" if is_dia else "")
+        mkmk_name = f"mkmk_t{mark_type}_{suffix}" + ("_dia" if is_dia else "")
+        lines.append(f"lookup {mkmk_name} {{")
+
+        for cp, g in stacking_marks:
+            mx = mark_anchors.get(cp, 0)
+            if g.props.stack_where in (SC.STACK_UP, SC.STACK_UP_N_DOWN):
+                m2y = SC.ASCENT + SC.H_DIACRITICS * SC.SCALE
+            else:  # STACK_DOWN
+                m2y = SC.ASCENT - SC.H_DIACRITICS * SC.SCALE
+            lines.append(
+                f"    pos mark {glyph_name(cp)}"
+                f" <anchor {mx} {m2y}> mark {class_name};"
+            )
+
+        lines.append(f"}} {mkmk_name};")
+        lines.append("")
+        mkmk_lookup_names.append(mkmk_name)
+
+    # Register MarkToBase lookups under DFLT (for Latin, etc.)
     lines.append("feature mark {")
     for ln in lookup_names:
         lines.append(f"    lookup {ln};")
     lines.append("} mark;")
+
+    # Register MarkToMark lookups under mkmk
+    if mkmk_lookup_names:
+        lines.append("")
+        lines.append("feature mkmk {")
+        for ln in mkmk_lookup_names:
+            lines.append(f"    lookup {ln};")
+        lines.append("} mkmk;")
 
     # For Devanagari, HarfBuzz's Indic v2 shaper uses abvm/blwm
     # features for mark positioning, not the generic 'mark' feature.
@@ -1621,6 +1664,8 @@ def _generate_mark(glyphs, has):
     lines.append("feature abvm {")
     lines.append("    script dev2;")
     for ln in lookup_names:
+        lines.append(f"    lookup {ln};")
+    for ln in mkmk_lookup_names:
         lines.append(f"    lookup {ln};")
     lines.append("} abvm;")
 
