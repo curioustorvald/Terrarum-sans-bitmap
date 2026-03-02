@@ -48,6 +48,26 @@ def generate_features(glyphs, kern_pairs, font_glyph_set,
     def has(cp):
         return glyph_name(cp) in font_glyph_set
 
+    preamble = """feature aalt {
+languagesystem DFLT dflt;
+languagesystem latn dflt;
+languagesystem cyrl dflt;
+languagesystem grek dflt;
+languagesystem hang KOR ;
+languagesystem hang KOH ;
+languagesystem cyrl SRB ;
+languagesystem cyrl BGR ;
+languagesystem dev2 MAR ;
+languagesystem dev2 NEP ;
+languagesystem dev2 SAN ;
+languagesystem dev2 SAT ;
+languagesystem tml2 TAM ;
+languagesystem sund SUN ;
+} aalt;
+"""
+    if preamble:
+        parts.append(preamble)
+
     # ccmp feature (replacewith directives + Hangul jamo decomposition)
     ccmp_code = _generate_ccmp(replacewith_subs or [], has)
     if ccmp_code:

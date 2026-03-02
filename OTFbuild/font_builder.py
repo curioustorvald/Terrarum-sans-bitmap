@@ -213,6 +213,10 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         g = glyphs[cp]
         if g.props.is_illegal:
             continue
+        # Skip C0/C1 control characters and DEL — some platforms render
+        # their traced bitmaps, which is undesirable.
+        if cp <= 0x001F or cp == 0x007F or 0x0080 <= cp <= 0x009F:
+            continue
         name = glyph_name(cp)
         if name == ".notdef":
             continue
