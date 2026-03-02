@@ -121,8 +121,8 @@ print(f"{name}: advance={w}, has_outlines={has_outlines}")
 - **ccmp** — replacewith expansions (DFLT); consonant-to-PUA mapping + vowel decompositions + anusvara upper (dev2); vowel decompositions (tml2)
 - **kern** — pair positioning from `keming_machine.py`
 - **liga** — Latin ligatures (ff, fi, fl, ffi, ffl, st) and Armenian ligatures
-- **locl** — Bulgarian/Serbian Cyrillic alternates
-- **nukt, akhn, half, vatu, pres, blws, rphf** — Devanagari complex script shaping (all under `script dev2`)
+- **locl** — Bulgarian/Serbian Cyrillic alternates; Devanagari consonant-to-PUA mapping + vowel decompositions + anusvara upper (dev2, duplicated from ccmp for DirectWrite compatibility)
+- **nukt, akhn, half, blwf, cjct, pres, blws, rphf, abvs, psts, calt** — Devanagari complex script shaping (all under `script dev2`)
 - **pres** (tml2) — Tamil consonant+vowel ligatures
 - **pres** (sund) — Sundanese diacritic combinations
 - **ljmo, vjmo, tjmo** — Hangul jamo positional variants
@@ -181,7 +181,7 @@ for sr in gsub.table.ScriptList.ScriptRecord:
         print(f"{tag}/{lsr.LangSysTag}: {' '.join(sorted(set(feats)))}")
 ```
 
-Expected output for dev2: `dev2/dflt: abvs akhn blwf blws calt ccmp cjct half liga nukt pres psts rphf`. If language-specific records (e.g. `dev2/MAR`) appear with only `ccmp liga`, the language records have incomplete feature inheritance — remove the corresponding `languagesystem` declaration.
+Expected output for dev2: `dev2/dflt: abvs akhn blwf blws calt ccmp cjct half liga locl nukt pres psts rphf`. If language-specific records (e.g. `dev2/MAR`) appear with only `ccmp liga`, the language records have incomplete feature inheritance — remove the corresponding `languagesystem` declaration.
 
 ### Debugging feature compilation failures
 
@@ -201,3 +201,26 @@ Understanding feature application order is critical for Devanagari debugging:
 4. **GPOS**: `kern` → `mark`/`abvm` → `mkmk`
 
 Implication: GSUB rules that need to match pre-base matras adjacent to post-base marks (e.g. anusvara substitution triggered by I-matra) must go in `ccmp`, not `psts`, because reordering separates them.
+
+### Cross-platform shaper differences (DirectWrite, CoreText, HarfBuzz)
+
+The three major shapers behave differently for Devanagari (dev2):
+
+**DirectWrite (Windows)**:
+- Feature order: `locl` → `nukt` → `akhn` → `rphf` → `rkrf` → `blwf` → `half` → `vatu` → `cjct` → `pres` → `abvs` → `blws` → `psts` → `haln` → `calt` → GPOS: `kern` → `dist` → `abvm` → `blwm`
+- **Does NOT apply `ccmp`** for the dev2 script. All lookups that must run before `nukt` (e.g. consonant-to-PUA mapping) must be registered under `locl` instead.
+- Tests reph eligibility via `would_substitute([RA, virama], rphf)` using **original Unicode codepoints** (before locl/ccmp). The `rphf` feature must include a rule with the Unicode form of RA, not just the PUA form.
+
+**CoreText (macOS)**:
+- Applies `ccmp` but may do so **after** reordering (unlike HarfBuzz which applies ccmp before reordering). This means pre-base matras (I-matra U+093F) are already reordered before the consonant, breaking adjacency rules like `sub 093F 0902'`.
+- Tests reph eligibility using `would_substitute()` with Unicode codepoints, same as DirectWrite.
+- Solution: add wider-context fallback rules in `abvs` (post-reordering) that match I-matra separated from anusvara by 1-3 intervening glyphs.
+
+**HarfBuzz (reference)**:
+- Applies `ccmp` **before** reordering (Unicode order).
+- Reph detection is pattern-based (RA + halant + consonant at syllable start), not feature-based.
+- Most lenient — works with PUA-only rules.
+
+**Practical implication**: Define standalone lookups (e.g. `DevaConsonantMap`, `DevaVowelDecomp`) **outside** any feature block, then reference them from both `locl` and `ccmp`. This ensures DirectWrite (via locl) and HarfBuzz (via ccmp) both fire the lookups. The second application is a no-op since glyphs are already transformed.
+
+Source: [Microsoft Devanagari shaping spec](https://learn.microsoft.com/en-us/typography/script-development/devanagari)

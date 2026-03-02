@@ -702,25 +702,46 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
 
     if ccmp_subs or vowel_decomp_subs or anusvara_ccmp_subs:
         ccmp_parts = []
-        # AnusvaraUpper lookup defined OUTSIDE the feature block so it only
-        # fires when referenced by contextual rules (not unconditionally).
+        # Define lookups OUTSIDE feature blocks so they can be referenced
+        # from both locl (for DirectWrite) and ccmp (for HarfBuzz).
+        # DirectWrite's dev2 shaper does not apply ccmp but does apply locl.
         if anusvara_ccmp_subs:
             ccmp_parts.append(f"lookup AnusvaraUpper {{")
             ccmp_parts.append(f"    sub {glyph_name(0x0902)} by {glyph_name(anusvara_upper)};")
             ccmp_parts.append(f"}} AnusvaraUpper;")
             ccmp_parts.append("")
-        ccmp_parts.append("feature ccmp {")
+        if ccmp_subs:
+            ccmp_parts.append("lookup DevaConsonantMap {")
+            ccmp_parts.extend(ccmp_subs)
+            ccmp_parts.append("} DevaConsonantMap;")
+            ccmp_parts.append("")
+        if vowel_decomp_subs:
+            ccmp_parts.append("lookup DevaVowelDecomp {")
+            ccmp_parts.extend(vowel_decomp_subs)
+            ccmp_parts.append("} DevaVowelDecomp;")
+            ccmp_parts.append("")
+        # locl for dev2 — DirectWrite applies locl as the first feature
+        # for Devanagari shaping.  Registering consonant mapping and vowel
+        # decomposition here ensures they fire on DirectWrite.
+        ccmp_parts.append("feature locl {")
         ccmp_parts.append("    script dev2;")
         if ccmp_subs:
-            ccmp_parts.append("    lookup DevaConsonantMap {")
-            ccmp_parts.extend("    " + s for s in ccmp_subs)
-            ccmp_parts.append("    } DevaConsonantMap;")
+            ccmp_parts.append("    lookup DevaConsonantMap;")
         if anusvara_ccmp_subs:
             ccmp_parts.extend(anusvara_ccmp_subs)
         if vowel_decomp_subs:
-            ccmp_parts.append("    lookup DevaVowelDecomp {")
-            ccmp_parts.extend("    " + s for s in vowel_decomp_subs)
-            ccmp_parts.append("    } DevaVowelDecomp;")
+            ccmp_parts.append("    lookup DevaVowelDecomp;")
+        ccmp_parts.append("} locl;")
+        ccmp_parts.append("")
+        # ccmp for dev2 — HarfBuzz applies ccmp before reordering
+        ccmp_parts.append("feature ccmp {")
+        ccmp_parts.append("    script dev2;")
+        if ccmp_subs:
+            ccmp_parts.append("    lookup DevaConsonantMap;")
+        if anusvara_ccmp_subs:
+            ccmp_parts.extend(anusvara_ccmp_subs)
+        if vowel_decomp_subs:
+            ccmp_parts.append("    lookup DevaVowelDecomp;")
         ccmp_parts.append("} ccmp;")
         features.append('\n'.join(ccmp_parts))
 
@@ -981,15 +1002,25 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     if blws_subs:
         features.append("feature blws {\n    script dev2;\n" + '\n'.join(blws_subs) + "\n} blws;")
 
-    # --- rphf: RA (PUA) + virama -> reph ---
+    # --- rphf: RA + virama -> reph ---
+    # Must include BOTH Unicode and PUA rules:
+    # - Unicode rule: needed by shapers (CoreText, DirectWrite) that test
+    #   reph eligibility via would_substitute() BEFORE ccmp/locl maps RA
+    #   to its PUA form
+    # - PUA rule: matches the actual glyph after ccmp/locl has run
     if has(ra_int) and has(SC.DEVANAGARI_VIRAMA) and has(SC.DEVANAGARI_RA_SUPER):
-        rphf_code = (
-            f"feature rphf {{\n"
-            f"    script dev2;\n"
-            f"    sub {glyph_name(ra_int)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(SC.DEVANAGARI_RA_SUPER)};\n"
-            f"}} rphf;"
+        rphf_lines = ["feature rphf {", "    script dev2;"]
+        if has(0x0930):
+            rphf_lines.append(
+                f"    sub {glyph_name(0x0930)} {glyph_name(SC.DEVANAGARI_VIRAMA)}"
+                f" by {glyph_name(SC.DEVANAGARI_RA_SUPER)};"
+            )
+        rphf_lines.append(
+            f"    sub {glyph_name(ra_int)} {glyph_name(SC.DEVANAGARI_VIRAMA)}"
+            f" by {glyph_name(SC.DEVANAGARI_RA_SUPER)};"
         )
-        features.append(rphf_code)
+        rphf_lines.append("} rphf;")
+        features.append('\n'.join(rphf_lines))
 
     # --- pres: alternate half-SHA before LA ---
     # SHA+virama+LA uses a special half-SHA form (uF010F) instead of the
@@ -1009,18 +1040,39 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
         pres_lines.append("} pres;")
         features.append('\n'.join(pres_lines))
 
-    # --- abvs: complex reph substitution ---
-    # The Kotlin engine uses complex reph (U+F010D) when a
+    # --- abvs: complex reph + post-reordering anusvara upper ---
+    # Complex reph: the Kotlin engine uses complex reph (U+F010D) when a
     # devanagariSuperscript mark precedes reph, or any vowel matra
     # (e.g. i-matra) exists in the syllable.
     # After dev2 reordering, glyph order is:
     #   [pre-base matras] + [base] + [below-base] + [above-base] + [reph]
     # We use chaining contextual substitution to detect these conditions.
-    if has(SC.DEVANAGARI_RA_SUPER) and has(SC.DEVANAGARI_RA_SUPER_COMPLEX):
-        # Trigger class: must match Kotlin's devanagariSuperscripts exactly.
-        # Does NOT include non-superscript vowels (AA 093E, below-base
-        # 0941-0944, nukta 093C) or I-matra 093F (handled separately
-        # via the sawLeftI / i-matra context rules below).
+    #
+    # Anusvara upper fallback: CoreText may apply ccmp AFTER reordering,
+    # which separates I-matra from anusvara (KA I-MATRA ANUSVARA →
+    # I-MATRA KA ANUSVARA).  The ccmp/locl rule `sub 093F 0902'` won't
+    # match when they're separated.  Add wider-context rules here (abvs
+    # runs post-reordering on all shapers).
+
+    # Broad Devanagari class for context gaps
+    deva_any_cps = (
+        list(range(0xF0140, 0xF0165)) +  # PUA consonants
+        list(range(0xF0170, 0xF0195)) +  # nukta forms
+        list(range(0xF0230, 0xF0255)) +  # half forms
+        list(range(0xF0320, 0xF0405)) +  # RA-appended forms
+        list(range(0x093A, 0x094D)) +     # vowel signs/matras
+        list(range(0x0900, 0x0903)) +     # signs
+        [0x094E, 0x094F, 0x0951] +
+        list(range(0x0953, 0x0956)) +
+        [SC.DEVANAGARI_RA_SUB] +          # below-base RA
+        [r for _, _, r, _ in _conjuncts]  # conjunct result glyphs
+    )
+    deva_any_glyphs = [glyph_name(cp) for cp in sorted(set(deva_any_cps)) if has(cp)]
+
+    abvs_lookups = []
+    abvs_body = []
+
+    if has(SC.DEVANAGARI_RA_SUPER) and has(SC.DEVANAGARI_RA_SUPER_COMPLEX) and deva_any_glyphs:
         trigger_cps = (
             list(range(0x0900, 0x0903)) +
             list(range(0x093A, 0x093C)) +    # 093A-093B only (not 093C)
@@ -1031,42 +1083,45 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
         )
         trigger_glyphs = [glyph_name(cp) for cp in trigger_cps if has(cp)]
 
-        # Broad Devanagari class for context gaps between i-matra and reph
-        deva_any_cps = (
-            list(range(0xF0140, 0xF0165)) +  # PUA consonants
-            list(range(0xF0170, 0xF0195)) +  # nukta forms
-            list(range(0xF0230, 0xF0255)) +  # half forms
-            list(range(0xF0320, 0xF0405)) +  # RA-appended forms
-            list(range(0x093A, 0x094D)) +     # vowel signs/matras
-            list(range(0x0900, 0x0903)) +     # signs
-            [0x094E, 0x094F, 0x0951] +
-            list(range(0x0953, 0x0956)) +
-            [SC.DEVANAGARI_RA_SUB] +          # below-base RA
-            [r for _, _, r, _ in _conjuncts]  # conjunct result glyphs
-        )
-        deva_any_glyphs = [glyph_name(cp) for cp in sorted(set(deva_any_cps)) if has(cp)]
-
-        if trigger_glyphs and deva_any_glyphs:
+        if trigger_glyphs:
             reph = glyph_name(SC.DEVANAGARI_RA_SUPER)
             complex_reph = glyph_name(SC.DEVANAGARI_RA_SUPER_COMPLEX)
 
-            abvs_lines = []
-            abvs_lines.append(f"lookup ComplexReph {{")
-            abvs_lines.append(f"    sub {reph} by {complex_reph};")
-            abvs_lines.append(f"}} ComplexReph;")
-            abvs_lines.append("")
-            abvs_lines.append("feature abvs {")
-            abvs_lines.append("    script dev2;")
-            abvs_lines.append(f"    @complexRephTriggers = [{' '.join(trigger_glyphs)}];")
-            abvs_lines.append(f"    @devaAny = [{' '.join(deva_any_glyphs)}];")
+            abvs_lookups.append(f"lookup ComplexReph {{")
+            abvs_lookups.append(f"    sub {reph} by {complex_reph};")
+            abvs_lookups.append(f"}} ComplexReph;")
+
+            abvs_body.append(f"    @complexRephTriggers = [{' '.join(trigger_glyphs)}];")
             # Rule 1: trigger mark/vowel immediately before reph
-            abvs_lines.append(f"    sub @complexRephTriggers {reph}' lookup ComplexReph;")
+            abvs_body.append(f"    sub @complexRephTriggers {reph}' lookup ComplexReph;")
             # Rules 2-4: i-matra separated from reph by 1-3 intervening glyphs
-            abvs_lines.append(f"    sub {glyph_name(0x093F)} @devaAny {reph}' lookup ComplexReph;")
-            abvs_lines.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny {reph}' lookup ComplexReph;")
-            abvs_lines.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny @devaAny {reph}' lookup ComplexReph;")
-            abvs_lines.append("} abvs;")
-            features.append('\n'.join(abvs_lines))
+            abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny {reph}' lookup ComplexReph;")
+            abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny {reph}' lookup ComplexReph;")
+            abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny @devaAny {reph}' lookup ComplexReph;")
+
+    # Post-reordering anusvara upper: catch I-matra separated from
+    # anusvara by reordering (1-3 intervening consonants/marks).
+    # On HarfBuzz, ccmp already handled this (no-op here); on CoreText,
+    # ccmp may run after reordering so the adjacency rule didn't match.
+    if has(0x093F) and has(0x0902) and has(anusvara_upper) and deva_any_glyphs:
+        abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny"
+                         f" {glyph_name(0x0902)}' lookup AnusvaraUpper;")
+        abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny"
+                         f" {glyph_name(0x0902)}' lookup AnusvaraUpper;")
+        abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny @devaAny"
+                         f" {glyph_name(0x0902)}' lookup AnusvaraUpper;")
+
+    if abvs_body:
+        abvs_lines = abvs_lookups[:]
+        if abvs_lookups:
+            abvs_lines.append("")
+        abvs_lines.append("feature abvs {")
+        abvs_lines.append("    script dev2;")
+        if deva_any_glyphs:
+            abvs_lines.append(f"    @devaAny = [{' '.join(deva_any_glyphs)}];")
+        abvs_lines.extend(abvs_body)
+        abvs_lines.append("} abvs;")
+        features.append('\n'.join(abvs_lines))
 
     # --- psts: I-matra/II-matra length variants + open Ya ---
     # Must run AFTER abvs because abvs uses uni093F as context for complex
