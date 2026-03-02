@@ -53,6 +53,10 @@ def _should_have_cmap(cp):
         return True
     if 0x1B000 <= cp <= 0x1B16F:
         return True
+    # Unicode noncharacters — never map these (U+FFFE, U+FFFF are reserved;
+    # format 4 cmap uses 0xFFFF as a sentinel, so mapping it causes OTS rejection)
+    if cp >= 0xFFFE and cp <= 0xFFFF:
+        return False
     # Everything in standard Unicode ranges (up to 0xFFFF plus SMP)
     if cp <= 0xFFFF:
         return True

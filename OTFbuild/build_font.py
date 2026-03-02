@@ -70,6 +70,24 @@ def main():
         no_features=args.no_features,
     )
 
+    # Run OpenType Sanitizer to catch issues browsers would reject
+    try:
+        import ots
+        print("\nRunning OpenType Sanitizer...")
+        result = ots.sanitize(args.output, capture_output=True)
+        if result.returncode == 0:
+            print("  OTS: passed")
+        else:
+            print(f"  OTS: FAILED (exit code {result.returncode})", file=sys.stderr)
+            if result.stderr:
+                for line in result.stderr.decode().strip().splitlines():
+                    print(f"    {line}", file=sys.stderr)
+            sys.exit(1)
+    except ImportError:
+        print("\nWarning: opentype-sanitizer not installed, skipping OTS validation",
+              file=sys.stderr)
+        print("  Install with: pip install opentype-sanitizer", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()
