@@ -1141,6 +1141,18 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
         abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny @devaAny"
                          f" {glyph_name(0x0902)}' lookup AnusvaraUpper;")
 
+    # Reverse anusvara upper when complex reph is present: the vertical
+    # offset is encoded in the glyph choice (uni0902 sits 2px lower than
+    # uF016C), so when complex reph precedes, use the lower form.
+    if has(0x0902) and has(anusvara_upper) and has(SC.DEVANAGARI_RA_SUPER_COMPLEX):
+        abvs_lookups.append(f"lookup AnusvaraLower {{")
+        abvs_lookups.append(f"    sub {glyph_name(anusvara_upper)} by {glyph_name(0x0902)};")
+        abvs_lookups.append(f"}} AnusvaraLower;")
+        abvs_body.append(
+            f"    sub {glyph_name(SC.DEVANAGARI_RA_SUPER_COMPLEX)}"
+            f" {glyph_name(anusvara_upper)}' lookup AnusvaraLower;"
+        )
+
     if abvs_body:
         abvs_lines = abvs_lookups[:]
         if abvs_lookups:
