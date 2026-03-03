@@ -58,6 +58,7 @@ languagesystem hang KOH ;
 languagesystem cyrl SRB ;
 languagesystem cyrl BGR ;
 languagesystem dev2 dflt;
+languagesystem deva dflt;
 languagesystem tml2 dflt;
 languagesystem sund dflt;
 """
@@ -182,7 +183,7 @@ def _generate_hangul_gsub(glyphs, has, jamo_data):
     pua_fn = jamo_data['pua_fn']
 
     # Build codepoint lists (standard + extended jamo ranges)
-    cho_ranges = list(range(0x1100, 0x115F)) + list(range(0xA960, 0xA97C))
+    cho_ranges = list(range(0x1100, 0x115F)) + list(range(0xA960, 0xA97D))
     jung_ranges = list(range(0x1160, 0x11A8)) + list(range(0xD7B0, 0xD7C7))
     jong_ranges = list(range(0x11A8, 0x1200)) + list(range(0xD7CB, 0xD7FC))
 
@@ -720,28 +721,32 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             ccmp_parts.extend(vowel_decomp_subs)
             ccmp_parts.append("} DevaVowelDecomp;")
             ccmp_parts.append("")
-        # locl for dev2 — DirectWrite applies locl as the first feature
-        # for Devanagari shaping.  Registering consonant mapping and vowel
-        # decomposition here ensures they fire on DirectWrite.
+        # locl for dev2/deva — DirectWrite applies locl as the first
+        # feature for Devanagari shaping.  Registering consonant mapping
+        # and vowel decomposition here ensures they fire on DirectWrite.
+        # Both dev2 (new Indic) and deva (old Indic) script tags are
+        # needed for CoreText compatibility.
         ccmp_parts.append("feature locl {")
-        ccmp_parts.append("    script dev2;")
-        if ccmp_subs:
-            ccmp_parts.append("    lookup DevaConsonantMap;")
-        if anusvara_ccmp_subs:
-            ccmp_parts.extend(anusvara_ccmp_subs)
-        if vowel_decomp_subs:
-            ccmp_parts.append("    lookup DevaVowelDecomp;")
+        for _st in ['dev2', 'deva']:
+            ccmp_parts.append(f"    script {_st};")
+            if ccmp_subs:
+                ccmp_parts.append("    lookup DevaConsonantMap;")
+            if anusvara_ccmp_subs:
+                ccmp_parts.extend(anusvara_ccmp_subs)
+            if vowel_decomp_subs:
+                ccmp_parts.append("    lookup DevaVowelDecomp;")
         ccmp_parts.append("} locl;")
         ccmp_parts.append("")
-        # ccmp for dev2 — HarfBuzz applies ccmp before reordering
+        # ccmp for dev2/deva — HarfBuzz applies ccmp before reordering
         ccmp_parts.append("feature ccmp {")
-        ccmp_parts.append("    script dev2;")
-        if ccmp_subs:
-            ccmp_parts.append("    lookup DevaConsonantMap;")
-        if anusvara_ccmp_subs:
-            ccmp_parts.extend(anusvara_ccmp_subs)
-        if vowel_decomp_subs:
-            ccmp_parts.append("    lookup DevaVowelDecomp;")
+        for _st in ['dev2', 'deva']:
+            ccmp_parts.append(f"    script {_st};")
+            if ccmp_subs:
+                ccmp_parts.append("    lookup DevaConsonantMap;")
+            if anusvara_ccmp_subs:
+                ccmp_parts.extend(anusvara_ccmp_subs)
+            if vowel_decomp_subs:
+                ccmp_parts.append("    lookup DevaVowelDecomp;")
         ccmp_parts.append("} ccmp;")
         features.append('\n'.join(ccmp_parts))
 
@@ -756,7 +761,9 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
                 f"    sub {glyph_name(internal)} {glyph_name(0x093C)} by {glyph_name(nukta_form)};"
             )
     if nukt_subs:
-        features.append("feature nukt {\n    script dev2;\n" + '\n'.join(nukt_subs) + "\n} nukt;")
+        nukt_body = '\n'.join(nukt_subs)
+        features.append("feature nukt {\n    script dev2;\n" + nukt_body
+                         + "\n    script deva;\n" + nukt_body + "\n} nukt;")
 
     # --- akhn: akhand ligatures + conjuncts ---
     # All conjunct ligatures (C1 + virama + C2 → ligature) go in akhn
@@ -882,7 +889,9 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
                 f"    sub {glyph_name(c1)} {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(c2)} by {glyph_name(result)}; # {name}"
             )
     if akhn_subs:
-        features.append("feature akhn {\n    script dev2;\n" + '\n'.join(akhn_subs) + "\n} akhn;")
+        akhn_body = '\n'.join(akhn_subs)
+        features.append("feature akhn {\n    script dev2;\n" + akhn_body
+                         + "\n    script deva;\n" + akhn_body + "\n} akhn;")
 
     # --- half: consonant (PUA) + virama -> half form ---
     # After ccmp, consonants are in PUA form, so reference PUA here.
@@ -915,7 +924,9 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             f"    sub {glyph_name(SC.MARWARI_LIG_DD_Y)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(SC.MARWARI_HALFLIG_DD_Y)};"
         )
     if half_subs:
-        features.append("feature half {\n    script dev2;\n" + '\n'.join(half_subs) + "\n} half;")
+        half_body = '\n'.join(half_subs)
+        features.append("feature half {\n    script dev2;\n" + half_body
+                         + "\n    script deva;\n" + half_body + "\n} half;")
 
     # --- blwf: virama + RA -> below-base RA (rakaar) ---
     # This serves two purposes:
@@ -938,7 +949,9 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             f"    sub {glyph_name(SC.DEVANAGARI_VIRAMA)} {glyph_name(ra_int)} by {glyph_name(ra_sub)};"
         )
     if blwf_subs:
-        features.append("feature blwf {\n    script dev2;\n" + '\n'.join(blwf_subs) + "\n} blwf;")
+        blwf_body = '\n'.join(blwf_subs)
+        features.append("feature blwf {\n    script dev2;\n" + blwf_body
+                         + "\n    script deva;\n" + blwf_body + "\n} blwf;")
 
     # --- cjct: consonant (PUA) + below-base RA -> RA-appended form ---
     # After blwf converts virama+RA to rakaar mark, cjct combines it
@@ -948,7 +961,10 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     #
     # A second lookup converts RA-appended + virama -> RA-appended half,
     # since the half feature has already run before cjct.
-    cjct_lines = []
+    # Lookups defined OUTSIDE the feature block so they can be referenced
+    # from both dev2 and deva script sections without name collisions.
+    cjct_lookups = []
+    cjct_lookup_refs = []
 
     # Lookup 1: consonant + rakaar -> RA-appended form
     ra_append_subs = []
@@ -956,17 +972,18 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
         ra_form = internal + 480
         if has(internal) and has(ra_sub) and has(ra_form):
             ra_append_subs.append(
-                f"        sub {glyph_name(internal)} {glyph_name(ra_sub)} by {glyph_name(ra_form)};"
+                f"    sub {glyph_name(internal)} {glyph_name(ra_sub)} by {glyph_name(ra_form)};"
             )
     # Marwari DD + rakaar -> DD.R (DD stays as uni0978, not PUA)
     if has(SC.MARWARI_DD) and has(ra_sub) and has(SC.MARWARI_LIG_DD_R):
         ra_append_subs.append(
-            f"        sub {glyph_name(SC.MARWARI_DD)} {glyph_name(ra_sub)} by {glyph_name(SC.MARWARI_LIG_DD_R)};"
+            f"    sub {glyph_name(SC.MARWARI_DD)} {glyph_name(ra_sub)} by {glyph_name(SC.MARWARI_LIG_DD_R)};"
         )
     if ra_append_subs:
-        cjct_lines.append("    lookup CjctRaAppend {")
-        cjct_lines.extend(ra_append_subs)
-        cjct_lines.append("    } CjctRaAppend;")
+        cjct_lookups.append("lookup CjctRaAppend {")
+        cjct_lookups.extend(ra_append_subs)
+        cjct_lookups.append("} CjctRaAppend;")
+        cjct_lookup_refs.append("    lookup CjctRaAppend;")
 
     # Lookup 2: RA-appended + virama -> RA-appended half form
     ra_half_subs = []
@@ -974,15 +991,21 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
         ra_half = ra_form + 240  # +240 from RA-appended = +720 from base
         if has(ra_form) and has(SC.DEVANAGARI_VIRAMA) and has(ra_half):
             ra_half_subs.append(
-                f"        sub {glyph_name(ra_form)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(ra_half)};"
+                f"    sub {glyph_name(ra_form)} {glyph_name(SC.DEVANAGARI_VIRAMA)} by {glyph_name(ra_half)};"
             )
     if ra_half_subs:
-        cjct_lines.append("    lookup CjctRaHalf {")
-        cjct_lines.extend(ra_half_subs)
-        cjct_lines.append("    } CjctRaHalf;")
+        cjct_lookups.append("lookup CjctRaHalf {")
+        cjct_lookups.extend(ra_half_subs)
+        cjct_lookups.append("} CjctRaHalf;")
+        cjct_lookup_refs.append("    lookup CjctRaHalf;")
 
-    if cjct_lines:
-        features.append("feature cjct {\n    script dev2;\n" + '\n'.join(cjct_lines) + "\n} cjct;")
+    if cjct_lookup_refs:
+        cjct_feat = cjct_lookups + ["", "feature cjct {"]
+        for _st in ['dev2', 'deva']:
+            cjct_feat.append(f"    script {_st};")
+            cjct_feat.extend(cjct_lookup_refs)
+        cjct_feat.append("} cjct;")
+        features.append('\n'.join(cjct_feat))
 
     # --- blws: RA/RRA/HA (PUA) + U/UU -> special syllables ---
     blws_subs = []
@@ -1000,7 +1023,9 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
                 f"    sub {glyph_name(c1)} {glyph_name(c2)} by {glyph_name(result)}; # {name}"
             )
     if blws_subs:
-        features.append("feature blws {\n    script dev2;\n" + '\n'.join(blws_subs) + "\n} blws;")
+        blws_body = '\n'.join(blws_subs)
+        features.append("feature blws {\n    script dev2;\n" + blws_body
+                         + "\n    script deva;\n" + blws_body + "\n} blws;")
 
     # --- rphf: RA + virama -> reph ---
     # Must include BOTH Unicode and PUA rules:
@@ -1009,16 +1034,20 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     #   to its PUA form
     # - PUA rule: matches the actual glyph after ccmp/locl has run
     if has(ra_int) and has(SC.DEVANAGARI_VIRAMA) and has(SC.DEVANAGARI_RA_SUPER):
-        rphf_lines = ["feature rphf {", "    script dev2;"]
+        rphf_rules = []
         if has(0x0930):
-            rphf_lines.append(
+            rphf_rules.append(
                 f"    sub {glyph_name(0x0930)} {glyph_name(SC.DEVANAGARI_VIRAMA)}"
                 f" by {glyph_name(SC.DEVANAGARI_RA_SUPER)};"
             )
-        rphf_lines.append(
+        rphf_rules.append(
             f"    sub {glyph_name(ra_int)} {glyph_name(SC.DEVANAGARI_VIRAMA)}"
             f" by {glyph_name(SC.DEVANAGARI_RA_SUPER)};"
         )
+        rphf_lines = ["feature rphf {"]
+        for _st in ['dev2', 'deva']:
+            rphf_lines.append(f"    script {_st};")
+            rphf_lines.extend(rphf_rules)
         rphf_lines.append("} rphf;")
         features.append('\n'.join(rphf_lines))
 
@@ -1035,8 +1064,9 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
         pres_lines.append(f"}} AltHalfSha;")
         pres_lines.append("")
         pres_lines.append("feature pres {")
-        pres_lines.append("    script dev2;")
-        pres_lines.append(f"    sub {glyph_name(half_sha)}' lookup AltHalfSha {glyph_name(la_int)};")
+        for _st in ['dev2', 'deva']:
+            pres_lines.append(f"    script {_st};")
+            pres_lines.append(f"    sub {glyph_name(half_sha)}' lookup AltHalfSha {glyph_name(la_int)};")
         pres_lines.append("} pres;")
         features.append('\n'.join(pres_lines))
 
@@ -1116,10 +1146,11 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
         if abvs_lookups:
             abvs_lines.append("")
         abvs_lines.append("feature abvs {")
-        abvs_lines.append("    script dev2;")
-        if deva_any_glyphs:
-            abvs_lines.append(f"    @devaAny = [{' '.join(deva_any_glyphs)}];")
-        abvs_lines.extend(abvs_body)
+        for _st in ['dev2', 'deva']:
+            abvs_lines.append(f"    script {_st};")
+            if deva_any_glyphs:
+                abvs_lines.append(f"    @devaAny = [{' '.join(deva_any_glyphs)}];")
+            abvs_lines.extend(abvs_body)
         abvs_lines.append("} abvs;")
         features.append('\n'.join(abvs_lines))
 
@@ -1137,8 +1168,10 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     all_lookups = matra_lookups + ya_lookups + anus_lookups
     all_body = matra_body + ya_body + anus_body
     if all_body:
-        feat = ["feature psts {", "    script dev2;"]
-        feat.extend(all_body)
+        feat = ["feature psts {"]
+        for _st in ['dev2', 'deva']:
+            feat.append(f"    script {_st};")
+            feat.extend(all_body)
         feat.append("} psts;")
         features.append('\n'.join(all_lookups + [''] + feat))
 
@@ -1168,9 +1201,10 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             calt_lines.append(f"}} InterwordVisarga;")
             calt_lines.append("")
             calt_lines.append("feature calt {")
-            calt_lines.append("    script dev2;")
-            calt_lines.append(f"    @devaFollowing = [{' '.join(deva_following)}];")
-            calt_lines.append(f"    sub {glyph_name(visarga)}' lookup InterwordVisarga @devaFollowing;")
+            for _st in ['dev2', 'deva']:
+                calt_lines.append(f"    script {_st};")
+                calt_lines.append(f"    @devaFollowing = [{' '.join(deva_following)}];")
+                calt_lines.append(f"    sub {glyph_name(visarga)}' lookup InterwordVisarga @devaFollowing;")
             calt_lines.append("} calt;")
             features.append('\n'.join(calt_lines))
 
@@ -1571,9 +1605,12 @@ def _generate_mark(glyphs, has):
     # and would bloat the GPOS table).
     _EXCLUDE_RANGES = (
         range(0x3400, 0xA000),   # CJK Unified Ideographs (Ext A + main)
-        range(0xAC00, 0xD7FF),   # Hangul Syllables
+        range(0xAC00, 0xD800),   # Hangul Syllables
         range(0x2800, 0x2900),   # Braille
     )
+    # I-matra glyphs excluded from MarkToBase (they should not attract
+    # mark attachment — marks attach to the consonant, not the matra).
+    _EXCLUDE_CPS = {0x093F} | set(range(0xF0110, 0xF0120))
     all_bases = {}
     marks = {}
 
@@ -1583,7 +1620,7 @@ def _generate_mark(glyphs, has):
         if g.props.write_on_top >= 0:
             marks[cp] = g
         elif g.bitmap and g.props.width > 0:
-            if not any(cp in r for r in _EXCLUDE_RANGES):
+            if cp not in _EXCLUDE_CPS and not any(cp in r for r in _EXCLUDE_RANGES):
                 all_bases[cp] = g
 
     if not all_bases or not marks:
@@ -1758,30 +1795,39 @@ def _generate_mark(glyphs, has):
         lines.append("")
         mkmk_lookup_names.append(mkmk_name)
 
-    # Register MarkToBase lookups under DFLT (for Latin, etc.)
+    # Register MarkToBase lookups under mark for non-Devanagari scripts.
+    # For dev2/deva, abvm already includes these lookups.  Registering
+    # mark/mkmk under dev2/deva too risks double-application on shapers
+    # (CoreText, DirectWrite) that may process mark AND abvm separately.
+    _NON_DEVA_SCRIPTS = ['DFLT', 'latn', 'cyrl', 'grek', 'hang', 'tml2', 'sund']
     lines.append("feature mark {")
-    for ln in lookup_names:
-        lines.append(f"    lookup {ln};")
+    for _st in _NON_DEVA_SCRIPTS:
+        lines.append(f"    script {_st};")
+        for ln in lookup_names:
+            lines.append(f"    lookup {ln};")
     lines.append("} mark;")
 
-    # Register MarkToMark lookups under mkmk
+    # Register MarkToMark lookups under mkmk (non-Devanagari only)
     if mkmk_lookup_names:
         lines.append("")
         lines.append("feature mkmk {")
-        for ln in mkmk_lookup_names:
-            lines.append(f"    lookup {ln};")
+        for _st in _NON_DEVA_SCRIPTS:
+            lines.append(f"    script {_st};")
+            for ln in mkmk_lookup_names:
+                lines.append(f"    lookup {ln};")
         lines.append("} mkmk;")
 
     # For Devanagari, HarfBuzz's Indic v2 shaper uses abvm/blwm
     # features for mark positioning, not the generic 'mark' feature.
-    # Register the same lookups under abvm for dev2 script.
+    # Register the same lookups under abvm for both dev2 and deva scripts.
     lines.append("")
     lines.append("feature abvm {")
-    lines.append("    script dev2;")
-    for ln in lookup_names:
-        lines.append(f"    lookup {ln};")
-    for ln in mkmk_lookup_names:
-        lines.append(f"    lookup {ln};")
+    for _st in ['dev2', 'deva']:
+        lines.append(f"    script {_st};")
+        for ln in lookup_names:
+            lines.append(f"    lookup {ln};")
+        for ln in mkmk_lookup_names:
+            lines.append(f"    lookup {ln};")
     lines.append("} abvm;")
 
     return '\n'.join(lines)
@@ -1826,80 +1872,111 @@ def _generate_anusvara_gpos(glyphs, has):
         lines.append(f"    pos {glyph_name(anusvara_upper)} <150 0 0 0>;")
         lines.append(f"}} AnusvaraUpperShift3;")
 
-        lines.append(f"lookup AnusvaraUpperShift3Down2 {{")
-        lines.append(f"    pos {glyph_name(anusvara_upper)} <150 -100 0 0>;")
-        lines.append(f"}} AnusvaraUpperShift3Down2;")
-
     # --- Lookups for regular anusvara (uni0902) ---
     if has_regular:
         lines.append(f"lookup AnusvaraRegShift2 {{")
         lines.append(f"    pos {glyph_name(anusvara)} <100 0 0 0>;")
         lines.append(f"}} AnusvaraRegShift2;")
 
-        lines.append(f"lookup AnusvaraRegShift3Down2 {{")
-        lines.append(f"    pos {glyph_name(anusvara)} <150 -100 0 0>;")
-        lines.append(f"}} AnusvaraRegShift3Down2;")
+    # --- MarkToMark: anusvara attaches to complex reph ---
+    # Without explicit MarkToMark, two marks on the same base get
+    # shaper-specific heuristic stacking (HarfBuzz, DirectWrite, and
+    # CoreText all disagree by ~100 units).  MarkToMark gives the font
+    # explicit control and suppresses those heuristics.
+    has_mkmk = False
+    if has(complex_reph):
+        mkmk_lines = []
+        if has_upper:
+            mkmk_lines.append(
+                f"    markClass {glyph_name(anusvara_upper)}"
+                f" <anchor 100 800> @anuUpperToReph;")
+        if has_regular:
+            mkmk_lines.append(
+                f"    markClass {glyph_name(anusvara)}"
+                f" <anchor 150 800> @anuRegToReph;")
+        if has_upper:
+            mkmk_lines.append(
+                f"    pos mark {glyph_name(complex_reph)}"
+                f" <anchor 150 800> mark @anuUpperToReph;")
+        if has_regular:
+            mkmk_lines.append(
+                f"    pos mark {glyph_name(complex_reph)}"
+                f" <anchor 150 800> mark @anuRegToReph;")
+        if mkmk_lines:
+            lines.append("")
+            lines.append("lookup AnusvaraToComplexReph {")
+            lines.extend(mkmk_lines)
+            lines.append("} AnusvaraToComplexReph;")
+            has_mkmk = True
 
-    lines.append("")
-    lines.append("feature abvm {")
-    lines.append("    script dev2;")
+    # Collect contextual positioning rules into NAMED lookups so that
+    # both dev2 and deva script sections reference the SAME lookup index.
+    # Without this, feaLib creates separate anonymous lookups for each
+    # script section, and shapers that merge both dev2/deva features
+    # (CoreText, DirectWrite) would apply the shift TWICE.
+    #
+    # NOTE: complex_reph + anusvara cases are handled by MarkToMark
+    # above (AnusvaraToComplexReph), NOT by ChainContextPos.
+    abvm_rules = []
 
     # --- Rules for anusvara upper (uF016C) ---
     # After reordering: base, [matras], reph?, anusvara.
     # When reph is present between matra and anusvara, use 3-glyph backtrack.
     # Rules ordered longest-context-first (first match wins).
     if has_upper:
-        # Complex reph → always shift3down2 (directly before anusvara)
-        if has(complex_reph):
-            lines.append(
-                f"    pos {glyph_name(complex_reph)}"
-                f" {glyph_name(anusvara_upper)}' lookup AnusvaraUpperShift3Down2;"
-            )
-
         # Matra + simple reph + anusvara (3-glyph context: matra in backtrack)
         if has(simple_reph):
             if has(0x094F):
-                lines.append(
+                abvm_rules.append(
                     f"    pos {glyph_name(0x094F)} {glyph_name(simple_reph)}"
                     f" {glyph_name(anusvara_upper)}' lookup AnusvaraUpperShift3;"
                 )
             for cp in [0x093A, 0x0948, 0x094C]:
                 if has(cp):
-                    lines.append(
+                    abvm_rules.append(
                         f"    pos {glyph_name(cp)} {glyph_name(simple_reph)}"
                         f" {glyph_name(anusvara_upper)}' lookup AnusvaraUpperShift2;"
                     )
 
         # Matra directly before anusvara (no reph)
         if has(0x094F):
-            lines.append(
+            abvm_rules.append(
                 f"    pos {glyph_name(0x094F)}"
                 f" {glyph_name(anusvara_upper)}' lookup AnusvaraUpperShift3;"
             )
         for cp in [0x093A, 0x0948, 0x094C]:
             if has(cp):
-                lines.append(
+                abvm_rules.append(
                     f"    pos {glyph_name(cp)}"
                     f" {glyph_name(anusvara_upper)}' lookup AnusvaraUpperShift2;"
                 )
 
     # --- Rules for regular anusvara (uni0902) ---
     # Regular anusvara has no matra trigger (else it would be upper).
-    # Only reph can trigger a shift here.
+    # Complex reph case handled by MarkToMark; only simple reph here.
     if has_regular:
-        # Complex reph → +3px X, -2px Y
-        if has(complex_reph):
-            lines.append(
-                f"    pos {glyph_name(complex_reph)}"
-                f" {glyph_name(anusvara)}' lookup AnusvaraRegShift3Down2;"
-            )
         # Simple reph → +2px X
         if has(simple_reph):
-            lines.append(
+            abvm_rules.append(
                 f"    pos {glyph_name(simple_reph)}"
                 f" {glyph_name(anusvara)}' lookup AnusvaraRegShift2;"
             )
 
+    # --- Emit named lookup ---
+    if abvm_rules:
+        lines.append("")
+        lines.append("lookup AnusvaraCtxShift {")
+        lines.extend(abvm_rules)
+        lines.append("} AnusvaraCtxShift;")
+
+    lines.append("")
+    lines.append("feature abvm {")
+    for _st in ['dev2', 'deva']:
+        lines.append(f"    script {_st};")
+        if has_mkmk:
+            lines.append("    lookup AnusvaraToComplexReph;")
+        if abvm_rules:
+            lines.append("    lookup AnusvaraCtxShift;")
     lines.append("} abvm;")
 
     return '\n'.join(lines)
