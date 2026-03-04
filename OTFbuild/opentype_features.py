@@ -701,7 +701,25 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
                     f" {glyph_name(0x0902)}' lookup AnusvaraUpper;"
                 )
 
-    if ccmp_subs or vowel_decomp_subs or anusvara_ccmp_subs:
+    # --- ccmp: Matra decomposition for CoreText compatibility ---
+    # CoreText's old Indic shaper (deva) may incorrectly decompose O-matra
+    # (U+094B) into AA-matra + II-matra instead of AA-matra + E-matra.
+    # We decompose O/AU-matra ourselves before the shaper acts, and add
+    # a fallback rule to fix the wrong decomposition if it already happened.
+    matra_decomp_subs = []
+    has_fix_wrong_decomp = False
+    if has(0x094B) and has(0x093E) and has(0x0947):
+        matra_decomp_subs.append(
+            f"    sub {glyph_name(0x094B)} by {glyph_name(0x093E)} {glyph_name(0x0947)};"
+        )
+    if has(0x094C) and has(0x093E) and has(0x0948):
+        matra_decomp_subs.append(
+            f"    sub {glyph_name(0x094C)} by {glyph_name(0x093E)} {glyph_name(0x0948)};"
+        )
+    if has(0x093E) and has(0x0940) and has(0x0947):
+        has_fix_wrong_decomp = True
+
+    if ccmp_subs or vowel_decomp_subs or anusvara_ccmp_subs or matra_decomp_subs or has_fix_wrong_decomp:
         ccmp_parts = []
         # Define lookups OUTSIDE feature blocks so they can be referenced
         # from both locl (for DirectWrite) and ccmp (for HarfBuzz).
@@ -721,6 +739,30 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             ccmp_parts.extend(vowel_decomp_subs)
             ccmp_parts.append("} DevaVowelDecomp;")
             ccmp_parts.append("")
+        if has_fix_wrong_decomp:
+            ccmp_parts.append("lookup FixWrongMatraDecomp {")
+            ccmp_parts.append(f"    sub {glyph_name(0x0940)} by {glyph_name(0x0947)};")
+            ccmp_parts.append("} FixWrongMatraDecomp;")
+            ccmp_parts.append("")
+            # Named contextual lookup — CoreText handles named lookups
+            # more reliably than inline anonymous lookups.  Cover both
+            # possible decomposition orders (093E+0940 and 0940+093E).
+            ccmp_parts.append("lookup FixWrongMatraCtx {")
+            ccmp_parts.append(
+                f"    sub {glyph_name(0x093E)}"
+                f" {glyph_name(0x0940)}' lookup FixWrongMatraDecomp;"
+            )
+            ccmp_parts.append(
+                f"    sub {glyph_name(0x0940)}'"
+                f" lookup FixWrongMatraDecomp {glyph_name(0x093E)};"
+            )
+            ccmp_parts.append("} FixWrongMatraCtx;")
+            ccmp_parts.append("")
+        if matra_decomp_subs:
+            ccmp_parts.append("lookup DevaMatraDecomp {")
+            ccmp_parts.extend(matra_decomp_subs)
+            ccmp_parts.append("} DevaMatraDecomp;")
+            ccmp_parts.append("")
         # locl for dev2/deva — DirectWrite applies locl as the first
         # feature for Devanagari shaping.  Registering consonant mapping
         # and vowel decomposition here ensures they fire on DirectWrite.
@@ -731,6 +773,10 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             ccmp_parts.append(f"    script {_st};")
             if ccmp_subs:
                 ccmp_parts.append("    lookup DevaConsonantMap;")
+            if has_fix_wrong_decomp:
+                ccmp_parts.append("    lookup FixWrongMatraCtx;")
+            if matra_decomp_subs:
+                ccmp_parts.append("    lookup DevaMatraDecomp;")
             if anusvara_ccmp_subs:
                 ccmp_parts.extend(anusvara_ccmp_subs)
             if vowel_decomp_subs:
@@ -743,6 +789,10 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             ccmp_parts.append(f"    script {_st};")
             if ccmp_subs:
                 ccmp_parts.append("    lookup DevaConsonantMap;")
+            if has_fix_wrong_decomp:
+                ccmp_parts.append("    lookup FixWrongMatraCtx;")
+            if matra_decomp_subs:
+                ccmp_parts.append("    lookup DevaMatraDecomp;")
             if anusvara_ccmp_subs:
                 ccmp_parts.extend(anusvara_ccmp_subs)
             if vowel_decomp_subs:
@@ -1182,6 +1232,13 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
         abvs_lines.append("feature abvs {")
         for _st in ['dev2', 'deva']:
             abvs_lines.append(f"    script {_st};")
+            # Post-reordering fallback for O/AU-matra decomposition.
+            # On CoreText, locl/ccmp may not fire before the shaper's
+            # internal split-matra decomposition, so repeat the fix here.
+            if matra_decomp_subs:
+                abvs_lines.append("    lookup DevaMatraDecomp;")
+            if has_fix_wrong_decomp:
+                abvs_lines.append("    lookup FixWrongMatraCtx;")
             if abvs_pass1_rules:
                 abvs_lines.append("    lookup AbvsPass1;")
             if abvs_pass2_rules:
@@ -1202,10 +1259,16 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     anus_lookups, anus_body = _generate_psts_anusvara(glyphs, has, _conjuncts)
     all_lookups = matra_lookups + ya_lookups + anus_lookups
     all_body = matra_body + ya_body + anus_body
-    if all_body:
+    if all_body or matra_decomp_subs or has_fix_wrong_decomp:
         feat = ["feature psts {"]
         for _st in ['dev2', 'deva']:
             feat.append(f"    script {_st};")
+            # Last-resort fallback: fix O-matra wrong decomposition before
+            # II-matra variant rules fire.  We know psts works on CoreText.
+            if matra_decomp_subs:
+                feat.append("    lookup DevaMatraDecomp;")
+            if has_fix_wrong_decomp:
+                feat.append("    lookup FixWrongMatraCtx;")
             feat.extend(all_body)
         feat.append("} psts;")
         features.append('\n'.join(all_lookups + [''] + feat))
