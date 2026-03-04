@@ -118,11 +118,11 @@ print(f"{name}: advance={w}, has_outlines={has_outlines}")
 
 ### OpenType features generated (`opentype_features.py`)
 
-- **ccmp** — replacewith expansions (DFLT); consonant-to-PUA mapping + vowel decompositions + anusvara upper (dev2); vowel decompositions (tml2)
+- **ccmp** — replacewith expansions (DFLT); consonant-to-PUA mapping + vowel decompositions + anusvara upper (dev2/deva); vowel decompositions (tml2)
 - **kern** — pair positioning from `keming_machine.py`
 - **liga** — Latin ligatures (ff, fi, fl, ffi, ffl, st) and Armenian ligatures
-- **locl** — Bulgarian/Serbian Cyrillic alternates; Devanagari consonant-to-PUA mapping + vowel decompositions + anusvara upper (dev2, duplicated from ccmp for DirectWrite compatibility)
-- **nukt, akhn, half, blwf, cjct, pres, blws, rphf, abvs, psts, calt** — Devanagari complex script shaping (all under `script dev2`)
+- **locl** — Bulgarian/Serbian Cyrillic alternates; Devanagari consonant-to-PUA mapping + vowel decompositions + anusvara upper (dev2/deva, duplicated from ccmp for DirectWrite compatibility)
+- **nukt, akhn, half, blwf, cjct, pres, blws, rphf, abvs, psts, calt** — Devanagari complex script shaping (all under both `script dev2` and `script deva`)
 - **pres** (tml2) — Tamil consonant+vowel ligatures
 - **pres** (sund) — Sundanese diacritic combinations
 - **ljmo, vjmo, tjmo** — Hangul jamo positional variants
@@ -204,23 +204,125 @@ Implication: GSUB rules that need to match pre-base matras adjacent to post-base
 
 ### Cross-platform shaper differences (DirectWrite, CoreText, HarfBuzz)
 
-The three major shapers behave differently for Devanagari (dev2):
+The three major shapers behave differently for Devanagari. The font registers all Devanagari features under **both** `dev2` (new Indic) and `deva` (old Indic) script tags. HarfBuzz and DirectWrite use `dev2`; CoreText uses `deva`.
 
-**DirectWrite (Windows)**:
-- Feature order: `locl` → `nukt` → `akhn` → `rphf` → `rkrf` → `blwf` → `half` → `vatu` → `cjct` → `pres` → `abvs` → `blws` → `psts` → `haln` → `calt` → GPOS: `kern` → `dist` → `abvm` → `blwm`
-- **Does NOT apply `ccmp`** for the dev2 script. All lookups that must run before `nukt` (e.g. consonant-to-PUA mapping) must be registered under `locl` instead.
-- Tests reph eligibility via `would_substitute([RA, virama], rphf)` using **original Unicode codepoints** (before locl/ccmp). The `rphf` feature must include a rule with the Unicode form of RA, not just the PUA form.
+#### Script tag selection
 
-**CoreText (macOS)**:
-- Applies `ccmp` but may do so **after** reordering (unlike HarfBuzz which applies ccmp before reordering). This means pre-base matras (I-matra U+093F) are already reordered before the consonant, breaking adjacency rules like `sub 093F 0902'`.
-- Tests reph eligibility using `would_substitute()` with Unicode codepoints, same as DirectWrite.
-- Solution: add wider-context fallback rules in `abvs` (post-reordering) that match I-matra separated from anusvara by 1-3 intervening glyphs.
+| Shaper | Script tag used | Indic model |
+|---|---|---|
+| HarfBuzz | `dev2` | New Indic (ot-indic2) |
+| DirectWrite | `dev2` | New Indic |
+| CoreText | `deva` | Old Indic |
 
-**HarfBuzz (reference)**:
-- Applies `ccmp` **before** reordering (Unicode order).
-- Reph detection is pattern-based (RA + halant + consonant at syllable start), not feature-based.
-- Most lenient — works with PUA-only rules.
+Both tags must exist, and all GSUB/GPOS features must be registered under both, otherwise CoreText silently breaks.
 
-**Practical implication**: Define standalone lookups (e.g. `DevaConsonantMap`, `DevaVowelDecomp`) **outside** any feature block, then reference them from both `locl` and `ccmp`. This ensures DirectWrite (via locl) and HarfBuzz (via ccmp) both fire the lookups. The second application is a no-op since glyphs are already transformed.
+#### Feature order differences
+
+**HarfBuzz (dev2, reference implementation)**:
+1. Pre-reordering: `locl` → `ccmp`
+2. Reordering (I-matra moves before consonant, reph moves to end)
+3. Post-reordering: `nukt` → `akhn` → `rphf` → `half` → `blwf` → `cjct` → `pres` → `abvs` → `blws` → `psts` → `haln` → `calt`
+4. GPOS: `kern` → `abvm` → `blwm`
+
+**DirectWrite (dev2)**:
+- `locl` → `nukt` → `akhn` → `rphf` → `rkrf` → `blwf` → `half` → `vatu` → `cjct` → `pres` → `abvs` → `blws` → `psts` → `haln` → `calt`
+- GPOS: `kern` → `dist` → `abvm` → `blwm`
+- **Does NOT apply `ccmp`** for the dev2 script. All lookups that must run before `nukt` (e.g. consonant-to-PUA mapping, anusvara upper) must be registered under `locl` instead.
+
+**CoreText (deva)**:
+- Applies `locl` and `ccmp`, but may apply `ccmp` **after** reordering (unlike HarfBuzz).
+- Post-reordering features same as above: `nukt` → `akhn` → `rphf` → ... → `abvs` → ... → `psts`
+- GPOS: `kern` → `abvm` (+ `mark`/`mkmk` if registered under `deva`)
+
+#### Key behavioural differences
+
+**1. ccmp timing (CoreText vs HarfBuzz)**
+
+HarfBuzz applies `ccmp` in Unicode order (before reordering). CoreText may apply it after reordering. This breaks adjacency-based rules:
+
+```
+# In ccmp — works on HarfBuzz (Unicode order: C + matra + anusvara):
+sub uni093F uni0902' lookup AnusvaraUpper;  # I-matra + anusvara
+
+# After reordering on CoreText: I-matra + [consonants] + anusvara
+# The I-matra and anusvara are no longer adjacent → rule fails
+```
+
+**Fix**: duplicate these rules in `abvs` (post-reordering) with wildcard gaps:
+```
+sub uni093F @devaAny uni0902' lookup AnusvaraUpper;
+sub uni093F @devaAny @devaAny uni0902' lookup AnusvaraUpper;
+```
+
+**2. Reph eligibility testing**
+
+| Shaper | Method |
+|---|---|
+| HarfBuzz | Pattern-based (RA + halant + consonant at syllable start) |
+| DirectWrite | `would_substitute([RA, virama], rphf)` with **Unicode** codepoints |
+| CoreText | `would_substitute()` with Unicode codepoints (same as DW) |
+
+The `rphf` feature must include a rule with the Unicode form of RA (`uni0930`), not just the PUA form. Otherwise DW and CT won't detect reph.
+
+**3. Within-lookup glyph visibility (CoreText)**
+
+In OpenType, a single lookup processes the glyph string left-to-right. Per spec, a substitution at position N should be visible when the lookup reaches position N+1. CoreText appears to **not** propagate substitutions within a single lookup pass to subsequent positions' backtrack context.
+
+Example: two rules in one anonymous lookup:
+```
+sub @trigger uF010C' lookup ComplexReph;     # rule at pos N: uF010C → uF010D
+sub uF010D uF016C' lookup AnusvaraLower;     # rule at pos N+1: needs uF010D in backtrack
+```
+
+On HarfBuzz/DirectWrite, rule 2 sees the updated `uF010D` at position N. On CoreText, it still sees the original `uF010C` → rule 2 fails to match.
+
+**Fix**: split into separate **named lookups** so each runs as an independent pass:
+```
+lookup AbvsPass1 {
+    sub @trigger uF010C' lookup ComplexReph;
+} AbvsPass1;
+lookup AbvsPass2 {
+    sub uF010D uF016C' lookup AnusvaraLower;
+} AbvsPass2;
+feature abvs {
+    script dev2; lookup AbvsPass1; lookup AbvsPass2;
+    script deva; lookup AbvsPass1; lookup AbvsPass2;
+} abvs;
+```
+
+**4. GPOS mark stacking heuristics**
+
+When two marks share the same base without MarkToMark, each shaper applies different internal Y adjustments:
+
+| Shaper | Internal Y shift |
+|---|---|
+| HarfBuzz | 0 (no heuristic) |
+| DirectWrite | -100 |
+| CoreText | -200 |
+
+No single GPOS Y value satisfies all three. **Fix**: use explicit MarkToMark positioning (e.g. `AnusvaraToComplexReph`) which suppresses shaper heuristics and gives consistent results across all three.
+
+**5. GPOS double-application with dev2+deva**
+
+When both script tags exist, CoreText/DirectWrite may merge lookup lists from both scripts. Inline (anonymous) GPOS rules create separate lookups per script → cumulative positioning doubles. **Fix**: use **named lookups** for all GPOS contextual positioning so both scripts reference the same lookup index.
+
+**6. mark/mkmk feature scoping**
+
+The `mark` and `mkmk` features are registered under `deva` (for CoreText) but **not** `dev2`. Under `dev2`, all mark positioning goes through `abvm` instead. This prevents double-application on HarfBuzz/DirectWrite where `abvm` already contains the same mark/mkmk lookups.
+
+```
+# GPOS features per script:
+# dev2/dflt: abvm kern
+# deva/dflt: abvm kern mark mkmk
+```
+
+#### Practical rules
+
+1. **Standalone lookups**: define all substitution/positioning lookups (e.g. `DevaConsonantMap`, `DevaVowelDecomp`, `ComplexReph`) **outside** any feature block, then reference from both `locl`/`ccmp` and script-specific features.
+2. **locl mirrors ccmp** for Devanagari: DirectWrite skips `ccmp`, so anything that must run early (consonant mapping, anusvara upper, vowel decomposition) must also be in `locl`.
+3. **abvs post-reordering fallbacks**: rules that depend on matra+anusvara adjacency (broken by reordering on CoreText) need wildcard-gap variants in `abvs`.
+4. **Separate lookup passes**: if rule B's backtrack context depends on rule A's output at an adjacent position, put them in separate named lookups. CoreText may not propagate within-pass substitutions.
+5. **Named GPOS lookups**: all contextual GPOS rules must use named lookups to avoid double-application across dev2/deva.
+6. **MarkToMark for multi-mark stacking**: never rely on shaper heuristics for positioning multiple marks on the same base — always provide explicit MarkToMark.
 
 Source: [Microsoft Devanagari shaping spec](https://learn.microsoft.com/en-us/typography/script-development/devanagari)

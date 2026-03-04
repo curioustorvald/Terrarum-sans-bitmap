@@ -1100,7 +1100,12 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
     deva_any_glyphs = [glyph_name(cp) for cp in sorted(set(deva_any_cps)) if has(cp)]
 
     abvs_lookups = []
-    abvs_body = []
+    # Split abvs into two named lookups so that AnusvaraLower (pass 2)
+    # sees the ComplexReph output (pass 1).  CoreText may not update the
+    # glyph stream within a single lookup pass, so rules that depend on
+    # earlier substitutions at adjacent positions must be in separate lookups.
+    abvs_pass1_rules = []   # ComplexReph + AnusvaraUpper
+    abvs_pass2_rules = []   # AnusvaraLower (needs to see uF010D from pass 1)
 
     if has(SC.DEVANAGARI_RA_SUPER) and has(SC.DEVANAGARI_RA_SUPER_COMPLEX) and deva_any_glyphs:
         trigger_cps = (
@@ -1121,48 +1126,66 @@ def _generate_devanagari(glyphs, has, replacewith_subs=None):
             abvs_lookups.append(f"    sub {reph} by {complex_reph};")
             abvs_lookups.append(f"}} ComplexReph;")
 
-            abvs_body.append(f"    @complexRephTriggers = [{' '.join(trigger_glyphs)}];")
+            abvs_pass1_rules.append(f"    @complexRephTriggers = [{' '.join(trigger_glyphs)}];")
             # Rule 1: trigger mark/vowel immediately before reph
-            abvs_body.append(f"    sub @complexRephTriggers {reph}' lookup ComplexReph;")
+            abvs_pass1_rules.append(f"    sub @complexRephTriggers {reph}' lookup ComplexReph;")
             # Rules 2-4: i-matra separated from reph by 1-3 intervening glyphs
-            abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny {reph}' lookup ComplexReph;")
-            abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny {reph}' lookup ComplexReph;")
-            abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny @devaAny {reph}' lookup ComplexReph;")
+            abvs_pass1_rules.append(f"    sub {glyph_name(0x093F)} @devaAny {reph}' lookup ComplexReph;")
+            abvs_pass1_rules.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny {reph}' lookup ComplexReph;")
+            abvs_pass1_rules.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny @devaAny {reph}' lookup ComplexReph;")
 
     # Post-reordering anusvara upper: catch I-matra separated from
     # anusvara by reordering (1-3 intervening consonants/marks).
     # On HarfBuzz, ccmp already handled this (no-op here); on CoreText,
     # ccmp may run after reordering so the adjacency rule didn't match.
     if has(0x093F) and has(0x0902) and has(anusvara_upper) and deva_any_glyphs:
-        abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny"
+        abvs_pass1_rules.append(f"    sub {glyph_name(0x093F)} @devaAny"
                          f" {glyph_name(0x0902)}' lookup AnusvaraUpper;")
-        abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny"
+        abvs_pass1_rules.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny"
                          f" {glyph_name(0x0902)}' lookup AnusvaraUpper;")
-        abvs_body.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny @devaAny"
+        abvs_pass1_rules.append(f"    sub {glyph_name(0x093F)} @devaAny @devaAny @devaAny"
                          f" {glyph_name(0x0902)}' lookup AnusvaraUpper;")
 
     # Reverse anusvara upper when complex reph is present: the vertical
     # offset is encoded in the glyph choice (uni0902 sits 2px lower than
     # uF016C), so when complex reph precedes, use the lower form.
+    # This MUST be in a separate lookup from ComplexReph so it runs in a
+    # second pass and sees the uF010C→uF010D substitution output.
     if has(0x0902) and has(anusvara_upper) and has(SC.DEVANAGARI_RA_SUPER_COMPLEX):
         abvs_lookups.append(f"lookup AnusvaraLower {{")
         abvs_lookups.append(f"    sub {glyph_name(anusvara_upper)} by {glyph_name(0x0902)};")
         abvs_lookups.append(f"}} AnusvaraLower;")
-        abvs_body.append(
+        abvs_pass2_rules.append(
             f"    sub {glyph_name(SC.DEVANAGARI_RA_SUPER_COMPLEX)}"
             f" {glyph_name(anusvara_upper)}' lookup AnusvaraLower;"
         )
 
-    if abvs_body:
+    has_abvs = abvs_pass1_rules or abvs_pass2_rules
+    if has_abvs:
         abvs_lines = abvs_lookups[:]
         if abvs_lookups:
+            abvs_lines.append("")
+        # Pass 1: ComplexReph + AnusvaraUpper
+        if abvs_pass1_rules:
+            abvs_lines.append("lookup AbvsPass1 {")
+            if deva_any_glyphs:
+                abvs_lines.append(f"    @devaAny = [{' '.join(deva_any_glyphs)}];")
+            abvs_lines.extend(abvs_pass1_rules)
+            abvs_lines.append("} AbvsPass1;")
+            abvs_lines.append("")
+        # Pass 2: AnusvaraLower (sees ComplexReph output)
+        if abvs_pass2_rules:
+            abvs_lines.append("lookup AbvsPass2 {")
+            abvs_lines.extend(abvs_pass2_rules)
+            abvs_lines.append("} AbvsPass2;")
             abvs_lines.append("")
         abvs_lines.append("feature abvs {")
         for _st in ['dev2', 'deva']:
             abvs_lines.append(f"    script {_st};")
-            if deva_any_glyphs:
-                abvs_lines.append(f"    @devaAny = [{' '.join(deva_any_glyphs)}];")
-            abvs_lines.extend(abvs_body)
+            if abvs_pass1_rules:
+                abvs_lines.append("    lookup AbvsPass1;")
+            if abvs_pass2_rules:
+                abvs_lines.append("    lookup AbvsPass2;")
         abvs_lines.append("} abvs;")
         features.append('\n'.join(abvs_lines))
 
@@ -1807,23 +1830,25 @@ def _generate_mark(glyphs, has):
         lines.append("")
         mkmk_lookup_names.append(mkmk_name)
 
-    # Register MarkToBase lookups under mark for non-Devanagari scripts.
-    # For dev2/deva, abvm already includes these lookups.  Registering
-    # mark/mkmk under dev2/deva too risks double-application on shapers
-    # (CoreText, DirectWrite) that may process mark AND abvm separately.
-    _NON_DEVA_SCRIPTS = ['DFLT', 'latn', 'cyrl', 'grek', 'hang', 'tml2', 'sund']
+    # Register MarkToBase lookups under mark.
+    # dev2 is excluded: HarfBuzz/DirectWrite use abvm for Devanagari marks.
+    # deva is INCLUDED: CoreText's old-Indic shaper may need mark/mkmk
+    # in addition to abvm for correct mark attachment.
+    # Double-application is safe because MarkToBase is idempotent and
+    # all ChainContextPos adjustments are X-only (no Y doubling risk).
+    _MARK_SCRIPTS = ['DFLT', 'latn', 'cyrl', 'grek', 'hang', 'tml2', 'sund', 'deva']
     lines.append("feature mark {")
-    for _st in _NON_DEVA_SCRIPTS:
+    for _st in _MARK_SCRIPTS:
         lines.append(f"    script {_st};")
         for ln in lookup_names:
             lines.append(f"    lookup {ln};")
     lines.append("} mark;")
 
-    # Register MarkToMark lookups under mkmk (non-Devanagari only)
+    # Register MarkToMark lookups under mkmk (includes deva for CoreText)
     if mkmk_lookup_names:
         lines.append("")
         lines.append("feature mkmk {")
-        for _st in _NON_DEVA_SCRIPTS:
+        for _st in _MARK_SCRIPTS:
             lines.append(f"    script {_st};")
             for ln in mkmk_lookup_names:
                 lines.append(f"    lookup {ln};")
