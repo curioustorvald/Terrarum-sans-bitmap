@@ -28,6 +28,7 @@ from keming_machine import generate_kerning_pairs
 from opentype_features import generate_features, glyph_name
 import sheet_config as SC
 
+FONT_VERSION = "1.15"
 
 # Codepoints that get cmap entries (user-visible)
 # PUA forms used internally by GSUB get glyphs but NO cmap entries
@@ -124,6 +125,7 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
             if uni_g.props.width == 0 and pua_g.props.width > 0:
                 uni_g.props.width = pua_g.props.width
                 uni_g.bitmap = pua_g.bitmap
+                uni_g.color_bitmap = pua_g.color_bitmap
                 deva_copied += 1
     # Also copy nukta consonant forms U+0958-095F
     for uni_cp in range(0x0958, 0x0960):
@@ -137,6 +139,7 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
             if uni_g.props.width == 0 and pua_g.props.width > 0:
                 uni_g.props.width = pua_g.props.width
                 uni_g.bitmap = pua_g.bitmap
+                uni_g.color_bitmap = pua_g.color_bitmap
                 deva_copied += 1
     print(f"  Copied {deva_copied} consonant glyphs from PUA forms")
 
@@ -229,6 +232,79 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
 
     print(f"  Glyph order: {len(glyph_order)} glyphs, cmap: {len(cmap)} entries")
 
+    # Step 4a: Detect coloured glyphs and prepare COLR layer data
+    print("Step 4a: Detecting coloured glyphs...")
+    colr_layer_data = {}  # base_name -> list of (layer_name, colour_rgb)
+    palette_colours = {}  # (r, g, b) -> palette_index
+    layer_bitmaps = {}    # layer_name -> 1-bit bitmap
+    layer_insert = []     # (after_name, [layer_names]) for glyph_order insertion
+
+    for cp in sorted_cps:
+        g = glyphs[cp]
+        if g.props.is_illegal or g.color_bitmap is None:
+            continue
+        name = glyph_name(cp)
+        if name == ".notdef" or name not in glyph_set:
+            continue
+
+        # Group pixels by RGB value -> per-colour 1-bit masks
+        colour_pixels = {}  # (r, g, b) -> set of (row, col)
+        cbm = g.color_bitmap
+        for row in range(len(cbm)):
+            for col in range(len(cbm[row])):
+                px = cbm[row][col]
+                a = px & 0xFF
+                if a == 0:
+                    continue
+                r = (px >> 24) & 0xFF
+                g_ch = (px >> 16) & 0xFF
+                b = (px >> 8) & 0xFF
+                rgb = (r, g_ch, b)
+                if rgb not in colour_pixels:
+                    colour_pixels[rgb] = set()
+                colour_pixels[rgb].add((row, col))
+
+        if not colour_pixels:
+            continue
+        if len(colour_pixels) == 1 and (255, 255, 255) in colour_pixels:
+            # Only white pixels — no colour layers needed
+            continue
+
+        # Assign palette indices for each unique colour
+        for rgb in colour_pixels:
+            if rgb not in palette_colours:
+                palette_colours[rgb] = len(palette_colours)
+
+        # Generate layer glyphs
+        h = len(cbm)
+        w = len(cbm[0]) if h > 0 else 0
+        layers = []
+        layer_names = []
+        for i, (rgb, positions) in enumerate(sorted(colour_pixels.items())):
+            layer_name = f"{name}.clr{i}"
+            # Build 1-bit mask for this colour
+            mask = [[0] * w for _ in range(h)]
+            for (row, col) in positions:
+                mask[row][col] = 1
+            layer_bitmaps[layer_name] = mask
+            layers.append((layer_name, rgb))
+            layer_names.append(layer_name)
+
+        colr_layer_data[name] = layers
+        layer_insert.append((name, layer_names))
+
+    # Insert layer glyph names into glyph_order immediately after their base glyph
+    for base_name, lnames in layer_insert:
+        idx = glyph_order.index(base_name)
+        for j, ln in enumerate(lnames):
+            glyph_order.insert(idx + 1 + j, ln)
+            glyph_set.add(ln)
+
+    if colr_layer_data:
+        print(f"  Found {len(colr_layer_data)} coloured glyphs, {len(palette_colours)} palette colours, {sum(len(v) for v in colr_layer_data.values())} layer glyphs")
+    else:
+        print("  No coloured glyphs found")
+
     # Step 5: Build font with fonttools (CFF/OTF)
     print("Step 5: Building font tables...")
     fb = FontBuilder(SC.UNITS_PER_EM, isTTF=False)
@@ -256,6 +332,7 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
     charstrings[".notdef"] = pen.getCharString()
 
     _unihan_cps = set(SC.CODE_RANGE[SC.SHEET_UNIHAN])
+    _base_offsets = {}  # glyph_name -> (x_offset, y_offset) for COLR layers
 
     traced_count = 0
     for cp in sorted_cps:
@@ -314,6 +391,10 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
             if 15 <= _pua_row <= 18:
                 x_offset -= SC.W_HANGUL_BASE * SCALE
 
+        # Store offsets for COLR layer glyphs
+        if name in colr_layer_data:
+            _base_offsets[name] = (x_offset, y_offset)
+
         contours = trace_bitmap(g.bitmap, g.props.width)
 
         pen = T2CharStringPen(advance, None)
@@ -322,7 +403,22 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
             traced_count += 1
         charstrings[name] = pen.getCharString()
 
-    print(f"  Traced {traced_count} glyphs with outlines")
+    # Trace COLR layer glyphs
+    layer_traced = 0
+    for base_name, layers in colr_layer_data.items():
+        base_xoff, base_yoff = _base_offsets.get(base_name, (0, 0))
+        for layer_name, _rgb in layers:
+            lbm = layer_bitmaps[layer_name]
+            # Find the effective glyph width from the base glyph's bitmap
+            lw = len(lbm[0]) if lbm and lbm[0] else 0
+            contours = trace_bitmap(lbm, lw)
+            pen = T2CharStringPen(0, None)  # advance width 0 for layers
+            if contours:
+                draw_glyph_to_pen(contours, pen, x_offset=base_xoff, y_offset=base_yoff)
+                layer_traced += 1
+            charstrings[layer_name] = pen.getCharString()
+
+    print(f"  Traced {traced_count} glyphs with outlines" + (f" + {layer_traced} colour layers" if layer_traced else ""))
 
     fb.setupCFF(
         psName="TerrarumSansBitmap-Regular",
@@ -346,6 +442,11 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         advance = 0 if cp in mark_cps else g.props.width * SCALE
         metrics[name] = (advance, 0)
 
+    # Add zero-advance metrics for COLR layer glyphs
+    for _base_name, layers in colr_layer_data.items():
+        for layer_name, _rgb in layers:
+            metrics[layer_name] = (0, 0)
+
     fb.setupHorizontalMetrics(metrics)
     fb.setupHorizontalHeader(
         ascent=SC.ASCENT,
@@ -353,15 +454,15 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
     )
 
     fb.setupNameTable({
-        "copyright": "CuriousTorvald",
+        "copyright": "Copyright (c) 2026 CuriousTorvald (curioustorvald.com), with Reserved Font Name Terrarum.",
         "familyName": "Terrarum Sans Bitmap",
         "styleName": "Regular",
-        "uniqueFontIdentifier": "TerrarumSansBitmap-Regular-1.15",
+        "uniqueFontIdentifier": "TerrarumSansBitmap-Regular-"+FONT_VERSION,
         "fullName": "Terrarum Sans Bitmap Regular",
         "psName": "TerrarumSansBitmap-Regular",
-        "version": "1.15",
-        "licenseDescription": "SIL Open Font License, Version 1.1",
-        "licenseInfoURL": "http://scripts.sil.org/OFL"
+        "version": FONT_VERSION,
+        "licenseDescription": "This Font Software is licensed under the SIL Open Font License, Version 1.1.",
+        "licenseInfoURL": "https://openfontlicense.org/"
     })
 
     fb.setupOS2(
@@ -386,6 +487,27 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
     )
 
     font = fb.font
+
+    # Step 7a: Build COLR v0 / CPAL tables
+    if colr_layer_data:
+        print("Step 7a: Building COLR v0/CPAL tables...")
+        from fontTools.colorLib.builder import buildCOLR, buildCPAL
+
+        # CPAL: single palette normalised to 0..1
+        palette = [(0, 0, 0, 1.0)] * len(palette_colours)
+        for (r, g, b), idx in palette_colours.items():
+            palette[idx] = (r / 255, g / 255, b / 255, 1.0)
+        font["CPAL"] = buildCPAL([palette])
+
+        # COLR v0: list of (layer_glyph_name, palette_index) per base glyph
+        colr_v0 = {}
+        for base_name, layers in colr_layer_data.items():
+            colr_v0[base_name] = [
+                (layer_name, palette_colours[rgb])
+                for layer_name, rgb in layers
+            ]
+        font["COLR"] = buildCOLR(colr_v0, version=0)
+        print(f"  COLR v0: {len(colr_v0)} base glyphs, {len(palette)} palette entries")
 
     # Step 8: Generate and compile OpenType features
     if not no_features:

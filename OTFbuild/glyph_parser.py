@@ -64,6 +64,18 @@ class ExtractedGlyph:
     codepoint: int
     props: GlyphProps
     bitmap: List[List[int]]  # [row][col], 0 or 1
+    color_bitmap: Optional[List[List[int]]] = None  # [row][col], RGBA8888 values
+
+
+def _is_coloured_pixel(px):
+    """Return True if the pixel is visible (A > 0) and non-white (R+G+B < 765)."""
+    a = px & 0xFF
+    if a == 0:
+        return False
+    r = (px >> 24) & 0xFF
+    g = (px >> 16) & 0xFF
+    b = (px >> 8) & 0xFF
+    return (r + g + b) < 765
 
 
 def _tagify(pixel):
@@ -215,7 +227,28 @@ def parse_variable_sheet(image, sheet_index, cell_w, cell_h, cols, is_xy_swapped
                 for row in range(cell_h):
                     bitmap[row][col_idx] = 0
 
-        result[code] = ExtractedGlyph(code, props, bitmap)
+        # Colour extraction: check if any visible pixel is non-white
+        has_colour = False
+        color_bitmap = []
+        for row in range(cell_h):
+            row_data = []
+            for col in range(max_w):
+                px = image.get_pixel(cell_x + col, cell_y + row)
+                row_data.append(px)
+                if not has_colour and _is_coloured_pixel(px):
+                    has_colour = True
+            color_bitmap.append(row_data)
+
+        if has_colour:
+            # Strip extInfo columns from color_bitmap too
+            if ext_count > 0:
+                for col_idx in range(min(ext_count, max_w)):
+                    for row in range(cell_h):
+                        color_bitmap[row][col_idx] = 0
+        else:
+            color_bitmap = None
+
+        result[code] = ExtractedGlyph(code, props, bitmap, color_bitmap)
 
     return result
 
@@ -321,15 +354,23 @@ def parse_fixed_sheet(image, sheet_index, cell_w, cell_h, cols):
         cell_y = (index // cols) * cell_h
 
         bitmap = []
+        has_colour = False
+        color_bitmap = []
         for row in range(cell_h):
             row_data = []
+            color_row = []
             for col in range(cell_w):
                 px = image.get_pixel(cell_x + col, cell_y + row)
                 row_data.append(1 if (px & 0xFF) != 0 else 0)
+                color_row.append(px)
+                if not has_colour and _is_coloured_pixel(px):
+                    has_colour = True
             bitmap.append(row_data)
+            color_bitmap.append(color_row)
 
         props = GlyphProps(width=fixed_width)
-        result[code] = ExtractedGlyph(code, props, bitmap)
+        result[code] = ExtractedGlyph(code, props, bitmap,
+                                      color_bitmap if has_colour else None)
 
     return result
 
