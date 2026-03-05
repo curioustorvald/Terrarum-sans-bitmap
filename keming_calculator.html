@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Keming Machine Tag Calculator</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f5f5; color: #222; padding: 24px; min-height: 100vh; }
+h1 { font-size: 1.4em; margin-bottom: 4px; color: #111; }
+.subtitle { color: #666; font-size: 0.85em; margin-bottom: 20px; }
+
+.main { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+.panel { background: #fff; border-radius: 8px; padding: 20px; border: 1px solid #ddd; }
+.panel h2 { font-size: 1em; margin-bottom: 12px; color: #1a5fb4; }
+.col-left { display: flex; flex-direction: column; gap: 20px; }
+
+/* Lowheight toggle */
+.lowheight-section { min-width: 300px; }
+.lowheight-row { display: flex; align-items: center; gap: 12px; }
+.lowheight-btn {
+    width: 140px; height: 36px; border: 2px solid #bbb; border-radius: 4px;
+    background: #f0f0f0; color: #666; font-weight: bold; font-size: 0.9em;
+    cursor: pointer; transition: all 0.15s; user-select: none;
+}
+.lowheight-btn:hover { border-color: #888; background: #e8e8e8; }
+.lowheight-btn.active { background: #2a5a8a; border-color: #1a4a7a; color: #fff; }
+.lowheight-hint { font-size: 0.8em; color: #888; margin-top: 8px; }
+
+/* Shape grid */
+.shape-section { min-width: 300px; }
+.grid-wrapper { display: flex; gap: 20px; align-items: flex-start; }
+.shape-grid { display: grid; grid-template-columns: auto 56px 10px 56px auto; grid-template-rows: repeat(9, auto); align-items: center; gap: 2px 0; }
+.zone-btn {
+    width: 52px; height: 32px; border: 2px solid #bbb; border-radius: 4px;
+    background: #f0f0f0; color: #666; font-weight: bold; font-size: 0.9em;
+    cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+    user-select: none;
+}
+.zone-btn:hover { border-color: #888; background: #e8e8e8; }
+.zone-btn.active { background: #2a5a8a; border-color: #1a4a7a; color: #fff; }
+.zone-btn.active.wye { background: #7b3f9e; border-color: #5a2d75; }
+.grid-label { color: #888; font-size: 0.75em; text-align: center; padding: 0 4px; white-space: nowrap; }
+.grid-label-left { text-align: right; }
+.grid-label-right { text-align: left; }
+.grid-sep { grid-column: 1 / -1; height: 3px; background: #999; margin: 2px 0; border-radius: 1px; }
+.grid-dot { text-align: center; color: #ccc; font-size: 0.7em; }
+.grid-spacer { height: 12px; }
+
+/* Y toggle */
+.y-toggle { margin-top: 16px; }
+.y-toggle label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.9em; }
+.y-toggle input { display: none; }
+.toggle-track {
+    width: 48px; height: 24px; background: #2a5a8a; border-radius: 12px;
+    position: relative; transition: background 0.2s;
+}
+.toggle-track::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 20px; height: 20px; background: #fff; border-radius: 50%;
+    transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.y-toggle input:checked + .toggle-track { background: #7b3f9e; }
+.y-toggle input:checked + .toggle-track::after { transform: translateX(24px); }
+.toggle-labels { display: flex; gap: 4px; font-size: 0.8em; }
+.toggle-labels span { padding: 2px 6px; border-radius: 3px; }
+.toggle-labels .active-label { background: #2a5a8a; color: #fff; }
+.toggle-labels .active-label.wye { background: #7b3f9e; }
+
+/* Codepoint input */
+.cp-section { min-width: 300px; }
+.cp-input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cp-input {
+    width: 180px; height: 34px; border: 2px solid #bbb; border-radius: 4px;
+    background: #fafafa; padding: 0 8px; font-family: 'Consolas', 'Fira Code', monospace;
+    font-size: 0.95em; color: #222; outline: none;
+}
+.cp-input:focus { border-color: #1a5fb4; }
+.cp-input.error { border-color: #c00; background: #fff0f0; }
+.cp-formats { font-size: 0.75em; color: #888; margin-top: 6px; line-height: 1.5; }
+.cp-formats code { background: #eee; padding: 1px 4px; border-radius: 3px; font-family: 'Consolas', monospace; color: #333; }
+.cp-resolved { margin-top: 8px; font-size: 0.85em; color: #444; }
+.cp-resolved .cp-char { font-size: 1.3em; }
+
+/* Output */
+.output-section { min-width: 280px; }
+.pixel-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 10px; background: #f8f8f8; border-radius: 6px; border: 1px solid #e0e0e0; }
+.colour-swatch {
+    width: 48px; height: 48px; border-radius: 6px; border: 2px solid #ccc;
+    flex-shrink: 0; image-rendering: pixelated;
+}
+.pixel-info { font-size: 0.85em; line-height: 1.6; }
+.pixel-info .hex { font-family: 'Consolas', 'Fira Code', monospace; font-size: 1.1em; color: #111; }
+.pixel-info .channels { color: #555; }
+.pixel-info .channel-r { color: #c00; }
+.pixel-info .channel-g { color: #070; }
+.pixel-info .channel-b { color: #00c; }
+.pixel-label { font-size: 0.8em; color: #1a5fb4; margin-bottom: 4px; font-weight: 600; }
+.pixel-inactive { font-size: 0.85em; color: #999; }
+.bit-display { font-family: 'Consolas', 'Fira Code', monospace; font-size: 0.8em; color: #777; margin-top: 2px; }
+
+/* Mask display */
+.mask-section { margin-top: 16px; padding: 10px; background: #f8f8f8; border-radius: 6px; border: 1px solid #e0e0e0; }
+.mask-section .label { font-size: 0.8em; color: #1a5fb4; margin-bottom: 4px; }
+.mask-val { font-family: 'Consolas', 'Fira Code', monospace; font-size: 0.95em; color: #111; }
+
+/* Examples */
+.examples-section { margin-top: 20px; }
+.examples-section h2 { font-size: 1em; margin-bottom: 8px; color: #1a5fb4; }
+.example-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px; }
+.example-item {
+    font-size: 0.8em; padding: 4px 8px; border-radius: 4px;
+    background: #f0f0f0; cursor: pointer; transition: background 0.15s;
+    display: flex; justify-content: space-between; align-items: center;
+    border: 1px solid #e0e0e0;
+}
+.example-item:hover { background: #e0ecf8; border-color: #b0c8e8; }
+.example-item .ex-code { color: #555; }
+.example-item .ex-char { font-size: 1.2em; min-width: 24px; text-align: center; }
+
+/* Notes */
+.notes { margin-top: 20px; font-size: 0.8em; color: #666; line-height: 1.5; }
+.notes code { background: #eee; padding: 1px 5px; border-radius: 3px; font-family: 'Consolas', monospace; color: #333; }
+</style>
+</head>
+<body>
+
+<h1>Keming Machine Tag Calculator</h1>
+<p class="subtitle">Calculate pixel colour values for the three Keming Machine tag pixels (K at Y+6, Y+7, Y+8)</p>
+
+<div class="main">
+<div class="col-left">
+
+<!-- Pixel 1: Lowheight -->
+<div class="panel lowheight-section">
+<h2>Pixel 1 &mdash; Low Height (Y+6)</h2>
+<div class="lowheight-row">
+    <button class="lowheight-btn" id="lowheightBtn" onclick="toggleLowheight()">Low Height: OFF</button>
+</div>
+<p class="lowheight-hint">
+    Set for lowercase-height characters (a, b, c, d, e, etc.).<br>
+    Set if above-diacritics should be lowered.
+</p>
+</div>
+
+<!-- Pixel 2: Shape Grid -->
+<div class="panel shape-section">
+<h2>Pixel 2 &mdash; Glyph Shape (Y+7)</h2>
+<p style="font-size:0.8em; color:#666; margin-bottom:12px;">Click zones to mark which parts of the glyph are occupied.</p>
+
+<div class="grid-wrapper">
+<div class="shape-grid" id="shapeGrid">
+    <!-- Row: A B (top / ascenders) -->
+    <span class="grid-label grid-label-left">top</span>
+    <button class="zone-btn" data-zone="A" onclick="toggleZone(this)">A</button>
+    <span class="grid-dot">&middot;</span>
+    <button class="zone-btn" data-zone="B" onclick="toggleZone(this)">B</button>
+    <span class="grid-label grid-label-right">ascender</span>
+
+    <!-- Spacer row -->
+    <span></span><span class="grid-spacer"></span><span></span><span class="grid-spacer"></span><span></span>
+
+    <!-- Row: C D -->
+    <span class="grid-label grid-label-left">mid</span>
+    <button class="zone-btn" data-zone="C" onclick="toggleZone(this)">C</button>
+    <span class="grid-dot">&middot;</span>
+    <button class="zone-btn" data-zone="D" onclick="toggleZone(this)">D</button>
+    <span class="grid-label grid-label-right">cap hole</span>
+
+    <!-- Row: E F -->
+    <span class="grid-label grid-label-left"></span>
+    <button class="zone-btn" data-zone="E" onclick="toggleZone(this)">E</button>
+    <span class="grid-dot">&middot;</span>
+    <button class="zone-btn" data-zone="F" onclick="toggleZone(this)">F</button>
+    <span class="grid-label grid-label-right">lc hole</span>
+
+    <!-- Row: G H -->
+    <span class="grid-label grid-label-left">btm</span>
+    <button class="zone-btn" data-zone="G" onclick="toggleZone(this)">G</button>
+    <span class="grid-dot">&middot;</span>
+    <button class="zone-btn" data-zone="H" onclick="toggleZone(this)">H</button>
+    <span class="grid-label grid-label-right">baseline</span>
+
+    <!-- Baseline separator -->
+    <div class="grid-sep"></div>
+
+    <!-- Spacer row -->
+    <span></span><span class="grid-spacer"></span><span></span><span class="grid-spacer"></span><span></span>
+
+    <!-- Row: J K (below baseline) -->
+    <span class="grid-label grid-label-left">desc</span>
+    <button class="zone-btn" data-zone="J" onclick="toggleZone(this)">J</button>
+    <span class="grid-dot">&middot;</span>
+    <button class="zone-btn" data-zone="K" onclick="toggleZone(this)">K</button>
+    <span class="grid-label grid-label-right">descender</span>
+</div>
+</div>
+
+<!-- Y (Bar/Wye) toggle -->
+<div class="y-toggle">
+    <label>
+        <input type="checkbox" id="yToggle" onchange="recalc()">
+        <span class="toggle-track"></span>
+        <span class="toggle-labels">
+            <span id="barLabel" class="active-label">Bar (B-type, 2px kern)</span>
+            <span id="wyeLabel">Wye (Y-type, 1px kern)</span>
+        </span>
+    </label>
+    <p style="font-size:0.75em; color:#888; margin-top:6px; margin-left:58px;">
+        Set Wye when top/bottom of glyph tapers to a point (V, Y, A, v, etc.)
+    </p>
+</div>
+
+<!-- Kerning mask output -->
+<div class="mask-section">
+    <div class="label">Kerning Mask (24-bit, used by rules)</div>
+    <div id="maskVal" class="mask-val">0x0000FF</div>
+    <div id="maskBin" class="bit-display">00000000 00000000 11111111</div>
+</div>
+</div>
+
+<!-- Pixel 3: Dot Removal -->
+<div class="panel cp-section">
+<h2>Pixel 3 &mdash; Dot Removal (Y+8)</h2>
+<p style="font-size:0.8em; color:#666; margin-bottom:12px;">Replacement character for diacritics dot removal. All 24 bits encode the codepoint.</p>
+
+<div class="cp-input-row">
+    <input type="text" class="cp-input" id="cpInput" placeholder="e.g. U+0041, 65, A" oninput="updateCodepoint()">
+</div>
+<p class="cp-formats">
+    Accepts: <code>U+0041</code> or <code>0x41</code> (hex), <code>65</code> (decimal), or a literal character <code>A</code>
+</p>
+<div class="cp-resolved" id="cpResolved"></div>
+</div>
+
+</div><!-- col-left -->
+
+<!-- Output -->
+<div class="panel output-section">
+<h2>Pixel Colour Values</h2>
+
+<div class="pixel-label">Pixel 1: Low Height (Y+6)</div>
+<div class="pixel-row">
+    <canvas id="swatch1" class="colour-swatch" width="48" height="48"></canvas>
+    <div class="pixel-info">
+        <div class="hex" id="hex1">&mdash;</div>
+        <div id="p1desc" class="pixel-inactive">No pixel (not lowheight)</div>
+    </div>
+</div>
+
+<div class="pixel-label" style="margin-top:12px;">Pixel 2: Glyph Shape (Y+7)</div>
+<div class="pixel-row">
+    <canvas id="swatch2" class="colour-swatch" width="48" height="48"></canvas>
+    <div class="pixel-info">
+        <div class="hex" id="hex2">#000000</div>
+        <div class="channels">
+            R: <span class="channel-r" id="r2">0</span> &nbsp;
+            G: <span class="channel-g" id="g2">0</span> &nbsp;
+            B: <span class="channel-b" id="b2">0</span>
+        </div>
+        <div class="bit-display" id="bits2">00000000 00000000 00000000</div>
+    </div>
+</div>
+
+<div class="pixel-label" style="margin-top:12px;">Pixel 3: Dot Removal (Y+8)</div>
+<div class="pixel-row">
+    <canvas id="swatch3" class="colour-swatch" width="48" height="48"></canvas>
+    <div class="pixel-info">
+        <div class="hex" id="hex3">&mdash;</div>
+        <div class="channels" id="p3channels" style="display:none">
+            R: <span class="channel-r" id="r3">0</span> &nbsp;
+            G: <span class="channel-g" id="g3">0</span> &nbsp;
+            B: <span class="channel-b" id="b3">0</span>
+        </div>
+        <div id="p3desc" class="pixel-inactive">No replacement character set</div>
+    </div>
+</div>
+
+<div class="notes" style="margin-top:16px;">
+    <strong>Alpha channel:</strong> must be non-zero (1&ndash;254) for the pixel to be read as a tag.
+    Set alpha to <code>1</code> (or any value &lt; 255 and &gt; 0).<br>
+    A fully transparent pixel (alpha = 0) means &ldquo;no data&rdquo;.
+</div>
+</div>
+</div>
+
+<!-- Examples -->
+<div class="panel examples-section" style="margin-top: 20px;">
+<h2>Examples &mdash; Glyph Shape (click to load)</h2>
+<div class="example-grid" id="exampleGrid"></div>
+</div>
+
+<script>
+const ZONES = ['A','B','C','D','E','F','G','H','J','K'];
+const state = { A:0, B:0, C:0, D:0, E:0, F:0, G:0, H:0, J:0, K:0 };
+let isLowheight = false;
+
+// Bit positions within kerning_mask (24-bit RGB):
+// Blue byte: A=bit7, B=bit6, C=bit5, D=bit4, E=bit3, F=bit2, G=bit1, H=bit0
+// Green byte: J=bit15(=green bit7), K=bit14(=green bit6)
+// Red byte: Y=bit23(=red bit7) -- tracked separately as isKernYtype
+const BIT_POS = { A:7, B:6, C:5, D:4, E:3, F:2, G:1, H:0, J:15, K:14 };
+
+function toggleLowheight() {
+    isLowheight = !isLowheight;
+    const btn = document.getElementById('lowheightBtn');
+    btn.classList.toggle('active', isLowheight);
+    btn.textContent = isLowheight ? 'Lowheight: ON' : 'Lowheight: OFF';
+    recalc();
+}
+
+function toggleZone(btn) {
+    const zone = btn.dataset.zone;
+    state[zone] = state[zone] ? 0 : 1;
+    btn.classList.toggle('active', !!state[zone]);
+    recalc();
+}
+
+function recalc() {
+    const isWye = document.getElementById('yToggle').checked;
+
+    // Update button styling for wye mode
+    document.querySelectorAll('.zone-btn.active').forEach(btn => {
+        btn.classList.toggle('wye', isWye);
+    });
+
+    // Update toggle labels
+    const barLabel = document.getElementById('barLabel');
+    const wyeLabel = document.getElementById('wyeLabel');
+    barLabel.className = isWye ? '' : 'active-label';
+    wyeLabel.className = isWye ? 'active-label wye' : '';
+
+    // --- Pixel 1: Lowheight ---
+    if (isLowheight) {
+        // Any non-zero pixel; use white with alpha=1 for visibility in editors
+        drawSwatchSolid('swatch1', 255, 255, 255);
+        document.getElementById('hex1').textContent = '#FFFFFF';
+        document.getElementById('p1desc').textContent = 'Any pixel with alpha > 0';
+        document.getElementById('p1desc').className = 'channels';
+    } else {
+        drawSwatchEmpty('swatch1');
+        document.getElementById('hex1').innerHTML = '&mdash;';
+        document.getElementById('p1desc').textContent = 'No pixel (not lowheight)';
+        document.getElementById('p1desc').className = 'pixel-inactive';
+    }
+
+    // --- Pixel 2: Shape Data ---
+    // Red: Y bit in MSB (bit 7)
+    const r = isWye ? 0x80 : 0x00;
+    // Green: J in bit 7, K in bit 6
+    const g = (state.J ? 0x80 : 0) | (state.K ? 0x40 : 0);
+    // Blue: ABCDEFGH
+    const b = (state.A ? 0x80 : 0) | (state.B ? 0x40 : 0) |
+              (state.C ? 0x20 : 0) | (state.D ? 0x10 : 0) |
+              (state.E ? 0x08 : 0) | (state.F ? 0x04 : 0) |
+              (state.G ? 0x02 : 0) | (state.H ? 0x01 : 0);
+
+    // Full 24-bit mask (same as what code extracts)
+    const fullMask = (r << 16) | (g << 8) | b;
+
+    document.getElementById('hex2').textContent = '#' + hex2(r) + hex2(g) + hex2(b);
+    document.getElementById('r2').textContent = r;
+    document.getElementById('g2').textContent = g;
+    document.getElementById('b2').textContent = b;
+    document.getElementById('bits2').textContent = bin8(r) + ' ' + bin8(g) + ' ' + bin8(b);
+
+    document.getElementById('maskVal').textContent = '0x' + fullMask.toString(16).toUpperCase().padStart(6, '0');
+    document.getElementById('maskBin').textContent = bin8((fullMask >> 16) & 0xFF) + ' ' + bin8((fullMask >> 8) & 0xFF) + ' ' + bin8(fullMask & 0xFF);
+
+    drawSwatchSolid('swatch2', r, g, b);
+}
+
+function updateCodepoint() {
+    const input = document.getElementById('cpInput');
+    const raw = input.value.trim();
+
+    if (raw === '') {
+        input.classList.remove('error');
+        drawSwatchEmpty('swatch3');
+        document.getElementById('hex3').innerHTML = '&mdash;';
+        document.getElementById('p3channels').style.display = 'none';
+        document.getElementById('p3desc').textContent = 'No replacement character set';
+        document.getElementById('p3desc').style.display = '';
+        document.getElementById('cpResolved').textContent = '';
+        return;
+    }
+
+    const cp = parseCodepoint(raw);
+
+    if (cp === null || cp < 0 || cp > 0xFFFFFF) {
+        input.classList.add('error');
+        drawSwatchEmpty('swatch3');
+        document.getElementById('hex3').innerHTML = '&mdash;';
+        document.getElementById('p3channels').style.display = 'none';
+        document.getElementById('p3desc').textContent = cp !== null ? 'Codepoint out of 24-bit range' : 'Invalid input';
+        document.getElementById('p3desc').style.display = '';
+        document.getElementById('cpResolved').textContent = '';
+        return;
+    }
+
+    input.classList.remove('error');
+
+    const r3 = (cp >> 16) & 0xFF;
+    const g3 = (cp >> 8) & 0xFF;
+    const b3 = cp & 0xFF;
+
+    document.getElementById('hex3').textContent = '#' + hex2(r3) + hex2(g3) + hex2(b3);
+    document.getElementById('r3').textContent = r3;
+    document.getElementById('g3').textContent = g3;
+    document.getElementById('b3').textContent = b3;
+    document.getElementById('p3channels').style.display = '';
+    document.getElementById('p3desc').style.display = 'none';
+
+    drawSwatchSolid('swatch3', r3, g3, b3);
+
+    // Show resolved character
+    let charDisplay = '';
+    try { charDisplay = String.fromCodePoint(cp); } catch(e) {}
+    document.getElementById('cpResolved').innerHTML =
+        'U+' + cp.toString(16).toUpperCase().padStart(4, '0') +
+        ' (decimal ' + cp + ')' +
+        (charDisplay ? ' &mdash; <span class="cp-char">' + escapeHtml(charDisplay) + '</span>' : '');
+}
+
+function parseCodepoint(s) {
+    // U+XXXX or u+XXXX
+    if (/^[Uu]\+([0-9A-Fa-f]+)$/.test(s)) {
+        return parseInt(RegExp.$1, 16);
+    }
+    // 0xXXXX
+    if (/^0[xX]([0-9A-Fa-f]+)$/.test(s)) {
+        return parseInt(RegExp.$1, 16);
+    }
+    // Pure decimal number
+    if (/^[0-9]+$/.test(s)) {
+        return parseInt(s, 10);
+    }
+    // Literal character (single grapheme — could be a surrogate pair)
+    const codepoints = [...s];
+    if (codepoints.length === 1) {
+        return codepoints[0].codePointAt(0);
+    }
+    return null;
+}
+
+function escapeHtml(s) {
+    const d = document.createElement('span');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function drawSwatchSolid(id, r, g, b) {
+    const canvas = document.getElementById(id);
+    const ctx = canvas.getContext('2d');
+    // Chequerboard background
+    ctx.fillStyle = '#ddd';
+    ctx.fillRect(0, 0, 48, 48);
+    ctx.fillStyle = '#fff';
+    for (let y = 0; y < 48; y += 8) {
+        for (let x = (y % 16 === 0) ? 8 : 0; x < 48; x += 16) {
+            ctx.fillRect(x, y, 8, 8);
+        }
+    }
+    // Colour
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillRect(4, 4, 40, 40);
+}
+
+function drawSwatchEmpty(id) {
+    const canvas = document.getElementById(id);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ddd';
+    ctx.fillRect(0, 0, 48, 48);
+    ctx.fillStyle = '#fff';
+    for (let y = 0; y < 48; y += 8) {
+        for (let x = (y % 16 === 0) ? 8 : 0; x < 48; x += 16) {
+            ctx.fillRect(x, y, 8, 8);
+        }
+    }
+    // Dash to indicate empty
+    ctx.fillStyle = '#aaa';
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('\u2014', 24, 24);
+}
+
+function hex2(v) { return v.toString(16).toUpperCase().padStart(2, '0'); }
+function bin8(v) { return v.toString(2).padStart(8, '0'); }
+
+// Load a preset (shape grid only)
+function loadPreset(zones, wye) {
+    for (const z of ZONES) state[z] = 0;
+    for (const z of zones) state[z] = 1;
+    document.getElementById('yToggle').checked = wye;
+    document.querySelectorAll('.zone-btn').forEach(btn => {
+        btn.classList.toggle('active', !!state[btn.dataset.zone]);
+    });
+    recalc();
+}
+
+// Examples from keming_machine.txt
+const EXAMPLES = [
+    { zones: 'AB',        wye: false, chars: 'T',          desc: 'AB(B)' },
+    { zones: 'ABCEGH',    wye: false, chars: 'C',          desc: 'ABCEGH(B)' },
+    { zones: 'ABCEFGH',   wye: true,  chars: 'K',          desc: 'ABCEFGH(Y)' },
+    { zones: 'ABCDEG',    wye: false, chars: 'P',     desc: 'ABCDEG' },
+    { zones: 'ABCDEFGH',  wye: false, chars: 'B,D,O',     desc: 'ABCDEFGH' },
+    { zones: 'ABCDFH',    wye: false, chars: '\u0427',     desc: 'ABCDFH' },
+    { zones: 'ABCEG',     wye: false, chars: '\u0413',     desc: 'ABCEG' },
+    { zones: 'ABGH',      wye: false, chars: '\u13C6',     desc: 'ABGH' },
+    { zones: 'ACDEG',     wye: false, chars: '\u13B0',     desc: 'ACDEG' },
+    { zones: 'ACDEFGH',   wye: false, chars: 'h,\u0184',  desc: 'ACDEFGH' },
+    { zones: 'ACDFH',     wye: false, chars: '\u07C6',     desc: 'ACDFH' },
+    { zones: 'ACEGH',     wye: false, chars: 'L',          desc: 'ACEGH' },
+    { zones: 'AH',        wye: true,  chars: '\\',         desc: 'AH(Y)' },
+    { zones: 'BDEFGH',    wye: false, chars: 'J',          desc: 'BDEFGH' },
+    { zones: 'BDFGH',     wye: false, chars: '\u027A',     desc: 'BDFGH' },
+    { zones: 'BG',        wye: true,  chars: '/',          desc: 'BG(Y)' },
+    { zones: 'CD',        wye: false, chars: '\u10B5',     desc: 'CD' },
+    { zones: 'CDEF',      wye: true,  chars: '\u03A6',     desc: 'CDEF(Y)' },
+    { zones: 'CDEFGH',    wye: false, chars: 'a,c,e',     desc: 'CDEFGH' },
+    { zones: 'CDEFGHJK',  wye: false, chars: 'g',          desc: 'CDEFGHJK' },
+    { zones: 'CDEFGHK',   wye: false, chars: '\u019E',     desc: 'CDEFGHK' },
+    { zones: 'AB',        wye: true,  chars: 'Y',          desc: 'AB(Y)' },
+    { zones: 'ABCD',      wye: true,  chars: 'V',          desc: 'ABCD(Y)' },
+    { zones: 'CDEF',      wye: true,  chars: 'v',          desc: 'CDEF(Y)' },
+    { zones: 'EFGH',      wye: true,  chars: '\u028C',     desc: 'EFGH(Y)' },
+    { zones: 'CDEFGH',    wye: true,  chars: 'A',          desc: 'CDEFGH(Y)' },
+];
+
+function buildExamples() {
+    const grid = document.getElementById('exampleGrid');
+    for (const ex of EXAMPLES) {
+        const div = document.createElement('div');
+        div.className = 'example-item';
+        div.innerHTML = `<span class="ex-code">${ex.desc}</span> <span class="ex-char">${ex.chars}</span>`;
+        div.onclick = () => loadPreset(ex.zones.split(''), ex.wye);
+        grid.appendChild(div);
+    }
+}
+
+// Init
+buildExamples();
+drawSwatchEmpty('swatch1');
+drawSwatchEmpty('swatch3');
+recalc();
+</script>
+
+</body>
+</html>
