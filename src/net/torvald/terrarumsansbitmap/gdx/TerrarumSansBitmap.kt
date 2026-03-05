@@ -887,6 +887,7 @@ class TerrarumSansBitmap(
             SHEET_ALPHABETIC_PRESENTATION_FORMS -> alphabeticPresentationFormsY(ch)
             SHEET_HENTAIGANA_VARW -> hentaiganaIndexY(ch)
             SHEET_CONTROL_PICTURES_VARW -> controlPicturesIndexY(ch)
+            SHEET_LEGACY_COMPUTING_VARW -> legacyComputingIndexY(ch)
             else -> ch / 16
         }
 
@@ -2602,6 +2603,7 @@ class TerrarumSansBitmap(
         internal const val SHEET_ALPHABETIC_PRESENTATION_FORMS = 38
         internal const val SHEET_HENTAIGANA_VARW = 39
         internal const val SHEET_CONTROL_PICTURES_VARW = 40
+        internal const val SHEET_LEGACY_COMPUTING_VARW = 41
 
         internal const val SHEET_UNKNOWN = 254
 
@@ -2669,6 +2671,7 @@ class TerrarumSansBitmap(
             "alphabetic_presentation_forms_extrawide_variable.tga",
             "hentaigana_variable.tga",
             "control_pictures_variable.tga",
+            "symbols_for_legacy_computing_variable.tga",
         )
         internal val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -2712,6 +2715,7 @@ class TerrarumSansBitmap(
             0xFB00..0xFB17, // SHEET_ALPHABETIC_PRESENTATION_FORMS
             0x1B000..0x1B16F, // SHEET_HENTAIGANA_VARW
             0x2400..0x243F, // SHEET_CONTROL_PICTURES_VARW
+            0x1FB00..0x1FBFF, // SHEET_LEGACY_COMPUTING_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -3061,6 +3065,7 @@ class TerrarumSansBitmap(
         private fun alphabeticPresentationFormsY(c: CodePoint) = (c - 0xFB00) / 16
         private fun hentaiganaIndexY(c: CodePoint) = (c - 0x1B000) / 16
         private fun controlPicturesIndexY(c: CodePoint) = (c - 0x2400) / 16
+        private fun legacyComputingIndexY(c: CodePoint) = (c - 0x1FB00) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()

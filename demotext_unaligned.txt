@@ -112,12 +112,13 @@ How multilingual? Real multilingual!
 ⁃ Latin Extended-A/B/C/D
 ⁃ Armenian
 ⁃ Bengali􏿆ᶠⁱ􀀀
-⁃ Braile Patterns
+⁃ Braille Patterns
 ⁃ Cherokee􏿆⁷􀀀
 ⁃ CJK Symbols and Punctuation
 ⁃ CJK Unified Ideographs􏿆⁶􀀀
 ⁃ CJK Unified Ideographs Extension A􏿆¹²·¹􀀀
 ⁃ Combining Diacritical Marks
+⁃ Control Pictures
 ⁃ Currency Symbols
 ⁃ Cyrillic􏿆ᴭ􀀀
 ⁃ Cyrillic Supplement􏿆ᴭ􀀀
@@ -148,6 +149,7 @@ How multilingual? Real multilingual!
 ⁃ Sundanese
 ⁃ Sundanese Supplement
 ⁃ Superscripts and Subscripts
+⁃ Symbols for Legacy Computing
 ⁃ Tamil
 ⁃ Thai
 

@@ -71,6 +71,7 @@ SHEET_CODESTYLE_ASCII_VARW = 37
 SHEET_ALPHABETIC_PRESENTATION_FORMS = 38
 SHEET_HENTAIGANA_VARW = 39
 SHEET_CONTROL_PICTURES_VARW = 40
+SHEET_LEGACY_COMPUTING_VARW = 41
 
 SHEET_UNKNOWN = 254
 
@@ -116,6 +117,7 @@ FILE_LIST = [
     "alphabetic_presentation_forms_extrawide_variable.tga",
     "hentaigana_variable.tga",
     "control_pictures_variable.tga",
+    "symbols_for_legacy_computing_variable.tga",
 ]
 
 CODE_RANGE = [
@@ -160,6 +162,7 @@ CODE_RANGE = [
     list(range(0xFB00, 0xFB18)),                                                    # 38: Alphabetic Presentation
     list(range(0x1B000, 0x1B170)),                                                  # 39: Hentaigana
     list(range(0x2400, 0x2440)),                                                    # 40: Control Pictures
+    list(range(0x1FB00, 0x1FC00)),                                                  # 41: Legacy Computing
 ]
 
 CODE_RANGE_HANGUL_COMPAT = range(0x3130, 0x3190)
@@ -535,5 +538,6 @@ def index_y(sheet_index, c):
         SHEET_ALPHABETIC_PRESENTATION_FORMS: lambda: (c - 0xFB00) // 16,
         SHEET_HENTAIGANA_VARW: lambda: (c - 0x1B000) // 16,
         SHEET_CONTROL_PICTURES_VARW: lambda: (c - 0x2400) // 16,
+        SHEET_LEGACY_COMPUTING_VARW: lambda: (c - 0x1FB00) // 16,
         SHEET_HANGUL: lambda: 0,
     }.get(sheet_index, lambda: c // 16)()
