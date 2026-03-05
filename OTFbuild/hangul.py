@@ -16,7 +16,7 @@ import sheet_config as SC
 
 # PUA range for Hangul jamo variant storage.
 # We need space for: max_col * max_row variants.
-# Using 0xF0600-0xF0FFF (2560 slots, more than enough).
+# Using 0xF0600-0xF1E7F
 HANGUL_PUA_BASE = 0xF0600
 
 

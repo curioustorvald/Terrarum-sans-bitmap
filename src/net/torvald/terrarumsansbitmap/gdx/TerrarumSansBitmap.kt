@@ -886,6 +886,7 @@ class TerrarumSansBitmap(
             SHEET_CODESTYLE_ASCII_VARW -> codestyleAsciiIndexY(ch)
             SHEET_ALPHABETIC_PRESENTATION_FORMS -> alphabeticPresentationFormsY(ch)
             SHEET_HENTAIGANA_VARW -> hentaiganaIndexY(ch)
+            SHEET_CONTROL_PICTURES_VARW -> controlPicturesIndexY(ch)
             else -> ch / 16
         }
 
@@ -2600,6 +2601,7 @@ class TerrarumSansBitmap(
         internal const val SHEET_CODESTYLE_ASCII_VARW = 37
         internal const val SHEET_ALPHABETIC_PRESENTATION_FORMS = 38
         internal const val SHEET_HENTAIGANA_VARW = 39
+        internal const val SHEET_CONTROL_PICTURES_VARW = 40
 
         internal const val SHEET_UNKNOWN = 254
 
@@ -2666,6 +2668,7 @@ class TerrarumSansBitmap(
             "pua_codestyle_ascii_variable.tga",
             "alphabetic_presentation_forms_extrawide_variable.tga",
             "hentaigana_variable.tga",
+            "control_pictures_variable.tga",
         )
         internal val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -2708,6 +2711,7 @@ class TerrarumSansBitmap(
             0xF0520..0xF057F, // SHEET_CODESTYLE_ASCII_VARW
             0xFB00..0xFB17, // SHEET_ALPHABETIC_PRESENTATION_FORMS
             0x1B000..0x1B16F, // SHEET_HENTAIGANA_VARW
+            0x2400..0x243F, // SHEET_CONTROL_PICTURES_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -3056,6 +3060,7 @@ class TerrarumSansBitmap(
         private fun codestyleAsciiIndexY(c: CodePoint) = (c - 0xF0520) / 16
         private fun alphabeticPresentationFormsY(c: CodePoint) = (c - 0xFB00) / 16
         private fun hentaiganaIndexY(c: CodePoint) = (c - 0x1B000) / 16
+        private fun controlPicturesIndexY(c: CodePoint) = (c - 0x2400) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
