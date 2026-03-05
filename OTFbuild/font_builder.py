@@ -454,7 +454,7 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
     )
 
     fb.setupNameTable({
-        "copyright": "Copyright (c) 2026 CuriousTorvald (curioustorvald.com), with Reserved Font Name Terrarum.",
+        "copyright": "Copyright (c) 2026 CuriousTorvald (curioustorvald.com), with Reserved Font Name TERRARUM.",
         "familyName": "Terrarum Sans Bitmap",
         "styleName": "Regular",
         "uniqueFontIdentifier": "TerrarumSansBitmap-Regular-"+FONT_VERSION,
