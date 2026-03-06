@@ -13,11 +13,20 @@ tmp_*
 *.bak
 *-autosave.kra
 .directory
+!**/CLAUDE.md
+!CLAUDE.md
 
-*/__pycache__
+# from OTF build
+**/__pycache__
 OTFbuild/*.ttf
 OTFbuild/*.otf
 OTFbuild/*.woff
 OTFbuild/*.woff2
+OTFbuild/*.md
 *.fea
 *.xdp-*
+
+# from Autokem build
+Autokem/*.o
+Autokem/autokem
+Autokem/*.md
