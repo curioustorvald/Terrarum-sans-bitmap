@@ -44,7 +44,7 @@ h1 { font-size: 1.4em; margin-bottom: 4px; color: #111; }
 .grid-label-right { text-align: left; }
 .grid-sep { grid-column: 1 / -1; height: 3px; background: #999; margin: 2px 0; border-radius: 1px; }
 .grid-dot { text-align: center; color: #ccc; font-size: 0.7em; }
-.grid-spacer { height: 12px; }
+.grid-spacer { height: 36px; }
 
 /* Y toggle */
 .y-toggle { margin-top: 16px; }
@@ -125,14 +125,14 @@ h1 { font-size: 1.4em; margin-bottom: 4px; color: #111; }
 <body>
 
 <h1>Keming Machine Tag Calculator</h1>
-<p class="subtitle">Calculate pixel colour values for the three Keming Machine tag pixels (K at Y+6, Y+7, Y+8)</p>
+<p class="subtitle">Calculate pixel colour values for the three Keming Machine tag pixels (K at Y+5, Y+6, Y+7)</p>
 
 <div class="main">
 <div class="col-left">
 
 <!-- Pixel 1: Lowheight -->
 <div class="panel lowheight-section">
-<h2>Pixel 1 &mdash; Low Height (Y+6)</h2>
+<h2>Pixel 1 &mdash; Low Height (Y+5)</h2>
 <div class="lowheight-row">
     <button class="lowheight-btn" id="lowheightBtn" onclick="toggleLowheight()">Low Height: OFF</button>
 </div>
@@ -144,7 +144,7 @@ h1 { font-size: 1.4em; margin-bottom: 4px; color: #111; }
 
 <!-- Pixel 2: Shape Grid -->
 <div class="panel shape-section">
-<h2>Pixel 2 &mdash; Glyph Shape (Y+7)</h2>
+<h2>Pixel 2 &mdash; Glyph Shape (Y+6)</h2>
 <p style="font-size:0.8em; color:#666; margin-bottom:12px;">Click zones to mark which parts of the glyph are occupied.</p>
 
 <div class="grid-wrapper">
@@ -183,9 +183,6 @@ h1 { font-size: 1.4em; margin-bottom: 4px; color: #111; }
     <!-- Baseline separator -->
     <div class="grid-sep"></div>
 
-    <!-- Spacer row -->
-    <span></span><span class="grid-spacer"></span><span></span><span class="grid-spacer"></span><span></span>
-
     <!-- Row: J K (below baseline) -->
     <span class="grid-label grid-label-left">desc</span>
     <button class="zone-btn" data-zone="J" onclick="toggleZone(this)">J</button>
@@ -220,7 +217,7 @@ h1 { font-size: 1.4em; margin-bottom: 4px; color: #111; }
 
 <!-- Pixel 3: Dot Removal -->
 <div class="panel cp-section">
-<h2>Pixel 3 &mdash; Dot Removal (Y+8)</h2>
+<h2>Pixel 3 &mdash; Dot Removal (Y+7)</h2>
 <p style="font-size:0.8em; color:#666; margin-bottom:12px;">Replacement character for diacritics dot removal. All 24 bits encode the codepoint.</p>
 
 <div class="cp-input-row">
@@ -238,7 +235,7 @@ h1 { font-size: 1.4em; margin-bottom: 4px; color: #111; }
 <div class="panel output-section">
 <h2>Pixel Colour Values</h2>
 
-<div class="pixel-label">Pixel 1: Low Height (Y+6)</div>
+<div class="pixel-label">Pixel 1: Low Height (Y+5)</div>
 <div class="pixel-row">
     <canvas id="swatch1" class="colour-swatch" width="48" height="48"></canvas>
     <div class="pixel-info">
@@ -247,7 +244,7 @@ h1 { font-size: 1.4em; margin-bottom: 4px; color: #111; }
     </div>
 </div>
 
-<div class="pixel-label" style="margin-top:12px;">Pixel 2: Glyph Shape (Y+7)</div>
+<div class="pixel-label" style="margin-top:12px;">Pixel 2: Glyph Shape (Y+6)</div>
 <div class="pixel-row">
     <canvas id="swatch2" class="colour-swatch" width="48" height="48"></canvas>
     <div class="pixel-info">
@@ -261,7 +258,7 @@ h1 { font-size: 1.4em; margin-bottom: 4px; color: #111; }
     </div>
 </div>
 
-<div class="pixel-label" style="margin-top:12px;">Pixel 3: Dot Removal (Y+8)</div>
+<div class="pixel-label" style="margin-top:12px;">Pixel 3: Dot Removal (Y+7)</div>
 <div class="pixel-row">
     <canvas id="swatch3" class="colour-swatch" width="48" height="48"></canvas>
     <div class="pixel-info">
