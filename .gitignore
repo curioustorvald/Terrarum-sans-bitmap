@@ -13,8 +13,6 @@ tmp_*
 *.bak
 *-autosave.kra
 .directory
-!**/CLAUDE.md
-!CLAUDE.md
 
 # from OTF build
 **/__pycache__
@@ -30,3 +28,8 @@ OTFbuild/*.md
 Autokem/*.o
 Autokem/autokem
 Autokem/*.md
+
+
+# exceptions
+!**/CLAUDE.md
+!CLAUDE.md
