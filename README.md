@@ -2,7 +2,7 @@
 
 ![Font sample — necessary information in this image is also provided below.](demo.PNG)
 
-This font is a bitmap font used in [my game project called Terrarum](https://github.com/curiuostorvald/Terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese, and Korean.
+This font is a bitmap font used in [my game project called Terrarum](https://github.com/curioustorvald/Terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese, and Korean.
 
 The font is provided in following formats:
 
@@ -27,7 +27,7 @@ The issue page is open. If you have some issues to submit, or have a question, p
 
 ## Download
 
-- Go ahead to the [release tab](https://github.com/curiuostorvald/Terrarum-sans-bitmap/releases), and download the most recent version. It is **not** advised to use the .jar found within the repository, they're experimental builds I use during the development, and may contain bugs like leaking memory.
+- Go ahead to the [release tab](https://github.com/curioustorvald/Terrarum-sans-bitmap/releases), and download the most recent version. It is **not** advised to use the .jar found within the repository, they're experimental builds I use during the development, and may contain bugs like leaking memory.
 
 ## Using on your LibGDX project
 

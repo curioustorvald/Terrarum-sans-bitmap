@@ -135,7 +135,7 @@ int apply_model(const char *tga_path) {
         int lowheight = output[11] >= 0.5f;
 
         /* Compose Y+5 pixel: lowheight (alpha=0xFF when set) */
-        uint32_t lh_pixel = lowheight ? 0x000000FF : 0x00000000;
+        uint32_t lh_pixel = lowheight ? 0xFFFFFFFF : 0x00000000;
         tga_write_pixel(tga_path, img, tag_x, tag_y + 5, lh_pixel);
 
         /* Compose Y+6 pixel:

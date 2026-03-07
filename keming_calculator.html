@@ -98,10 +98,10 @@ h1 { font-size: 1.4em; margin-bottom: 4px; color: #111; }
 .pixel-inactive { font-size: 0.85em; color: #999; }
 .bit-display { font-family: 'Consolas', 'Fira Code', monospace; font-size: 0.8em; color: #777; margin-top: 2px; }
 
-/* Mask display */
+/* Mask input/display */
 .mask-section { margin-top: 16px; padding: 10px; background: #f8f8f8; border-radius: 6px; border: 1px solid #e0e0e0; }
 .mask-section .label { font-size: 0.8em; color: #1a5fb4; margin-bottom: 4px; }
-.mask-val { font-family: 'Consolas', 'Fira Code', monospace; font-size: 0.95em; color: #111; }
+.mask-input-row { display: flex; gap: 8px; align-items: center; }
 
 /* Examples */
 .examples-section { margin-top: 20px; }
@@ -207,11 +207,16 @@ h1 { font-size: 1.4em; margin-bottom: 4px; color: #111; }
     </p>
 </div>
 
-<!-- Kerning mask output -->
+<!-- Kerning mask input/output -->
 <div class="mask-section">
-    <div class="label">Kerning Mask (24-bit, used by rules)</div>
-    <div id="maskVal" class="mask-val">0x0000FF</div>
-    <div id="maskBin" class="bit-display">00000000 00000000 11111111</div>
+    <div class="label">Kerning Mask (24-bit hex colour)</div>
+    <div class="mask-input-row">
+        <input type="text" class="cp-input" id="maskInput" placeholder="e.g. #800AFF, 0x800AFF" oninput="updateFromMask()" value="">
+    </div>
+    <p class="cp-formats" style="margin-top:4px;">
+        Accepts: <code>#RRGGBB</code>, <code>0xRRGGBB</code>, or <code>RRGGBB</code>
+    </p>
+    <div id="maskBin" class="bit-display" style="margin-top:6px;">00000000 00000000 00000000</div>
 </div>
 </div>
 
@@ -290,6 +295,7 @@ h1 { font-size: 1.4em; margin-bottom: 4px; color: #111; }
 const ZONES = ['A','B','C','D','E','F','G','H','J','K'];
 const state = { A:0, B:0, C:0, D:0, E:0, F:0, G:0, H:0, J:0, K:0 };
 let isLowheight = false;
+let maskInputActive = false; // prevent recalc from overwriting mask input while user types
 
 // Bit positions within kerning_mask (24-bit RGB):
 // Blue byte: A=bit7, B=bit6, C=bit5, D=bit4, E=bit3, F=bit2, G=bit1, H=bit0
@@ -360,10 +366,69 @@ function recalc() {
     document.getElementById('b2').textContent = b;
     document.getElementById('bits2').textContent = bin8(r) + ' ' + bin8(g) + ' ' + bin8(b);
 
-    document.getElementById('maskVal').textContent = '0x' + fullMask.toString(16).toUpperCase().padStart(6, '0');
+    // Update mask input only if the change didn't come from the mask input itself
+    if (!maskInputActive) {
+        document.getElementById('maskInput').value = '#' + hex2(r) + hex2(g) + hex2(b);
+        document.getElementById('maskInput').classList.remove('error');
+    }
     document.getElementById('maskBin').textContent = bin8((fullMask >> 16) & 0xFF) + ' ' + bin8((fullMask >> 8) & 0xFF) + ' ' + bin8(fullMask & 0xFF);
 
     drawSwatchSolid('swatch2', r, g, b);
+}
+
+function updateFromMask() {
+    const input = document.getElementById('maskInput');
+    const raw = input.value.trim();
+
+    if (raw === '') {
+        input.classList.remove('error');
+        return;
+    }
+
+    // Parse hex colour: #RRGGBB, 0xRRGGBB, or RRGGBB
+    let hex = null;
+    if (/^#([0-9A-Fa-f]{6})$/.test(raw)) {
+        hex = parseInt(RegExp.$1, 16);
+    } else if (/^0[xX]([0-9A-Fa-f]{6})$/.test(raw)) {
+        hex = parseInt(RegExp.$1, 16);
+    } else if (/^([0-9A-Fa-f]{6})$/.test(raw)) {
+        hex = parseInt(RegExp.$1, 16);
+    }
+
+    if (hex === null) {
+        input.classList.add('error');
+        return;
+    }
+    input.classList.remove('error');
+
+    const r = (hex >> 16) & 0xFF;
+    const g = (hex >> 8) & 0xFF;
+    const b = hex & 0xFF;
+
+    // Reverse-map to zone states
+    state.A = (b & 0x80) ? 1 : 0;
+    state.B = (b & 0x40) ? 1 : 0;
+    state.C = (b & 0x20) ? 1 : 0;
+    state.D = (b & 0x10) ? 1 : 0;
+    state.E = (b & 0x08) ? 1 : 0;
+    state.F = (b & 0x04) ? 1 : 0;
+    state.G = (b & 0x02) ? 1 : 0;
+    state.H = (b & 0x01) ? 1 : 0;
+    state.J = (g & 0x80) ? 1 : 0;
+    state.K = (g & 0x40) ? 1 : 0;
+
+    // Reverse-map Y toggle
+    document.getElementById('yToggle').checked = !!(r & 0x80);
+
+    // Update all zone buttons
+    document.querySelectorAll('.zone-btn').forEach(btn => {
+        btn.classList.toggle('active', !!state[btn.dataset.zone]);
+    });
+
+    // Recalc without overwriting the mask input
+    maskInputActive = true;
+    recalc();
+    maskInputActive = false;
 }
 
 function updateCodepoint() {
