@@ -1125,8 +1125,7 @@ class TerrarumSansBitmap(
         var nonDiacriticCounter = 0 // index of last instance of non-diacritic char
         var stackUpwardCounter = 0 // TODO separate stack counter for centre- and right aligned
         var stackDownwardCounter = 0
-        var nudgeUpwardCounter = 0
-        var nudgeDownwardCounter = 0
+        var nudgeUpHighWater = 0 // tracks max nudgeY seen in current stack, so subsequent marks with lower nudge still clear the previous one
 
         val HALF_VAR_INIT = W_VAR_INIT.minus(1).div(2)
 
@@ -1205,8 +1204,7 @@ class TerrarumSansBitmap(
 
                         stackUpwardCounter = 0
                         stackDownwardCounter = 0
-                        nudgeUpwardCounter = 0
-                        nudgeDownwardCounter = 0
+                        nudgeUpHighWater = 0
                     }
                     // FIXME HACK: using 0th diacritics' X-anchor pos as a type selector
                     /*else if (thisProp.writeOnTop && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
@@ -1286,12 +1284,12 @@ class TerrarumSansBitmap(
                         // set Y pos according to diacritics position
                         when (thisProp.stackWhere) {
                             GlyphProps.STACK_DOWN -> {
-                                posYbuffer[charIndex] = (-thisProp.nudgeY + H_DIACRITICS * stackDownwardCounter) * flipY.toSign() - thisProp.nudgeY - nudgeDownwardCounter
+                                posYbuffer[charIndex] = (-thisProp.nudgeY + H_DIACRITICS * stackDownwardCounter) * flipY.toSign() - thisProp.nudgeY
                                 stackDownwardCounter++
-                                nudgeDownwardCounter -= thisProp.nudgeY
                             }
                             GlyphProps.STACK_UP -> {
-                                posYbuffer[charIndex] = -thisProp.nudgeY + (-H_DIACRITICS * stackUpwardCounter + -thisProp.nudgeY) * flipY.toSign() + thisProp.nudgeY + nudgeUpwardCounter
+                                val effectiveNudge = maxOf(thisProp.nudgeY, nudgeUpHighWater)
+                                posYbuffer[charIndex] = -effectiveNudge + (-H_DIACRITICS * stackUpwardCounter + -effectiveNudge) * flipY.toSign() + effectiveNudge
                                 // shift down on lowercase if applicable
                                 if (lastNonDiacriticChar.isLowHeight()) {
                                     //dbgprn("AAARRRRHHHH for character ${thisChar.toHex()}")
@@ -1303,18 +1301,17 @@ class TerrarumSansBitmap(
                                         posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
                                 }
 
+                                nudgeUpHighWater = effectiveNudge
                                 stackUpwardCounter++
-                                nudgeUpwardCounter += thisProp.nudgeY
 
 //                                    dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.charInfo()}; stack counter: $stackUpwardCounter")
                             }
                             GlyphProps.STACK_UP_N_DOWN -> {
                                 posYbuffer[charIndex] = (-thisProp.nudgeY + H_DIACRITICS * stackDownwardCounter) * flipY.toSign()
                                 stackDownwardCounter++
-                                if (thisProp.nudgeY < 0)
-                                    nudgeDownwardCounter -= thisProp.nudgeY
 
-                                posYbuffer[charIndex] = (-thisProp.nudgeY + -H_DIACRITICS * stackUpwardCounter) * flipY.toSign()
+                                val effectiveNudge = maxOf(thisProp.nudgeY, nudgeUpHighWater)
+                                posYbuffer[charIndex] = (-effectiveNudge + -H_DIACRITICS * stackUpwardCounter) * flipY.toSign()
                                 // shift down on lowercase if applicable
                                 if (lastNonDiacriticChar.isLowHeight()) {
                                     if (diacriticsType == GlyphProps.DIA_OVERLAY)
@@ -1323,9 +1320,8 @@ class TerrarumSansBitmap(
                                         posYbuffer[charIndex] += H_STACKUP_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
                                 }
 
+                                nudgeUpHighWater = effectiveNudge
                                 stackUpwardCounter++
-                                if (thisProp.nudgeY > 0)
-                                    nudgeUpwardCounter += thisProp.nudgeY
                             }
                             // for BEFORE_N_AFTER, do nothing in here
                         }
