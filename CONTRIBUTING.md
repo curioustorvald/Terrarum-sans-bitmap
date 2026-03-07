@@ -80,7 +80,7 @@ Up&Down:
 Each X and Y numbers are Signed 8-Bit Integer.
 
 X-positive: nudges towards left  
-Y-positive: nudges towards up  
+Y-positive: nudges towards down  
 
 #### Diacritics Anchor Point Encoding
 

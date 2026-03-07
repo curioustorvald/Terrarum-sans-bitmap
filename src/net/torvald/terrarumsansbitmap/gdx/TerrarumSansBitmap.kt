@@ -888,6 +888,8 @@ class TerrarumSansBitmap(
             SHEET_HENTAIGANA_VARW -> hentaiganaIndexY(ch)
             SHEET_CONTROL_PICTURES_VARW -> controlPicturesIndexY(ch)
             SHEET_LEGACY_COMPUTING_VARW -> legacyComputingIndexY(ch)
+            SHEET_CYRILIC_EXTB_VARW -> cyrilicExtBIndexY(ch)
+            SHEET_CYRILIC_EXTA_VARW -> cyrilicExtAIndexY(ch)
             else -> ch / 16
         }
 
@@ -1120,6 +1122,8 @@ class TerrarumSansBitmap(
         var nonDiacriticCounter = 0 // index of last instance of non-diacritic char
         var stackUpwardCounter = 0 // TODO separate stack counter for centre- and right aligned
         var stackDownwardCounter = 0
+        var nudgeUpwardCounter = 0
+        var nudgeDownwardCounter = 0
 
         val HALF_VAR_INIT = W_VAR_INIT.minus(1).div(2)
 
@@ -1198,6 +1202,8 @@ class TerrarumSansBitmap(
 
                         stackUpwardCounter = 0
                         stackDownwardCounter = 0
+                        nudgeUpwardCounter = 0
+                        nudgeDownwardCounter = 0
                     }
                     // FIXME HACK: using 0th diacritics' X-anchor pos as a type selector
                     /*else if (thisProp.writeOnTop && thisProp.diacriticsAnchors[0].x == GlyphProps.DIA_JOINER) {
@@ -1277,14 +1283,14 @@ class TerrarumSansBitmap(
                         // set Y pos according to diacritics position
                         when (thisProp.stackWhere) {
                             GlyphProps.STACK_DOWN -> {
-                                posYbuffer[charIndex] = (-thisProp.nudgeY + H_DIACRITICS * stackDownwardCounter) * flipY.toSign()
+                                posYbuffer[charIndex] = (-thisProp.nudgeY + H_DIACRITICS * stackDownwardCounter) * flipY.toSign() - thisProp.nudgeY - nudgeDownwardCounter
                                 stackDownwardCounter++
+                                nudgeDownwardCounter -= thisProp.nudgeY
                             }
                             GlyphProps.STACK_UP -> {
-                                posYbuffer[charIndex] = -thisProp.nudgeY + (-H_DIACRITICS * stackUpwardCounter + -thisProp.nudgeY) * flipY.toSign()
+                                posYbuffer[charIndex] = -thisProp.nudgeY + (-H_DIACRITICS * stackUpwardCounter + -thisProp.nudgeY) * flipY.toSign() + thisProp.nudgeY + nudgeUpwardCounter
                                 // shift down on lowercase if applicable
-                                if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
-                                    lastNonDiacriticChar.isLowHeight()) {
+                                if (lastNonDiacriticChar.isLowHeight()) {
                                     //dbgprn("AAARRRRHHHH for character ${thisChar.toHex()}")
                                     //dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.toHex()}")
                                     //dbgprn("cond: ${thisProp.alignXPos == GlyphProps.DIA_OVERLAY}, charIndex: $charIndex")
@@ -1295,18 +1301,19 @@ class TerrarumSansBitmap(
                                 }
 
                                 stackUpwardCounter++
+                                nudgeUpwardCounter += thisProp.nudgeY
 
 //                                    dbgprn("lastNonDiacriticChar: ${lastNonDiacriticChar.charInfo()}; stack counter: $stackUpwardCounter")
                             }
                             GlyphProps.STACK_UP_N_DOWN -> {
                                 posYbuffer[charIndex] = (-thisProp.nudgeY + H_DIACRITICS * stackDownwardCounter) * flipY.toSign()
                                 stackDownwardCounter++
-
+                                if (thisProp.nudgeY < 0)
+                                    nudgeDownwardCounter -= thisProp.nudgeY
 
                                 posYbuffer[charIndex] = (-thisProp.nudgeY + -H_DIACRITICS * stackUpwardCounter) * flipY.toSign()
                                 // shift down on lowercase if applicable
-                                if (getSheetType(thisChar) in autoShiftDownOnLowercase &&
-                                    lastNonDiacriticChar.isLowHeight()) {
+                                if (lastNonDiacriticChar.isLowHeight()) {
                                     if (diacriticsType == GlyphProps.DIA_OVERLAY)
                                         posYbuffer[charIndex] += H_OVERLAY_LOWERCASE_SHIFTDOWN * flipY.toSign() // if minus-assign doesn't work, try plus-assign
                                     else
@@ -1314,6 +1321,8 @@ class TerrarumSansBitmap(
                                 }
 
                                 stackUpwardCounter++
+                                if (thisProp.nudgeY > 0)
+                                    nudgeUpwardCounter += thisProp.nudgeY
                             }
                             // for BEFORE_N_AFTER, do nothing in here
                         }
@@ -2604,6 +2613,8 @@ class TerrarumSansBitmap(
         internal const val SHEET_HENTAIGANA_VARW = 39
         internal const val SHEET_CONTROL_PICTURES_VARW = 40
         internal const val SHEET_LEGACY_COMPUTING_VARW = 41
+        internal const val SHEET_CYRILIC_EXTB_VARW = 42
+        internal const val SHEET_CYRILIC_EXTA_VARW = 43
 
         internal const val SHEET_UNKNOWN = 254
 
@@ -2624,10 +2635,6 @@ class TerrarumSansBitmap(
         const val MOVABLE_BLOCK_M1 = 0xFFFE0
         const val MOVABLE_BLOCK_1 = 0xFFFF0
 
-
-        private val autoShiftDownOnLowercase = arrayOf(
-            SHEET_DIACRITICAL_MARKS_VARW
-        )
 
         private val fileList = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             "ascii_variable.tga",
@@ -2672,6 +2679,8 @@ class TerrarumSansBitmap(
             "hentaigana_variable.tga",
             "control_pictures_variable.tga",
             "symbols_for_legacy_computing_variable.tga",
+            "cyrilic_extB_variable.tga",
+            "cyrilic_extA_variable.tga",
         )
         internal val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -2716,6 +2725,8 @@ class TerrarumSansBitmap(
             0x1B000..0x1B16F, // SHEET_HENTAIGANA_VARW
             0x2400..0x243F, // SHEET_CONTROL_PICTURES_VARW
             0x1FB00..0x1FBFF, // SHEET_LEGACY_COMPUTING_VARW
+            0xA640..0xA69F, // SHEET_CYRILIC_EXTB_VARW
+            0x2DE0..0x2DFF, // SHEET_CYRILIC_EXTA_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -3066,6 +3077,8 @@ class TerrarumSansBitmap(
         private fun hentaiganaIndexY(c: CodePoint) = (c - 0x1B000) / 16
         private fun controlPicturesIndexY(c: CodePoint) = (c - 0x2400) / 16
         private fun legacyComputingIndexY(c: CodePoint) = (c - 0x1FB00) / 16
+        private fun cyrilicExtBIndexY(c: CodePoint) = (c - 0xA640) / 16
+        private fun cyrilicExtAIndexY(c: CodePoint) = (c - 0x2DE0) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()

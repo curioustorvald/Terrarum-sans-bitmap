@@ -1750,7 +1750,7 @@ def _generate_mark(glyphs, has):
 
     mark_groups = {}  # (mark_type, align, is_dia, stack_cat) -> [(cp, g), ...]
     for cp, g in marks.items():
-        is_dia = (0x0300 <= cp <= 0x036F)
+        is_dia = True  # all marks (write_on_top >= 0) are diacritics; Kotlin applies lowheight shiftdown unconditionally
         sc = _stack_cat(g.props.stack_where)
         key = (g.props.write_on_top, g.props.align_where, is_dia, sc)
         mark_groups.setdefault(key, []).append((cp, g))
