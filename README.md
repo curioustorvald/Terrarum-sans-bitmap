@@ -4,15 +4,18 @@
 
 This font is a bitmap font used in [my game project called Terrarum](https://github.com/minjaesong/Terrarum) (hence the name). The font supports more than 90 % of european languages, as well as Chinese, Japanese, and Korean.
 
-The JAR package is meant to be used with LibGDX (extends ```BitmapFont``` class). If you are not using the framework, please refer to the __Font metrics__ section to implement the font metrics correctly on your system.
+The font is provided in following formats:
+
+* **OTF** — This is the version you want most likely. It's compatible with anything that supports OpenType fonts.
+* **WOFF2** — This is OTF font repackaged as a web font. You will want this if you want to use it on a web page.
+* **JAR** — This is the version you want if you work with LibGDX. (extends ```BitmapFont``` class)
 
 The issue page is open. If you have some issues to submit, or have a question, please leave it on the page.
 
 #### Notes and Limitations
-- Displaying Bulgarian/Serbian variants of Cyrillic requires special Control Characters. (`GameFontBase.charsetOverrideBulgarian` -- U+FFFC1; `GameFontBase.charsetOverrideSerbian` -- U+FFFC2)
+- (JAR only) Displaying Bulgarian/Serbian variants of Cyrillic requires special Control Characters. (`GameFontBase.charsetOverrideBulgarian` -- U+FFFC1; `GameFontBase.charsetOverrideSerbian` -- U+FFFC2)
 - All Han characters are in Mainland Chinese variant. There is no plan to support the other variants unless there is someone willing to do the drawing of the characters
 - Only the Devanagari and Tamil has full (as much as I can) ligature support for Indic scripts -- Bengali script does not have any ligature support
-- Slick2d versions are now unsupported. I couldn't extend myself to work on both versions, but I'm still welcome to merge your pull requests.
 
 ### Design Goals
 
@@ -25,11 +28,9 @@ The issue page is open. If you have some issues to submit, or have a question, p
 
 - Go ahead to the [release tab](https://github.com/minjaesong/Terrarum-sans-bitmap/releases), and download the most recent version. It is **not** advised to use the .jar found within the repository, they're experimental builds I use during the development, and may contain bugs like leaking memory.
 
-## Using on your game
+## Using on your LibGDX project
 
-- Firstly, place the .jar to your library path and assets folder to the main directory of the app, then:
-
-### Using on LibGDX
+- Firstly, place the .jar to your library path, then:
 
 On your code (Kotlin):
 
@@ -40,7 +41,7 @@ On your code (Kotlin):
         lateinit var fontGame: Font
     
         override fun create() {
-            fontGame = TerrarumSansBitmap(path_to_assets, ...)
+            fontGame = TerrarumSansBitmap(...)
             ...
         }
         
@@ -62,7 +63,7 @@ On your code (Java):
         Font fontGame;
     
         @Override void create() {
-            fontGame = new TerrarumSansBitmap(path_to_assets, ...);
+            fontGame = new TerrarumSansBitmap(...);
             ...
         }
         
