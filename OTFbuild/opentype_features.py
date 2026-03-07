@@ -1899,7 +1899,9 @@ def _generate_mark(glyphs, has):
             # Lowheight adjustment for combining diacritical marks:
             # shift base anchor Y down so diacritics sit closer to
             # the shorter base glyph.
-            if is_dia and g.props.is_low_height:
+            # Only applies to 'up' marks (and overlay), not 'dn',
+            # matching Kotlin which only adjusts in STACK_UP/STACK_UP_N_DOWN.
+            if is_dia and g.props.is_low_height and scat != 'dn':
                 if mark_type == 2:  # overlay
                     ay -= SC.H_OVERLAY_LOWERCASE_SHIFTDOWN * SC.SCALE
                 else:  # above (type 0)
@@ -1937,10 +1939,7 @@ def _generate_mark(glyphs, has):
 
         for cp, g in mark_list:
             mx = mark_anchors.get(cp, 0)
-            # Cascade nudge_y: the mark2 anchor includes this mark's
-            # nudge so that the next stacked mark inherits the shift,
-            # matching the Kotlin engine's nudgeUpwardCounter / nudgeDownwardCounter.
-            m2y = m2y_base + g.props.nudge_y * SC.SCALE
+            m2y = m2y_base
             lines.append(
                 f"    pos mark {glyph_name(cp)}"
                 f" <anchor {mx} {m2y}> mark {class_name};"
@@ -1949,6 +1948,46 @@ def _generate_mark(glyphs, has):
         lines.append(f"}} {mkmk_name};")
         lines.append("")
         mkmk_lookup_names.append(mkmk_name)
+
+    # --- Nudge-Y gap correction for MarkToMark ---
+    # Without cascade, the gap between consecutive 'up' marks is
+    #   H_DIACRITICS + nudge_y_2 - nudge_y_1
+    # which is less than H_DIACRITICS when nudge_y_1 > nudge_y_2
+    # (e.g. Cyrillic uni2DED nudge=2 followed by uni0487 nudge=0).
+    # Add contextual positioning to compensate: shift mark2 up by
+    # (nudge_y_1 - nudge_y_2) * SCALE for each such pair.
+    # This keeps Thai correct (same nudge on both marks → no correction)
+    # while fixing Cyrillic (different nudge → correction applied).
+    nudge_groups = {}  # nudge_y -> [glyph_name, ...]
+    for (mark_type, align, is_dia, scat), mark_list in sorted(mark_groups.items()):
+        if scat != 'up':
+            continue
+        for cp, g in mark_list:
+            ny = g.props.nudge_y
+            nudge_groups.setdefault(ny, []).append(glyph_name(cp))
+
+    distinct_nudges = sorted(nudge_groups.keys())
+    correction_pairs = []
+    for n1 in distinct_nudges:
+        for n2 in distinct_nudges:
+            if n1 > n2:
+                correction_pairs.append((n1, n2, (n1 - n2) * SC.SCALE))
+
+    if correction_pairs:
+        for ny, glyphs in sorted(nudge_groups.items()):
+            lines.append(f"@up_nudge_{ny} = [{' '.join(sorted(glyphs))}];")
+        lines.append("")
+
+        mkmk_corr_name = "mkmk_nudge_correct"
+        lines.append(f"lookup {mkmk_corr_name} {{")
+        for n1, n2, val in correction_pairs:
+            lines.append(
+                f"    pos @up_nudge_{n1} <0 0 0 0>"
+                f" @up_nudge_{n2} <0 {val} 0 0>;"
+            )
+        lines.append(f"}} {mkmk_corr_name};")
+        lines.append("")
+        mkmk_lookup_names.append(mkmk_corr_name)
 
     # Register MarkToBase lookups under mark.
     # dev2 is excluded: HarfBuzz/DirectWrite use abvm for Devanagari marks.
