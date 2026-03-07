@@ -13,6 +13,7 @@ The font is provided in following formats:
 The issue page is open. If you have some issues to submit, or have a question, please leave it on the page.
 
 #### Notes and Limitations
+- JAR version comes with its own shaping and typesetting engine, texture caching, and self-contained assets. It is NOT compatible with `GlyphLayout`.
 - (JAR only) Displaying Bulgarian/Serbian variants of Cyrillic requires special Control Characters. (`GameFontBase.charsetOverrideBulgarian` -- U+FFFC1; `GameFontBase.charsetOverrideSerbian` -- U+FFFC2)
 - All Han characters are in Mainland Chinese variant. There is no plan to support the other variants unless there is someone willing to do the drawing of the characters
 - Only the Devanagari and Tamil has full (as much as I can) ligature support for Indic scripts -- Bengali script does not have any ligature support
