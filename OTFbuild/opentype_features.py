@@ -1878,12 +1878,16 @@ def _generate_mark(glyphs, has):
         lines.append(f"lookup {mkmk_name} {{")
 
         if scat == 'up':
-            m2y = SC.ASCENT + SC.H_DIACRITICS * SC.SCALE
+            m2y_base = SC.ASCENT + SC.H_DIACRITICS * SC.SCALE
         else:  # 'dn'
-            m2y = SC.ASCENT - SC.H_DIACRITICS * SC.SCALE
+            m2y_base = SC.ASCENT - SC.H_DIACRITICS * SC.SCALE
 
         for cp, g in mark_list:
             mx = mark_anchors.get(cp, 0)
+            # Cascade nudge_y: the mark2 anchor includes this mark's
+            # nudge so that the next stacked mark inherits the shift,
+            # matching the Kotlin engine's nudgeUpwardCounter / nudgeDownwardCounter.
+            m2y = m2y_base + g.props.nudge_y * SC.SCALE
             lines.append(
                 f"    pos mark {glyph_name(cp)}"
                 f" <anchor {mx} {m2y}> mark {class_name};"

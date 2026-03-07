@@ -921,9 +921,9 @@ class TerrarumSansBitmap(
             val isLowHeight = (pixmap.getPixel(codeStartX, codeStartY + 5).and(255) != 0)
 
             // Keming machine parameters
-            val kerningBit1 = pixmap.getPixel(codeStartX, codeStartY + 6).tagify()
-            val kerningBit2 = pixmap.getPixel(codeStartX, codeStartY + 7).tagify()
-            val kerningBit3 = pixmap.getPixel(codeStartX, codeStartY + 8).tagify()
+            val kerningBit1 = pixmap.getPixel(codeStartX, codeStartY + 6).tagify() // glyph shape
+            val kerningBit2 = pixmap.getPixel(codeStartX, codeStartY + 7).tagify() // dot removal
+            val kerningBit3 = pixmap.getPixel(codeStartX, codeStartY + 8).tagify() // unused
             var isKernYtype = ((kerningBit1 and 0x80000000.toInt()) != 0)
             var kerningMask = kerningBit1.ushr(8).and(0xFFFFFF)
             val hasKernData = kerningBit1 and 255 != 0//(kerningBit1 and 255 != 0 && kerningMask != 0xFFFF)
@@ -971,7 +971,9 @@ class TerrarumSansBitmap(
                 GlyphProps.STACK_DONT
             else (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 18).and(255) != 0).toInt() shl y) }
 
-            glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, IntArray(15), hasKernData, isKernYtype, kerningMask, directiveOpcode, directiveArg1, directiveArg2)
+            val dotRemoval = if (kerningBit2 == 0) null else kerningBit2.ushr(8)
+
+            glyphProps[code] = GlyphProps(width, isLowHeight, nudgeX, nudgeY, diacriticsAnchors, alignWhere, writeOnTop, stackWhere, IntArray(15), hasKernData, isKernYtype, kerningMask, dotRemoval, directiveOpcode, directiveArg1, directiveArg2)
 
             // extra info
             val extCount = glyphProps[code]?.requiredExtInfoCount() ?: 0
@@ -1533,8 +1535,8 @@ class TerrarumSansBitmap(
 
             }
             // for lowercase i and j, if cNext is a diacritic that goes on top, remove the dots
-            else if (diacriticDotRemoval.containsKey(c) && (glyphProps[cNext]?.writeOnTop ?: -1) >= 0 && glyphProps[cNext]?.stackWhere == GlyphProps.STACK_UP) {
-                seq.add(diacriticDotRemoval[c]!!)
+            else if (glyphProps[c]!!.dotRemoval != null && (glyphProps[cNext]?.writeOnTop ?: -1) >= 0 && glyphProps[cNext]?.stackWhere == GlyphProps.STACK_UP) {
+                seq.add(glyphProps[c]!!.dotRemoval!!)
             }
 
             // BEGIN of tamil subsystem implementation
@@ -2745,11 +2747,6 @@ class TerrarumSansBitmap(
                 0x400..0x45F,
                 0x400..0x45F,
                 0x20..0x7F,
-        )
-
-        private val diacriticDotRemoval = hashMapOf(
-            'i'.toInt() to 0x131,
-            'j'.toInt() to 0x237
         )
 
         internal fun Int.charInfo() = "U+${this.toString(16).padStart(4, '0').toUpperCase()}: ${Character.getName(this)}"

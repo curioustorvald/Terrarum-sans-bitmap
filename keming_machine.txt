@@ -106,3 +106,5 @@ dot removal for diacritics:
 - encoding:
     - <MSB> RRRRRRRR GGGGGGGG BBBBBBBB <LSB>
 
+--- Pixel 3
+Unused for now.

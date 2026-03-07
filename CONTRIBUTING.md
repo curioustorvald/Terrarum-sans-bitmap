@@ -46,8 +46,8 @@ Rightmost vertical column (should be 20 px tall) contains the tags. Tags are def
       W  |= Width of the character
       W  |
       W -'
-      m --Is this character lowheight?
       K -,
+      K  |
       K  |= Tags used by the "Keming Machine"
       K -'
       Q ---Compiler Directive (see below)

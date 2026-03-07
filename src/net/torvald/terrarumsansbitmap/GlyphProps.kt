@@ -1,5 +1,7 @@
 package net.torvald.terrarumsansbitmap
 
+import net.torvald.terrarumsansbitmap.gdx.CodePoint
+
 /**
  * Created by minjaesong on 2021-11-25.
  */
@@ -28,6 +30,8 @@ data class GlyphProps(
         val hasKernData: Boolean = false,
         val isKernYtype: Boolean = false,
         val kerningMask: Int = 255,
+
+        val dotRemoval: CodePoint? = null,
 
         val directiveOpcode: Int = 0, // 8-bits wide
         val directiveArg1: Int = 0, // 8-bits wide
