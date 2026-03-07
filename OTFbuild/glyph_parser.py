@@ -38,6 +38,7 @@ class GlyphProps:
     has_kern_data: bool = False
     is_kern_y_type: bool = False
     kerning_mask: int = 255
+    dot_removal: Optional[int] = None  # codepoint to replace with when followed by a STACK_UP mark
     directive_opcode: int = 0
     directive_arg1: int = 0
     directive_arg2: int = 0
@@ -131,7 +132,8 @@ def parse_variable_sheet(image, sheet_index, cell_w, cell_h, cols, is_xy_swapped
 
         # Kerning data
         kerning_bit1 = _tagify(image.get_pixel(code_start_x, code_start_y + 6))
-        # kerning_bit2 and kerning_bit3 are reserved
+        kerning_bit2 = _tagify(image.get_pixel(code_start_x, code_start_y + 7))
+        dot_removal = None if kerning_bit2 == 0 else (kerning_bit2 >> 8)
         is_kern_y_type = (kerning_bit1 & 0x80000000) != 0
         kerning_mask = (kerning_bit1 >> 8) & 0xFFFFFF
         has_kern_data = (kerning_bit1 & 0xFF) != 0
@@ -188,7 +190,7 @@ def parse_variable_sheet(image, sheet_index, cell_w, cell_h, cols, is_xy_swapped
             align_where=align_where, write_on_top=write_on_top,
             stack_where=stack_where, ext_info=ext_info,
             has_kern_data=has_kern_data, is_kern_y_type=is_kern_y_type,
-            kerning_mask=kerning_mask,
+            kerning_mask=kerning_mask, dot_removal=dot_removal,
             directive_opcode=directive_opcode, directive_arg1=directive_arg1,
             directive_arg2=directive_arg2,
         )

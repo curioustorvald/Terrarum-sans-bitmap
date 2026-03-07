@@ -1,7 +1,7 @@
 --- Pixel 0
 - Lowheight bit
 - encoding: has pixel - it's low height
-- used by the diacritics system to quickly look up if the character is low height without parsing the Pixel 1
+- bit must be set if above-diacritics should be lowered (e.g. lowercase b, which has 'A' shape bit but considered lowheight) 
 
 ### Legends
 #

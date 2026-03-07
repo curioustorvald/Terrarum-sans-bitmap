@@ -70,6 +70,11 @@ languagesystem sund dflt;
     if ccmp_code:
         parts.append(ccmp_code)
 
+    # ccmp: dot removal (e.g. i→ı, j→ȷ when followed by STACK_UP marks)
+    dot_removal_code = _generate_dot_removal(glyphs, has)
+    if dot_removal_code:
+        parts.append(dot_removal_code)
+
     # Hangul jamo GSUB assembly
     hangul_code = _generate_hangul_gsub(glyphs, has, jamo_data)
     if hangul_code:
@@ -159,6 +164,54 @@ def _generate_ccmp(replacewith_subs, has):
     lines.extend(subs)
     lines.append("    } ReplacewithExpansion;")
     lines.append("} ccmp;")
+    return '\n'.join(lines)
+
+
+def _generate_dot_removal(glyphs, has):
+    """Generate ccmp contextual substitution for dot removal.
+
+    When a base glyph tagged with dot_removal (kerning bit 2, pixel Y+7) is
+    followed by a STACK_UP mark, substitute the base with its dotless form.
+    Matches the Kotlin engine's dotRemoval logic.
+    """
+    # Collect all STACK_UP marks
+    stack_up_marks = []
+    for cp, g in glyphs.items():
+        if g.props.write_on_top >= 0 and g.props.stack_where == SC.STACK_UP and has(cp):
+            stack_up_marks.append(cp)
+
+    if not stack_up_marks:
+        return ""
+
+    # Collect all base glyphs with dot_removal
+    dot_removal_subs = []
+    for cp, g in glyphs.items():
+        if g.props.dot_removal is not None and has(cp) and has(g.props.dot_removal):
+            dot_removal_subs.append((cp, g.props.dot_removal))
+
+    if not dot_removal_subs:
+        return ""
+
+    lines = []
+
+    # Define the STACK_UP marks class
+    mark_names = ' '.join(glyph_name(cp) for cp in sorted(stack_up_marks))
+    lines.append(f"@stackUpMarks = [{mark_names}];")
+    lines.append("")
+
+    # Single substitution lookup for the replacements
+    lines.append("lookup DotRemoval {")
+    for src_cp, dst_cp in sorted(dot_removal_subs):
+        lines.append(f"    sub {glyph_name(src_cp)} by {glyph_name(dst_cp)};")
+    lines.append("} DotRemoval;")
+    lines.append("")
+
+    # Contextual rules in ccmp
+    lines.append("feature ccmp {")
+    for src_cp, _ in sorted(dot_removal_subs):
+        lines.append(f"    sub {glyph_name(src_cp)}' lookup DotRemoval @stackUpMarks;")
+    lines.append("} ccmp;")
+
     return '\n'.join(lines)
 
 
