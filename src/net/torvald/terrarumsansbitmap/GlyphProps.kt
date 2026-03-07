@@ -5,7 +5,9 @@ import net.torvald.terrarumsansbitmap.gdx.CodePoint
 /**
  * Created by minjaesong on 2021-11-25.
  */
-data class DiacriticsAnchor(val type: Int, val x: Int, val y: Int, val xUsed: Boolean, val yUsed: Boolean)
+data class DiacriticsAnchor(val type: Int, val x: Int, val y: Int) {
+    val isZero = (x == 0 && y == 0)
+}
 /**
  * Created by minjaesong on 2018-08-07.
  */
@@ -17,7 +19,7 @@ data class GlyphProps(
         val nudgeX: Int = 0,
         val nudgeY: Int = 0,
 
-        val diacriticsAnchors: Array<DiacriticsAnchor> = Array(6) { DiacriticsAnchor(it, 0, 0, false, false) },
+        val diacriticsAnchors: Array<DiacriticsAnchor> = Array(6) { DiacriticsAnchor(it, 0, 0) },
 
         val alignWhere: Int = 0, // ALIGN_LEFT..ALIGN_BEFORE
 
@@ -98,10 +100,6 @@ data class GlyphProps(
 
         diacriticsAnchors.forEach {
             hash = hash xor it.type
-            hash = hash * 16777619
-            hash = hash xor (it.x or (if (it.xUsed) 128 else 0))
-            hash = hash * 16777619
-            hash = hash xor (it.y or (if (it.yUsed) 128 else 0))
             hash = hash * 16777619
         }
 

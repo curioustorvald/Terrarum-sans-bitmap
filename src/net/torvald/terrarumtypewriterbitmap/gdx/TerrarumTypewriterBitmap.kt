@@ -229,16 +229,16 @@ class TerrarumTypewriterBitmap(
             val nudgeY = nudgingBits.ushr(16).toByte().toInt() // signed 8-bit int
 
             val diacriticsAnchors = (0..5).map {
-                val yPos = 11 + (it / 3) * 2
+                val yPos = 13 - (it / 3) * 2
                 val shift = (3 - (it % 3)) * 8
                 val yPixel = pixmap.getPixel(codeStartX, codeStartY + yPos).tagify()
                 val xPixel = pixmap.getPixel(codeStartX, codeStartY + yPos + 1).tagify()
-                val y = (yPixel ushr shift) and 127
-                val x = (xPixel ushr shift) and 127
-                val yUsed = (yPixel ushr shift) >= 128
-                val xUsed = (yPixel ushr shift) >= 128
+                val ySgn = ((yPixel ushr shift) and 128).let { if (it == 0) -1 else 1 }
+                val xSgn = ((xPixel ushr shift) and 128).let { if (it == 0) -1 else 1 }
+                val y = ((yPixel ushr shift) and 127) * ySgn
+                val x = ((xPixel ushr shift) and 127) * xSgn
 
-                DiacriticsAnchor(it, x, y, xUsed, yUsed)
+                DiacriticsAnchor(it, x, y)
             }.toTypedArray()
 
             val alignWhere = (0..1).fold(0) { acc, y -> acc or ((pixmap.getPixel(codeStartX, codeStartY + y + 15).and(255) != 0).toInt() shl y) }

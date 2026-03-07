@@ -77,7 +77,7 @@ Up&Down:
 
     <MSB,Red> SXXXXXXX SYYYYYYY 00000000 <LSB,Blue>
 
-Each X and Y numbers are Signed 8-Bit Integer.
+Each X and Y numbers are TWO'S COMPLEMENT Signed 8-Bit Integer.
 
 X-positive: nudges towards left  
 Y-positive: nudges towards down  
@@ -87,19 +87,22 @@ Y-positive: nudges towards down
 4 Pixels are further divided as follows:
 
 | LSB |   | Red | Green | Blue |
-| ------------ | ------------ | ------------ | ------------ | ------------ |
+| ------------ | ------------ | ------------ | ----------- | ------------ |
 | Y | Anchor point Y for: | undefined | undefined | undefined |
 | X | Anchor point X for: | undefined | undefined | undefined |
-| Y | Anchor point Y for: | (unused) | (unused) | (unused) |
+| Y | Anchor point Y for: | Type-0 | Type-1 | Type-2 |
 | X | Anchor point X for: | Type-0 | Type-1 | Type-2 |
 | **MSB** |   |   |   |   |
 
-    <MSB,Red> 1Y1Y1Y1Y 1Y2Y2Y2Y 1Y3Y3Y3Y <LSB,Blue>
-    <MSB,Red> 1X1X1X1X 1X2X2X2X 1X3X3X3X <LSB,Blue>
+    <MSB,Red> 1Y1Y1Y1Y 2Y2Y2Y2Y 3Y3Y3Y3Y <LSB,Blue>
+    <MSB,Red> 1X1X1X1X 2X2X2X2X 3X3X3X3X <LSB,Blue>
 
 where Red is first, Green is second, Blue is the third diacritics.
-MSB for each word must be set so that the pixel would appear brighter on the image editor.
-(the font program will only read low 7 bits for each RGB channel)
+
+Each X and Y numbers are SIGN AND MAGNITUDE 8-Bit Integer.
+
+X-positive: nudges towards left  
+Y-positive: nudges towards down
 
 #### Diacritics Type Bit Encoding
 
