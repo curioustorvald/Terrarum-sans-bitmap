@@ -157,7 +157,7 @@ CODE_RANGE = [
     list(range(0xA720, 0xA800)),                                                    # 27: Latin Ext D
     list(range(0x20A0, 0x20D0)),                                                    # 28: Currencies
     list(range(0xFFE00, 0xFFFA0)),                                                  # 29: Internal
-    list(range(0x2100, 0x2150)),                                                    # 30: Letterlike
+    list(range(0x2100, 0x2200)),                                                    # 30: Letterlike
     list(range(0x1F100, 0x1F200)),                                                  # 31: Enclosed Alphanum Supl
     list(range(0x0B80, 0x0C00)) + list(range(0xF00C0, 0xF0100)),                    # 32: Tamil
     list(range(0x980, 0xA00)),                                                      # 33: Bengali

@@ -116,6 +116,7 @@ How multilingual? Real multilingual!
 ⁃ Latin Extended Additional
 ⁃ Latin Extended-A/B/C/D
 ⁃ Armenian
+⁃ Arrows
 ⁃ Bengali􏿆ᶠⁱ􀀀
 ⁃ Braille Patterns
 ⁃ Cherokee􏿆⁷􀀀
@@ -146,6 +147,7 @@ How multilingual? Real multilingual!
 ⁃ Katakana Phonetic Extensions
 ⁃ Kana Supplement
 ⁃ Kana Extended-A
+⁃ Number Forms
 ⁃ Small Kana Extension
 ⁃ Letterlike Symbols
 ⁃ Phonetic Extensions
