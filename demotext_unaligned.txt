@@ -127,8 +127,7 @@ How multilingual? Real multilingual!
 ⁃ Currency Symbols
 ⁃ Cyrillic
 ⁃ Cyrillic Supplement
-⁃ Cyrillic Extended-A
-⁃ Cyrillic Extended-B
+⁃ Cyrillic Extended-A/B/C
 ⁃ Devanagari
 ⁃ Enclosed Alphanumeric Supplement
 ⁃ General Punctuations

@@ -890,6 +890,7 @@ class TerrarumSansBitmap(
             SHEET_LEGACY_COMPUTING_VARW -> legacyComputingIndexY(ch)
             SHEET_CYRILIC_EXTB_VARW -> cyrilicExtBIndexY(ch)
             SHEET_CYRILIC_EXTA_VARW -> cyrilicExtAIndexY(ch)
+            SHEET_CYRILIC_EXTC_VARW -> cyrilicExtCIndexY(ch)
             else -> ch / 16
         }
 
@@ -2615,6 +2616,7 @@ class TerrarumSansBitmap(
         internal const val SHEET_LEGACY_COMPUTING_VARW = 41
         internal const val SHEET_CYRILIC_EXTB_VARW = 42
         internal const val SHEET_CYRILIC_EXTA_VARW = 43
+        internal const val SHEET_CYRILIC_EXTC_VARW = 44
 
         internal const val SHEET_UNKNOWN = 254
 
@@ -2727,6 +2729,7 @@ class TerrarumSansBitmap(
             0x1FB00..0x1FBFF, // SHEET_LEGACY_COMPUTING_VARW
             0xA640..0xA69F, // SHEET_CYRILIC_EXTB_VARW
             0x2DE0..0x2DFF, // SHEET_CYRILIC_EXTA_VARW
+            0x1C80..0x1C8F, // SHEET_CYRILIC_EXTC_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -3079,6 +3082,7 @@ class TerrarumSansBitmap(
         private fun legacyComputingIndexY(c: CodePoint) = (c - 0x1FB00) / 16
         private fun cyrilicExtBIndexY(c: CodePoint) = (c - 0xA640) / 16
         private fun cyrilicExtAIndexY(c: CodePoint) = (c - 0x2DE0) / 16
+        private fun cyrilicExtCIndexY(c: CodePoint) = (c - 0x1C80) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
