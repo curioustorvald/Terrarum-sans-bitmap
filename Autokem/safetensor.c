@@ -31,18 +31,14 @@ static void collect_tensors(Network *net, TensorEntry *entries, int *count) {
     ADD("conv2.bias", conv2, bias);
     ADD("fc1.weight", fc1, weight);
     ADD("fc1.bias", fc1, bias);
-    ADD("head_shape.weight", head_shape, weight);
-    ADD("head_shape.bias", head_shape, bias);
-    ADD("head_ytype.weight", head_ytype, weight);
-    ADD("head_ytype.bias", head_ytype, bias);
-    ADD("head_lowheight.weight", head_lowheight, weight);
-    ADD("head_lowheight.bias", head_lowheight, bias);
+    ADD("output.weight", output, weight);
+    ADD("output.bias", output, bias);
 #undef ADD
     *count = n;
 }
 
 int safetensor_save(const char *path, Network *net, int total_samples, int epochs, float val_loss) {
-    TensorEntry entries[12];
+    TensorEntry entries[8];
     int count;
     collect_tensors(net, entries, &count);
 
@@ -149,7 +145,7 @@ int safetensor_load(const char *path, Network *net) {
 
     long data_start = 8 + (long)header_len;
 
-    TensorEntry entries[12];
+    TensorEntry entries[8];
     int count;
     collect_tensors(net, entries, &count);
 
@@ -234,14 +230,12 @@ int safetensor_stats(const char *path) {
     const char *tensor_names[] = {
         "conv1.weight", "conv1.bias", "conv2.weight", "conv2.bias",
         "fc1.weight", "fc1.bias",
-        "head_shape.weight", "head_shape.bias",
-        "head_ytype.weight", "head_ytype.bias",
-        "head_lowheight.weight", "head_lowheight.bias"
+        "output.weight", "output.bias"
     };
 
     int total_params = 0;
     printf("\nTensors:\n");
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 8; i++) {
         size_t off_start, off_end;
         if (find_tensor_offsets(json, (size_t)header_len, tensor_names[i], &off_start, &off_end) == 0) {
             int params = (int)(off_end - off_start) / 4;

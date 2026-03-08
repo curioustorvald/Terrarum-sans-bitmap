@@ -25,20 +25,32 @@ make clean
 - `apply` creates `.bak` backup, runs inference per cell, writes Y+5 (lowheight) and Y+6 (kern data) pixels. Skips cells with width=0, writeOnTop, or compiler directives
 - Model file `autokem.safetensors` must be in the working directory
 
+### PyTorch training (faster prototyping)
+
+```bash
+cd Autokem
+.venv/bin/python train_torch.py                     # train with defaults
+.venv/bin/python train_torch.py --epochs 300         # override max epochs
+.venv/bin/python train_torch.py --lr 0.0005          # override learning rate
+.venv/bin/python train_torch.py --load model.safetensors  # resume from weights
+```
+
+- Drop-in replacement for `./autokem train` — reads the same sheets, produces the same safetensors format
+- The exported `autokem.safetensors` is directly loadable by the C inference code (`./autokem apply`)
+- Requires: `pip install torch numpy` (venv at `.venv/`)
+
 ## Architecture
 
 ### Neural network
 
 ```
 Input: 15x20x1 binary (300 values, alpha >= 0x80 → 1.0)
-  Conv2D(1→12, 3x3, same) → LeakyReLU(0.01)
-  Conv2D(12→16, 3x3, same) → LeakyReLU(0.01)
-  Flatten → 4800
-  Dense(4800→24) → LeakyReLU(0.01)
-  ├── Dense(24→10) → sigmoid  (shape bits A-H, J, K)
-  ├── Dense(24→1)  → sigmoid  (Y-type)
-  └── Dense(24→1)  → sigmoid  (lowheight)
-Total: ~117,388 params (~460 KB float32)
+  Conv2D(1→32, 7x7, pad=1) → SiLU
+  Conv2D(32→64, 7x7, pad=1) → SiLU
+  Global Average Pool → [batch, 64]
+  Dense(64→256) → SiLU
+  Dense(256→12) → sigmoid  (10 shape bits + 1 ytype + 1 lowheight)
+Total: ~121,740 params (~476 KB float32)
 ```
 
 Training: Adam (lr=0.001, beta1=0.9, beta2=0.999), BCE loss, batch size 32, early stopping patience 10.
@@ -49,8 +61,9 @@ Training: Adam (lr=0.001, beta1=0.9, beta2=0.999), BCE loss, batch size 32, earl
 |------|---------|
 | `main.c` | CLI dispatch |
 | `tga.h/tga.c` | TGA reader/writer — BGRA↔RGBA8888, row-order handling, per-pixel write-in-place |
-| `nn.h/nn.c` | Tensor, Conv2D (same padding), Dense, LeakyReLU, sigmoid, Adam, He init |
-| `safetensor.h/safetensor.c` | `.safetensors` serialisation — 12 named tensors + JSON metadata |
+| `nn.h/nn.c` | Tensor, Conv2D (configurable padding), Dense, SiLU, sigmoid, global avg pool, Adam, He init |
+| `safetensor.h/safetensor.c` | `.safetensors` serialisation — 8 named tensors + JSON metadata |
+| `train_torch.py` | PyTorch training script — same data pipeline and architecture, exports C-compatible safetensors |
 | `train.h/train.c` | Data collection from sheets, training loop, validation, label distribution |
 | `apply.h/apply.c` | Backup, eligibility checks, inference, pixel composition |
 

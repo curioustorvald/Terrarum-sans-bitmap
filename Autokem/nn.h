@@ -20,6 +20,7 @@ void tensor_free(Tensor *t);
 
 typedef struct {
     int in_ch, out_ch, kh, kw;
+    int pad_h, pad_w;
     Tensor *weight; /* [out_ch, in_ch, kh, kw] */
     Tensor *bias;   /* [out_ch] */
     Tensor *grad_weight;
@@ -45,35 +46,32 @@ typedef struct {
 /* ---- Network ---- */
 
 typedef struct {
-    Conv2D conv1;  /* 1->12, 3x3 */
-    Conv2D conv2;  /* 12->16, 3x3 */
-    Dense fc1;     /* 4800->24 */
-    Dense head_shape;    /* 24->10 (bits A-H, J, K) */
-    Dense head_ytype;    /* 24->1 */
-    Dense head_lowheight;/* 24->1 */
+    Conv2D conv1;  /* 1->32, 7x7, pad=1 */
+    Conv2D conv2;  /* 32->64, 7x7, pad=1 */
+    Dense fc1;     /* 64->256 */
+    Dense output;  /* 256->12 (10 shape + 1 ytype + 1 lowheight) */
 
     /* activation caches (allocated per forward) */
     Tensor *act_conv1;
-    Tensor *act_relu1;
+    Tensor *act_silu1;
     Tensor *act_conv2;
-    Tensor *act_relu2;
-    Tensor *act_flat;
+    Tensor *act_silu2;
+    Tensor *act_pool;    /* global average pool output */
     Tensor *act_fc1;
-    Tensor *act_relu3;
-    Tensor *out_shape;
-    Tensor *out_ytype;
-    Tensor *out_lowheight;
+    Tensor *act_silu3;
+    Tensor *act_logits;  /* pre-sigmoid */
+    Tensor *out_all;     /* sigmoid output [batch, 12] */
 } Network;
 
 /* Init / free */
 Network *network_create(void);
 void network_free(Network *net);
 
-/* Forward pass. input: [batch, 1, 20, 15]. Outputs stored in net->out_* */
+/* Forward pass. input: [batch, 1, 20, 15]. Output stored in net->out_all */
 void network_forward(Network *net, Tensor *input, int training);
 
-/* Backward pass. targets: shape[batch,10], ytype[batch,1], lowheight[batch,1] */
-void network_backward(Network *net, Tensor *target_shape, Tensor *target_ytype, Tensor *target_lowheight);
+/* Backward pass. target: [batch, 12] */
+void network_backward(Network *net, Tensor *target);
 
 /* Adam update step */
 void network_adam_step(Network *net, float lr, float beta1, float beta2, float eps, int t);
@@ -81,8 +79,8 @@ void network_adam_step(Network *net, float lr, float beta1, float beta2, float e
 /* Zero all gradients */
 void network_zero_grad(Network *net);
 
-/* Compute BCE loss (sum of all heads) */
-float network_bce_loss(Network *net, Tensor *target_shape, Tensor *target_ytype, Tensor *target_lowheight);
+/* Compute BCE loss */
+float network_bce_loss(Network *net, Tensor *target);
 
 /* Single-sample inference: input float[300], output float[12] (A-H,J,K,ytype,lowheight) */
 void network_infer(Network *net, const float *input300, float *output12);
