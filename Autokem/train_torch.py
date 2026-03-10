@@ -188,10 +188,10 @@ def build_model():
     class Keminet(nn.Module):
         def __init__(self):
             super().__init__()
-            self.conv1 = nn.Conv2d(1, 32, 5, padding=1)
+            self.conv1 = nn.Conv2d(1, 32, 7, padding=1)
             self.conv2 = nn.Conv2d(32, 64, 7, padding=1)
             self.fc1 = nn.Linear(64, 256)
-            # self.fc2 = nn.Linear(256, 48)
+            # self.fc2 = nn.Linear(256, 128)
             self.output = nn.Linear(256, 12)
             self.tf = nn.SiLU()
 

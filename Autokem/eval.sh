@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-RUNS="${1:-10}"
+RUNS="${1:-42}"
 shift 2>/dev/null || true
 EXTRA_ARGS="$*"
 PYTHON="${PYTHON:-.venv/bin/python3}"

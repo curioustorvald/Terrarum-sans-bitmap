@@ -891,6 +891,9 @@ class TerrarumSansBitmap(
             SHEET_CYRILIC_EXTB_VARW -> cyrilicExtBIndexY(ch)
             SHEET_CYRILIC_EXTA_VARW -> cyrilicExtAIndexY(ch)
             SHEET_CYRILIC_EXTC_VARW -> cyrilicExtCIndexY(ch)
+            SHEET_LATIN_EXTE_VARW -> latinExtEIndexY(ch)
+            SHEET_LATIN_EXTF_VARW -> latinExtFIndexY(ch)
+            SHEET_LATIN_EXTG_VARW -> latinExtGIndexY(ch)
             else -> ch / 16
         }
 
@@ -2609,6 +2612,9 @@ class TerrarumSansBitmap(
         internal const val SHEET_CYRILIC_EXTB_VARW = 42
         internal const val SHEET_CYRILIC_EXTA_VARW = 43
         internal const val SHEET_CYRILIC_EXTC_VARW = 44
+        internal const val SHEET_LATIN_EXTE_VARW = 45
+        internal const val SHEET_LATIN_EXTF_VARW = 46
+        internal const val SHEET_LATIN_EXTG_VARW = 47
 
         internal const val SHEET_UNKNOWN = 254
 
@@ -2676,6 +2682,9 @@ class TerrarumSansBitmap(
             "cyrilic_extB_variable.tga",
             "cyrilic_extA_variable.tga",
             "cyrilic_extC_variable.tga",
+            "latinExtE_variable.tga",
+            "latinExtF_variable.tga",
+            "latinExtG_variable.tga",
         )
         internal val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -2723,6 +2732,9 @@ class TerrarumSansBitmap(
             0xA640..0xA69F, // SHEET_CYRILIC_EXTB_VARW
             0x2DE0..0x2DFF, // SHEET_CYRILIC_EXTA_VARW
             0x1C80..0x1C8F, // SHEET_CYRILIC_EXTC_VARW
+            0xAB30..0xAB6F, // SHEET_LATIN_EXTE_VARW
+            0x10780..0x107BF, // SHEET_LATIN_EXTF_VARW
+            0x1DF00..0x1DFFF, // SHEET_LATIN_EXTG_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -3071,6 +3083,9 @@ class TerrarumSansBitmap(
         private fun cyrilicExtBIndexY(c: CodePoint) = (c - 0xA640) / 16
         private fun cyrilicExtAIndexY(c: CodePoint) = (c - 0x2DE0) / 16
         private fun cyrilicExtCIndexY(c: CodePoint) = (c - 0x1C80) / 16
+        private fun latinExtEIndexY(c: CodePoint) = (c - 0xAB30) / 16
+        private fun latinExtFIndexY(c: CodePoint) = (c - 0x10780) / 16
+        private fun latinExtGIndexY(c: CodePoint) = (c - 0x1DF00) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
