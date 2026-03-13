@@ -2,6 +2,7 @@
 #include "tga.h"
 #include "nn.h"
 #include "safetensor.h"
+#include "unicode_lm.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,7 +43,8 @@ static void extract_shape_bits(int kerning_mask, float *shape) {
 
 /* ---- Collect samples from one TGA ---- */
 
-static int collect_from_sheet(const char *path, int is_xyswap, Sample *samples, int max_samples) {
+static int collect_from_sheet(const char *path, int is_xyswap, int start_code,
+                              Sample *samples, int max_samples) {
     TgaImage *img = tga_read(path);
     if (!img) {
         fprintf(stderr, "Warning: cannot read %s\n", path);
@@ -75,6 +77,10 @@ static int collect_from_sheet(const char *path, int is_xyswap, Sample *samples, 
                 width |= (1 << y);
         }
         if (width == 0) continue;
+
+        /* Skip modifier letters (superscripts/subscripts) */
+        if (start_code >= 0 && is_modifier_letter(start_code + index))
+            continue;
 
         /* Read kerning data pixel at Y+6 */
         uint32_t kern_pixel = tagify(tga_get_pixel(img, tag_x, tag_y + 6));
@@ -170,7 +176,9 @@ int train_model(void) {
         char fullpath[512];
         snprintf(fullpath, sizeof(fullpath), "%s/%s", assets_dir, name);
 
-        int got = collect_from_sheet(fullpath, is_xyswap, all_samples + total, max_total - total);
+        int start_code = sheet_start_code(name);
+        int got = collect_from_sheet(fullpath, is_xyswap, start_code,
+                                     all_samples + total, max_total - total);
         if (got > 0) {
             printf("  %s: %d samples\n", name, got);
             total += got;

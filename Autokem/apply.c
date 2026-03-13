@@ -2,6 +2,7 @@
 #include "tga.h"
 #include "nn.h"
 #include "safetensor.h"
+#include "unicode_lm.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,7 +76,8 @@ int apply_model(const char *tga_path) {
     int rows = img->height / cell_h;
     int total_cells = cols * rows;
 
-    int processed = 0, updated = 0, skipped = 0;
+    int start_code = sheet_start_code(basename);
+    int processed = 0, updated = 0, skipped = 0, fixed_lm = 0;
 
     for (int index = 0; index < total_cells; index++) {
         int cell_x, cell_y;
@@ -106,6 +108,21 @@ int apply_model(const char *tga_path) {
         uint32_t dir_pixel = tagify(tga_get_pixel(img, tag_x, tag_y + 9));
         int opcode = (int)((dir_pixel >> 24) & 0xFF);
         if (opcode != 0) { skipped++; continue; }
+
+        /* Modifier letters: fixed kern pixel, skip inference */
+        if (start_code >= 0 && is_modifier_letter(start_code + index)) {
+            if (is_subscript_modifier(start_code + index)) {
+                /* Subscript: CDEFGHJK(B), lowheight=1 */
+                tga_write_pixel(tga_path, img, tag_x, tag_y + 5, 0xFFFFFFFF);
+                tga_write_pixel(tga_path, img, tag_x, tag_y + 6, 0x00C03FFF);
+            } else {
+                /* Superscript: ABCDEF(B), lowheight=0 */
+                tga_write_pixel(tga_path, img, tag_x, tag_y + 5, 0x00000000);
+                tga_write_pixel(tga_path, img, tag_x, tag_y + 6, 0x0000FCFF);
+            }
+            processed++; updated++; fixed_lm++;
+            continue;
+        }
 
         /* Extract 15x20 binary input */
         float input[300];
@@ -155,8 +172,8 @@ int apply_model(const char *tga_path) {
         updated++;
     }
 
-    printf("Processed: %d cells, Updated: %d, Skipped: %d (of %d total)\n",
-           processed, updated, skipped, total_cells);
+    printf("Processed: %d cells, Updated: %d, Skipped: %d, Fixed Lm: %d (of %d total)\n",
+           processed, updated, skipped, fixed_lm, total_cells);
 
     tga_free(img);
     network_free(net);

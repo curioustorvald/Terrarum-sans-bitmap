@@ -114,7 +114,7 @@ How multilingual? Real multilingual!
 ⁃ Basic Latin
 ⁃ Latin-1 Supplement
 ⁃ Latin Extended Additional
-⁃ Latin Extended-A/B/C/D
+⁃ Latin Extended-A/B/C/D/E/F/G
 ⁃ Armenian
 ⁃ Arrows
 ⁃ Bengali􏿆ᶠⁱ􀀀

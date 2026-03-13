@@ -20,9 +20,25 @@ import json
 import os
 import struct
 import sys
+import unicodedata
 from pathlib import Path
 
 import numpy as np
+
+# ---- Sheet code ranges (imported from OTFbuild/sheet_config.py) ----
+
+_otfbuild = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'OTFbuild')
+try:
+    sys.path.insert(0, _otfbuild)
+    from sheet_config import FILE_LIST as _FILE_LIST, CODE_RANGE as _CODE_RANGE
+    sys.path.pop(0)
+    _CODE_RANGE_MAP = {}
+    for _i, _fn in enumerate(_FILE_LIST):
+        if _i < len(_CODE_RANGE):
+            _CODE_RANGE_MAP[_fn] = _CODE_RANGE[_i]
+except ImportError:
+    _CODE_RANGE_MAP = {}
+
 
 # ---- TGA reader (matches OTFbuild/tga_reader.py and Autokem/tga.c) ----
 
@@ -80,7 +96,7 @@ def tagify(pixel):
 
 # ---- Data collection (matches Autokem/train.c) ----
 
-def collect_from_sheet(path, is_xyswap):
+def collect_from_sheet(path, is_xyswap, code_range=None):
     """Extract labelled samples from a single TGA sheet."""
     img = read_tga(path)
     cell_w, cell_h = 16, 20
@@ -90,6 +106,7 @@ def collect_from_sheet(path, is_xyswap):
 
     inputs = []
     labels = []
+    skipped_lm = 0
 
     for index in range(total_cells):
         if is_xyswap:
@@ -109,6 +126,16 @@ def collect_from_sheet(path, is_xyswap):
                 width |= (1 << y)
         if width == 0:
             continue
+
+        # Skip modifier letters (superscripts/subscripts)
+        if code_range is not None and index < len(code_range):
+            cp = code_range[index]
+            try:
+                if unicodedata.category(chr(cp)) == 'Lm':
+                    skipped_lm += 1
+                    continue
+            except (ValueError, OverflowError):
+                pass
 
         # Kern data pixel at Y+6
         kern_pixel = tagify(img.get_pixel(tag_x, tag_y + 6))
@@ -145,7 +172,7 @@ def collect_from_sheet(path, is_xyswap):
         inputs.append(inp)
         labels.append(shape + [is_kern_ytype, is_low_height])
 
-    return inputs, labels
+    return inputs, labels, skipped_lm
 
 
 def collect_all_samples(assets_dir):
@@ -153,6 +180,7 @@ def collect_all_samples(assets_dir):
     all_inputs = []
     all_labels = []
     file_count = 0
+    total_skipped_lm = 0
 
     for name in sorted(os.listdir(assets_dir)):
         if not name.endswith('_variable.tga'):
@@ -161,13 +189,19 @@ def collect_all_samples(assets_dir):
             continue
 
         is_xyswap = 'xyswap' in name
+        code_range = _CODE_RANGE_MAP.get(name, None)
         path = os.path.join(assets_dir, name)
-        inputs, labels = collect_from_sheet(path, is_xyswap)
+        inputs, labels, skipped_lm = collect_from_sheet(path, is_xyswap, code_range)
+        total_skipped_lm += skipped_lm
         if inputs:
-            print(f"  {name}: {len(inputs)} samples")
+            suffix = f" (skipped {skipped_lm} Lm)" if skipped_lm else ""
+            print(f"  {name}: {len(inputs)} samples{suffix}")
             all_inputs.extend(inputs)
             all_labels.extend(labels)
             file_count += 1
+
+    if total_skipped_lm:
+        print(f"  Total modifier letters filtered: {total_skipped_lm}")
 
     return np.array(all_inputs), np.array(all_labels, dtype=np.float32), file_count
 
