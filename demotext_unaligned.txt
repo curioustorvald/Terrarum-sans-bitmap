@@ -161,8 +161,8 @@ How multilingual? Real multilingual!
 ⁃ Tamil
 ⁃ Thai
 
-  􏿆ᴱ􀀀  No support for Coptic　　􏿆ᴬ􀀀  Uppercase only
-  􏿆ᶠⁱ􀀀  No support for ligatures　　􏿆ჼ􀀀  Mkhedruli only
-  􏿆⁶􀀀  􏿆⁹􀀀  􏿆¹²·¹􀀀  Up to the specified Unicode version
+  􏿆ᴱ􀀀   No support for Coptic　  　 􏿆ᴬ􀀀  Uppercase only
+  􏿆ᶠⁱ􀀀  No support for ligatures     􏿆ჼ􀀀  Mkhedruli only
+  􏿆⁶􀀀   􏿆¹²·¹􀀀  Up to the specified Unicode version
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀. You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make changes, and make a 􏽕pull request􀀀! I appreciate any and all supports.
