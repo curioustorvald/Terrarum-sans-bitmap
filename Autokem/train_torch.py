@@ -127,11 +127,12 @@ def collect_from_sheet(path, is_xyswap, code_range=None):
         if width == 0:
             continue
 
-        # Skip modifier letters (superscripts/subscripts)
+        # Skip modifier letters, symbols, punctuation
         if code_range is not None and index < len(code_range):
             cp = code_range[index]
             try:
-                if unicodedata.category(chr(cp)) == 'Lm':
+                cat = unicodedata.category(chr(cp))
+                if cat == 'Lm' or cat[0] in ('S', 'P'):
                     skipped_lm += 1
                     continue
             except (ValueError, OverflowError):
@@ -194,14 +195,14 @@ def collect_all_samples(assets_dir):
         inputs, labels, skipped_lm = collect_from_sheet(path, is_xyswap, code_range)
         total_skipped_lm += skipped_lm
         if inputs:
-            suffix = f" (skipped {skipped_lm} Lm)" if skipped_lm else ""
+            suffix = f" (skipped {skipped_lm})" if skipped_lm else ""
             print(f"  {name}: {len(inputs)} samples{suffix}")
             all_inputs.extend(inputs)
             all_labels.extend(labels)
             file_count += 1
 
     if total_skipped_lm:
-        print(f"  Total modifier letters filtered: {total_skipped_lm}")
+        print(f"  Filtered (Lm/S/P): {total_skipped_lm}")
 
     return np.array(all_inputs), np.array(all_labels, dtype=np.float32), file_count
 

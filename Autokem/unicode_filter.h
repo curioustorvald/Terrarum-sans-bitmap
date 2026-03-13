@@ -1,18 +1,21 @@
-#ifndef UNICODE_LM_H
-#define UNICODE_LM_H
+#ifndef UNICODE_FILTER_H
+#define UNICODE_FILTER_H
 
 #include <string.h>
 
 /*
- * Unicode category Lm (Letter, modifier) range checks.
+ * Unicode category filters for training/apply.
  * Generated from Python unicodedata (Unicode 16.0).
  *
- * is_modifier_letter(cp)    — true for all Lm codepoints
- * is_subscript_modifier(cp) — true for Lm codepoints with <sub> decomposition
+ * is_modifier_letter(cp)         — category Lm
+ * is_subscript_modifier(cp)      — Lm with <sub> decomposition
+ * is_symbol_or_punctuation(cp)   — categories S* or P*
+ * is_excluded_from_training(cp)  — Lm or S* or P*
  */
 
+/* ---- Lm (modifier letter) ---- */
+
 static inline int is_modifier_letter(int cp) {
-    /* 71 contiguous ranges covering all 397 Lm codepoints */
     if (cp >= 0x02B0 && cp <= 0x02C1) return 1;
     if (cp >= 0x02C6 && cp <= 0x02D1) return 1;
     if (cp >= 0x02E0 && cp <= 0x02E4) return 1;
@@ -88,20 +91,67 @@ static inline int is_modifier_letter(int cp) {
 }
 
 static inline int is_subscript_modifier(int cp) {
-    /* 49 Lm codepoints with <sub> decomposition */
-    if (cp >= 0x1D62 && cp <= 0x1D6A) return 1;  /* 9 */
-    if (cp >= 0x2090 && cp <= 0x209C) return 1;   /* 13 */
-    if (cp == 0x2C7C) return 1;                    /* 1 */
-    if (cp >= 0x1E051 && cp <= 0x1E06A) return 1;  /* 26 */
+    if (cp >= 0x1D62 && cp <= 0x1D6A) return 1;
+    if (cp >= 0x2090 && cp <= 0x209C) return 1;
+    if (cp == 0x2C7C) return 1;
+    if (cp >= 0x1E051 && cp <= 0x1E06A) return 1;
     return 0;
 }
 
-/*
- * Map sheet filename to first codepoint of its (contiguous) code range.
- * Returns -1 if unknown. For non-contiguous sheets (e.g. Devanagari),
- * returns the start of the first sub-range; cells beyond it won't
- * collide with Lm codepoints in practice.
- */
+/* ---- S* (Symbol) and P* (Punctuation) ---- */
+
+/* Table of {start, end} ranges for S/P codepoints in font sheets */
+static const int sp_ranges[][2] = {
+    {0x00021, 0x0002F}, {0x0003A, 0x00040}, {0x0005B, 0x00060},
+    {0x0007B, 0x0007E}, {0x000A1, 0x000A9}, {0x000AB, 0x000AC},
+    {0x000AE, 0x000B1}, {0x000B4, 0x000B4}, {0x000B6, 0x000B8},
+    {0x000BB, 0x000BB}, {0x000BF, 0x000BF}, {0x000D7, 0x000D7},
+    {0x000F7, 0x000F7}, {0x002C2, 0x002C5}, {0x002D2, 0x002DF},
+    {0x002E5, 0x002EB}, {0x002ED, 0x002ED}, {0x002EF, 0x002FF},
+    {0x00375, 0x00375}, {0x0037E, 0x0037E}, {0x00384, 0x00385},
+    {0x00387, 0x00387}, {0x00482, 0x00482}, {0x0055A, 0x0055F},
+    {0x00589, 0x0058A}, {0x0058D, 0x0058F}, {0x00964, 0x00965},
+    {0x00970, 0x00970}, {0x009F2, 0x009F3}, {0x009FA, 0x009FB},
+    {0x009FD, 0x009FD}, {0x00BF3, 0x00BFA}, {0x00E3F, 0x00E3F},
+    {0x00E4F, 0x00E4F}, {0x00E5A, 0x00E5B}, {0x010FB, 0x010FB},
+    {0x016EB, 0x016ED}, {0x01CC0, 0x01CC7}, {0x01FBD, 0x01FBD},
+    {0x01FBF, 0x01FC1}, {0x01FCD, 0x01FCF}, {0x01FDD, 0x01FDF},
+    {0x01FED, 0x01FEF}, {0x01FFD, 0x01FFE}, {0x02010, 0x02027},
+    {0x02030, 0x0205E}, {0x0207A, 0x0207E}, {0x0208A, 0x0208E},
+    {0x020A0, 0x020C0}, {0x02100, 0x02101}, {0x02103, 0x02106},
+    {0x02108, 0x02109}, {0x02114, 0x02114}, {0x02116, 0x02118},
+    {0x0211E, 0x02123}, {0x02125, 0x02125}, {0x02127, 0x02127},
+    {0x02129, 0x02129}, {0x0212E, 0x0212E}, {0x0213A, 0x0213B},
+    {0x02140, 0x02144}, {0x0214A, 0x0214D}, {0x0214F, 0x0214F},
+    {0x0218A, 0x0218B}, {0x02190, 0x021FF}, {0x02400, 0x02426},
+    {0x02800, 0x028FF}, {0x03001, 0x03004}, {0x03008, 0x03020},
+    {0x03030, 0x03030}, {0x03036, 0x03037}, {0x0303D, 0x0303F},
+    {0x0309B, 0x0309C}, {0x030A0, 0x030A0}, {0x030FB, 0x030FB},
+    {0x04DC0, 0x04DFF}, {0x0A673, 0x0A673}, {0x0A67E, 0x0A67E},
+    {0x0A720, 0x0A721}, {0x0A789, 0x0A78A}, {0x0AB5B, 0x0AB5B},
+    {0x0AB6A, 0x0AB6B}, {0x0FF01, 0x0FF0F}, {0x0FF1A, 0x0FF20},
+    {0x0FF3B, 0x0FF40}, {0x0FF5B, 0x0FF65}, {0x0FFE0, 0x0FFE6},
+    {0x0FFE8, 0x0FFEE}, {0x0FFFC, 0x0FFFD}, {0x1F10D, 0x1F1AD},
+    {0x1F1E6, 0x1F1FF}, {0x1FB00, 0x1FB92}, {0x1FB94, 0x1FBCA},
+};
+
+static inline int is_symbol_or_punctuation(int cp) {
+    int n = (int)(sizeof(sp_ranges) / sizeof(sp_ranges[0]));
+    for (int i = 0; i < n; i++) {
+        if (cp >= sp_ranges[i][0] && cp <= sp_ranges[i][1])
+            return 1;
+    }
+    return 0;
+}
+
+/* ---- Combined filter for training exclusion ---- */
+
+static inline int is_excluded_from_training(int cp) {
+    return is_modifier_letter(cp) || is_symbol_or_punctuation(cp);
+}
+
+/* ---- Sheet filename → start codepoint ---- */
+
 static int sheet_start_code(const char *basename) {
     if (strstr(basename, "ascii_variable"))                return 0x00;
     if (strstr(basename, "latinExtA_variable"))            return 0x100;
@@ -138,4 +188,4 @@ static int sheet_start_code(const char *basename) {
     return -1;
 }
 
-#endif /* UNICODE_LM_H */
+#endif /* UNICODE_FILTER_H */

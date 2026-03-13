@@ -2,7 +2,7 @@
 #include "tga.h"
 #include "nn.h"
 #include "safetensor.h"
-#include "unicode_lm.h"
+#include "unicode_filter.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,8 +78,8 @@ static int collect_from_sheet(const char *path, int is_xyswap, int start_code,
         }
         if (width == 0) continue;
 
-        /* Skip modifier letters (superscripts/subscripts) */
-        if (start_code >= 0 && is_modifier_letter(start_code + index))
+        /* Skip modifier letters, symbols, punctuation */
+        if (start_code >= 0 && is_excluded_from_training(start_code + index))
             continue;
 
         /* Read kerning data pixel at Y+6 */
