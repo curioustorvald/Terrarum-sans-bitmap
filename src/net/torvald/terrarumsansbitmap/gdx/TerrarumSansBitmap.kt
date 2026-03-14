@@ -386,9 +386,19 @@ class TerrarumSansBitmap(
                     PixmapRegionPack(pixmap, W_LATIN_WIDE, H)
                 else throw IllegalArgumentException("Unknown sheet index: $index")
 
+                // this code causes initial deva chars to be skipped from rendering
+//                val illegalCells = HashSet<Long>()
+//                for (code in codeRange[index]) {
+//                    if (glyphProps[code]?.isIllegal == true) {
+//                        val pos = getSheetwisePosition(0, code)
+//                        illegalCells.add(pos[0].toLong().shl(16) or pos[1].toLong())
+//                    }
+//                }
+//
                 for (cy in 0 until texRegPack.verticalCount) {
                     for (cx in 0 until texRegPack.horizontalCount) {
-                        atlas.packCell(index, cx, cy, texRegPack.get(cx, cy))
+//                        if (cx.toLong().shl(16) or cy.toLong() in illegalCells) continue
+                        atlas.queueCell(index, cx, cy, texRegPack.get(cx, cy))
                     }
                 }
 
@@ -396,6 +406,9 @@ class TerrarumSansBitmap(
                 pixmap.dispose()
             }
         }
+
+        // sort and pack all queued cells (tight-cropped, sorted by height then width)
+        atlas.packAllQueued()
 
         // pack wenquanyi (SHEET_UNIHAN) last as a contiguous blit
         unihanPixmap?.let {
@@ -566,6 +579,9 @@ class TerrarumSansBitmap(
                         renderCol = getColour(c)
                     }
                 }
+                else if (isNoDrawChar(c) || glyphProps[c]?.isIllegal == true) {
+                    // whitespace/control/internal/invalid — no visible glyph, just advance position
+                }
                 else if (sheetID == SHEET_HANGUL) {
                     // Flookahead for {I, P, F}
 
@@ -673,6 +689,9 @@ class TerrarumSansBitmap(
                     else {
                         renderCol = getColour(c)
                     }
+                }
+                else if (isNoDrawChar(c) || glyphProps[c]?.isIllegal == true) {
+                    // whitespace/control/internal/invalid — no visible glyph, just advance position
                 }
                 else if (sheetID == SHEET_HANGUL) {
                     // Flookahead for {I, P, F}
@@ -3008,6 +3027,13 @@ class TerrarumSansBitmap(
         private fun isBulgarian(c: CodePoint) = c in 0xF0000..0xF005F
         private fun isSerbian(c: CodePoint) = c in 0xF0060..0xF00BF
         fun isColourCode(c: CodePoint) = c == 0x100000 || c in 0x10F000..0x10FFFF
+        private fun isNoDrawChar(c: CodePoint): Boolean =
+            c <= 0x20 || c == NBSP || c == SHY || c == OBJ ||
+            c in 0x2000..0x200D ||
+            c in 0xD800..0xDFFF ||
+            c in 0xF800..0xF8FF ||
+            c in 0xFFF70..0xFFF9F ||
+            c >= 0xFFFA0
         private fun isCharsetOverride(c: CodePoint) = c in 0xFFFC0..0xFFFCF
         private fun isDevanagari(c: CodePoint) = c in codeRange[SHEET_DEVANAGARI_VARW]
         private fun isHangulCompat(c: CodePoint) = c in codeRangeHangulCompat
