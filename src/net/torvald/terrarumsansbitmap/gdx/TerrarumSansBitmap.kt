@@ -318,7 +318,7 @@ class TerrarumSansBitmap(
     /** Props of all printable Unicode points. */
     private val glyphProps = HashMap<CodePoint, GlyphProps>()
     private val textReplaces = HashMap<CodePoint, CodePoint>()
-    private val sheets: Array<PixmapRegionPack>
+    private lateinit var atlas: GlyphAtlas
 
 //    private var charsetOverride = 0
 
@@ -326,9 +326,10 @@ class TerrarumSansBitmap(
 //    private val tempFiles = ArrayList<String>()
 
     init {
-        val sheetsPack = ArrayList<PixmapRegionPack>()
+        atlas = GlyphAtlas(4096, 4096)
+        var unihanPixmap: Pixmap? = null
 
-        // first we create pixmap to read pixels, then make texture using pixmap
+        // first we create pixmap to read pixels, then pack into atlas
         fileList.forEachIndexed { index, it ->
             val isVariable = it.endsWith("_variable.tga")
             val isXYSwapped = it.contains("xyswap", true)
@@ -346,32 +347,6 @@ class TerrarumSansBitmap(
             else
                 dbgprn("loading texture [STATIC] $it")
 
-
-            // unpack gz if applicable
-            /*if (it.endsWith(".gz")) {
-                val tmpFilePath = tempDir + "/tmp_${it.dropLast(7)}.tga"
-
-                try {
-                    val gzi = GZIPInputStream(Gdx.files.classpath(fontParentDir + it).read(8192))
-                    val wholeFile = gzi.readBytes()
-                    gzi.close()
-                    val fos = BufferedOutputStream(FileOutputStream(tmpFilePath))
-                    fos.write(wholeFile)
-                    fos.flush()
-                    fos.close()
-
-                    pixmap = Pixmap(Gdx.files.absolute(tmpFilePath))
-//                    tempFiles.add(tmpFilePath)
-                }
-                catch (e: GdxRuntimeException) {
-                    //e.printStackTrace()
-                    dbgprn("said texture not found, skipping...")
-
-                    pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
-                }
-                //File(tmpFileName).delete()
-            }
-            else {*/
                 try {
                     pixmap = Pixmap(Gdx.files.classpath("assets/$it"))
                 }
@@ -387,7 +362,6 @@ class TerrarumSansBitmap(
                         System.exit(1)
                     }
                 }
-            //}
 
             if (isVariable) buildWidthTable(pixmap, codeRange[index], if (isExtraWide) 32 else 16)
             buildWidthTableFixed()
@@ -395,40 +369,50 @@ class TerrarumSansBitmap(
 
             setupDynamicTextReplacer()
 
-            /*if (!noShadow) {
-                makeShadowForSheet(pixmap)
-            }*/
+            if (index == SHEET_UNIHAN) {
+                // defer wenquanyi packing to after all other sheets
+                unihanPixmap = pixmap
+            }
+            else {
+                val texRegPack = if (isExtraWide)
+                    PixmapRegionPack(pixmap, W_WIDEVAR_INIT, H, HGAP_VAR, 0, xySwapped = isXYSwapped)
+                else if (isVariable)
+                    PixmapRegionPack(pixmap, W_VAR_INIT, H, HGAP_VAR, 0, xySwapped = isXYSwapped)
+                else if (index == SHEET_HANGUL)
+                    PixmapRegionPack(pixmap, W_HANGUL_BASE, H)
+                else if (index == SHEET_CUSTOM_SYM)
+                    PixmapRegionPack(pixmap, SIZE_CUSTOM_SYM, SIZE_CUSTOM_SYM)
+                else if (index == SHEET_RUNIC)
+                    PixmapRegionPack(pixmap, W_LATIN_WIDE, H)
+                else throw IllegalArgumentException("Unknown sheet index: $index")
 
+                for (cy in 0 until texRegPack.verticalCount) {
+                    for (cx in 0 until texRegPack.horizontalCount) {
+                        atlas.packCell(index, cx, cy, texRegPack.get(cx, cy))
+                    }
+                }
 
-            //val texture = Texture(pixmap)
-            val texRegPack = if (isExtraWide)
-                PixmapRegionPack(pixmap, W_WIDEVAR_INIT, H, HGAP_VAR, 0, xySwapped = isXYSwapped)
-            else if (isVariable)
-                PixmapRegionPack(pixmap, W_VAR_INIT, H, HGAP_VAR, 0, xySwapped = isXYSwapped)
-            else if (index == SHEET_UNIHAN)
-                PixmapRegionPack(pixmap, W_UNIHAN, H_UNIHAN) // the only exception that is height is 16
-            // below they all have height of 20 'H'
-            else if (index == SHEET_HANGUL)
-                PixmapRegionPack(pixmap, W_HANGUL_BASE, H)
-            else if (index == SHEET_CUSTOM_SYM)
-                PixmapRegionPack(pixmap, SIZE_CUSTOM_SYM, SIZE_CUSTOM_SYM) // TODO variable
-            else if (index == SHEET_RUNIC)
-                PixmapRegionPack(pixmap, W_LATIN_WIDE, H)
-            else throw IllegalArgumentException("Unknown sheet index: $index")
-
-            //texRegPack.texture.setFilter(minFilter, magFilter)
-
-            sheetsPack.add(texRegPack)
-
-            pixmap.dispose() // you are terminated
+                texRegPack.dispose()
+                pixmap.dispose()
+            }
         }
 
-        sheets = sheetsPack.toTypedArray()
+        // pack wenquanyi (SHEET_UNIHAN) last as a contiguous blit
+        unihanPixmap?.let {
+            val cols = it.width / W_UNIHAN
+            val rows = it.height / H_UNIHAN
+            atlas.blitSheet(SHEET_UNIHAN, it, W_UNIHAN, H_UNIHAN, cols, rows)
+            it.dispose()
+        }
 
         // make sure null char is actually null (draws nothing and has zero width)
-        sheets[SHEET_ASCII_VARW].regions[0].setColor(0)
-        sheets[SHEET_ASCII_VARW].regions[0].fill()
+        atlas.getRegion(SHEET_ASCII_VARW, 0, 0)?.let { atlas.clearRegion(it) }
         glyphProps[0] = GlyphProps(0)
+
+        if (debug) {
+            com.badlogic.gdx.graphics.PixmapIO.writePNG(Gdx.files.absolute("$tempDir/glyph_atlas_dump.png"), atlas.pixmap)
+            dbgprn("atlas dumped to $tempDir/glyph_atlas_dump.png")
+        }
     }
 
     override fun getLineHeight(): Float = LINE_HEIGHT.toFloat() * scale
@@ -599,39 +583,31 @@ class TerrarumSansBitmap(
 
                     val (indexCho, indexJung, indexJong) = indices
                     val (choRow, jungRow, jongRow) = rows
-                    val hangulSheet = sheets[SHEET_HANGUL]
-
-
-
-                    val choTex = hangulSheet.get(indexCho, choRow)
-                    val jungTex = hangulSheet.get(indexJung, jungRow)
-                    val jongTex = hangulSheet.get(indexJong, jongRow)
-
-                    linotypePixmap.drawPixmap(choTex,  posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
-                    linotypePixmap.drawPixmap(jungTex, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
-                    linotypePixmap.drawPixmap(jongTex, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                    atlas.getRegion(SHEET_HANGUL, indexCho, choRow)?.let {
+                        linotypePixmap.drawFromAtlas(atlas.pixmap, it, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                    }
+                    atlas.getRegion(SHEET_HANGUL, indexJung, jungRow)?.let {
+                        linotypePixmap.drawFromAtlas(atlas.pixmap, it, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                    }
+                    atlas.getRegion(SHEET_HANGUL, indexJong, jongRow)?.let {
+                        linotypePixmap.drawFromAtlas(atlas.pixmap, it, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                    }
 
 
                     index += hangulLength - 1
 
                 }
                 else {
-                    try {
-                        val posY = posmap.y[index].flipY() +
-                                if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                    offsetUnihan
-                                else if (sheetID == SHEET_CUSTOM_SYM)
-                                    offsetCustomSym
-                                else 0
+                    val posY = posmap.y[index].flipY() +
+                            if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                offsetUnihan
+                            else if (sheetID == SHEET_CUSTOM_SYM)
+                                offsetCustomSym
+                            else 0
 
-                        val posX = posmap.x[index]
-                        val texture = sheets[sheetID].get(sheetX, sheetY)
-
-                        linotypePixmap.drawPixmap(texture, posX + linotypePaddingX, posY + linotypePaddingY, renderCol)
-
-
-                    }
-                    catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
+                    val posX = posmap.x[index]
+                    atlas.getRegion(sheetID, sheetX, sheetY)?.let {
+                        linotypePixmap.drawFromAtlas(atlas.pixmap, it, posX + linotypePaddingX, posY + linotypePaddingY, renderCol)
                     }
                 }
 
@@ -715,39 +691,31 @@ class TerrarumSansBitmap(
 
                     val (indexCho, indexJung, indexJong) = indices
                     val (choRow, jungRow, jongRow) = rows
-                    val hangulSheet = sheets[SHEET_HANGUL]
-
-
-
-                    val choTex = hangulSheet.get(indexCho, choRow)
-                    val jungTex = hangulSheet.get(indexJung, jungRow)
-                    val jongTex = hangulSheet.get(indexJong, jongRow)
-
-                    linotypePixmap.drawPixmap(choTex,  posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
-                    linotypePixmap.drawPixmap(jungTex, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
-                    linotypePixmap.drawPixmap(jongTex, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                    atlas.getRegion(SHEET_HANGUL, indexCho, choRow)?.let {
+                        linotypePixmap.drawFromAtlas(atlas.pixmap, it, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                    }
+                    atlas.getRegion(SHEET_HANGUL, indexJung, jungRow)?.let {
+                        linotypePixmap.drawFromAtlas(atlas.pixmap, it, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                    }
+                    atlas.getRegion(SHEET_HANGUL, indexJong, jongRow)?.let {
+                        linotypePixmap.drawFromAtlas(atlas.pixmap, it, posmap.x[index] + linotypePaddingX, linotypePaddingY, renderCol)
+                    }
 
 
                     index += hangulLength - 1
 
                 }
                 else {
-                    try {
-                        val posY = posmap.y[index].flipY() +
-                                if (sheetID == SHEET_UNIHAN) // evil exceptions
-                                    offsetUnihan
-                                else if (sheetID == SHEET_CUSTOM_SYM)
-                                    offsetCustomSym
-                                else 0
+                    val posY = posmap.y[index].flipY() +
+                            if (sheetID == SHEET_UNIHAN) // evil exceptions
+                                offsetUnihan
+                            else if (sheetID == SHEET_CUSTOM_SYM)
+                                offsetCustomSym
+                            else 0
 
-                        val posX = posmap.x[index]
-                        val texture = sheets[sheetID].get(sheetX, sheetY)
-
-                        linotypePixmap.drawPixmap(texture, posX + linotypePaddingX, posY + linotypePaddingY, renderCol)
-
-
-                    }
-                    catch (noSuchGlyph: ArrayIndexOutOfBoundsException) {
+                    val posX = posmap.x[index]
+                    atlas.getRegion(sheetID, sheetX, sheetY)?.let {
+                        linotypePixmap.drawFromAtlas(atlas.pixmap, it, posX + linotypePaddingX, posY + linotypePaddingY, renderCol)
                     }
                 }
 
@@ -826,7 +794,7 @@ class TerrarumSansBitmap(
     override fun dispose() {
         super.dispose()
         textCache.values.forEach { it.dispose() }
-        sheets.forEach { it.dispose() }
+        atlas.dispose()
     }
 
     fun getSheetType(c: CodePoint): Int {
@@ -2159,6 +2127,16 @@ class TerrarumSansBitmap(
                 val newPixel = pixel colorTimes col
 
                 this.drawPixel(xPos + x, yPos + y, newPixel)
+            }
+        }
+    }
+
+    private fun Pixmap.drawFromAtlas(atlas: Pixmap, region: AtlasRegion, xPos: Int, yPos: Int, col: Int) {
+        for (y in 0 until region.height) {
+            for (x in 0 until region.width) {
+                val pixel = atlas.getPixel(region.atlasX + x, region.atlasY + y)
+                val newPixel = pixel colorTimes col
+                this.drawPixel(xPos + x + region.offsetX, yPos + y + region.offsetY, newPixel)
             }
         }
     }
