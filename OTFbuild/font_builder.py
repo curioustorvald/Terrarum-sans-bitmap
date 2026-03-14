@@ -28,7 +28,7 @@ from keming_machine import generate_kerning_pairs
 from opentype_features import generate_features, glyph_name
 import sheet_config as SC
 
-FONT_VERSION = "1.15"
+FONT_VERSION = "1.16"
 
 # Codepoints that get cmap entries (user-visible)
 # PUA forms used internally by GSUB get glyphs but NO cmap entries

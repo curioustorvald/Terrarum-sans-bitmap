@@ -26,6 +26,7 @@ How multilingual? Real multilingual!
 􏻬󿿁Под южно дърво, цъфтящо в синьо, бягаше малко пухкаво зайче󿿀􀀀
 􏻬ᎠᏍᎦᏯᎡᎦᎢᎾᎨᎢᎣᏍᏓᎤᎩᏍᏗᎥᎴᏓᎯᎲᎢᏔᎵᏕᎦᏟᏗᏖᎸᎳᏗᏗᎧᎵᎢᏘᎴᎩ ᏙᏱᏗᏜᏫᏗᏣᏚᎦᏫᏛᏄᏓᎦᏝᏃᎠᎾᏗᎭᏞᎦᎯᎦᏘᏓᏠᎨᏏᏕᏡᎬᏢᏓᏥᏩᏝᎡᎢᎪᎢ ᎠᎦᏂᏗᎮᎢᎫᎩᎬᏩᎴᎢᎠᏆᏅᏛᎫᏊᎾᎥᎠᏁᏙᎲᏐᏈᎵᎤᎩᎸᏓᏭᎷᏤᎢᏏᏉᏯᏌᏊ ᎤᏂᏋᎢᏡᎬᎢᎰᏩᎬᏤᎵᏍᏗᏱᎩᎱᎱᎤᎩᎴᎢᏦᎢᎠᏂᏧᏣᏨᎦᏥᎪᎥᏌᏊᎤᎶᏒᎢᎢᏡᎬᎢ ᎹᎦᎺᎵᏥᎻᎼᏏᎽᏗᏩᏂᎦᏘᎾᎿᎠᏁᎬᎢᏅᎩᎾᏂᎡᎢᏌᎶᎵᏎᎷᎠᏑᏍᏗᏪᎩ ᎠᎴ ᏬᏗᏲᏭᎾᏓᏍᏓᏴᏁᎢᎤᎦᏅᏮᏰᎵᏳᏂᎨᎢ􀀀
 􏻬Ѳеѡфа́нъ и҆ Алеѯі́й, ѕѣлѡ̀ возлюби́вше ѱалти́рь, воспѣ́ша при свѣ́тѣ ѕвѣ́здъ, помазꙋ́юще сщ҃е́нное мѵ́ро; серафими мн̑оꙮ҆читїи̑, ꙗ҆́кѡ ѻ҆́гнь, ѡ҆крꙋжа́хꙋ прⷭ҇то́лъ Бж҃їй, и҆ всѧ̀ землѧ̀ и҆спо́лнисѧ свѣ́та, ꙗ҆́кѡ ѕмі́й попра́нъ є҆́сть􀀀
+􏻬ⲡⲓⲝⲉⲛⲟⲥ ⲅⲁⲣ ⲁϥϫⲉⲙ ⲟⲩⲫⲱⲥ ϧⲉⲛ ⲡⲓⲍⲏⲗⲟⲥ ⲛⲧⲉ ϯⲯⲩⲭⲏ· ⲁϥϣⲱⲡⲓ ⲇⲉ ⲕⲁⲧⲁ ⲡⲓⲑⲉⲗⲏⲙⲁ· ⲁϥϭⲓ ⲛϩⲱⲃ ⲛⲓⲃⲉⲛ ⲟⲩⲟϩ ⲁϥϯⲙⲟⲧ􀀀
 􏻬Příliš žluťoučký kůň úpěl ďábelské ódy􀀀
 􏻬Quizdeltagerne spiste jordbær med fløde, mens cirkusklovnen Walther spillede på xylofon􀀀
 􏻬PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS􀀀
@@ -125,6 +126,7 @@ How multilingual? Real multilingual!
 ⁃ CJK Unified Ideographs Extension A􏿆¹²·¹􀀀
 ⁃ Combining Diacritical Marks
 ⁃ Control Pictures
+⁃ Coptic
 ⁃ Currency Symbols
 ⁃ Cyrillic
 ⁃ Cyrillic Supplement
