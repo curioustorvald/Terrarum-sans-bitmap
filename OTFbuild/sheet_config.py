@@ -143,7 +143,7 @@ CODE_RANGE = [
     list(range(0x400, 0x530)),                                                      # 7: Cyrillic
     list(range(0xFF00, 0x10000)),                                                   # 8: Halfwidth/Fullwidth
     list(range(0x2000, 0x20A0)),                                                    # 9: Uni Punct
-    list(range(0x370, 0x3CF)),                                                      # 10: Greek
+    list(range(0x370, 0x400)),                                                      # 10: Greek
     list(range(0xE00, 0xE60)),                                                      # 11: Thai
     list(range(0x530, 0x590)),                                                      # 12: Armenian
     list(range(0x10D0, 0x1100)),                                                    # 13: Georgian

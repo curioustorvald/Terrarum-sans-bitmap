@@ -2697,7 +2697,7 @@ class TerrarumSansBitmap(
             0x400..0x52F, // SHEET_CYRILIC_VARW
             0xFF00..0xFFFF, // SHEET_HALFWIDTH_FULLWIDTH_VARW
             0x2000..0x209F, // SHEET_UNI_PUNCT_VARW
-            0x370..0x3CE, // SHEET_GREEK_VARW
+            0x370..0x3FF, // SHEET_GREEK_VARW
             0xE00..0xE5F, // SHEET_THAI_VARW
             0x530..0x58F, // SHEET_HAYEREN_VARW
             0x10D0..0x10FF, // SHEET_KARTULI_VARW
