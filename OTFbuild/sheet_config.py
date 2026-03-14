@@ -78,6 +78,7 @@ SHEET_CYRILIC_EXTC_VARW = 44
 SHEET_LATIN_EXTE_VARW = 45
 SHEET_LATIN_EXTF_VARW = 46
 SHEET_LATIN_EXTG_VARW = 47
+SHEET_OGHAM_VARW = 48
 
 SHEET_UNKNOWN = 254
 
@@ -130,6 +131,7 @@ FILE_LIST = [
     "latinExtE_variable.tga",
     "latinExtF_variable.tga",
     "latinExtG_variable.tga",
+    "ogham_variable.tga",
 ]
 
 CODE_RANGE = [
@@ -181,6 +183,7 @@ CODE_RANGE = [
     list(range(0xAB30, 0xAB70)),                                                    # 45: Latin Ext E
     list(range(0x10780, 0x107C0)),                                                  # 46: Latin Ext F
     list(range(0x1DF00, 0x1E000)),                                                  # 47: Latin Ext G
+    list(range(0x1680, 0x16A0)),                                                    # 48: Ogham
 ]
 
 CODE_RANGE_HANGUL_COMPAT = range(0x3130, 0x3190)
@@ -563,5 +566,6 @@ def index_y(sheet_index, c):
         SHEET_LATIN_EXTE_VARW: lambda: (c - 0xAB30) // 16,
         SHEET_LATIN_EXTF_VARW: lambda: (c - 0x10780) // 16,
         SHEET_LATIN_EXTG_VARW: lambda: (c - 0x1DF00) // 16,
+        SHEET_OGHAM_VARW: lambda: (c - 0x1680) // 16,
         SHEET_HANGUL: lambda: 0,
     }.get(sheet_index, lambda: c // 16)()

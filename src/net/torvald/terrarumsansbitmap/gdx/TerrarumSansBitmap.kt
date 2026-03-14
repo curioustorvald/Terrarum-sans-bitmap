@@ -881,6 +881,7 @@ class TerrarumSansBitmap(
             SHEET_LATIN_EXTE_VARW -> latinExtEIndexY(ch)
             SHEET_LATIN_EXTF_VARW -> latinExtFIndexY(ch)
             SHEET_LATIN_EXTG_VARW -> latinExtGIndexY(ch)
+            SHEET_OGHAM_VARW -> oghamIndexY(ch)
             else -> ch / 16
         }
 
@@ -2612,6 +2613,7 @@ class TerrarumSansBitmap(
         internal const val SHEET_LATIN_EXTE_VARW = 45
         internal const val SHEET_LATIN_EXTF_VARW = 46
         internal const val SHEET_LATIN_EXTG_VARW = 47
+        internal const val SHEET_OGHAM_VARW = 48
 
         internal const val SHEET_UNKNOWN = 254
 
@@ -2682,6 +2684,7 @@ class TerrarumSansBitmap(
             "latinExtE_variable.tga",
             "latinExtF_variable.tga",
             "latinExtG_variable.tga",
+            "ogham_variable.tga",
         )
         internal val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -2732,6 +2735,7 @@ class TerrarumSansBitmap(
             0xAB30..0xAB6F, // SHEET_LATIN_EXTE_VARW
             0x10780..0x107BF, // SHEET_LATIN_EXTF_VARW
             0x1DF00..0x1DFFF, // SHEET_LATIN_EXTG_VARW
+            0x1680..0x169F, // SHEET_OGHAM_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -3090,6 +3094,7 @@ class TerrarumSansBitmap(
         private fun latinExtEIndexY(c: CodePoint) = (c - 0xAB30) / 16
         private fun latinExtFIndexY(c: CodePoint) = (c - 0x10780) / 16
         private fun latinExtGIndexY(c: CodePoint) = (c - 0x1DF00) / 16
+        private fun oghamIndexY(c: CodePoint) = (c - 0x1680) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
