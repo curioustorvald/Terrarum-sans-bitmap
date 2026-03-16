@@ -122,8 +122,8 @@ How multilingual? Real multilingual!
 ⁃ Braille Patterns
 ⁃ Cherokee􏿆ᴬ􀀀
 ⁃ CJK Symbols and Punctuation
-⁃ CJK Unified Ideographs􏿆⁶􀀀
-⁃ CJK Unified Ideographs Extension A􏿆¹²·¹􀀀
+⁃ CJK Unified Ideographs
+⁃ CJK Unified Ideographs Extension A
 ⁃ Combining Diacritical Marks
 ⁃ Control Pictures
 ⁃ Coptic
@@ -163,9 +163,9 @@ How multilingual? Real multilingual!
 ⁃ Symbols for Legacy Computing
 ⁃ Tamil
 ⁃ Thai
+⁃ Yijing Hexagram Symbols
 
   􏿆ᶠⁱ􀀀  No support for ligatures
   􏿆ᴬ􀀀   Uppercase only     􏿆ჼ􀀀  Mkhedruli only
-  􏿆⁶􀀀   􏿆¹²·¹􀀀  Up to the specified Unicode version
 
 GitHub’s issue page is open! You can report any 􏽕errors􀀀, or leave 􏽕suggestions􀀀. You can help this font to be more versatile. (for more languages, more frameworks) 􏽕Clone􀀀 this repo, make changes, and make a 􏽕pull request􀀀! I appreciate any and all supports.
