@@ -130,7 +130,7 @@ How multilingual? Real multilingual!
 ⁃ Currency Symbols
 ⁃ Cyrillic
 ⁃ Cyrillic Supplement
-⁃ Cyrillic Extended-A/B/C
+⁃ Cyrillic Extended-A/B/C/D
 ⁃ Devanagari
 ⁃ Enclosed Alphanumeric Supplement
 ⁃ General Punctuations

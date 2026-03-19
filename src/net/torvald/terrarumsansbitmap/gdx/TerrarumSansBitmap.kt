@@ -883,6 +883,7 @@ class TerrarumSansBitmap(
             SHEET_LATIN_EXTG_VARW -> latinExtGIndexY(ch)
             SHEET_OGHAM_VARW -> oghamIndexY(ch)
             SHEET_COPTIC_VARW -> copticIndexY(ch)
+            SHEET_CYRILIC_EXTD_VARW -> cyrilicExtDIndexY(ch)
             else -> ch / 16
         }
 
@@ -2616,6 +2617,7 @@ class TerrarumSansBitmap(
         internal const val SHEET_LATIN_EXTG_VARW = 47
         internal const val SHEET_OGHAM_VARW = 48
         internal const val SHEET_COPTIC_VARW = 49
+        internal const val SHEET_CYRILIC_EXTD_VARW = 50
 
         internal const val SHEET_UNKNOWN = 254
 
@@ -2688,6 +2690,7 @@ class TerrarumSansBitmap(
             "latinExtG_variable.tga",
             "ogham_variable.tga",
             "coptic_variable.tga",
+            "cyrilic_extD_variable.tga",
         )
         internal val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -2740,6 +2743,7 @@ class TerrarumSansBitmap(
             0x1DF00..0x1DFFF, // SHEET_LATIN_EXTG_VARW
             0x1680..0x169F, // SHEET_OGHAM_VARW
             0x2C80..0x2CFF, // SHEET_COPTIC_VARW
+            0x1E030..0x1E08F, // SHEET_CYRILIC_EXTD_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -3100,6 +3104,7 @@ class TerrarumSansBitmap(
         private fun latinExtGIndexY(c: CodePoint) = (c - 0x1DF00) / 16
         private fun oghamIndexY(c: CodePoint) = (c - 0x1680) / 16
         private fun copticIndexY(c: CodePoint) = (c - 0x2C80) / 16
+        private fun cyrilicExtDIndexY(c: CodePoint) = (c - 0x1E030) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()
