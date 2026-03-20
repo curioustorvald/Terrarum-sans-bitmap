@@ -273,7 +273,7 @@ def _generate_hangul_gsub(glyphs, has, jamo_data):
             continue
         for f in [0, 1]:
             try:
-                row_ng = SC.get_han_initial_row(1, idx, f)
+                row_ng = SC.get_han_initial_row(2, idx, f)
             except (ValueError, KeyError):
                 continue
             jung_groups_general.setdefault((row_ng, f), []).append(jcp)
