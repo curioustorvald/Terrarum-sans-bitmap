@@ -153,6 +153,7 @@ How multilingual? Real multilingual!
 ⁃ Letterlike Symbols
 ⁃ Number Forms
 ⁃ Ogham
+⁃ Optical Character Recognition
 ⁃ Phonetic Extensions
 ⁃ Phonetic Extensions Supplement
 ⁃ Runic
