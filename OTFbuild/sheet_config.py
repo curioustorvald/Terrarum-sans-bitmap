@@ -179,7 +179,7 @@ CODE_RANGE = [
     list(range(0xF0520, 0xF0580)),                                                  # 37: Codestyle ASCII
     list(range(0xFB00, 0xFB18)),                                                    # 38: Alphabetic Presentation
     list(range(0x1B000, 0x1B170)),                                                  # 39: Hentaigana
-    list(range(0x2400, 0x2440)),                                                    # 40: Control Pictures
+    list(range(0x2400, 0x2450)),                                                    # 40: Control Pictures
     list(range(0x1FB00, 0x1FC00)),                                                  # 41: Legacy Computing
     list(range(0xA640, 0xA6A0)),                                                    # 42: Cyrillic Ext B
     list(range(0x2DE0, 0x2E00)),                                                    # 43: Cyrillic Ext A

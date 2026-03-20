@@ -16,8 +16,8 @@ import sheet_config as SC
 
 # PUA range for Hangul jamo variant storage.
 # We need space for: max_col * max_row variants.
-# Using 0xF0600-0xF1E7F
-HANGUL_PUA_BASE = 0xF0600
+# Using 0x100000-0x10187F
+HANGUL_PUA_BASE = 0x100000
 
 
 def _compose_bitmaps(a, b, w, h):
