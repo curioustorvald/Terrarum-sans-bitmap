@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "Bash(head:*)",
+      "WebFetch(domain:gitlab.com)",
+      "Bash(java:*)",
+      "Bash(ls:*)",
+      "Bash(jar tf:*)",
+      "Bash(chmod +x:*)",
+      "WebFetch(domain:fontforge.org)",
+      "WebFetch(domain:fonttools.readthedocs.io)",
+      "Bash(grep:*)",
+      "Bash(tail:*)",
+      "Bash(python3:*)",
+      "Bash(make:*)",
+      "Bash(git stash:*)",
+      "Bash(./autokem*)",
+      "Bash(cmp:*)",
+      "Bash(wc:*)",
+      "Bash(pip3:*)",
+      "Bash(pip install:*)",
+      "Bash(.venv/bin/python3:*)",
+      "Bash(.venv/bin/python:*)",
+      "Bash(find:*)",
+      "Skill(update-config)"
+    ]
+  }
+}

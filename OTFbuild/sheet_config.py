@@ -81,6 +81,7 @@ SHEET_LATIN_EXTG_VARW = 47
 SHEET_OGHAM_VARW = 48
 SHEET_COPTIC_VARW = 49
 SHEET_CYRILIC_EXTD_VARW = 50
+SHEET_MATHS1_VARW = 51
 
 SHEET_UNKNOWN = 254
 
@@ -136,6 +137,7 @@ FILE_LIST = [
     "ogham_variable.tga",
     "coptic_variable.tga",
     "cyrilic_extD_variable.tga",
+    "maths1_extrawide_variable.tga",
 ]
 
 CODE_RANGE = [
@@ -190,6 +192,7 @@ CODE_RANGE = [
     list(range(0x1680, 0x16A0)),                                                    # 48: Ogham
     list(range(0x2C80, 0x2D00)),                                                    # 49: Coptic
     list(range(0x1E030, 0x1E090)),                                                  # 50: Cyrillic Ext D
+    list(range(0x2200, 0x2300)),                                                    # 51: Maths1
 ]
 
 CODE_RANGE_HANGUL_COMPAT = range(0x3130, 0x3190)
@@ -575,5 +578,6 @@ def index_y(sheet_index, c):
         SHEET_OGHAM_VARW: lambda: (c - 0x1680) // 16,
         SHEET_COPTIC_VARW: lambda: (c - 0x2C80) // 16,
         SHEET_CYRILIC_EXTD_VARW: lambda: (c - 0x1E030) // 16,
+        SHEET_MATHS1_VARW: lambda: (c - 0x2200) // 16,
         SHEET_HANGUL: lambda: 0,
     }.get(sheet_index, lambda: c // 16)()
