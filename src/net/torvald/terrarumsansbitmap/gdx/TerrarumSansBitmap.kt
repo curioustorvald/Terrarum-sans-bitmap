@@ -2747,7 +2747,7 @@ class TerrarumSansBitmap(
             0x1680..0x169F, // SHEET_OGHAM_VARW
             0x2C80..0x2CFF, // SHEET_COPTIC_VARW
             0x1E030..0x1E08F, // SHEET_CYRILIC_EXTD_VARW
-            0x2200..0x22FF, // SHEET_MATHS1_VARW
+            0x2200..0x23FF, // SHEET_MATHS1_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 

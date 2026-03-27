@@ -152,6 +152,7 @@ How multilingual? Real multilingual!
 ⁃ Small Kana Extension
 ⁃ Letterlike Symbols
 ⁃ Mathematical Operators
+⁃ Miscellaneous Technical
 ⁃ Number Forms
 ⁃ Ogham
 ⁃ Optical Character Recognition

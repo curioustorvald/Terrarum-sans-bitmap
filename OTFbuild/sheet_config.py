@@ -192,7 +192,7 @@ CODE_RANGE = [
     list(range(0x1680, 0x16A0)),                                                    # 48: Ogham
     list(range(0x2C80, 0x2D00)),                                                    # 49: Coptic
     list(range(0x1E030, 0x1E090)),                                                  # 50: Cyrillic Ext D
-    list(range(0x2200, 0x2300)),                                                    # 51: Maths1
+    list(range(0x2200, 0x2400)),                                                    # 51: Maths1
 ]
 
 CODE_RANGE_HANGUL_COMPAT = range(0x3130, 0x3190)
