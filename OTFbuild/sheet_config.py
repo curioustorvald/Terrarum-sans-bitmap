@@ -6,8 +6,10 @@ Ported from TerrarumSansBitmap.kt companion object and SheetConfig.kt.
 # Font metrics
 H = 20
 H_UNIHAN = 16
+H_EMOJI1 = 16
 W_HANGUL_BASE = 13
 W_UNIHAN = 16
+W_EMOJI1 = 17
 W_LATIN_WIDE = 9
 W_VAR_INIT = 15
 W_WIDEVAR_INIT = 31
@@ -82,6 +84,7 @@ SHEET_OGHAM_VARW = 48
 SHEET_COPTIC_VARW = 49
 SHEET_CYRILIC_EXTD_VARW = 50
 SHEET_MATHS1_VARW = 51
+SHEET_EMOJI1 = 52
 
 SHEET_UNKNOWN = 254
 
@@ -138,6 +141,7 @@ FILE_LIST = [
     "coptic_variable.tga",
     "cyrilic_extD_variable.tga",
     "maths1_extrawide_variable.tga",
+    "emoji1.tga",
 ]
 
 CODE_RANGE = [
@@ -193,6 +197,7 @@ CODE_RANGE = [
     list(range(0x2C80, 0x2D00)),                                                    # 49: Coptic
     list(range(0x1E030, 0x1E090)),                                                  # 50: Cyrillic Ext D
     list(range(0x2200, 0x2400)),                                                    # 51: Maths1
+    list(range(0x1F600, 0x1F650)),                                                  # 52: Emoji1
 ]
 
 CODE_RANGE_HANGUL_COMPAT = range(0x3130, 0x3190)
@@ -274,6 +279,8 @@ def get_cell_width(sheet_index):
         return W_VAR_INIT + HGAP_VAR  # 16
     if sheet_index == SHEET_UNIHAN:
         return W_UNIHAN
+    if sheet_index == SHEET_EMOJI1:
+        return W_EMOJI1
     if sheet_index == SHEET_HANGUL:
         return W_HANGUL_BASE
     if sheet_index == SHEET_CUSTOM_SYM:
@@ -286,6 +293,8 @@ def get_cell_width(sheet_index):
 def get_cell_height(sheet_index):
     if sheet_index == SHEET_UNIHAN:
         return H_UNIHAN
+    if sheet_index == SHEET_EMOJI1:
+        return H_EMOJI1
     if sheet_index == SHEET_CUSTOM_SYM:
         return SIZE_CUSTOM_SYM
     return H
@@ -579,5 +588,6 @@ def index_y(sheet_index, c):
         SHEET_COPTIC_VARW: lambda: (c - 0x2C80) // 16,
         SHEET_CYRILIC_EXTD_VARW: lambda: (c - 0x1E030) // 16,
         SHEET_MATHS1_VARW: lambda: (c - 0x2200) // 16,
+        SHEET_EMOJI1: lambda: (c - 0x1F600) // 16,
         SHEET_HANGUL: lambda: 0,
     }.get(sheet_index, lambda: c // 16)()

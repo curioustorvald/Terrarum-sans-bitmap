@@ -328,6 +328,7 @@ class TerrarumSansBitmap(
     init {
         atlas = GlyphAtlas(4096, 4096)
         var unihanPixmap: Pixmap? = null
+        var emoji1Pixmap: Pixmap? = null
 
         // first we create pixmap to read pixels, then pack into atlas
         fileList.forEachIndexed { index, it ->
@@ -372,6 +373,10 @@ class TerrarumSansBitmap(
             if (index == SHEET_UNIHAN) {
                 // defer wenquanyi packing to after all other sheets
                 unihanPixmap = pixmap
+            }
+            else if (index == SHEET_EMOJI1) {
+                // defer emoji1 packing to after all other sheets
+                emoji1Pixmap = pixmap
             }
             else {
                 val texRegPack = if (isExtraWide)
@@ -418,6 +423,14 @@ class TerrarumSansBitmap(
             it.dispose()
         }
 
+        // pack emoji1 as a contiguous blit (fixed 17x16 cells, 2px top/bottom padding)
+        emoji1Pixmap?.let {
+            val cols = it.width / W_EMOJI1
+            val rows = it.height / H_EMOJI1
+            atlas.blitSheet(SHEET_EMOJI1, it, W_EMOJI1, H_EMOJI1, cols, rows)
+            it.dispose()
+        }
+
         // make sure null char is actually null (draws nothing and has zero width)
         atlas.getRegion(SHEET_ASCII_VARW, 0, 0)?.let { atlas.clearRegion(it) }
         glyphProps[0] = GlyphProps(0)
@@ -446,6 +459,7 @@ class TerrarumSansBitmap(
     }
 
     private val offsetUnihan = (H - H_UNIHAN) / 2
+    private val offsetEmoji1 = (H - H_EMOJI1) / 2
     private val offsetCustomSym = (H - SIZE_CUSTOM_SYM) / 2
 
     private var flagFirstRun = true
@@ -617,6 +631,8 @@ class TerrarumSansBitmap(
                     val posY = posmap.y[index].flipY() +
                             if (sheetID == SHEET_UNIHAN) // evil exceptions
                                 offsetUnihan
+                            else if (sheetID == SHEET_EMOJI1)
+                                offsetEmoji1
                             else if (sheetID == SHEET_CUSTOM_SYM)
                                 offsetCustomSym
                             else 0
@@ -728,6 +744,8 @@ class TerrarumSansBitmap(
                     val posY = posmap.y[index].flipY() +
                             if (sheetID == SHEET_UNIHAN) // evil exceptions
                                 offsetUnihan
+                            else if (sheetID == SHEET_EMOJI1)
+                                offsetEmoji1
                             else if (sheetID == SHEET_CUSTOM_SYM)
                                 offsetCustomSym
                             else 0
@@ -885,6 +903,7 @@ class TerrarumSansBitmap(
             SHEET_COPTIC_VARW -> copticIndexY(ch)
             SHEET_CYRILIC_EXTD_VARW -> cyrilicExtDIndexY(ch)
             SHEET_MATHS1_VARW -> maths1IndexY(ch)
+            SHEET_EMOJI1 -> emoji1IndexY(ch)
             else -> ch / 16
         }
 
@@ -1011,6 +1030,7 @@ class TerrarumSansBitmap(
         codeRangeHangulCompat.forEach { glyphProps[it] = GlyphProps(W_HANGUL_BASE) }
         codeRange[SHEET_RUNIC].forEach { glyphProps[it] = GlyphProps(9) }
         codeRange[SHEET_UNIHAN].forEach { glyphProps[it] = GlyphProps(W_UNIHAN) }
+        codeRange[SHEET_EMOJI1].forEach { glyphProps[it] = GlyphProps(W_EMOJI1) }
         (0xD800..0xDFFF).forEach { glyphProps[it] = GlyphProps(0) }
         (0x100000..0x10FFFF).forEach { glyphProps[it] = GlyphProps(0) }
         (0xFFFA0..0xFFFFF).forEach { glyphProps[it] = GlyphProps(0) }
@@ -2560,6 +2580,8 @@ class TerrarumSansBitmap(
 
         internal const val H = 20
         internal const val H_UNIHAN = 16
+        internal const val W_EMOJI1 = 17
+        internal const val H_EMOJI1 = 16
 
         internal const val H_DIACRITICS = 3
 
@@ -2620,6 +2642,7 @@ class TerrarumSansBitmap(
         internal const val SHEET_COPTIC_VARW = 49
         internal const val SHEET_CYRILIC_EXTD_VARW = 50
         internal const val SHEET_MATHS1_VARW = 51
+        internal const val SHEET_EMOJI1 = 52
 
         internal const val SHEET_UNKNOWN = 254
 
@@ -2694,6 +2717,7 @@ class TerrarumSansBitmap(
             "coptic_variable.tga",
             "cyrilic_extD_variable.tga",
             "maths1_extrawide_variable.tga",
+            "emoji1.tga",
         )
         internal val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -2748,6 +2772,7 @@ class TerrarumSansBitmap(
             0x2C80..0x2CFF, // SHEET_COPTIC_VARW
             0x1E030..0x1E08F, // SHEET_CYRILIC_EXTD_VARW
             0x2200..0x23FF, // SHEET_MATHS1_VARW
+            0x1F600..0x1F64F, // SHEET_EMOJI1
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -3110,6 +3135,7 @@ class TerrarumSansBitmap(
         private fun copticIndexY(c: CodePoint) = (c - 0x2C80) / 16
         private fun cyrilicExtDIndexY(c: CodePoint) = (c - 0x1E030) / 16
         private fun maths1IndexY(c: CodePoint) = (c - 0x2200) / 16
+        private fun emoji1IndexY(c: CodePoint) = (c - 0x1F600) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()

@@ -11,7 +11,7 @@ The user must supply:
 - **TGA filename** — the sprite sheet filename without path (e.g. `ogham_variable.tga`)
 - **Unicode range** — start and end codepoints inclusive (e.g. `U+1680..U+169F`)
 
-If any of these are missing, ask for them before proceeding.
+If any of these are missing, ask for them before proceeding. Extra directions can be given after Unicode range.
 
 ## Step 1 — Determine the next sheet index
 

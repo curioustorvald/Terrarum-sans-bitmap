@@ -332,6 +332,7 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
     charstrings[".notdef"] = pen.getCharString()
 
     _unihan_cps = set(SC.CODE_RANGE[SC.SHEET_UNIHAN])
+    _emoji1_cps = set(SC.CODE_RANGE[SC.SHEET_EMOJI1])
     _base_offsets = {}  # glyph_name -> (x_offset, y_offset) for COLR layers
 
     traced_count = 0
@@ -381,6 +382,10 @@ def build_font(assets_dir, output_path, no_bitmap=False, no_features=False):
         # centres them vertically with offsetUnihan = (H - H_UNIHAN) / 2.
         if cp in _unihan_cps:
             y_offset -= ((SC.H - SC.H_UNIHAN) // 2) * SCALE
+
+        # Emoji1 glyphs are 16px tall in a 20px cell; same 2px top/bottom padding.
+        if cp in _emoji1_cps:
+            y_offset -= ((SC.H - SC.H_EMOJI1) // 2) * SCALE
 
         # Hangul jungseong/jongseong PUA variants (rows 15-18) have zero
         # advance and overlay the preceding choseong.  Shift their outlines
