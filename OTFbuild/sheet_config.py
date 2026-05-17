@@ -85,6 +85,7 @@ SHEET_COPTIC_VARW = 49
 SHEET_CYRILIC_EXTD_VARW = 50
 SHEET_MATHS1_VARW = 51
 SHEET_EMOJI1 = 52
+SHEET_ENCLOSED_ALPHNUM_VARW = 53
 
 SHEET_UNKNOWN = 254
 
@@ -142,6 +143,7 @@ FILE_LIST = [
     "cyrilic_extD_variable.tga",
     "maths1_extrawide_variable.tga",
     "emoji1.tga",
+    "enclosed_alphanumeric_variable.tga",
 ]
 
 CODE_RANGE = [
@@ -198,6 +200,7 @@ CODE_RANGE = [
     list(range(0x1E030, 0x1E090)),                                                  # 50: Cyrillic Ext D
     list(range(0x2200, 0x2400)),                                                    # 51: Maths1
     list(range(0x1F600, 0x1F650)),                                                  # 52: Emoji1
+    list(range(0x2460, 0x2500)),                                                    # 53: Enclosed Alphanum
 ]
 
 CODE_RANGE_HANGUL_COMPAT = range(0x3130, 0x3190)
@@ -589,5 +592,6 @@ def index_y(sheet_index, c):
         SHEET_CYRILIC_EXTD_VARW: lambda: (c - 0x1E030) // 16,
         SHEET_MATHS1_VARW: lambda: (c - 0x2200) // 16,
         SHEET_EMOJI1: lambda: (c - 0x1F600) // 16,
+        SHEET_ENCLOSED_ALPHNUM_VARW: lambda: (c - 0x2460) // 16,
         SHEET_HANGUL: lambda: 0,
     }.get(sheet_index, lambda: c // 16)()

@@ -904,6 +904,7 @@ class TerrarumSansBitmap(
             SHEET_CYRILIC_EXTD_VARW -> cyrilicExtDIndexY(ch)
             SHEET_MATHS1_VARW -> maths1IndexY(ch)
             SHEET_EMOJI1 -> emoji1IndexY(ch)
+            SHEET_ENCLOSED_ALPHNUM_VARW -> enclosedAlphnumIndexY(ch)
             else -> ch / 16
         }
 
@@ -2643,6 +2644,7 @@ class TerrarumSansBitmap(
         internal const val SHEET_CYRILIC_EXTD_VARW = 50
         internal const val SHEET_MATHS1_VARW = 51
         internal const val SHEET_EMOJI1 = 52
+        internal const val SHEET_ENCLOSED_ALPHNUM_VARW = 53
 
         internal const val SHEET_UNKNOWN = 254
 
@@ -2718,6 +2720,7 @@ class TerrarumSansBitmap(
             "cyrilic_extD_variable.tga",
             "maths1_extrawide_variable.tga",
             "emoji1.tga",
+            "enclosed_alphanumeric_variable.tga",
         )
         internal val codeRange = arrayOf( // MUST BE MATCHING WITH SHEET INDICES!!
             0..0xFF, // SHEET_ASCII_VARW
@@ -2773,6 +2776,7 @@ class TerrarumSansBitmap(
             0x1E030..0x1E08F, // SHEET_CYRILIC_EXTD_VARW
             0x2200..0x23FF, // SHEET_MATHS1_VARW
             0x1F600..0x1F64F, // SHEET_EMOJI1
+            0x2460..0x24FF, // SHEET_ENCLOSED_ALPHNUM_VARW
         )
         private val codeRangeHangulCompat = 0x3130..0x318F
 
@@ -3136,6 +3140,7 @@ class TerrarumSansBitmap(
         private fun cyrilicExtDIndexY(c: CodePoint) = (c - 0x1E030) / 16
         private fun maths1IndexY(c: CodePoint) = (c - 0x2200) / 16
         private fun emoji1IndexY(c: CodePoint) = (c - 0x1F600) / 16
+        private fun enclosedAlphnumIndexY(c: CodePoint) = (c - 0x2460) / 16
 
         val charsetOverrideDefault = Character.toChars(CHARSET_OVERRIDE_DEFAULT).toSurrogatedString()
         val charsetOverrideBulgarian = Character.toChars(CHARSET_OVERRIDE_BG_BG).toSurrogatedString()

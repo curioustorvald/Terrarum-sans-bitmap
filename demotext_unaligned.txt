@@ -132,6 +132,7 @@ How multilingual? Real multilingual!
 ⁃ Cyrillic Supplement
 ⁃ Cyrillic Extended-A/B/C/D
 ⁃ Devanagari
+⁃ Enclosed Alphanumerics
 ⁃ Enclosed Alphanumeric Supplement
 ⁃ General Punctuations
 ⁃ Georgian􏿆ჼ􀀀
