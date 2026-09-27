@@ -153,6 +153,7 @@ def cmd_plan(args):
 
 def cmd_show(args):
     ctx = Context()
+    scorer = None
     for ch in parse_chars(args.chars):
         cp = ord(ch)
         comp = ctx.model.get(ch)
@@ -171,8 +172,20 @@ def cmd_show(args):
         assembled = ASM.resolve(ctx.layout, cp, ctx.drawn)
         if assembled is None:
             print("  assembled: not yet (some parts are not drawn)")
-        elif assembled != planned:
-            print("  assembled from: " + ', '.join(str(k) for k, _, _ in assembled))
+        else:
+            if assembled != planned:
+                print("  assembled from: " + ', '.join(str(k) for k, _, _ in assembled))
+            if scorer is None:
+                scorer = ASM.font_scorer(ctx.layout, ctx.drawn)
+            cell, arr = ASM.assemble_one(ctx.layout, cp, ctx.drawn, scorer)
+            print("  as assembled:")
+            for row in cell[GEO.BODY_Y:GEO.BODY_Y + GEO.BODY_H, GEO.BODY_X:GEO.BODY_X + GEO.BODY_W]:
+                print('    ' + ' '.join('█' if v else '·' for v in row))
+            moves = [f"{p.key} " + ', '.join(filter(None, [
+                f"moved {p.dx:+d},{p.dy:+d}" if p.dx or p.dy else '',
+                f"resized {p.gw:+d}x{p.gh:+d}" if p.gw or p.gh else '']))
+                for p in arr.parts if p.dx or p.dy or p.gw or p.gh]
+            print("  evenness pass: " + ('; '.join(moves) if moves else 'no change'))
         print()
 
 
@@ -309,7 +322,7 @@ def cmd_status(args):
 
 def cmd_assemble(args):
     ctx = Context(with_plan=False)
-    glyphs = ASM.assemble(ctx.layout, ctx.model.targets, ctx.drawn)
+    glyphs = ASM.assemble(ctx.layout, ctx.model.targets, ctx.drawn, even=not args.no_even)
     for cp in ASM.HEXAGRAMS:
         glyphs[cp] = ASM.hexagram(cp)
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -513,6 +526,7 @@ def main(argv=None):
     p = sub.add_parser('assemble', help='compose the characters and write the Han sheet')
     p.add_argument('-o', '--output', help=f'output TGA (default {os.path.relpath(OUTPUT_SHEET, HERE)})')
     p.add_argument('--install', action='store_true', help='also copy the sheet into src/assets')
+    p.add_argument('--no-even', action='store_true', help='skip the evenness pass (evenness.py)')
     p.set_defaults(func=cmd_assemble)
 
     args = ap.parse_args(argv)

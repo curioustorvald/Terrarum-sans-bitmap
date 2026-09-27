@@ -32,10 +32,11 @@ a sprite sheet in the same format as the one it replaces. Both font engines load
 | slot | A component placed in a box of a given size: `SlotKey(comp, w, h, role)`, written `青@11x15`. A slot's layout depends only on its key, so the same slot looks the same in every character. |
 | frame | The outer part of a surround operator (⿴⿵⿶⿷⿸⿹⿺⿼⿽), drawn over the whole box with the inner area left empty, written `辶@15x15/⿺`. It is a different drawing from the plain component. |
 | glyphlette | A slot that is drawn by hand. It can be a radical, a phonetic part, a large chunk, or a whole character. |
-| generated glyphlette | A slot of a simple rectilinear component (口 日 目 白 工 木 土 …) drawn by code (`generators.py`). It is never on the worklist, and a hand drawing of the same slot always wins. |
+| generated glyphlette | A slot of a simple rectilinear component (口 日 目 白 工 土 …) drawn by code (`generators.py`). It is never on the worklist, and a hand drawing of the same slot always wins. |
 
 ### Generated glyphlettes (`generators.py`)
-- 27 components: 口 囗 日 曰 目 田 白 工 土 士 王 十 一 二 三 丨 山 中 由 甲 申 冂 凵 匚 冖 亠 宀 艹 木.
+- Components: 口 日 曰 目 田 白 工 土 士 王 十 一 二 三 丨 山 中 由 甲 申 冂 凵 匚 冖 亠 宀 艹, plus the
+  frames 囗 ⿴, 冂 ⿵, 凵 ⿶ and 匚 ⿷ (`SPECS`, `FRAMES`).
 - **Sizing:** shapes keep a plausible aspect ratio inside their box, centred (a left-hand 口 is
   5×7). Enclosed shapes keep clear of the sides of wide boxes (口 on top of 呆 is 11px wide).
 - **Bottom serifs:** the outer verticals of 口 囗 日 曰 目 田 白 山 中 由 甲 申 凵 匚 run past the
@@ -63,9 +64,10 @@ Juxing/
   model.py         builds/loads the Han model (model/han_model.tsv)
   geometry.py      layout engine: slot DAG, splits, frames, legibility rules
   planner.py       which glyphlettes to draw (cut optimisation, size reuse) and in what order
-  generators.py    procedural glyphlettes for simple components (口 日 木 ...)
+  generators.py    procedural glyphlettes for simple components (口 日 田 ...)
   glyphlettes.py   registry, drawing sheets (guides, ink), and the Library of available glyphlettes
   assembler.py     composes characters, writes the Han sheet, procedural hexagrams
+  evenness.py      evenness pass: refines each assembled character (after Lai, Yeung & Pong)
   render.py        terminal diagrams, sheet indices, mock-ups, previews
   tga.py           TGA I/O
   sample_text.txt  text rendered into out/preview.png
@@ -238,12 +240,12 @@ Current numbers (G preference, default rules):
 
 | | |
 |---|---|
-| Glyphlettes to draw for all 27,584 characters | 7,532 (effort 18% of drawing every character whole) |
-| Generated instead | 473 glyphlettes of 27 components, serving 10,358 slots; 144 characters need no drawing |
-| Reusing a drawing up to 2px smaller | 2,114 slot sizes |
-| First 1,000 glyphlettes complete | 3,720 of 7,071 everyday characters |
-| First 3,000 complete | 6,221 everyday characters |
-| All everyday characters | complete by glyphlette 4,686 |
+| Glyphlettes to draw for all 27,584 characters | 7,544 (effort 18% of drawing every character whole) |
+| Generated instead | 450 glyphlettes of 26 components; 97 characters need no drawing |
+| Reusing a drawing up to 2px smaller | 2,125 slot sizes |
+| First 1,000 glyphlettes complete | 3,700 of 7,071 everyday characters |
+| First 3,000 complete | 6,210 everyday characters |
+| All everyday characters | complete by glyphlette 4,698 |
 
 ### 4. Assembler (`assembler.py`)
 - Glyphlettes come from a `Library`, in order of preference: a hand drawing of exactly the slot,
@@ -259,6 +261,50 @@ Current numbers (G preference, default rules):
   procedurally from the King Wen sequence.
 - Output: `out/juxing.tga`, 4096×1728, 256 columns of 16×16 cells from U+3400, white on
   transparent. Header and pixel conventions are identical to `wenquanyi.tga`.
+
+### 5. Evenness pass (`evenness.py`)
+Each assembled character is refined by greedy search. This is after P.-K. Lai, D.-Y. Yeung and
+M.-C. Pong: *A Heuristic Search Approach to Chinese Glyph Generation Using Hierarchical Character
+Composition*, Computer Processing of Oriental Languages 10(3), 1996. The 1995 conference version is
+*Chinese glyph generation using character composition and beauty evaluation metrics*. Both papers
+are in `sources/`.
+- **Search:** the paper moves and resizes component boxes, keeping whichever change most improves
+  a weighted sum of "beauty metrics" that quantify calligraphy rules: 四平八稳 (alignment,
+  stability), 布白均匀 (even white space), 穿插避让 (closing gaps between components).
+- **What moves:**
+  - Parts only move **within their own boxes**, so they can't collide. Generated parts may also be
+    regenerated 2px smaller or larger.
+  - There is room when generated parts don't fill their boxes, when a reused drawing sits in a
+    larger box, and when hand drawings leave space.
+  - `MOVE_DRAWN` (default on) lets hand-drawn parts move too.
+- **Surrounds:** a lone part inside a frame may use the largest empty rectangle within the frame's
+  actual ink (1px clear), as in the paper.
+- **Hard constraints:**
+  - No new contact between parts that weren't touching at the start.
+  - Parts at a joined joint don't move vertically, so bridging still meets.
+- **Metrics (0 = ideal):**
+  - `cog`: centre of gravity off the body centre.
+  - `spacing`: unevenness (coefficient of variation) of the white gaps between strokes along every
+    row and column.
+  - `gaps`: adjacent parts not exactly one clear pixel apart.
+  - `align`: parts of a ⿱⿳ stack off its centre line.
+  - `density`: spread of ink density between parts.
+  - `moved`: displacement, which keeps changes small.
+- **Normalisation:** as in the paper, each metric is scaled as (M / (mean + sd))² over the font's
+  own initial configurations. A fixed sample of every character that can be assembled is used, so a
+  character gets the same result however it's assembled. `SCALE_FLOOR` stops a metric that never
+  varies (every initial stack is centred) from vanishing or dominating.
+- **Left out:** the paper's border-elimination metric. It concerns margins after scaling, which
+  Juxing never does, and it rewards pushing parts apart.
+- **Typical effect:**
+  - Enclosed or upper 口 and 日 narrow over wider parts (古 吉 高 早 晶 宫).
+  - Inner squares shrink for even white space (回 冋).
+  - Small left-hand 口s rise a pixel (吐 咭).
+- **Tools:**
+  - `show` prints the glyph as assembled and what the pass changed (e.g. `口@15x5 resized -2x+0`).
+  - `assemble --no-even` skips the pass, e.g. for comparisons.
+- **Cost:** about 15s for the whole font.
+- **Knobs:** `WEIGHTS`, `SCALE_FLOOR`, `MAX_STEPS`, `MOVE_DRAWN`.
 
 ## Switching the font over from WenQuanYi
 

@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
+import evenness as EV
 import generators as GN
 import geometry as GEO
 import glyphlettes as GL
@@ -83,14 +84,52 @@ def bridge(cell: np.ndarray, gaps, placements: List[Placement], drawn):
                 cell[gy, x] = True
 
 
-def assemble(layout: Layout, targets: List[int], drawn: GL.Library) -> Dict[int, np.ndarray]:
+def font_scorer(layout: Layout, drawn: GL.Library, limit: int = 2000) -> 'EV.Scorer':
+    """
+    The evenness scorer, normalised (as in the paper) over the font's own initial
+    configurations: an evenly spaced, fixed sample of every character that can be
+    assembled, so that a character gets the same result however it is assembled.
+    """
+    ready = [cp for cp in layout.model.targets if resolve(layout, cp, drawn) is not None]
+    step = max(1, len(ready) // limit)
+    samples = []
+    for cp in ready[::step]:
+        p = resolve(layout, cp, drawn)
+        samples.append(EV.Arrangement(layout, cp, p, drawn, joined_gaps(layout, cp, drawn)).metrics())
+    return EV.Scorer(samples)
+
+
+def assemble_one(layout: Layout, cp: int, drawn: GL.Library, scorer: Optional['EV.Scorer']):
+    """
+    Compose one character, refined by the evenness pass when a scorer is given.
+    Returns (cell, arrangement or None), or None if the character cannot be made yet.
+    """
+    p = resolve(layout, cp, drawn)
+    if p is None:
+        return None
+    gaps = joined_gaps(layout, cp, drawn)
+    if scorer is None:
+        cell = GL.compose(p, drawn)
+        arr = None
+    else:
+        arr = EV.Arrangement(layout, cp, p, drawn, gaps)
+        if arr.movable():
+            EV.optimise(arr, scorer)
+        cell = arr.compose() & GL.BODY_MASK
+    bridge(cell, gaps, p, drawn)
+    return cell, arr
+
+
+def assemble(layout: Layout, targets: List[int], drawn: GL.Library, even=True,
+             scorer: 'EV.Scorer' = None) -> Dict[int, np.ndarray]:
+    """Compose every character that can be made; with `even`, refined by the evenness pass."""
+    if even and scorer is None:
+        scorer = font_scorer(layout, drawn)
     out = {}
     for cp in targets:
-        p = resolve(layout, cp, drawn)
-        if p is not None:
-            cell = GL.compose(p, drawn)
-            bridge(cell, joined_gaps(layout, cp, drawn), p, drawn)
-            out[cp] = cell
+        r = assemble_one(layout, cp, drawn, scorer if even else None)
+        if r is not None:
+            out[cp] = r[0]
     return out
 
 

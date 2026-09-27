@@ -33,7 +33,7 @@ refresh:
 	$(PYTHON) juxing.py refresh
 
 $(OUTPUT): $(MODEL) model/layout.tsv $(wildcard glyphlettes/registry.tsv glyphlettes/sheet_*.tga) \
-           juxing.py model.py ids.py geometry.py planner.py generators.py glyphlettes.py assembler.py tga.py
+           juxing.py model.py ids.py geometry.py planner.py generators.py glyphlettes.py assembler.py evenness.py tga.py
 	$(PYTHON) juxing.py assemble
 
 install: $(OUTPUT)

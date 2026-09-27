@@ -366,7 +366,7 @@ SPECS: Dict[str, Spec] = {
     '亠': Spec(_tou, max_wide=99, max_tall=0.8),
     '宀': Spec(_mian, max_wide=99, max_tall=0.6),
     '艹': Spec(_cao, max_wide=99, max_tall=0.6, min_w=5),
-    '木': Spec(_mu4, max_wide=1.6, max_tall=2.6, min_w=5, min_h=5),
+#     '木': Spec(_mu4, max_wide=1.6, max_tall=2.6, min_w=5, min_h=5),
 }
 
 # Frames that are plain outlines of their box: (draw, natural height/width for serifs).
