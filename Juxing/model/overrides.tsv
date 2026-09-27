@@ -1,0 +1,15 @@
+# Juxing model overrides -- hand-maintained corrections to the upstream IDS data.
+#
+# Each line replaces the decomposition of one character or component:
+#   <character or U+XXXX> <TAB> <IDS> [<TAB> note]
+#
+# An IDS equal to the character itself makes it an atom: it is never split and
+# is always drawn whole. Use this for characters whose IDS splits them at a
+# point that does not work in a bitmap (strokes crossing the split, parts that
+# only look right drawn together).
+#
+# Any other IDS replaces the upstream one, e.g. to describe the G-source glyph
+# more usefully for assembly:
+#   U+XXXX	⿰亻⿱...	note
+#
+# Run `make model` after editing, then `make check`.

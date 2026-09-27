@@ -59,6 +59,12 @@ The test application demonstrates font rendering with text from `demotext_unalig
 - Devanagari, Tamil with ligature support
 - Many other scripts (see assets directory)
 
+**Juxing (Han ideographs)**
+- Standalone Python tool in `Juxing/` (no GDX dependency) that assembles CJK Unified Ideographs + Ext. A from hand-drawn glyphlettes
+- Produces `juxing.tga`, a drop-in replacement for the `wenquanyi.tga` sheet (`SHEET_UNIHAN`)
+- Nothing from WenQuanYi (GPL) may be used; decompositions come from Unihan + BabelStone IDS only
+- See `Juxing/CLAUDE.md` for the model, the drawing workflow and the switch-over steps
+
 **Typewriter Font**
 - Separate typewriter bitmap font in `src/net/torvald/terrarumtypewriterbitmap/`
 - Includes audio feedback system with typing sounds

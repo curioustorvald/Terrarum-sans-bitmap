@@ -33,3 +33,7 @@ Autokem/*.md
 # exceptions
 !**/CLAUDE.md
 !CLAUDE.md
+
+# from Juxing
+Juxing/sources/
+Juxing/out/
