@@ -79,6 +79,9 @@ VARIANT_FORMS = {
 def base_form(comp: str) -> str:
     return VARIANT_FORMS.get(comp, comp)
 
+# contexts of the layout.tsv 'place' column
+PLACE_CONTEXTS = ('left', 'right', 'middle', 'top', 'bottom', 'inner', 'whole', 'any')
+
 # layout.tsv preference names of the first and last part of each split
 SIDES = {'⿰': ('left', 'right'), '⿲': ('left', 'right'), '⿱': ('top', 'bottom'), '⿳': ('top', 'bottom')}
 
@@ -225,16 +228,18 @@ class ComponentRule:
     bottom: Optional[int] = None
     insets: Dict[str, Tuple[int, int, int, int]] = None
     levels: Optional[Tuple[float, float]] = None
+    place: Dict[str, Dict[str, float]] = None   # context -> {'x': fraction, 'y': fraction}
 
 
 def read_layout_rules(path=LAYOUT_PATH) -> Dict[str, ComponentRule]:
     """
-    layout.tsv columns: component, left, right, top, bottom, frame, levels, note
+    layout.tsv columns: component, left, right, top, bottom, frame, levels, place, note
       left/right  preferred width (px, in a 15px-wide box) as the left/right part of ⿰ ⿲
       top/bottom  preferred height (px, in a 15px-tall box) as the top/bottom part of ⿱ ⿳
       frame       inner-box insets when used as a surround frame, e.g. '⿸4,4,0,0'
                   (left,top,right,bottom at 15x15; several separated by spaces)
       levels      shape as 'rows,columns' of parallel stroke levels (see Layout.levels)
+      place       preferred position in a context for the evenness pass, e.g. 'left:y=0.45'
       '-' or empty means no preference.
     """
     rules: Dict[str, ComponentRule] = {}
@@ -245,7 +250,7 @@ def read_layout_rules(path=LAYOUT_PATH) -> Dict[str, ComponentRule]:
             line = line.rstrip('\n')
             if not line.strip() or line.startswith('#'):
                 continue
-            cols = (line.split('\t') + [''] * 8)[:8]
+            cols = (line.split('\t') + [''] * 9)[:9]
             comp = cols[0].strip()
 
             def num(s):
@@ -267,7 +272,21 @@ def read_layout_rules(path=LAYOUT_PATH) -> Dict[str, ComponentRule]:
                 levels = tuple(float(n) for n in cols[6].split(','))
                 if len(levels) != 2:
                     raise ValueError(f"{path}:{lineno}: levels need 2 numbers (rows,columns)")
-            rules[comp] = ComponentRule(num(cols[1]), num(cols[2]), num(cols[3]), num(cols[4]), insets, levels)
+            place = {}
+            for spec in cols[7].split():
+                if spec == '-':
+                    continue
+                context, _, coords = spec.partition(':')
+                if context not in PLACE_CONTEXTS or not coords:
+                    raise ValueError(f"{path}:{lineno}: bad place '{spec}' (contexts: {' '.join(PLACE_CONTEXTS)})")
+                place[context] = {}
+                for c in coords.split(','):
+                    axis, _, v = c.partition('=')
+                    if axis not in ('x', 'y') or not 0 <= float(v) <= 1:
+                        raise ValueError(f"{path}:{lineno}: bad place '{spec}' (x=/y= fractions 0..1)")
+                    place[context][axis] = float(v)
+            rules[comp] = ComponentRule(num(cols[1]), num(cols[2]), num(cols[3]), num(cols[4]), insets, levels,
+                                        place)
     return rules
 
 

@@ -27,7 +27,12 @@ MN = (M / (mean + sd))^2, measured over the initial configurations:
   gaps      adjacent parts not exactly one clear pixel apart
   align     parts of a stack (⿱ ⿳) off the stack's centre line
   density   spread of ink density between parts
+  rule      parts away from their preferred position (layout.tsv 'place' column),
+            the paper's rule-based metric: distance over box size, per axis
   moved     distance from the initial configuration (keeps changes small)
+
+A part with a preferred position also starts there, as far as its room and the
+no-contact rule allow; the 'rule' metric keeps other metrics from pulling it away.
 The paper's border-elimination metric is left out: it concerns trimming margins
 after scaling, which never happens here, and it rewards pushing parts apart.
 
@@ -45,13 +50,13 @@ import geometry as GEO
 import ids as IDS
 from geometry import Layout, SlotKey
 
-WEIGHTS = {'cog': 1.0, 'spacing': 1.0, 'gaps': 1.5, 'align': 1.0, 'density': 0.3, 'moved': 0.5}
+WEIGHTS = {'cog': 1.0, 'spacing': 1.0, 'gaps': 1.5, 'align': 1.0, 'density': 0.3, 'rule': 1.5, 'moved': 0.5}
 # The paper scales each metric by mean + sd over the font's initial configurations.
 # A metric that hardly varies there (every initial stack is centred, so 'align' is
 # always 0) would get a tiny or zero scale and then dominate or vanish; these floors,
 # in the metric's own units, keep one pixel of error meaningful.
 SCALE_FLOOR = {'cog': 0.5 / GEO.BODY_W, 'spacing': 0.1, 'gaps': 0.5, 'align': 1 / GEO.BODY_W,
-               'density': 0.05, 'moved': 1.0}
+               'density': 0.05, 'rule': 0.5 / GEO.BODY_W, 'moved': 1.0}
 MAX_STEPS = 16
 # Whether hand-drawn parts may be moved within their boxes too (not only generated
 # and reused ones). A drawing that fills its box cannot move either way.
@@ -110,6 +115,9 @@ class Part:
         self.generated = generated
         self.fixed = False
         self.pin_y = False
+        self.context = 'whole'
+        self.target: Dict[str, float] = {}      # preferred ink centre, fractions of the box
+        self.start = (0, 0, 0, 0)              # state the search starts from
         self.stack: Optional[Tuple[int, int]] = None      # (x0, x1) of its ⿱/⿳ stack
         self.dx = self.dy = 0
         self.gw = self.gh = 0                   # size change of a generated part
@@ -171,12 +179,13 @@ class Arrangement:
         # parts in contact at the start (bridged or protruding joints) may stay so
         self.contact = {(i, j) for i, j in self._all_pairs() if self._touching(i, j)}
         self._surround_regions()
-        self._stacks(layout.root(cp))
+        self._contexts(layout.root(cp))
         for gy, x0, x1 in joined_rows:
             for p in self.parts:
                 px0, py0, px1, py1 = p.box
                 if px0 < x1 and x0 < px1 and (py1 == gy or py0 == gy + 1):
                     p.pin_y = True
+        self._apply_rules()
 
     def _pairs(self):
         pairs = []
@@ -236,20 +245,65 @@ class Arrangement:
                             grown = True
                 p.region = (x0, y0, x1, y1)
 
-    def _stacks(self, root: SlotKey):
+    def _contexts(self, root: SlotKey):
+        """Each part's position in its parent (left, top, inner, ...), and the stack it is centred in."""
         at = {(p.key, p.box[0], p.box[1]): p for p in self.parts}
 
         def walk(key, x, y):
             s = self.layout.slot(key)
             if not s.parts or (key, x, y) in at:
                 return
-            for c, dx, dy in s.parts:
+            n = len(s.parts)
+            for i, (c, dx, dy) in enumerate(s.parts):
                 p = at.get((c, x + dx, y + dy))
-                if p is not None and s.op in IDS.SPLIT_V:
-                    p.stack = (x, x + key.w)
+                if p is not None:
+                    if c.role:
+                        p.context = 'frame'
+                    elif s.op in IDS.SURROUND:
+                        p.context = 'inner'
+                    elif s.op in IDS.SPLIT_H:
+                        p.context = 'left' if i == 0 else 'right' if i == n - 1 else 'middle'
+                    else:
+                        p.context = 'top' if i == 0 else 'bottom' if i == n - 1 else 'middle'
+                        p.stack = (x, x + key.w)
                 walk(c, x + dx, y + dy)
 
         walk(root, GEO.BODY_X, GEO.BODY_Y)
+        for p in self.parts:
+            rule = self.layout.rules.get(p.key.comp)
+            if rule and rule.place:
+                p.target = rule.place.get(p.context) or rule.place.get('any') or {}
+
+    def _apply_rules(self):
+        """Start ruled parts at their preferred position, as far as room and contacts allow."""
+        for k, p in enumerate(self.parts):
+            if not p.target or p.core is None:
+                continue
+            ex, ey = self._rule_offset(p)
+            # step towards the target one pixel at a time, stopping where a step is refused
+            dx = dy = 0
+            for axis, total in (('x', ex), ('y', ey)):
+                step = 1 if total > 0 else -1
+                for _ in range(abs(total)):
+                    nx, ny = (dx + step, dy) if axis == 'x' else (dx, dy + step)
+                    if not p.set_state(nx, ny, 0, 0):
+                        break
+                    if self.new_contact(k):
+                        p.set_state(dx, dy, 0, 0)
+                        break
+                    dx, dy = nx, ny
+            p.start = p.state()
+
+    def _rule_offset(self, p: Part) -> Tuple[int, int]:
+        """Whole-pixel offset that brings the part's ink centre to its target."""
+        bb = _bbox(p.ink)
+        x0, y0, x1, y1 = p.box
+        ex = ey = 0
+        if 'x' in p.target:
+            ex = round(x0 + p.target['x'] * (x1 - x0) - (bb[0] + bb[2]) / 2)
+        if 'y' in p.target:
+            ey = round(y0 + p.target['y'] * (y1 - y0) - (bb[1] + bb[3]) / 2)
+        return ex, ey
 
     # -- metrics ---------------------------------------------------------------
 
@@ -296,12 +350,26 @@ class Arrangement:
             if bb:
                 dens.append(p.ink.sum() / ((bb[2] - bb[0]) * (bb[3] - bb[1])))
         m['density'] = (max(dens) - min(dens)) if len(dens) > 1 else 0.0
-        m['moved'] = sum(abs(p.dx) + abs(p.dy) + (abs(p.gw) + abs(p.gh)) / 2 for p in self.parts) / len(self.parts)
+        rule, ruled = 0.0, 0
+        for p in self.parts:
+            if p.target:
+                bb = _bbox(p.ink)
+                if bb:
+                    x0, y0, x1, y1 = p.box
+                    for axis, (lo, hi, c) in (('x', (x0, x1, (bb[0] + bb[2]) / 2)),
+                                              ('y', (y0, y1, (bb[1] + bb[3]) / 2))):
+                        if axis in p.target:
+                            rule += abs(c - (lo + p.target[axis] * (hi - lo))) / (hi - lo)
+                    ruled += 1
+        m['rule'] = rule / ruled if ruled else 0.0
+        m['moved'] = sum(abs(p.dx - p.start[0]) + abs(p.dy - p.start[1])
+                         + (abs(p.gw - p.start[2]) + abs(p.gh - p.start[3])) / 2 for p in self.parts) / len(self.parts)
         return m
 
     def movable(self) -> bool:
-        return any(p.generated or (p.core and (p.core[2] - p.core[0] < p.key.w or p.core[3] - p.core[1] < p.key.h))
-                   or p.region != p.box for p in self.parts)
+        return any(not p.fixed and (p.generated or p.region != p.box or
+                                    (p.core and (p.core[2] - p.core[0] < p.key.w or p.core[3] - p.core[1] < p.key.h)))
+                   for p in self.parts)
 
 
 class Scorer:

@@ -183,8 +183,10 @@ def cmd_show(args):
                 print('    ' + ' '.join('█' if v else '·' for v in row))
             moves = [f"{p.key} " + ', '.join(filter(None, [
                 f"moved {p.dx:+d},{p.dy:+d}" if p.dx or p.dy else '',
-                f"resized {p.gw:+d}x{p.gh:+d}" if p.gw or p.gh else '']))
-                for p in arr.parts if p.dx or p.dy or p.gw or p.gh]
+                f"resized {p.gw:+d}x{p.gh:+d}" if p.gw or p.gh else '',
+                f"placed by rule {p.context}:" + ','.join(f"{a}={v:g}" for a, v in p.target.items())
+                if p.target else '']))
+                for p in arr.parts if p.dx or p.dy or p.gw or p.gh or p.target]
             print("  evenness pass: " + ('; '.join(moves) if moves else 'no change'))
         print()
 

@@ -74,7 +74,7 @@ Juxing/
   model/
     han_model.tsv  GENERATED model (committed so assembling needs no downloads)
     overrides.tsv  hand corrections to decompositions (atoms, replacement IDS)
-    layout.tsv     hand-tuned layout rules (preferred part sizes, frame insets)
+    layout.tsv     hand-tuned layout rules (part sizes, frame insets, atom shapes, placement)
   glyphlettes/
     registry.tsv   issued glyphlettes and their permanent cells (committed)
     sheet_NN.tga   drawing sheets (committed; LFS)
@@ -289,11 +289,23 @@ are in `sources/`.
   - `gaps`: adjacent parts not exactly one clear pixel apart.
   - `align`: parts of a ⿱⿳ stack off its centre line.
   - `density`: spread of ink density between parts.
-  - `moved`: displacement, which keeps changes small.
+  - `rule`: a part away from its preferred position; see Placement rules below.
+  - `moved`: displacement from the starting position, which keeps changes small.
 - **Normalisation:** as in the paper, each metric is scaled as (M / (mean + sd))² over the font's
   own initial configurations. A fixed sample of every character that can be assembled is used, so a
   character gets the same result however it's assembled. `SCALE_FLOOR` stops a metric that never
   varies (every initial stack is centred) from vanishing or dominating.
+- **Placement rules** (the paper's rule-based metric, its "relatively fixed position of the left
+  radical 口"):
+  - The `place` column of `layout.tsv` gives a component's preferred position per context, as
+    fractions of its box for the centre of its ink. E.g. 口 has `left:y=0.45 right:y=0.55`: a
+    little high on the left (叶 吐 唱 咕), a little low on the right.
+  - Contexts: `left` `right` `middle` (⿰⿲), `top` `bottom` `middle` (⿱⿳), `inner`, `whole`,
+    `any`.
+  - A ruled part starts at its preferred position, as far as its room and the no-contact rule
+    allow. The `rule` metric (distance over box size, per axis) keeps other metrics from pulling
+    it away.
+  - `show` reports it, e.g. `口@5x15 moved +0,-1, placed by rule left:y=0.45`.
 - **Left out:** the paper's border-elimination metric. It concerns margins after scaling, which
   Juxing never does, and it rewards pushing parts apart.
 - **Typical effect:**
@@ -304,7 +316,8 @@ are in `sources/`.
   - `show` prints the glyph as assembled and what the pass changed (e.g. `口@15x5 resized -2x+0`).
   - `assemble --no-even` skips the pass, e.g. for comparisons.
 - **Cost:** about 15s for the whole font.
-- **Knobs:** `WEIGHTS`, `SCALE_FLOOR`, `MAX_STEPS`, `MOVE_DRAWN`.
+- **Knobs:** `WEIGHTS`, `SCALE_FLOOR`, `MAX_STEPS`, `MOVE_DRAWN`, and the `place` column of
+  `layout.tsv`.
 
 ## Switching the font over from WenQuanYi
 
