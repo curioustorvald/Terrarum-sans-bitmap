@@ -301,7 +301,17 @@ Juxing's visual target.
     under the left part, and the only clean gaps were inside 川, which was measured 5px wide. A side
     with *fewer* pieces is no sign of anything (strokes apart on their own often touch in a
     character, as in 音), so where the stroke touches its neighbour (釧 馴) the cut can still fall
-    inside 川; `layout.tsv` keeps 川 at least 7px there;
+    inside 川; `layout.tsv` keeps 川 at least 7px there. The rule misleads where a part's own
+    pieces stand apart in a character but touch on their own: 周 alone is 2 pieces (土's stem
+    runs into 口), in 调 3, so the right cut through 讠's rising stroke looked like a piece taken,
+    and the cut went through 周 instead, giving 周's 丿 to 讠 (6.7px wide; 谵 likewise). Charging
+    only a piece *moved* (one side over its count, the other under) fixes 调 but breaks 勒 凱,
+    where 力's and 几's 丿 sweep under the left part: where parts touch, piece counts can't tell
+    whose stroke a fragment is. Such cases are settled in `layout.tsv` (讠 below). Likewise where
+    stacked parts touch and the lower part has a clean gap inside it: a clean gap costs nothing,
+    cutting touching strokes `CUT_CHARGE`, so the cut falls in the gap and the top takes the lower
+    part's first element (笠: 𥫗 takes 立's 亠, 7.9px tall; 答 签 竺 艽 荟 羊 alike). Nothing marks
+    such a cut as doubtful (it is clean and unambiguous); `layout.tsv` caps these tops (below);
   - a surround's inside is a rectangle whose four edges are searched the same way, starting from
     the operator's default insets or a hand setting in `layout.tsv` (never from inferred ones, so
     a measurement doesn't depend on the one before), open sides from the node's edge (勹's 丿
@@ -376,7 +386,17 @@ and half if ambiguous; values with less than 3 measurements' worth (`MIN_WEIGHT`
 - **⿰⿲ / ⿱⿳ split sizes:**
   - A size set by hand in `layout.tsv` (left/right/top/bottom, for a 15px box, scaled) comes first.
     A least size (`>=7`) only rules out the partitions that go below it, and the rest decides above
-    it: 川 `>=7` on the right keeps 训 at 5|9 and makes 釧 and 馴 7|7, not 9|5.
+    it: 川 `>=7` on the right keeps 训 at 5|9 and makes 釧 and 馴 7|7, not 9|5. A most size (`<=5`)
+    likewise rules out those above it: 𥫗 艹 䒑 `<=5` on top, so that where the reference mis-cuts
+    (above) 笠 答 艽 羊 are 5|9, not 7|7 or 9|5 (29 characters under 𥫗, 15 under 艹, 1 under 䒑),
+    and the rest keep 3 or 5 as measured. 宀 `<=5` too: it is generated 4 rows tall at most (a 1px
+    dot, legs of 3), while Chiron Hei HK draws the radical 穴 with a long dot and legs (6.9px, so
+    7|7 left 3 empty rows over 八), and 宅 宝 牢 are mis-cut where the part below touches the legs.
+    A size set by hand
+    also makes a family one width where the reference sits on a rounding tie: 讠 measures about
+    4.5px on the left, between 3|11 and 5|9, so 21 ⿰讠 characters were 3px wide and the rest 5 (and
+    调 谵, mis-cut, 7); `讠 5` keeps all 151 at 5|9. (亻 4.3 and 忄 are on the same tie: 亻 is 3px
+    in 409 characters and 5px in 299, 忄 186 and 335.)
   - Then the split falls where Chiron Hei HK puts it (`Layout.reference_split`: the middle of the
     space between the parts' ink). A whole character follows its own measurement; a component
     inside others the weighted median of its measurements wherever it appears, weighted by how
@@ -483,15 +503,15 @@ and half if ambiguous; values with less than 3 measurements' worth (`MIN_WEIGHT`
 
 Current numbers (G preference, default rules), as `plan` prints them:
 
-> 4414 base glyphlettes (6367 glyphlettes derived; min 0, 25% 0, 50% 0, 75% 2, max 14 per base
-> glyphlette; 25 glyphlettes overridden)
+> 4409 base glyphlettes (6328 glyphlettes derived; min 0, 25% 0, 50% 0, 75% 2, max 14 per base
+> glyphlette; 49 glyphlettes overridden)
 
 | | |
 |---|---|
-| Glyphlettes to draw for all 27,584 characters | 4,414 bases, plus the overrides the resizer asks for (effort 13% of drawing every character whole) |
-| Derived instead of drawn | 6,367 slot sizes |
+| Glyphlettes to draw for all 27,584 characters | 4,409 bases, plus the overrides the resizer asks for (effort 13% of drawing every character whole) |
+| Derived instead of drawn | 6,328 slot sizes |
 | Generated instead | 465 slot sizes of 26 components |
-| All everyday characters | complete by glyphlette 2,555 |
+| All everyday characters | complete by glyphlette 2,551 |
 
 (With the paper's sizes and insets in `layout.tsv` and the reference used for splits only: 4,414
 bases, 12%, everyday characters complete by glyphlette 2,703. With split sizes from demand alone,

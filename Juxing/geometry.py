@@ -252,6 +252,7 @@ class ComponentRule:
     levels: Optional[Tuple[float, float]] = None
     place: Dict[str, Dict[str, float]] = None   # context -> {'x': fraction, 'y': fraction}
     minimum: Dict[str, float] = None            # side -> the least size there ('>=7' in layout.tsv)
+    maximum: Dict[str, float] = None            # side -> the most size there ('<=5' in layout.tsv)
     roof: bool = False                          # a roof over the part below ('roof' in the frame column)
 
 
@@ -260,6 +261,7 @@ def read_layout_rules(path=LAYOUT_PATH) -> Dict[str, ComponentRule]:
     layout.tsv columns: component, left, right, top, bottom, frame, levels, place, note
       left/right  preferred width (px, in a 15px-wide box) as the left/right part of ⿰ ⿲
       top/bottom  preferred height (px, in a 15px-tall box) as the top/bottom part of ⿱ ⿳
+                  (or a range: '>=7' the least size, '<=5' the most, or both)
       frame       inner-box insets when used as a surround frame, e.g. '⿸4,4,0,0'
                   (left,top,right,bottom at 15x15; several separated by spaces)
       levels      shape as 'rows,columns' of parallel stroke levels (see Layout.levels)
@@ -279,12 +281,17 @@ def read_layout_rules(path=LAYOUT_PATH) -> Dict[str, ComponentRule]:
             if comp in rules:
                 raise ValueError(f"{path}:{lineno}: {comp} has a row already (one row per component)")
 
-            def num(s):
-                s = s.strip()
-                return float(s) if s and s != '-' and not s.startswith('>=') else None
-
-            minimum = {side: float(v.strip()[2:]) for side, v in zip(('left', 'right', 'top', 'bottom'), cols[1:5])
-                       if v.strip().startswith('>=')}
+            sizes, minimum, maximum = [], {}, {}
+            for side, cell in zip(('left', 'right', 'top', 'bottom'), cols[1:5]):
+                size = None
+                for token in cell.split():
+                    if token.startswith('>='):
+                        minimum[side] = float(token[2:])
+                    elif token.startswith('<='):
+                        maximum[side] = float(token[2:])
+                    elif token != '-':
+                        size = float(token)
+                sizes.append(size)
 
             insets = {}
             roof = False
@@ -318,8 +325,7 @@ def read_layout_rules(path=LAYOUT_PATH) -> Dict[str, ComponentRule]:
                     if axis not in ('x', 'y') or not 0 <= float(v) <= 1:
                         raise ValueError(f"{path}:{lineno}: bad place '{spec}' (x=/y= fractions 0..1)")
                     place[context][axis] = float(v)
-            rules[comp] = ComponentRule(num(cols[1]), num(cols[2]), num(cols[3]), num(cols[4]), insets, levels,
-                                        place, minimum, roof)
+            rules[comp] = ComponentRule(*sizes, insets, levels, place, minimum, maximum, roof)
     return rules
 
 
@@ -338,7 +344,7 @@ def merge_rules(inferred: Dict[str, ComponentRule], hand: Dict[str, ComponentRul
             *(getattr(b, f) if getattr(b, f) is not None else getattr(a, f) for f in ('left', 'right', 'top', 'bottom')),
             insets={**(a.insets or {}), **(b.insets or {})},
             levels=b.levels if b.levels is not None else a.levels,
-            place=place, minimum=b.minimum, roof=b.roof)
+            place=place, minimum=b.minimum, maximum=b.maximum, roof=b.roof)
     return out
 
 
@@ -773,8 +779,9 @@ class Layout:
           - otherwise the size the reference font gives the first and last parts wherever
             they appear (inferred.tsv), the rest of the space shared by how much room
             each part wants along the axis (demand).
-        Twins (林 昌) take no preference: they split evenly. A least size set by hand ('>=7' in
-        layout.tsv: 川 on the right of 训 釧) rules out the partitions that go below it.
+        Twins (林 昌) take no preference: they split evenly. A least or most size set by hand
+        ('>=7' or '<=5' in layout.tsv: 川 on the right of 训 釧, 𥫗 over 笠 答) rules out the
+        partitions that go below or above it.
         `fits(sizes)`: whether a partition is legible; the closest one that is wins.
         Not `inferred`: without the sizes inferred from the reference (for measuring the
         reference itself, which would otherwise lean on its own earlier measurements).
@@ -824,13 +831,14 @@ class Layout:
             targets = [t * avail / fixed for t in targets]
 
         candidates = _odd_partitions(avail, n)
-        least = [0] * n
+        least, most = [0] * n, [extent] * n
         for i, side in ends:
             rule = self.hand.get(children[i])
             if rule and rule.minimum and side in rule.minimum:
                 least[i] = round(rule.minimum[side] * scale)
-        if any(least):
-            candidates = [p for p in candidates if all(sz >= m for sz, m in zip(p, least))] or candidates
+            if rule and rule.maximum and side in rule.maximum:
+                most[i] = round(rule.maximum[side] * scale)
+        candidates = [p for p in candidates if all(lo <= sz <= hi for sz, lo, hi in zip(p, least, most))] or candidates
         if n == 3 and base_form(children[0]) == base_form(children[2]):
             # 木缶木, 糹言糸: the outer twins get the same size
             candidates = [p for p in candidates if p[0] == p[2]] or candidates
