@@ -2,7 +2,7 @@
 Assembler: composes ideographs from drawn glyphlettes and writes the Han sheet.
 
 A character is assembled from the *shallowest* cut of its slot tree whose parts
-are all available (drawn, generated, or reused from a size up to 2px smaller), by
+are all available (drawn, generated, or derived from a drawing of their family), by
 overlaying their drawings (protruding pixels included) and clipping to the body.
 Joined joints between generated parts are bridged automatically (see bridge()): a glyphlette drawn for a whole character or a large chunk always
 wins over smaller parts, so any assembly can be overridden simply by drawing
@@ -39,22 +39,29 @@ def resolve(layout: Layout, cp: int, drawn: Dict[SlotKey, GL.Drawing]) -> Option
 
 
 def joined_gaps(layout: Layout, cp: int, drawn) -> List[Tuple[int, int, int]]:
-    """Gap rows (y, x0, x1) of the joined joints in the character's resolved layout."""
+    """
+    Gap rows (y, x0, x1) of the joined joints in the character's resolved layout. A joint
+    Chiron Hei HK separates cleanly in this character (its split cut no ink) is not
+    joined, whatever strokes face it: 艹's stems stop short of 品 in 䓵.
+    """
     out = []
+    ref = layout.reference.data.get(chr(cp), {})
 
-    def walk(key, x, y):
+    def walk(key, x, y, path):
         if key in drawn or GN.is_unit(key):
             return
         s = layout.slot(key)
         if not s.parts:
             return
+        first = ref.get(f"{path}.0" if path else '0')
+        apart = first is not None and first.cut == 0
         for (a, ax, ay), (b, _, _), joined in zip(s.parts, s.parts[1:], layout.joints(key)):
-            if joined:
+            if joined and not apart:
                 out.append((y + ay + a.h, x, x + key.w))
-        for c, dx, dy in s.parts:
-            walk(c, x + dx, y + dy)
+        for i, (c, dx, dy) in enumerate(s.parts):
+            walk(c, x + dx, y + dy, f"{path}.{i}" if path else str(i))
 
-    walk(layout.root(cp), GEO.BODY_X, GEO.BODY_Y)
+    walk(layout.root(cp), GEO.BODY_X, GEO.BODY_Y, '')
     return out
 
 

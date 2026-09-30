@@ -9,19 +9,25 @@ Choosing *where to cut* every tree is a trade-off:
   - cutting high (drawing big chunks or whole characters) avoids drawing parts
     that nothing else uses, and looks better.
 
-The planner minimises the total drawing effort, where drawing a glyphlette costs
-OVERHEAD + (strokes of its component), plus a quality cost for every joint
-between glyphlettes in every assembled character (JOINT_COST, or JOINED_JOINT_COST
-where strokes have to meet across the joint). Starting from the deepest
-possible cut, it collapses a slot into a single glyphlette whenever the glyphlettes
-used only underneath it, plus the joints it would remove, cost at least as much as
-drawing the slot itself. Slots are visited from
-the smallest up, and passes repeat until nothing changes. Glyphlettes that are
-already issued for drawing cost nothing, so later plans build on existing work.
+A component is drawn once per *family* (glyphlettes.family: component, frame role
+and aspect class), its *base glyphlette*, and its other sizes in that family are
+derived from it (resize.py). So the effort is counted per family: the first size of
+a family costs OVERHEAD + (strokes of its component), and every further size a share
+of that (DERIVED_SHARE), the risk that it needs an override drawn by hand. Joints
+between glyphlettes in every assembled character add a quality cost (JOINT_COST, or
+JOINED_JOINT_COST where strokes have to meet across the joint).
 
-The resulting glyphlettes are then put in drawing order by a greedy pass that
-always picks the glyphlette bringing the most (frequency-weighted) characters
-closest to completion per unit of effort.
+Starting from the deepest possible cut, the planner collapses a slot into a single
+glyphlette whenever the glyphlettes used only underneath it, plus the joints it would
+remove, cost at least as much as drawing the slot itself. Slots are visited from the
+smallest up, and passes repeat until nothing changes. Families that already have an
+issued drawing cost nothing to start, so later plans build on existing work.
+
+The plan then chooses the drawings of each family (choose_drawings): the base at the
+largest size the family needs, plus an override for every size whose derivation from
+a drawing on the sheets has been declined. The drawings are put in drawing order by a
+greedy pass that always picks the one bringing the most (frequency-weighted)
+characters closest to completion per unit of effort.
 """
 
 import heapq
@@ -30,9 +36,12 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Set
 
 import glyphlettes as GL
-from geometry import SIZE_TOLERANCE, Layout, SlotKey
+from geometry import Layout, SlotKey
 
 OVERHEAD = 3        # effort of drawing any glyphlette, in strokes
+# Effort of a further size of a family, as a share of drawing its base: the risk that
+# the derived size is declined or looks wrong and needs an override.
+DERIVED_SHARE = 0.2
 WHOLE_BIAS = 0      # collapse a slot even if that costs up to this much more effort
 # Quality cost of one joint (a boundary between two assembled glyphlettes) in one
 # character, in strokes of drawing effort. Drawing a slot whole removes its joints
@@ -49,16 +58,46 @@ TIER_WEIGHT = {1: 100.0, 2: 20.0, 3: 4.0, 4: 1.0}
 class Plan:
     layout: Layout
     leaves: Set[SlotKey]                     # slots drawn whole (where the trees are cut)
-    uses: Dict[SlotKey, int]                 # glyphlette to draw -> number of slots it serves
-    chars: Dict[int, List[SlotKey]]          # code point -> glyphlettes to draw for it
+    uses: Dict[SlotKey, int]                 # drawing -> number of slots it serves
+    chars: Dict[int, List[SlotKey]]          # code point -> drawings it needs
     why: Dict[SlotKey, str] = field(default_factory=dict)  # why the planner draws a splittable slot whole
-    cover: Dict[SlotKey, SlotKey] = field(default_factory=dict)  # leaf slot -> glyphlette drawn for it
+    cover: Dict[SlotKey, SlotKey] = field(default_factory=dict)  # leaf slot -> drawing it comes from
     generated: Set[SlotKey] = field(default_factory=set)   # leaf slots that are generated
+    declined: Dict[SlotKey, List[SlotKey]] = field(default_factory=dict)  # slot -> drawings it declined
     order: List[SlotKey] = field(default_factory=list)
     progress: List[Dict[int, int]] = field(default_factory=list)  # after each glyphlette: tier -> completed chars
 
     def glyphlettes(self) -> Set[SlotKey]:
         return set(self.uses)
+
+    def families(self) -> Dict[GL.Family, 'FamilyPlan']:
+        out: Dict[GL.Family, FamilyPlan] = {}
+        for k, d in self.cover.items():
+            f = out.setdefault(GL.family(d), FamilyPlan())
+            f.drawings.add(d)
+            if k != d:
+                f.derived.add(k)
+        for f in out.values():
+            f.base = max(f.drawings, key=lambda k: (k.w * k.h, k.w, k.h))
+        return out
+
+    def summary(self) -> str:
+        """The drawing effort in one line: bases, derived sizes per base, overrides."""
+        fams = self.families()
+        per = sorted(len(f.derived) for f in fams.values()) or [0]
+        q = lambda p: per[round(p * (len(per) - 1))]
+        derived = sum(per)
+        overrides = sum(len(f.drawings) - 1 for f in fams.values())
+        return (f"{len(fams)} base glyphlettes ({derived} glyphlettes derived; min {per[0]}, 25% {q(.25)}, "
+                f"50% {q(.5)}, 75% {q(.75)}, max {per[-1]} per base glyphlette; "
+                f"{overrides} glyphlettes overridden)")
+
+
+@dataclass
+class FamilyPlan:
+    drawings: Set[SlotKey] = field(default_factory=set)   # base and overrides
+    derived: Set[SlotKey] = field(default_factory=set)    # sizes derived from them
+    base: SlotKey = None                                   # the largest drawing
 
 
 def cost(layout: Layout, key: SlotKey) -> int:
@@ -66,11 +105,17 @@ def cost(layout: Layout, key: SlotKey) -> int:
 
 
 def make_plan(layout: Layout, targets: List[int], sunk: Set[SlotKey] = frozenset(), free=None,
-              unit=None, verbose=True) -> Plan:
+              unit=None, derive_ok=None, verbose=True, blank: Set[SlotKey] = frozenset()) -> Plan:
     """
-    sunk: glyphlettes already issued (cost nothing, reused by nearby sizes)
+    sunk: glyphlettes already issued (their families cost nothing to start)
+    blank: the issued ones with nothing drawn yet. A blank one whose size no character's layout
+        has any more (the layout changed since it was issued: 讠@9x15, issued while 训 was
+        mis-measured) is no drawing at all: it is left out, so its family gets a base at a size
+        in use, and it shows as an orphan. A drawn one is kept whatever its size.
     free: predicate for slots that are generated rather than drawn (cost nothing)
     unit: predicate for slots that must never be split
+    derive_ok(src, dst): whether dst derives acceptably from the drawing of src; None
+        while src is not drawn (assumed to work)
     """
     free = free or (lambda k: False)
     unit = unit or (lambda k: False)
@@ -89,9 +134,21 @@ def make_plan(layout: Layout, targets: List[int], sunk: Set[SlotKey] = frozenset
                     stack.append(c)
     if verbose:
         print(f"  {len(seen)} distinct slots reachable from {len(targets)} characters")
+    passed_over = {k for k in sunk if k in blank and k not in seen}
+    sunk = set(sunk) - passed_over
+    if verbose and passed_over:
+        print(f"  {len(passed_over)} blank issued glyphlettes passed over (no layout uses their size): "
+              f"{' '.join(map(str, sorted(passed_over)))}")
 
-    def price(k):
-        return 0 if k in sunk or free(k) else cost(layout, k)
+    started = {GL.family(k) for k in sunk}
+    family_of = {k: GL.family(k) for k in seen}
+
+    def family_cost(fam, sizes: int) -> float:
+        """Effort of a family drawn in `sizes` sizes: its base, and a share of it for every further size."""
+        if sizes <= 0:
+            return 0.0
+        full = OVERHEAD + layout.strokes(fam[0])
+        return (0 if fam in started else full) + DERIVED_SHARE * full * (sizes - 1)
 
     leaves: Set[SlotKey] = {k for k in seen if layout.slot(k).parts is None or unit(k)}
     why: Dict[SlotKey, str] = {}
@@ -109,6 +166,14 @@ def make_plan(layout: Layout, targets: List[int], sunk: Set[SlotKey] = frozenset
             for c, _, _ in layout.slot(k).parts:
                 counts[c] += n
         return counts
+
+    def in_use(counts) -> Dict[GL.Family, Set[SlotKey]]:
+        """The sizes of every family that are drawn or derived (leaves in use, not generated)."""
+        out: Dict[GL.Family, Set[SlotKey]] = defaultdict(set)
+        for k in leaves:
+            if counts.get(k, 0) > 0 and not free(k):
+                out[family_of[k]].add(k)
+        return out
 
     joint_cost: Dict[SlotKey, float] = {}
 
@@ -150,6 +215,7 @@ def make_plan(layout: Layout, targets: List[int], sunk: Set[SlotKey] = frozenset
 
     close_downward()
     counts = count_occurrences()
+    active = in_use(counts)
     splittable = sorted((k for k in seen if k not in leaves), key=lambda k: (k.w * k.h, str(k)))
     for pass_no in range(1, 10):
         changed = 0
@@ -160,21 +226,36 @@ def make_plan(layout: Layout, targets: List[int], sunk: Set[SlotKey] = frozenset
             if n == 0:
                 continue
             sub = below(t)
-            saved = sum(price(e) for e, m in sub.items()
-                        if e in leaves and counts.get(e, 0) == n * m)
+            gone = [e for e, m in sub.items() if e in leaves and counts.get(e, 0) == n * m and not free(e)]
+            # the families whose sizes change: those only used under t lose them, t's gains t
+            change: Dict[GL.Family, int] = defaultdict(int)
+            for e in gone:
+                change[family_of[e]] -= 1
+            if not free(t):
+                change[family_of[t]] += 1
+            delta = sum(family_cost(f, len(active[f]) + d) - family_cost(f, len(active[f]))
+                        for f, d in change.items())
             pieces = sum(m for e, m in sub.items() if e in leaves)
             joints = n * (own_joints(t) + sum(m * own_joints(u) for u, m in sub.items() if u not in leaves))
-            if price(t) - saved - joints <= WHOLE_BIAS:
+            if delta - joints <= WHOLE_BIAS:
                 leaves.add(t)
+                own = family_cost(family_of[t], len(active[family_of[t]]) + 1) - \
+                    family_cost(family_of[t], len(active[family_of[t]]))
                 why[t] = (f"assembled in {n} character{'s' if n != 1 else ''} from {pieces} pieces: "
-                          f"drawing it whole ({price(t)}) is cheaper than the joints ({joints:g}) "
-                          f"and the pieces only it uses ({saved})")
+                          f"drawing it whole ({own:g}{'' if active[family_of[t]] else ', a new base'}) "
+                          f"is cheaper than the joints ({joints:g}) and the pieces only it uses "
+                          f"({own - delta:g})")
                 for d, m in sub.items():
                     counts[d] -= n * m
+                for e in gone:
+                    active[family_of[e]].discard(e)
+                if not free(t):
+                    active[family_of[t]].add(t)
                 changed += 1
         closed = close_downward()
         if closed:
             counts = count_occurrences()
+            active = in_use(counts)
         if verbose:
             print(f"  collapse pass {pass_no}: {changed} slots collapsed, {closed} smaller sizes followed")
         if not changed and not closed:
@@ -197,7 +278,8 @@ def make_plan(layout: Layout, targets: List[int], sunk: Set[SlotKey] = frozenset
             slot_uses[k] += 1
 
     generated = {k for k in slot_uses if k not in sunk and free(k)}
-    cover = choose_drawings({k: n for k, n in slot_uses.items() if k not in generated}, sunk)
+    cover, declined = choose_drawings({k: n for k, n in slot_uses.items() if k not in generated}, sunk,
+                                      derive_ok or (lambda s, d: None))
     chars: Dict[int, List[SlotKey]] = {}
     uses: Dict[SlotKey, int] = defaultdict(int)
     for cp, parts in cut.items():
@@ -210,46 +292,73 @@ def make_plan(layout: Layout, targets: List[int], sunk: Set[SlotKey] = frozenset
             if d not in need:
                 need.append(d)
         chars[cp] = need
+    plan = Plan(layout, leaves, dict(uses), chars, why, cover, generated, declined)
     if verbose:
-        reused = sum(1 for k, d in cover.items() if k != d)
-        print(f"  {len(generated)} slots generated, {reused} slots reuse a drawing up to "
-              f"{SIZE_TOLERANCE}px smaller")
-    plan = Plan(layout, leaves, dict(uses), chars, why, cover, generated)
+        print(f"  {len(generated)} slots generated, {sum(1 for k, d in cover.items() if k != d)} derived")
     order_plan(plan, sunk)
     return plan
 
 
-def choose_drawings(slot_uses: Dict[SlotKey, int], sunk: Set[SlotKey]) -> Dict[SlotKey, SlotKey]:
+def choose_drawings(slot_uses: Dict[SlotKey, int], sunk: Set[SlotKey], derive_ok):
     """
-    Decide which sizes of each component to draw. A drawing may serve slots up to
-    SIZE_TOLERANCE px larger per axis, so per component: issued drawings serve what
-    they can, then sizes are drawn in order of use (the most used sizes exactly),
-    each serving the rarer sizes just above it. Returns slot -> glyphlette drawn for it,
-    always the largest drawing that fits, as the assembler picks.
+    Decide what to draw in each family. Returns (slot -> drawing it comes from,
+    slot -> drawings that declined it).
+
+      - Sizes are derived from the issued drawings of their family where they can be
+        (the closest one first, see glyphlettes.source_order): optimistically while a
+        drawing is still blank, and only if its derivation is acceptable once drawn.
+      - Sizes that no issued drawing can reach get one new drawing: the most used of
+        them that can serve all the others (up to SIZE_TOLERANCE px smaller than the
+        largest), so the most common size is drawn exactly; failing that, the smallest
+        size covering all of them. So a family's base is its largest size, or nearly.
+      - Sizes declined by every drawing that could serve them are drawn exactly, as
+        overrides, largest first; each serves the declined sizes it can, optimistically.
     """
-    by_comp: Dict[str, List[SlotKey]] = defaultdict(list)
-    cover: Dict[SlotKey, SlotKey] = {}
+    by_family: Dict[GL.Family, List[SlotKey]] = defaultdict(list)
     for k in slot_uses:
-        if k.role:
-            cover[k] = k          # frames are drawn at their exact size
-        else:
-            by_comp[k.comp].append(k)
-    issued: Dict[str, List[SlotKey]] = defaultdict(list)
+        by_family[GL.family(k)].append(k)
+    issued: Dict[GL.Family, List[SlotKey]] = defaultdict(list)
     for k in sunk:
-        if not k.role:
-            issued[k.comp].append(k)
-    for comp, slots in by_comp.items():
-        drawings = list(issued.get(comp, ()))
-        covered = {t for t in slots if any(GL.reusable_for(d, t) or d == t for d in drawings)}
-        for s in sorted(slots, key=lambda k: (-slot_uses[k], k.w * k.h, k)):
-            if s in covered:
-                continue
-            drawings.append(s)
-            covered.update(t for t in slots if t == s or GL.reusable_for(s, t))
+        issued[GL.family(k)].append(k)
+
+    cover: Dict[SlotKey, SlotKey] = {}
+    declined: Dict[SlotKey, List[SlotKey]] = {}
+
+    def serve(slots, drawings):
+        """Cover what the drawings can; returns (unreached, declined) slots."""
+        unreached, refused = [], []
         for t in slots:
-            fits = [d for d in drawings if d == t or GL.reusable_for(d, t)]
-            cover[t] = t if t in fits else max(fits, key=lambda d: (d.w * d.h, d.w))
-    return cover
+            if t in drawings:
+                cover[t] = t
+                continue
+            said_no = []
+            for s in sorted((d for d in drawings if GL.derivable(d, t)), key=lambda d: GL.source_order(d, t)):
+                if derive_ok(s, t) is False:
+                    said_no.append(s)
+                    continue
+                cover[t] = s
+                break
+            else:
+                (refused if said_no else unreached).append(t)
+            if said_no:
+                declined[t] = said_no
+        return unreached, refused
+
+    for fam, slots in by_family.items():
+        drawings = list(issued.get(fam, ()))
+        unreached, refused = serve(sorted(slots), drawings)
+        if unreached:
+            reach_all = [k for k in unreached if all(t == k or GL.derivable(k, t) for t in unreached)]
+            drawings.append(max(reach_all, key=lambda k: (slot_uses[k], k.w * k.h, k)) if reach_all
+                            else GL.bounding(unreached))
+            more_unreached, more_refused = serve(unreached + refused, drawings)
+            refused = more_unreached + more_refused
+        for t in sorted(refused, key=lambda k: (-(k.w * k.h), k)):
+            if t in cover:
+                continue
+            drawings.append(t)
+            serve([u for u in refused if u not in cover], drawings)
+    return cover, declined
 
 
 def order_plan(plan: Plan, done: Set[SlotKey] = frozenset()):

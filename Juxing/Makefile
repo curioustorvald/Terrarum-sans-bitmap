@@ -20,6 +20,15 @@ model: $(SOURCES)
 fetch:
 	$(PYTHON) juxing.py fetch
 
+# measure the parts of every character in Chiron Hei HK (a 4th source; committed, like the model)
+# and infer the layout preferences from them (committed too)
+reference:
+	$(PYTHON) juxing.py reference
+	$(PYTHON) juxing.py infer
+
+infer:
+	$(PYTHON) juxing.py infer
+
 plan:
 	$(PYTHON) juxing.py plan
 
@@ -32,9 +41,15 @@ status:
 refresh:
 	$(PYTHON) juxing.py refresh
 
-$(OUTPUT): $(MODEL) model/layout.tsv $(wildcard glyphlettes/registry.tsv glyphlettes/sheet_*.tga) \
-           juxing.py model.py ids.py geometry.py planner.py generators.py glyphlettes.py assembler.py evenness.py tga.py
+$(OUTPUT): $(MODEL) model/layout.tsv model/reference.tsv model/inferred.tsv \
+           $(wildcard glyphlettes/registry.tsv glyphlettes/sheet_*.tga) \
+           juxing.py model.py ids.py geometry.py reference.py infer.py planner.py generators.py glyphlettes.py resize.py \
+           assembler.py evenness.py tga.py
 	$(PYTHON) juxing.py assemble
+
+# web app: status at a glance and a pixel editor for the drawing sheets
+serve:
+	$(PYTHON) juxing.py serve
 
 install: $(OUTPUT)
 	cp $(OUTPUT) $(ASSETS)/
@@ -42,4 +57,4 @@ install: $(OUTPUT)
 clean:
 	rm -rf out
 
-.PHONY: all model fetch plan check status refresh install clean
+.PHONY: all model fetch reference infer plan check status refresh serve install clean

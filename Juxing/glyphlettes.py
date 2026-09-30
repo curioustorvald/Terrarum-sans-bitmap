@@ -23,6 +23,10 @@ The box is where a glyphlette goes, not a limit on its ink: pixels drawn outside
 it (anywhere in the cell) are kept and overlaid wherever the glyphlette is placed,
 e.g. the hook of 小 reaching up through the gap to join 幺 in 糸.
 
+A component is drawn once per family (family(): component, frame role, aspect
+class); its other sizes are derived from that drawing (resize.py), unless an
+override of the exact size is drawn too. The Library serves all of them.
+
 The registry (glyphlettes/registry.tsv) assigns each issued glyphlette a
 permanent cell. Cells are never reassigned: if the model changes and a
 glyphlette falls out of use, its cell simply becomes an orphan.
@@ -30,12 +34,13 @@ glyphlette falls out of use, its cell simply becomes an orphan.
 
 import os
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
 
 import generators as GN
 import geometry as GEO
+import resize as RZ
 import tga
 from geometry import Layout, SlotKey
 
@@ -84,25 +89,52 @@ class Drawing:
         return int(m.sum())
 
 
-class Shifted:
-    """A drawing reused for a slot up to SIZE_TOLERANCE px larger, centred in it."""
+# ---------------------------------------------------------------------------
+# Families: a component is drawn once per family and its other sizes are derived
 
-    def __init__(self, drawing: Drawing, dx: int, dy: int):
-        self.drawing, self.dx, self.dy = drawing, dx, dy
-        self.key = drawing.key
+# A box at least this many times taller than wide is 'tall' (a left or right part), at
+# least this many times wider than tall is 'wide' (a top or bottom part), else 'square'.
+# A component is drawn differently in each: 木 on the left has a dot for its last stroke,
+# 木 at the bottom of 呆 spreads it wide.
+FAMILY_ASPECT = 2 ** 0.5
 
-    def blit(self, target: np.ndarray, x: int, y: int):
-        self.drawing.blit(target, x + self.dx, y + self.dy)
-
-    def protrusions(self) -> int:
-        return self.drawing.protrusions()
+Family = Tuple[str, str, str]
 
 
-def reusable_for(drawn: SlotKey, slot: SlotKey) -> bool:
-    """Whether a drawing of `drawn` may serve `slot` (same component, slot up to SIZE_TOLERANCE larger)."""
-    return (drawn.comp == slot.comp and not drawn.role and not slot.role
-            and not (slot.w == GEO.BODY_W and slot.h == GEO.BODY_H)
-            and 0 <= slot.w - drawn.w <= GEO.SIZE_TOLERANCE and 0 <= slot.h - drawn.h <= GEO.SIZE_TOLERANCE)
+def family(key: SlotKey) -> Family:
+    """(component, frame role, aspect class): the sizes that one drawing can serve."""
+    if key.h >= key.w * FAMILY_ASPECT:
+        aspect = 'tall'
+    elif key.w >= key.h * FAMILY_ASPECT:
+        aspect = 'wide'
+    else:
+        aspect = 'square'
+    return key.comp, key.role, aspect
+
+
+def is_whole(key: SlotKey) -> bool:
+    return not key.role and key.w == GEO.BODY_W and key.h == GEO.BODY_H
+
+
+def derivable(src: SlotKey, dst: SlotKey) -> bool:
+    """Whether dst may be derived from a drawing of src: same family, and src at most
+    SIZE_TOLERANCE px smaller on each axis. Whole characters are always drawn."""
+    return (src != dst and family(src) == family(dst) and not is_whole(dst)
+            and dst.w - src.w <= GEO.SIZE_TOLERANCE and dst.h - src.h <= GEO.SIZE_TOLERANCE)
+
+
+def source_order(src: SlotKey, dst: SlotKey):
+    """Sort key of the drawings a size may be derived from: the smallest one at least as
+    large on both axes first (least change), then the largest of the smaller ones."""
+    covers = src.w >= dst.w and src.h >= dst.h
+    return (0, src.w * src.h, src.w) if covers else (1, -src.w * src.h, -src.w)
+
+
+def bounding(keys) -> SlotKey:
+    """The smallest size of a family that covers all of `keys`."""
+    keys = list(keys)
+    k = keys[0]
+    return SlotKey(k.comp, max(x.w for x in keys), max(x.h for x in keys), k.role)
 
 
 class Library:
@@ -110,19 +142,60 @@ class Library:
     Every glyphlette the assembler can use, in order of preference:
       drawn      a hand drawing of exactly this slot
       generated  a procedural glyphlette (generators.py)
-      reused     a hand drawing of the same component up to SIZE_TOLERANCE px smaller,
-                 centred in the slot
+      derived    resized from the closest hand drawing of its family (resize.py);
+                 if that one declines, the next closest is tried
     Behaves like a read-only mapping from slot keys to drawings.
     """
 
-    def __init__(self, hand: Dict[SlotKey, Drawing], layout: Layout):
+    def __init__(self, hand: Dict[SlotKey, Drawing], layout: Layout, cache: 'RZ.Cache' = None):
         self.hand = hand
         self.layout = layout
-        self._by_comp: Dict[str, List[SlotKey]] = {}
+        self.cache = cache
+        self._by_family: Dict[Family, List[SlotKey]] = {}
         for k in hand:
-            if not k.role:
-                self._by_comp.setdefault(k.comp, []).append(k)
+            self._by_family.setdefault(family(k), []).append(k)
         self._cache: Dict[SlotKey, Tuple] = {}
+        self._derived: Dict[Tuple[SlotKey, SlotKey], Optional[RZ.Derived]] = {}
+
+    def sources(self, key: SlotKey) -> List[SlotKey]:
+        """Hand drawings `key` may be derived from, best first."""
+        return sorted((k for k in self._by_family.get(family(key), ()) if derivable(k, key)),
+                      key=lambda k: source_order(k, key))
+
+    def derive(self, src: SlotKey, key: SlotKey) -> Optional[RZ.Derived]:
+        """The drawing of `src` resized to `key` (ok or declined), or None if it cannot be mapped."""
+        hit = self._derived.get((src, key), False)
+        if hit is not False:
+            return hit
+        d = self.hand[src]
+        insets = new_insets = None
+        if key.role:
+            insets = self.layout.insets(src.comp, src.role, src.w, src.h)
+            new_insets = self.layout.insets(key.comp, key.role, key.w, key.h)
+        args = (d.bx, d.by, src.w, src.h, key.w, key.h, insets, new_insets)
+        ck = self.cache.key(d.mask, *args) if self.cache else None
+        hit = self.cache.get(ck) if self.cache else False
+        if hit is False:
+            hit = RZ.derive(d.mask, *args)
+            if self.cache:
+                self.cache.put(ck, hit)
+        self._derived[(src, key)] = hit
+        return hit
+
+    def derivation(self, key: SlotKey) -> Tuple[Optional[SlotKey], Optional[RZ.Derived], List[SlotKey]]:
+        """(source, result, sources that declined) of the best derivation of `key`.
+        With no acceptable one, the result is the draft of the closest source."""
+        declined, draft = [], (None, None)
+        for src in self.sources(key):
+            d = self.derive(src, key)
+            if d is None:
+                continue
+            if d.ok:
+                return src, d, declined
+            declined.append(src)
+            if draft[1] is None:
+                draft = (src, d)
+        return draft[0], draft[1], declined
 
     def lookup(self, key: SlotKey):
         """Returns (drawing, kind, source key) or None."""
@@ -141,12 +214,9 @@ class Library:
             mask = np.zeros((GEO.CELL_H, GEO.CELL_W), dtype=bool)
             mask[:key.h, :key.w] = g
             return Drawing(mask, key, 0, 0), 'generated', key
-        best = None
-        for k in self._by_comp.get(key.comp, ()):
-            if reusable_for(k, key) and (best is None or (k.w * k.h, k.w) > (best.w * best.h, best.w)):
-                best = k
-        if best is not None:
-            return Shifted(self.hand[best], (key.w - best.w) // 2, (key.h - best.h) // 2), 'reused', best
+        src, d, _ = self.derivation(key)
+        if d is not None and d.ok:
+            return Drawing(d.mask, key, d.bx, d.by), 'derived', src
         return None
 
     def __contains__(self, key) -> bool:
@@ -165,6 +235,13 @@ class Library:
     def source(self, key: SlotKey):
         hit = self.lookup(key)
         return hit[2] if hit else None
+
+    def derive_ok(self, src: SlotKey, key: SlotKey) -> Optional[bool]:
+        """For the planner: whether `key` derives acceptably from `src`; None if `src` is not drawn yet."""
+        if src not in self.hand:
+            return None
+        d = self.derive(src, key)
+        return d is not None and d.ok
 
 
 BODY_MASK = np.zeros((GEO.CELL_H, GEO.CELL_W), dtype=bool)
@@ -212,45 +289,88 @@ class Registry:
     HEADER = (
         "# Juxing glyphlette registry -- one line per issued glyphlette, in cell order.\n"
         "# Written by `juxing.py issue`. Cells are permanent: never renumber or delete lines.\n"
+        "# A retired cell (`juxing.py retire`) keeps its line, with '-' for the glyphlette, and is\n"
+        "# given to the next glyphlette issued.\n"
         "# id = cell number (sheet = id // %d, row-major within the sheet)\n"
         "#id\tglyphlette\tbox_x\tbox_y\texemplar\n" % PER_SHEET
     )
 
     def __init__(self, path=REGISTRY_PATH):
         self.path = path
-        self.entries: List[Entry] = []
+        self.entries: List[Entry] = []          # the cells in use, in id order
         self.by_key: Dict[SlotKey, Entry] = {}
+        self.by_id: Dict[int, Entry] = {}
+        self.retired: Set[int] = set()          # cells given up, free for the next issue
         if os.path.exists(path):
             with open(path, encoding='utf-8') as f:
                 for line in f:
                     if line.startswith('#') or not line.strip():
                         continue
-                    i, key, bx, by, ex = line.rstrip('\n').split('\t')
-                    self._add(Entry(int(i), SlotKey.parse(key), int(bx), int(by), ex))
+                    i, key, bx, by, ex = (line.rstrip('\n').split('\t') + [''] * 5)[:5]
+                    if key == '-':
+                        self._check_id(int(i))
+                        self.retired.add(int(i))
+                    else:
+                        self._add(Entry(int(i), SlotKey.parse(key), int(bx), int(by), ex))
+
+    @property
+    def size(self) -> int:
+        """Cells allotted so far, in use or retired."""
+        return len(self.entries) + len(self.retired)
+
+    def _check_id(self, i: int):
+        if i != self.size:
+            raise ValueError(f"{self.path}: registry ids must be consecutive (found {i})")
 
     def _add(self, e: Entry):
-        if e.id != len(self.entries):
-            raise ValueError(f"{self.path}: registry ids must be consecutive (found {e.id})")
+        self._check_id(e.id)
         if e.key in self.by_key:
             raise ValueError(f"{self.path}: {e.key} issued twice")
         self.entries.append(e)
         self.by_key[e.key] = e
+        self.by_id[e.id] = e
 
     def save(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        lines = {e.id: f"{e.id}\t{e.key}\t{e.bx}\t{e.by}\t{e.exemplar}\n" for e in self.entries}
+        lines.update({i: f"{i}\t-\t-\t-\t-\n" for i in self.retired})
         with open(self.path + '.part', 'w', encoding='utf-8', newline='\n') as f:
             f.write(self.HEADER)
-            for e in self.entries:
-                f.write(f"{e.id}\t{e.key}\t{e.bx}\t{e.by}\t{e.exemplar}\n")
+            for i in sorted(lines):
+                f.write(lines[i])
         os.replace(self.path + '.part', self.path)
 
+    def next_id(self) -> int:
+        """The cell the next glyphlette issued gets: the first retired one, else a new one."""
+        return min(self.retired) if self.retired else self.size
+
     def issue(self, key: SlotKey, bx: int, by: int, exemplar: str) -> Entry:
-        e = Entry(len(self.entries), key, bx, by, exemplar)
-        self._add(e)
+        if key in self.by_key:
+            raise ValueError(f"{key} is already issued")
+        e = Entry(self.next_id(), key, bx, by, exemplar)
+        if e.id in self.retired:
+            self.retired.discard(e.id)
+            self.entries.append(e)
+            self.entries.sort(key=lambda x: x.id)
+            self.by_key[key] = e
+            self.by_id[e.id] = e
+        else:
+            self._add(e)
         return e
 
+    def retire(self, e: Entry):
+        """Give a cell up: it keeps its number (nothing moves) and goes to the next glyphlette
+        issued. Its ink is the caller's to clear (juxing.retire)."""
+        self.entries.remove(e)
+        del self.by_key[e.key]
+        del self.by_id[e.id]
+        self.retired.add(e.id)
+
+    def on_sheet(self, n: int) -> List[Entry]:
+        return [e for e in self.entries if e.sheet == n]
+
     def sheet_count(self) -> int:
-        return (len(self.entries) + PER_SHEET - 1) // PER_SHEET
+        return (self.size + PER_SHEET - 1) // PER_SHEET
 
 
 # ---------------------------------------------------------------------------
@@ -341,7 +461,7 @@ class Sheets:
         keep = ink_mask(old)
         img = np.zeros_like(old)
         first = n * PER_SHEET
-        for e in self.registry.entries[first:first + PER_SHEET]:
+        for e in self.registry.on_sheet(n):
             cx, cy = e.cell_origin
             cell = img[cy:cy + GEO.CELL_H, cx:cx + GEO.CELL_W]
             _paint_cell(cell, e, layout, is_leaf, drawn)
@@ -363,28 +483,52 @@ def _frame_inner(layout: Layout, key: SlotKey) -> Tuple[int, int, int, int]:
     return l, t, key.w - l - r, key.h - t - b
 
 
-def _paint_cell(cell, e: Entry, layout: Layout, is_leaf, drawn: Dict[SlotKey, Drawing]):
+Rect = Tuple[int, int, int, int]   # x, y, w, h
+
+
+@dataclass
+class Guides:
+    """What the guides of a drawing cell show (cell coordinates)."""
+    box: Rect                                        # where the glyphlette goes
+    keep_empty: Optional[Rect]                       # inside of a frame
+    context: List[Tuple[SlotKey, Rect, Optional[Rect]]]   # undrawn parts of the exemplar (and a frame's inside)
+    context_ink: np.ndarray                          # drawn parts of the exemplar, protrusions included
+
+
+def cell_guides(e: Entry, layout: Layout, is_leaf, drawn) -> Guides:
     context = []
     if e.exemplar:
         context = [(k, x, y) for k, x, y in
                    cut_placements(layout, ord(e.exemplar), lambda k: k == e.key or is_leaf(k))
                    if not (k == e.key and (x, y) == (e.bx, e.by))]
-    # parts of the exemplar that are not drawn yet
-    for k, x, y in context:
-        if k in drawn:
-            continue
-        _fill(cell, x, y, k.w, k.h, COLOUR_CONTEXT)
-        if k.role:
-            ix, iy, iw, ih = _frame_inner(layout, k)
-            _fill(cell, x + ix, y + iy, iw, ih, (0, 0, 0, 0))
-    # the box itself
-    _fill(cell, e.bx, e.by, e.key.w, e.key.h, COLOUR_BOX)
-    if e.key.role:
-        ix, iy, iw, ih = _frame_inner(layout, e.key)
-        _fill(cell, e.bx + ix, e.by + iy, iw, ih, COLOUR_KEEP_EMPTY)
-    # parts that are drawn, protrusions included, over everything
-    ink = np.zeros(cell.shape[:2], dtype=bool)
+    parts = []
+    ink = np.zeros((GEO.CELL_H, GEO.CELL_W), dtype=bool)
     for k, x, y in context:
         if k in drawn:
             drawn[k].blit(ink, x, y)
-    cell[ink & BODY_MASK] = COLOUR_CONTEXT_INK
+            continue
+        hole = None
+        if k.role:
+            ix, iy, iw, ih = _frame_inner(layout, k)
+            hole = (x + ix, y + iy, iw, ih)
+        parts.append((k, (x, y, k.w, k.h), hole))
+    keep = None
+    if e.key.role:
+        ix, iy, iw, ih = _frame_inner(layout, e.key)
+        keep = (e.bx + ix, e.by + iy, iw, ih)
+    return Guides((e.bx, e.by, e.key.w, e.key.h), keep, parts, ink & BODY_MASK)
+
+
+def _paint_cell(cell, e: Entry, layout: Layout, is_leaf, drawn: Dict[SlotKey, Drawing]):
+    g = cell_guides(e, layout, is_leaf, drawn)
+    # parts of the exemplar that are not drawn yet
+    for _, rect, hole in g.context:
+        _fill(cell, *rect, COLOUR_CONTEXT)
+        if hole:
+            _fill(cell, *hole, (0, 0, 0, 0))
+    # the box itself
+    _fill(cell, *g.box, COLOUR_BOX)
+    if g.keep_empty:
+        _fill(cell, *g.keep_empty, COLOUR_KEEP_EMPTY)
+    # parts that are drawn, protrusions included, over everything
+    cell[g.context_ink] = COLOUR_CONTEXT_INK

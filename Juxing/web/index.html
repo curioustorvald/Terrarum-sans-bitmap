@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Juxing Workbench</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="brand-han">聚形</span> Juxing</div>
+  <nav class="tabs" aria-label="Views">
+    <a href="#status" data-tab="status">Status</a>
+    <a href="#sheets" data-tab="sheets">Sheets</a>
+    <a href="#edit" data-tab="edit">Editor</a>
+    <a href="#families" data-tab="families">Families</a>
+    <a href="#worklist" data-tab="worklist">Worklist</a>
+    <a href="#text" data-tab="text">Text</a>
+    <a href="#about" data-tab="about">About</a>
+  </nav>
+  <div class="top-actions">
+    <span id="busy" class="busy" hidden>working…</span>
+    <button id="reload" class="ghost" title="Re-read the model, registry and sheets from disk">Reload</button>
+  </div>
+</header>
+<main id="view"></main>
+<div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>

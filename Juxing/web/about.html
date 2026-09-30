@@ -1,0 +1,185 @@
+<!-- The About tab (loaded by app.js into #view). Plain HTML: edit freely.
+     data-px="rows/separated/by/slashes" ('#' ink, '.' blank) is drawn as a small bitmap;
+     data-live="name" is filled in from /api/status. -->
+<div class="about">
+
+<section class="card about-intro">
+  <div class="about-title"><span class="about-han">聚形成字</span> Juxing</div>
+  <p class="lead">Juxing <span class="muted">(“gathering shapes into characters”)</span> builds the Han
+    characters of Terrarum Sans Bitmap: all 27,584 CJK Unified Ideographs and Extension A, as
+    15×15 pixel glyphs. Nobody draws 27,584 glyphs. Instead, people draw the pieces
+    characters are made of, <em>glyphlettes</em>, and Juxing assembles every character from
+    them.</p>
+  <p>Draw 氵 once and it serves over 1,400 characters; draw 亻, 扌, 木 and a couple of thousand more and
+    the everyday characters are complete. The workbench you are in shows what to draw next, lets
+    you draw it, and shows you the result in real text straight away.</p>
+  <p class="live muted" data-live="progress"></p>
+</section>
+
+<div class="grid-2">
+<section class="card">
+  <h2>How it works</h2>
+  <ol class="steps">
+    <li><b>Decompose.</b> Every character is split into its parts using open character data
+      (清 = 氵 + 青, 青 = 龶 + 月 …).</li>
+    <li><b>Lay out.</b> Each part gets a box inside the 15×15 body. How big a part is and where it
+      sits is measured from a well-made reference font, Chiron Hei HK.</li>
+    <li><b>Plan.</b> Juxing works out which pieces are worth drawing, and in which order: the
+      pieces that complete the most common characters come first.</li>
+    <li><b>Draw.</b> You draw each piece once, at its largest size, on a drawing sheet.</li>
+    <li><b>Resize.</b> The other sizes of a piece are derived from your drawing by a
+      stroke-preserving resizer. Where it can't do a size well, it asks for a drawing of that
+      size too.</li>
+    <li><b>Assemble.</b> Characters are put together from the pieces and then fine-tuned for even
+      spacing and balance, after Lai, Yeung &amp; Pong's glyph-composition method (1996).</li>
+  </ol>
+  <p class="muted">Simple shapes such as 口 日 田 工 土 are drawn by code and need no drawing at
+    all, though a hand drawing of the same piece always wins.</p>
+</section>
+
+<section class="card">
+  <h2>Words you'll meet</h2>
+  <dl class="terms">
+    <dt>glyphlette</dt><dd>A piece drawn by hand: a radical, a part, a larger chunk, or a whole
+      character.</dd>
+    <dt>slot</dt><dd>A piece in a box of a given size, written <span class="mono">木@5x15</span>:
+      木, 5 pixels wide and 15 tall.</dd>
+    <dt>frame</dt><dd>The outside of an enclosing piece (囗 冂 广 辶 …), drawn over the whole box
+      with its inside kept empty: <span class="mono">辶@15x15/⿺</span>.</dd>
+    <dt>family</dt><dd>The sizes one drawing serves: the same piece in tall, square or wide boxes.
+      木 on the left of 林 and 木 under 呆 are drawn differently, so they are different
+      families.</dd>
+    <dt>base</dt><dd>The one drawing of a family, at its largest size.</dd>
+    <dt>derived</dt><dd>Any other size of a family, made from the base by the resizer.</dd>
+    <dt>declined</dt><dd>A size the resizer can't make well. It needs a drawing of its own.</dd>
+    <dt>override</dt><dd>A hand drawing of one exact size, replacing its derived version.</dd>
+    <dt>draft</dt><dd>An override you have opened but not saved yet. It starts from the resizer's
+      version and only takes a cell on the sheets when you first save it.</dd>
+    <dt>generated</dt><dd>A simple piece drawn by code (口 日 目 田 …).</dd>
+    <dt>exemplar</dt><dd>The common character a glyphlette is shown in while you draw it.</dd>
+  </dl>
+</section>
+</div>
+
+<div class="grid-2">
+<section class="card">
+  <h2>Drawing, step by step</h2>
+  <ol class="steps">
+    <li><b>Issue.</b> In the <a href="#worklist">Worklist</a>, issue the next glyphlettes. They
+      get cells on a drawing sheet, most useful first. (Cells never move. A cell the plan no
+      longer uses is an <em>orphan</em>: its editor offers to retire it, which frees the cell for
+      the next glyphlette issued.)</li>
+    <li><b>Draw.</b> The <a href="#edit">Editor</a> opens the cell with guides: the
+      <span class="swatch box"></span>blue box is where the piece goes, the
+      <span class="swatch keep"></span>red area inside a frame stays empty, and the rest of the
+      exemplar is shown around it, <span class="swatch ctx"></span>grey where its parts aren't drawn
+      yet and <span class="swatch ctxink"></span>faint white where they are, so you can line things
+      up. The live preview shows every size derived from your drawing and the characters that use
+      it, as you draw.</li>
+    <li><b>Save</b> (Ctrl+S). The drawing goes into its sheet and is used everywhere at once.</li>
+    <li><b>Check the sizes.</b> Under “Sizes of this family”, click any size you don't like to
+      override it: it opens as a draft, starting from the resizer's version. The
+      <a href="#families">Families</a> tab lists every family's sizes, the worst resized ones
+      first.</li>
+    <li><b>Look at real text</b> in the <a href="#text">Text</a> tab, and click a character to see
+      what it is made of.</li>
+  </ol>
+  <p class="muted">The sheets are ordinary 32-bit TGA files, so Krita or any editor that keeps
+    the alpha channel works too, just not on the same sheet at the same moment as the web
+    editor.</p>
+</section>
+
+<section class="card">
+  <h2>Editor keys</h2>
+  <table class="data keys-table">
+    <tbody>
+      <tr><td><kbd>left</kbd> drag</td><td>draw</td></tr>
+      <tr><td><kbd>right</kbd> drag</td><td>erase</td></tr>
+      <tr><td><kbd>shift</kbd>+click</td><td>a line from the last point</td></tr>
+      <tr><td><kbd>P</kbd> <kbd>E</kbd> <kbd>L</kbd></td><td>pencil, eraser, line</td></tr>
+      <tr><td><kbd>M</kbd></td><td>select a rectangle, then drag it or use the arrows to move it: its blank pixels don't erase what they land on</td></tr>
+      <tr><td><kbd>Ctrl</kbd>/<kbd>Alt</kbd>+drag</td><td>move a copy of the selection</td></tr>
+      <tr><td><kbd>Del</kbd></td><td>clear the selection</td></tr>
+      <tr><td><kbd>Enter</kbd> <kbd>Esc</kbd></td><td>drop the selection</td></tr>
+      <tr><td><kbd>Ctrl+A</kbd></td><td>select everything</td></tr>
+      <tr><td><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd></td><td>move all the ink (or the selection)</td></tr>
+      <tr><td><kbd>Ctrl+Z</kbd> <kbd>Ctrl+Shift+Z</kbd></td><td>undo, redo</td></tr>
+      <tr><td><kbd>Ctrl+S</kbd></td><td>save</td></tr>
+      <tr><td><kbd>[</kbd> <kbd>]</kbd> <kbd>N</kbd></td><td>previous, next, next blank cell</td></tr>
+      <tr><td><kbd>G</kbd> <kbd>#</kbd></td><td>guides, grid</td></tr>
+    </tbody>
+  </table>
+</section>
+</div>
+
+<div class="grid-2">
+<section class="card">
+  <h2>How to draw</h2>
+  <ul class="rules">
+    <li><b>Draw from scratch.</b> Never trace or copy pixels from another font, WenQuanYi
+      included. Every pixel of the font comes from these sheets, and it has to be original.</li>
+    <li><b>Strokes are 1 pixel wide</b>, in opaque white. Everything else on a sheet is a guide
+      and is redrawn by Juxing.</li>
+    <li><b>Draw each family at its largest size</b>, the size the worklist gives you. Smaller sizes
+      are made from it.</li>
+    <li><b>The box is the space available, not a size to fill.</b> A piece may use less. Ink outside
+      the box is kept, for strokes that reach across to join a neighbour (the hook of 小 meeting 幺).</li>
+    <li><b>Serifs are one pixel at most</b>: the legs of 口 below its bottom stroke, for instance.</li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>What the resizer keeps</h2>
+  <p>A stroke stays a stroke: a diagonal step stays diagonal. When a dot is made narrower, its runs
+    get shorter, never its steps.</p>
+  <div class="px-examples">
+    <figure><span data-px="##../..#./...#"></span><figcaption>drawn</figcaption></figure>
+    <figure class="good"><span data-px="#../.#./..#"></span><figcaption>resized ✓</figcaption></figure>
+    <figure class="bad"><span data-px="##./.#./..#"></span><figcaption>kinked ✗</figcaption></figure>
+    <figure class="bad"><span data-px="##./..#/..#"></span><figcaption>step turned ✗</figcaption></figure>
+  </div>
+  <p>A piece made of separate strokes, like 氵, is resized stroke by stroke, so each dot keeps its
+    shape. Where a size still comes out wrong, override it: your drawing always wins.</p>
+</section>
+</div>
+
+
+
+<div class="grid-2">
+<section class="card">
+  <h2>Sources and licences</h2>
+  <p>Juxing uses open data only:</p>
+  <ul class="rules">
+    <li><b>Unihan</b> and related Unicode data (Unicode License v3): stroke counts, variants,
+      commonness.</li>
+    <li><b>BabelStone IDS</b> (Andrew West; rights waived): how characters decompose.</li>
+    <li><b>CNS 11643</b> stroke data (Ministry of Digital Affairs, Taiwan; Open Government Data
+      Licence v1.0): stroke types.</li>
+    <li><b>Chiron Hei HK</b> (The Chiron Hei HK Project Authors; SIL Open Font License 1.1): the
+      visual target for sizes and positions. It is <em>measured</em>, never copied: no outline or
+      pixel of it reaches the font.</li>
+  </ul>
+  <p>GPL data is deliberately not used: neither WenQuanYi, whose glyphs Juxing replaces, nor the
+    CHISE/cjkvi IDS data. The composition method follows P.-K. Lai, D.-Y. Yeung and M.-C. Pong,
+    <i>A Heuristic Search Approach to Chinese Glyph Generation Using Hierarchical Character
+    Composition</i> (1996). Terrarum Sans Bitmap is licensed under the SIL Open Font License 1.1.</p>
+</section>
+
+<section class="card">
+  <h2>Behind the workbench</h2>
+  <p>Everything here is also on the command line, in <span class="mono">Juxing/</span> of the
+    Terrarum Sans Bitmap repository:</p>
+  <table class="data">
+    <tbody>
+      <tr><td class="mono">make serve</td><td>this workbench</td></tr>
+      <tr><td class="mono">make plan</td><td>the drawing order, in <span class="mono">out/worklist.tsv</span></td></tr>
+      <tr><td class="mono">juxing.py show 清</td><td>how a character is laid out and what it needs</td></tr>
+      <tr><td class="mono">juxing.py derived --score</td><td>the resizer against the sizes drawn by hand</td></tr>
+      <tr><td class="mono">make</td><td>assemble the font sheet, <span class="mono">out/juxing.tga</span></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">How it all works, in detail, is in <span class="mono">Juxing/CLAUDE.md</span>.</p>
+</section>
+</div>
+
+</div>

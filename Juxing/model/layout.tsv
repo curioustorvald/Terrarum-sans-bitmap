@@ -1,196 +1,92 @@
-# Juxing layout rules -- hand-maintained.
+# Juxing layout settings -- hand-maintained.
 #
-# How big a component wants to be when it takes part in a split, and where a
-# surround frame leaves room for its inner part. All numbers are pixels in the
-# 15x15 reference body; they are scaled for smaller boxes. Parts without a
-# preference share the remaining space by complexity (stroke count).
+# The layout's visual targets come from the reference font (Chiron Hei HK): how big each part
+# is and where it sits are measured (model/reference.tsv, `make reference`) and inferred for
+# every component (model/inferred.tsv, `make infer`). A value here overrides the inferred one
+# for that component, value by value; leave it '-' to follow the reference.
+# (The sizes, insets and positions this file used to hold were guesses after the paper of
+# Lai, Yeung & Pong; the reference makes most parts larger: 亻 4.3 not 3, bottoms 7 not 5.)
 #
-# Split parts always end up odd-sized (3,5,7,9,11,13), with a 1px gap between
-# them: in a 15px box a ⿰ split is one of 3|11, 5|9, 7|7, 9|5, 11|3.
+# Split parts always end up odd-sized (3,5,7,9,11,13), with a 1px gap between them: in a
+# 15px box a ⿰ split is one of 3|11, 5|9, 7|7, 9|5, 11|3. A size set here also exempts the
+# part from the crowding test (it is legible by declaration).
 #
-# Columns (tab-separated, '-' = no preference):
+# Columns (tab-separated, '-' = not set):
 #   component
-#   left     width as the left part of ⿰ (first part of ⿲)
+#   left     width as the left part of ⿰ (first part of ⿲), px of a 15px-wide box
 #   right    width as the right part of ⿰ (last part of ⿲)
-#   top      height as the top part of ⿱ (first part of ⿳)
+#   top      height as the top part of ⿱ (first part of ⿳), px of a 15px-tall box
 #   bottom   height as the bottom part of ⿱ (last part of ⿳)
-#   frame    inner-box insets as a surround frame: <op>left,top,right,bottom
-#            several may be given, separated by spaces
+#            A number sets the size; '>=N' sets only the least size, and the reference decides
+#            above it (川 >=7 on the right: 训 stays 5|9, 釧 goes 7|7 rather than 9|5).
+#   frame    inner-box insets as a surround frame at 15x15: <op>left,top,right,bottom
+#            several may be given, separated by spaces. 'roof': a roof over the part below it,
+#            with legs at the sides and room between them (宀 冖): the part below reaches up
+#            under it wherever the reference has it reach half a pixel or more (elsewhere 1px)
 #   levels   shape of the component as rows,columns of parallel stroke levels, for
-#            components whose IDS does not reveal it (atoms such as 幺 or 灬).
-#            Rows are stacked horizontal elements, columns side-by-side vertical ones;
-#            dots and slants count half. Its minimum size is (2*columns-1) x (2*rows-1)
-#            px, at least 3x3. Components with an IDS are measured from their structure.
-#   place    preferred position within its box in a given context, used by the
-#            evenness pass (after the rule-based metric of Lai, Yeung & Pong):
+#            components whose IDS does not reveal it (atoms such as 幺 or 灬). This is
+#            structure, not appearance, so it is set here rather than inferred: it says how
+#            many 1px strokes a component needs at 15px, which a font drawn at high
+#            resolution does not tell. Rows are stacked horizontal elements, columns
+#            side-by-side vertical ones; dots and slants count half. Its minimum size is
+#            (2*columns-1) x (2*rows-1) px, at least 3x3. Components with an IDS are measured
+#            from their structure.
+#   place    preferred position within its box in a given context, used by the evenness
+#            pass for parts the reference does not measure in their character:
 #            <context>:x=<fraction>,y=<fraction>, several separated by spaces.
 #            The fractions place the centre of the component's ink within its box
 #            (0 = left/top edge, 1 = right/bottom edge); give x, y or both.
 #            Contexts: left right middle (in ⿰⿲), top bottom middle (in ⿱⿳),
 #            inner (inside a surround), whole (a standalone slot), any.
-#            e.g. 口 on the left sits a little high: left:y=0.45
 #   note
 #
 # Run `python3 juxing.py show <chars>` to see the effect of a change.
 #
 #comp	left	right	top	bottom	frame	levels	place	note
 
-# --- narrow left-hand radicals -----------------------------------------------
-亻	3	-	-	-	-	-	-	人 on the left
-彳	5	-	-	-	-	-	-
-氵	3	-	-	-	-	3,1.5	-
-冫	3	-	-	-	-	-	-
-丬	3	-	-	-	-	-	-
-忄	3	-	-	-	-	3,2	-
-讠	3	-	-	-	-	2,1.5	-
-阝	3	5	-	-	-	3,1.5	-	left: 阜, right: 邑
-卩	-	5	-	-	-	2,2	-
-扌	5	-	-	-	-	-	-
-犭	5	-	-	-	-	3,2	-
-纟	5	-	-	-	-	3,1.5	-
-糹	5	-	-	-	-	-	-
-钅	5	-	-	-	-	3.5,2	-
-釒	5	-	-	-	-	4.5,2	-
-饣	5	-	-	-	-	2.5,2	-
-飠	5	-	-	-	-	4.5,2.5	-
-訁	5	-	-	-	-	-	-
-礻	5	-	-	-	-	3,2.5	-
-衤	5	-	-	-	-	-	-
-𤣩	5	-	-	-	-	3,1.5	-
-王	5	-	-	-	-	-	-
-牜	5	-	-	-	-	3,2	-
-𧾷	5	-	-	-	-	-	-
-口	5	5	5	5	-	2,2	left:y=0.45 right:y=0.55
-日	5	-	5	5	-	-	-
-目	5	-	-	5	-	-	-
-月	5	-	-	5	-	-	-
-⺼	5	-	-	-	-	3,2	-
-木	5	-	5	5	-	-	-
-禾	5	-	-	-	-	-	-
-米	5	-	5	5	-	-	-
-火	5	-	-	5	-	2.5,3	-
-土	5	-	5	5	-	-	-
-女	5	-	-	5	-	3,3	-
-子	5	-	-	5	-	-	-
-弓	5	-	-	-	-	-	-
-山	5	-	5	5	-	-	-
-巾	5	-	-	5	-	-	-
-耳	5	-	-	-	-	4.5,3	-
-石	5	-	-	5	-	-	-
-虫	5	-	-	5	-	-	-
-贝	5	-	-	5	-	-	-
-貝	5	-	-	7	-	-	-
-车	5	-	-	-	-	-	-
-車	5	-	-	-	-	-	-
-马	5	-	-	5	-	-	-
-馬	5	-	-	-	-	-	-
-鱼	5	-	-	-	-	-	-
-魚	5	-	-	-	-	-	-
-舟	5	-	-	-	-	-	-
-方	5	-	-	-	-	-	-
-矢	5	-	-	-	-	-	-
-立	5	-	5	-	-	-	-
-歹	5	-	-	-	-	-	-
-酉	5	-	-	-	-	-	-
-身	5	-	-	-	-	-	-
-角	5	-	-	-	-	-	-
-田	5	-	5	5	-	-	-
-白	5	-	5	-	-	-	-
-片	5	-	-	-	-	-	-
-羊	5	-	-	-	-	-	-
-缶	5	-	-	-	-	-	-
-舌	5	-	-	-	-	-	-
-耒	5	-	-	-	-	-	-
-豸	5	-	-	-	-	4,3	-
-革	5	-	-	-	-	-	-
-骨	5	-	-	-	-	-	-
-足	5	-	-	-	-	-	-
-食	5	-	-	7	-	-	-
+# --- roofs: the part below may reach up between the legs -----------------------------------
+宀	-	-	-	-	roof	-	-	宙: 由's stem rises between the legs
 
-# --- narrow right-hand parts -------------------------------------------------
-刂	-	3	-	-	-	-	-
-力	-	5	-	5	-	-	-
-寸	-	5	-	5	-	-	-
-彡	-	5	-	-	-	-	-
-攵	-	7	-	-	-	3,3	-
-夂	-	-	3	-	-	2,2	-
-殳	-	7	-	-	-	-	-
-欠	-	7	-	-	-	-	-
-页	-	7	-	-	-	-	-
-頁	-	7	-	-	-	-	-
-隹	-	7	-	-	-	-	-
-鸟	-	7	-	-	-	-	-
-鳥	-	7	-	-	-	-	-
-斤	-	7	-	-	-	-	-
-见	-	7	-	-	-	-	-
-見	-	7	-	-	-	-	-
+# --- least sizes -------------------------------------------------------------------------
+川	-	>=7	-	-	-	-	-	at least half on the right (训 釧 馴): its three strokes need the room
 
-# --- tops ----------------------------------------------------------------------
-艹	-	-	3	-	-	-	-
-宀	-	-	3	-	-	-	-
-冖	-	-	3	-	-	1.5,2	-
-亠	-	-	3	-	-	-	-
-丷	-	-	3	-	-	-	-
-⺌	-	-	3	-	-	1.5,3	-
-爫	-	-	3	-	-	-	-
-罒	-	-	3	-	-	-	-
-𠆢	-	-	3	-	-	1.5,2	-
-⺈	-	-	3	-	-	1.5,1.5	-
-𥫗	-	-	5	-	-	2,4	-
-雨	-	-	5	-	-	-	-
-穴	-	-	5	-	-	-	-
-耂	-	-	5	-	-	-	-
-覀	-	-	5	-	-	-	-
-癶	-	-	5	-	-	-	-
-人	-	-	5	5	-	1.5,2	-
-士	-	-	5	5	-	-	-
-
-# --- bottoms -------------------------------------------------------------------
-灬	-	-	-	3	-	1,3	-
-心	-	-	-	5	-	-	-
-皿	-	-	-	5	-	-	-
-大	-	-	-	5	-	-	-
-儿	-	-	-	5	-	-	-
-廾	-	-	-	5	-	-	-
-又	-	-	-	5	-	2,2	-
-手	-	-	-	5	-	-	-
-衣	-	-	-	7	⿴4,4,4,4	-	-
-糸	-	-	-	7	-	-	-
-言	-	-	-	7	-	-	-
-金	-	-	-	7	-	-	-
-
-# --- surround frames -----------------------------------------------------------
-囗	-	-	-	-	⿴2,2,2,4	2,2	-
-行	-	-	-	-	⿴5,0,5,0	-	-	彳 | inner | 亍
-冂	-	-	-	-	⿵2,2,2,0	1.5,2	-
-门	-	-	-	-	⿵2,4,2,0	-	-
-門	-	-	-	-	⿵2,6,2,0	-	-
-几	-	-	-	-	⿵2,2,2,0	-	-
-凡	-	-	-	-	⿵2,2,2,0	-	-
-风	-	-	-	-	⿵2,2,2,0	-	-
-凵	-	-	-	-	⿶2,0,2,4	1.5,2	-
-匚	-	-	-	-	⿷2,2,0,4	2,1.5	-
-匸	-	-	-	-	⿷2,2,0,2	-	-
-广	-	-	-	-	⿸4,4,0,0	-	-
-厂	-	-	-	-	⿸4,4,0,0	-	-
-疒	-	-	-	-	⿸4,4,0,0	-	-
-尸	-	-	-	-	⿸4,4,0,0	-	-
-户	-	-	-	-	⿸4,6,0,0	-	-
-戶	-	-	-	-	⿸4,6,0,0	-	-
-虍	-	-	-	-	⿸4,6,0,0	-	-
-鹿	-	-	-	-	⿸4,6,0,0	-	-
-勹	-	-	-	-	⿹2,4,4,0	-	-
-戈	-	-	-	-	⿹0,4,6,0	-	-
-弋	-	-	-	-	⿹0,4,6,0	-	-
-气	-	-	-	-	⿹0,6,4,0	-	-
-辶	-	-	-	-	⿺4,0,0,4	2,2.5	-
-廴	-	-	-	-	⿺4,0,0,4	2,2	-
-走	-	-	-	-	⿺6,0,0,4	-	-
-是	-	-	-	-	⿺6,0,0,4	-	-
-鬼	-	-	-	-	⿺6,0,0,4	-	-
-毛	-	-	-	-	⿺6,0,0,4	-	-
-
-# --- shapes of atoms (components the IDS data does not decompose) ---------------
+# --- stroke levels of components whose IDS does not reveal their shape ------------------
+氵	-	-	-	-	-	3,1.5	-
+忄	-	-	-	-	-	3,2	-
+讠	-	-	-	-	-	2,1.5	-
+阝	-	-	-	-	-	3,1.5	-	left: 阜, right: 邑
+卩	-	-	-	-	-	2,2	-
+犭	-	-	-	-	-	3,2	-
+纟	-	-	-	-	-	3,1.5	-
+钅	-	-	-	-	-	3.5,2	-
+釒	-	-	-	-	-	4.5,2	-
+饣	-	-	-	-	-	2.5,2	-
+飠	-	-	-	-	-	4.5,2.5	-
+礻	-	-	-	-	-	3,2.5	-
+𤣩	-	-	-	-	-	3,1.5	-
+牜	-	-	-	-	-	3,2	-
+口	-	-	-	-	-	2,2	-
+⺼	-	-	-	-	-	3,2	-
+火	-	-	-	-	-	2.5,3	-
+女	-	-	-	-	-	3,3	-
+耳	-	-	-	-	-	4.5,3	-
+豸	-	-	-	-	-	4,3	-
+攵	-	-	-	-	-	3,3	-
+夂	-	-	-	-	-	2,2	-
+冖	-	-	-	-	roof	1.5,2	-	the same roof as 宀, without the dot on top (军 冥 冢)
+⺌	-	-	-	-	-	1.5,3	-
+𠆢	-	-	-	-	-	1.5,2	-
+⺈	-	-	-	-	-	1.5,1.5	-
+𥫗	-	-	-	-	-	2,4	-
+人	-	-	-	-	-	1.5,2	-
+灬	-	-	-	-	-	1,3	-
+又	-	-	-	-	-	2,2	-
+囗	-	-	-	-	-	2,2	-
+冂	-	-	-	-	-	1.5,2	-
+凵	-	-	-	-	-	1.5,2	-
+匚	-	-	-	-	-	2,1.5	-
+辶	-	-	-	-	-	2,2.5	-
+廴	-	-	-	-	-	2,2	-
 ⺝	-	-	-	-	-	3,2	-
 九	-	-	-	-	-	2,2	-
 瓜	-	-	-	-	-	3,3	-

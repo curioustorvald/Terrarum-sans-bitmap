@@ -10,13 +10,23 @@ with the generated ink for you to edit.
 Rules:
   - Whole characters (15x15 plain slots) are never generated; standalone 口 or 木
     deserve hand drawing.
-  - A shape keeps a plausible aspect ratio: in a 5x15 box 口 is 5x7 and 日 5x13,
-    centred, rather than stretched to fill the box; enclosed shapes also keep clear
-    of the sides of wide boxes (口 on top of 呆 is 11px wide, not 15).
+  - A shape is as large as Chiron Hei HK draws the component in boxes like its own
+    (Layout.ink_size: the share of its space its ink takes, times the box): 口 left of
+    吃 叫 唱 is 5x11 in its 5x15 box, 口 over a 15x3 box 11px wide, 十 under 日 in 早
+    fills its box to meet 日. Its width is the nearest odd one (5 at least for enclosed
+    shapes, where the box allows), its height the nearest. The evenness pass then sizes
+    each generated part as Chiron Hei HK does in that very character, where measured.
+  - Without a measurement, a shape keeps a plausible aspect ratio inside its box instead
+    (the aspect limits of its Spec), centred; enclosed shapes also keep clear of the
+    sides of wide boxes.
   - The outer verticals of box-like shapes (口 囗 日 曰 目 田 白 山 中 由 甲 申 凵 匚)
-    run past the bottom stroke: 1px, or 2px when the shape is extra tall. This is
-    how these characters are made, not a serif of the typeface, but it disappears
-    when a shape is squashed vertically to about 60% of its natural proportion.
+    run 1px past the bottom stroke, never more. This is how these characters are
+    made, not a serif of the typeface, but it disappears when a shape is squashed
+    vertically to about 60% of its natural proportion, and on shapes under 5 rows
+    (a 4-row 口 keeps a 2-row counter).
+  - The bars are evenly spaced: with a 1px serif an odd-sized shape leaves an even number
+    of rows for its strokes, so the shape is drawn a row taller or shorter where that
+    centres the middle bar (日 目 田 申).
   - If the box cannot hold the strokes with 1px gaps between parallel ones
     (目 needs 7 rows), the serif goes first, then the generator declines and the
     slot must be drawn.
@@ -32,16 +42,18 @@ from geometry import SlotKey
 # (array (h, w), w, h, serif length) -> False if the shape does not fit
 Shape = Callable[[np.ndarray, int, int, int], bool]
 
-SERIF_TALL = 13       # shapes at least this tall get 2px serifs
 SERIF_SQUASH = 0.6    # no serifs at or below this fraction of the natural height
+SERIF_MIN_H = 5       # nor on shapes shorter than this: a 4-row 口 keeps a 2-row counter
 
 
 class Spec:
     def __init__(self, draw: Shape, max_wide: float, max_tall: float, min_w: int = 3, min_h: int = 3,
                  boxy: bool = False, natural: Optional[float] = None):
         self.draw = draw
-        self.max_wide = max_wide    # width may be at most this many times the height
-        self.max_tall = max_tall    # height may be at most this many times the width
+        # without a measurement (see _fit): width at most max_wide times the height, and
+        # height at most max_tall times the width
+        self.max_wide = max_wide
+        self.max_tall = max_tall
         self.min_w, self.min_h = min_w, min_h
         # enclosed shapes (口 日 田 ...) keep clear of the sides of wide boxes, while
         # stroke-like ones (一 十 土 木 ...) may span them
@@ -59,20 +71,46 @@ def _odd_at_most(v: float, limit: int) -> int:
     return n if n % 2 == 1 else n - 1
 
 
-def _fit(spec: Spec, w: int, h: int) -> Optional[Tuple[int, int, int, int]]:
-    """The rectangle (x, y, w, h) the shape occupies inside a w x h box: centred, odd-sized."""
+def _like_at_most(v: float, limit: int) -> int:
+    """The largest number up to v and limit with the parity of limit."""
+    n = min(int(v), limit)
+    return n if (limit - n) % 2 == 0 else n - 1
+
+
+def _fit(spec: Spec, w: int, h: int) -> Optional[Tuple[int, int]]:
+    """
+    The size (w, h) of a shape that fills a w x h box as far as its aspect limits allow,
+    for boxes Chiron Hei HK has no measurement for. Its width is odd, so a central
+    stroke is central; its height takes the parity of the box, so it centres exactly.
+    """
     fw = _odd_at_most(spec.max_wide * h, w - 2 * _side_margin(w) if spec.boxy else w)
-    fh = _odd_at_most(spec.max_tall * fw, h)
+    fh = _like_at_most(spec.max_tall * fw, h)
     fw = _odd_at_most(spec.max_wide * fh, fw)
     if fw < spec.min_w or fh < spec.min_h:
         return None
-    return (w - fw) // 2, (h - fh) // 2, fw, fh
+    return fw, fh
+
+
+def _measured(spec: Spec, w: int, h: int, size: Tuple[float, float]) -> Optional[Tuple[int, int]]:
+    """
+    The size (w, h) of a shape drawn as large as Chiron Hei HK draws it in a box like
+    this (Layout.ink_size), within the box: the nearest odd width and the nearest height.
+    Enclosed shapes are 5px wide at least where the box allows, as 3px would leave a 1px
+    counter (Chiron Hei HK's 口 in a 5x5 box is 4px wide).
+    """
+    mw, mh = size
+    odd_w = w if w % 2 else w - 1
+    fw = min(max(2 * round((mw - 1) / 2) + 1, spec.min_w | 1, min(5, odd_w) if spec.boxy else 1), odd_w)
+    fh = min(max(int(mh + 0.5), spec.min_h), h)
+    if fw < spec.min_w or fh < spec.min_h:
+        return None
+    return fw, fh
 
 
 def serif_length(natural: Optional[float], w: int, h: int) -> int:
-    if natural is None or h / (w * natural) <= SERIF_SQUASH:
+    if natural is None or h < SERIF_MIN_H or h / (w * natural) <= SERIF_SQUASH:
         return 0
-    return 2 if h >= SERIF_TALL else 1
+    return 1
 
 
 # --- stroke helpers (operate on a (h, w) boolean array) ---------------------------
@@ -336,7 +374,7 @@ def _mu4(a, w, h, s):       # 木: bar, stem, and legs at 45° from under the ba
 
 
 SPECS: Dict[str, Spec] = {
-    '口': Spec(_kou, max_wide=2.2, max_tall=1.4, boxy=True, natural=1.0),
+    '口': Spec(_kou, max_wide=2.75, max_tall=1.4, boxy=True, natural=1.0),   # 2.75: Chiron Hei HK's widest (95%), 宫
     '日': Spec(_ri, max_wide=3.0, max_tall=2.6, min_h=5, boxy=True, natural=1.3),
     '曰': Spec(_ri, max_wide=3.5, max_tall=1.2, min_h=5, boxy=True, natural=0.75),
     '目': Spec(_mu, max_wide=1.6, max_tall=3.2, min_h=7, boxy=True, natural=1.8),
@@ -370,21 +408,28 @@ SPECS: Dict[str, Spec] = {
 }
 
 # Frames that are plain outlines of their box: (draw, natural height/width for serifs).
-# A frame's serifs raise its bottom stroke, which must stay clear of its inner box:
-# layout.tsv gives these frames a bottom inset of 4 (stroke, 1px gap, 2px serif).
+# A frame's serifs raise its bottom stroke, which must stay clear of its inner box: the
+# serif is drawn only where the bottom inset leaves the stroke and a clear pixel above it
+# (the insets are inferred from the reference font: 囗 and 匚 3, so a serif; 凵 2, none).
 FRAMES = {('囗', '⿴'): (_kou, 1.0), ('冂', '⿵'): (_jiong, None),
           ('凵', '⿶'): (_kan, 0.9), ('匚', '⿷'): (_fang, 1.0)}
 
-_cache: Dict[Tuple[SlotKey, Optional[int]], Optional[np.ndarray]] = {}
+_cache: Dict[Tuple, Optional[np.ndarray]] = {}
+_shapes: Dict[Tuple[str, int, int, int], Optional[np.ndarray]] = {}
 
 
-def generate(key: SlotKey, bottom_inset: Optional[int] = None) -> Optional[np.ndarray]:
+def generate(key: SlotKey, bottom_inset: Optional[int] = None,
+             size: Optional[Tuple[float, float]] = None) -> Optional[np.ndarray]:
     """
     The generated glyphlette as a (h, w) boolean array, or None if it cannot be generated.
     bottom_inset: for frames, how far their inner box stays from the bottom (Layout.insets);
     serifs are only drawn where they leave the inner box clear.
+    size: the ink size to draw a component at, in pixels, as Chiron Hei HK draws it in
+    boxes like this one (Layout.ink_size). Without it, or if the shape can't be drawn at
+    that size, the shape fills its box within the aspect limits of its Spec. Either way it
+    is centred in the box.
     """
-    ck = (key, bottom_inset)
+    ck = (key, bottom_inset, size)
     if ck in _cache:
         return _cache[ck]
     out = None
@@ -393,29 +438,83 @@ def generate(key: SlotKey, bottom_inset: Optional[int] = None) -> Optional[np.nd
         if frame is not None:
             draw, natural = frame
             s = serif_length(natural, key.w, key.h)
-            s = min(s, max(0, (bottom_inset or 0) - 2))   # bottom stroke + 1px gap above the inner box
+            s = min(s, max(0, (bottom_inset or 0) - 2))   # bottom stroke + a gap above the inner box
             out = np.zeros((key.h, key.w), dtype=bool)
             draw(out, key.w, key.h, s)
     elif key.comp in SPECS and not (key.w == GEO.BODY_W and key.h == GEO.BODY_H):
         spec = SPECS[key.comp]
-        fit = _fit(spec, key.w, key.h)
-        if fit is not None:
-            x, y, fw, fh = fit
-            for s in dict.fromkeys((serif_length(spec.natural, fw, fh), 0)):
-                shape = np.zeros((fh, fw), dtype=bool)
-                if spec.draw(shape, fw, fh, s):
-                    out = np.zeros((key.h, key.w), dtype=bool)
-                    out[y:y + fh, x:x + fw] = shape
-                    break
+        sizes = [_measured(spec, key.w, key.h, size)] if size is not None else []
+        for fit in sizes + [_fit(spec, key.w, key.h)]:
+            if fit is None:
+                continue
+            shape = _shape(spec, fit[0], fit[1], key.h)
+            if shape is not None:
+                sh, sw = shape.shape
+                sx, sy = (key.w - sw) // 2, (key.h - sh) // 2
+                out = np.zeros((key.h, key.w), dtype=bool)
+                out[sy:sy + sh, sx:sx + sw] = shape
+                break
     _cache[ck] = out
     return out
 
 
+def shape(comp: str, w: int, h: int) -> Optional[np.ndarray]:
+    """
+    A component's shape drawn w x h, or a row taller or shorter where that spaces its bars
+    more evenly; None if it can't be drawn so. The evenness pass resizes generated parts
+    with this.
+    """
+    k = (comp, w, h, h + 1)
+    if k not in _shapes:
+        spec = SPECS.get(comp)
+        _shapes[k] = _shape(spec, w, h, h + 1) if spec and w >= spec.min_w and h >= spec.min_h else None
+    return _shapes[k]
+
+
+def _shape(spec: Spec, fw: int, fh: int, room: int) -> Optional[np.ndarray]:
+    """The shape about fw x fh (see _even_bars), with its serif if it has room for one."""
+    for s in dict.fromkeys((serif_length(spec.natural, fw, fh), 0)):
+        out = _even_bars(spec, fw, fh, s, room)
+        if out is not None:
+            return out
+    return None
+
+
+def _bar_unevenness(shape: np.ndarray) -> int:
+    """Spread of the gaps between the horizontal bars of a shape (rows inked nearly across)."""
+    bars = [y for y in range(shape.shape[0]) if shape[y].sum() >= max(3, shape.shape[1] - 1)]
+    gaps = [b - a for a, b in zip(bars, bars[1:])]
+    return max(gaps) - min(gaps) if len(gaps) >= 2 else 0
+
+
+def _even_bars(spec: Spec, fw: int, fh: int, s: int, room: int) -> Optional[np.ndarray]:
+    """
+    The shape drawn fh rows tall, or a row shorter or taller (two shorter at most) if that
+    spaces its bars more evenly: with a 1px serif, an odd height leaves an even number of
+    rows for the strokes, and 日 田 申 could not centre their middle bars; 目 needs 3k+1.
+    """
+    best = None
+    for h in (fh, fh + 1, fh - 1, fh - 2):
+        if h < 1 or h > room:
+            continue
+        shape = np.zeros((h, fw), dtype=bool)
+        if not spec.draw(shape, fw, h, s):
+            continue
+        score = _bar_unevenness(shape)
+        if best is None or score < best[0]:
+            best = (score, shape)
+        if score == 0:
+            break
+    return best[1] if best else None
+
+
 def generate_for(layout, key: SlotKey) -> Optional[np.ndarray]:
-    """generate() with the frame insets of a layout."""
+    """generate() with a layout's frame insets and Chiron Hei HK's size for the slot."""
     if key.role:
         return generate(key, layout.insets(key.comp, key.role, key.w, key.h)[3])
-    return generate(key)
+    if key.comp not in SPECS:
+        return None
+    return generate(key, size=layout.ink_size(key.comp, key.w, key.h))
 
 
 def is_unit(key: SlotKey) -> bool:
@@ -424,7 +523,7 @@ def is_unit(key: SlotKey) -> bool:
     return not key.role and key.comp in SPECS
 
 
-def can_generate(key: SlotKey) -> bool:
+def can_generate(key: SlotKey, layout=None) -> bool:
     if key.role:
         return (key.comp, key.role) in FRAMES
-    return generate(key) is not None
+    return (generate_for(layout, key) if layout else generate(key)) is not None

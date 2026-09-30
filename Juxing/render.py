@@ -107,7 +107,7 @@ def ascii_layout(layout: Layout, placements: List[Tuple[SlotKey, int, int]], dra
         state = ''
         if drawn is not None:
             kind = drawn.kind(k) if hasattr(drawn, 'kind') else ('drawn' if k in drawn else None)
-            state = (f"  [reuses {drawn.source(k)}]" if kind == 'reused' else
+            state = (f"  [derived from {drawn.source(k)}]" if kind == 'derived' else
                      f"  [{kind}]" if kind else '  [not drawn]')
         lines.append(f"  {string.ascii_letters[i % 52]} = {describe(layout, k)} at ({x},{y}){state}")
     return lines
@@ -146,7 +146,7 @@ def sheet_index(sheet_rgba: np.ndarray, entries, layout: Layout, out_path: str, 
 
 
 # ---------------------------------------------------------------------------
-# Layout mock-ups (for tuning layout.tsv before anything is drawn)
+# Layout mock-ups (for checking the layout before anything is drawn)
 
 def mockup(layout: Layout, chars: Sequence[str], placements_of, out_path: str, scale=8, per_row=8):
     """
@@ -282,4 +282,76 @@ def gallery(items, out_path: str, scale=4, per_row=24):
         x = big.draw(d, (x0, y0 + ch + 1), k.comp, FG)
         small.draw(d, (x + 2, y0 + ch + 4), f"{k.w}×{k.h}{k.role}", DIM)
         small.draw(d, (x0, y0 + ch + 17), f"{uses}×", DIM)
+    img.save(out_path)
+
+
+DERIVED_BG = {'drawn': (0x1E, 0x32, 0x50, 255), 'derived': (0x30, 0x30, 0x30, 255),
+              'declined': (0x58, 0x1E, 0x1E, 255)}
+
+
+def derived_gallery(rows, out_path: str, scale=4):
+    """
+    One row per family: its drawings, then every size derived from them.
+    rows: [(label, [(key, box mask (h, w), state, caption)])], state being 'drawn',
+    'derived' or 'declined' (the mask is then the draft the resizer gave up on).
+    """
+    pad, label_w, cap_h = 6, 110, 28
+    col = lambda k: max(k.w * scale, 40)
+    widths = [label_w + sum(col(k) + pad for k, _, _, _ in items) + pad for _, items in rows]
+    row_h = GEO.BODY_H * scale + cap_h + pad
+    img = Image.new('RGBA', (max(widths, default=200), max(1, len(rows)) * row_h + pad), BG)
+    d = ImageDraw.Draw(img)
+    big, small = LabelFont(16), LabelFont(10)
+    for r, (label, items) in enumerate(rows):
+        y0 = pad + r * row_h
+        big.draw(d, (pad, y0), label[0], FG)
+        small.draw(d, (pad, y0 + 22), label[1], DIM)
+        x0 = label_w
+        for k, mask, state, caption in items:
+            d.rectangle((x0, y0, x0 + k.w * scale - 1, y0 + k.h * scale - 1), fill=DERIVED_BG[state])
+            for yy, xx in zip(*np.nonzero(mask)):
+                d.rectangle((x0 + xx * scale, y0 + yy * scale, x0 + xx * scale + scale - 1,
+                             y0 + yy * scale + scale - 1), fill=FG)
+            small.draw(d, (x0, y0 + GEO.BODY_H * scale + 2), f"{k.w}×{k.h}", FG if state != 'derived' else DIM)
+            small.draw(d, (x0, y0 + GEO.BODY_H * scale + 14), caption, DIM)
+            x0 += col(k) + pad
+    img.save(out_path)
+
+
+REFERENCE_COLOURS = [(0xE6, 0x50, 0x50), (0x50, 0xA0, 0xF0), (0x5A, 0xC8, 0x78), (0xF0, 0xB4, 0x28),
+                     (0xC8, 0x5A, 0xDC), (0x3C, 0xD2, 0xD2)]
+
+
+def reference_sheet(layout: Layout, renderer, chars: Sequence[str], out_path: str, per_row: int = 10):
+    """
+    The characters as Chiron Hei HK draws them, with the boxes measured for their parts
+    (reference.py), for checking the segmentation. Reference images only.
+    """
+    import reference as RF
+    fx0, fy0, fx1, fy1 = renderer.face
+    fw, fh = fx1 - fx0, fy1 - fy0
+    pad, cap = 8, 22
+    tw, th = int(fw) + 2 * pad, int(fh) + 2 * pad + cap
+    rows = max(1, (len(chars) + per_row - 1) // per_row)
+    img = Image.new('RGB', (per_row * tw, rows * th), BG[:3])
+    d = ImageDraw.Draw(img)
+    small = LabelFont(11)
+    for i, ch in enumerate(chars):
+        ox, oy = (i % per_row) * tw, (i // per_row) * th
+        m = renderer.render(ch)
+        if m is not None:
+            crop = m[int(fy0) - pad:int(fy1) + pad, int(fx0) - pad:int(fx1) + pad]
+            glyph = Image.fromarray((crop * 150).astype(np.uint8)).convert('RGB')
+            img.paste(glyph, (ox, oy))
+        d.rectangle((ox + pad, oy + pad, ox + pad + fw, oy + pad + fh), outline=(60, 60, 60))
+        boxes = RF.measure(layout, renderer, ch)
+        for p, b in boxes:
+            if not p or '.' in p:
+                continue
+            c = REFERENCE_COLOURS[int(p) % len(REFERENCE_COLOURS)]
+            d.rectangle((ox + pad + b.x0 * fw, oy + pad + b.y0 * fh, ox + pad + b.x1 * fw - 1, oy + pad + b.y1 * fh - 1),
+                        outline=c, width=2 if not b.ambiguous else 1)
+        tops = [b for p, b in boxes if p and '.' not in p]
+        note = ' '.join(b.comp[:3] for b in tops) + (' ?' if any(b.ambiguous for b in tops) else '')
+        small.draw(d, (ox + pad, oy + th - cap + 2), f"{ch} {note}", FG)
     img.save(out_path)
