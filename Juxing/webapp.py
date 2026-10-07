@@ -99,6 +99,7 @@ class State:
         self.drafts = {}
         self.tracer = None
         self.suggestions = {}
+        self.users_cache = {}
 
     def fresh(self):
         """The Context, reloaded if the registry or a sheet changed on disk."""
@@ -313,11 +314,40 @@ class State:
                     note=(ctx.model.get(e.key.comp).note if ctx.model.get(e.key.comp) else ''))
 
     def users_of(self, key):
-        """Characters that use a drawing (or the size it serves), most common first."""
+        """Characters that use a drawing (every size it serves), most common first. A size that
+        is no drawing of the plan (one derived, or a draft to override it) counts as it would
+        be once issued: its own characters and those of the sizes it would then serve, being
+        their closest drawing (glyphlettes.source_order), as the planner would have it. A draft
+        of 衤@5x11 is used in 2 characters, not in the 297 of the drawing it is derived from."""
         ctx = self.ctx
-        d = key if key in ctx.plan.uses else ctx.plan.cover.get(key, key)
-        users = [cp for cp, parts in ctx.plan.chars.items() if d in parts]
-        return sorted(users, key=lambda cp: (ctx.model[chr(cp)].tier, len(ctx.plan.chars[cp]), cp))
+        k = (id(ctx.plan), key)
+        if k not in self.users_cache:
+            if key in ctx.plan.uses:
+                users = [cp for cp, parts in ctx.plan.chars.items() if key in parts]
+            else:
+                # as choose_drawings serves sizes: from the issued drawings first, the closest
+                # that can, so a new override takes the sizes it is closest to, and those only a
+                # drawing not issued yet would have served
+                fam = GL.family(key)
+                issued = [d for d in ctx.registry.by_key if GL.family(d) == fam] + [key]
+                sizes = {key}
+                for t in ctx.plan.cover:
+                    if t in issued or GL.family(t) != fam or not GL.derivable(key, t):
+                        continue
+                    for d in sorted((d for d in issued if GL.derivable(d, t)), key=lambda d: GL.source_order(d, t)):
+                        if d == key:
+                            sizes.add(t)
+                            break
+                        if ctx.drawn.derive_ok(d, t) is not False:
+                            break
+                # the characters using these sizes are among those using their drawings now
+                now = {ctx.plan.cover[t] for t in sizes if t in ctx.plan.cover}
+                users = [cp for cp, parts in ctx.plan.chars.items() if now & set(parts)
+                         and any(p in sizes for p, _, _ in GL.cut_placements(ctx.layout, cp, ctx.is_leaf))]
+            if len(self.users_cache) > 512:
+                self.users_cache.clear()
+            self.users_cache[k] = sorted(users, key=lambda cp: (ctx.model[chr(cp)].tier, len(ctx.plan.chars[cp]), cp))
+        return self.users_cache[k]
 
     def preview(self, eid, ink: np.ndarray, key: str = None):
         """Derived sizes and characters as they would be with this ink in the cell (of an

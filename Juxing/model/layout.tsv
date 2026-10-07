@@ -51,10 +51,12 @@
 
 # --- sizes -------------------------------------------------------------------------------
 讠	5	-	-	-	-	2,1.5	-	one width for the family: it measures about 4.5px, on the 3|5 tie, and 调 谵 measure 7 where 讠 touches the neighbour's 丿
-𥫗	-	-	<=4	-	-	2,4	-	at most 5px on top: where its dots touch the part below (笠 答 签 竺), the reference cuts in a gap inside that part
-艹	-	-	<=4	-	-	-	-	at most 5px on top, likewise (艽 芌 荟 荿 莃)
+𥫗	-	-	<=4	-	-	2,4	-	at most 4px on top: where its dots touch the part below (笠 答 签 竺), the reference cuts in a gap inside that part
+艹	-	-	<=4	-	-	-	-	at most 4px on top, likewise (艽 芌 荟 荿 莃)
 䒑	-	-	<=5	-	-	-	-	at most 5px on top, likewise (羊)
-丷	-	-	<=4	-	-	-	-	at most 5px on top: two dots never stand tall; 兰 measures 6.5 (三 well below it), 7|7 by a hair
+丷	-	-	<=4	-	-	-	-	at most 4px on top: two dots never stand tall; 兰 measures 6.5 (三 well below it), 7|7 by a hair
+龶	-	-	>=6	>=6	-	-	-
+贝	>=5	>=5	>=5	>=5	-	-	-
 
 # --- stroke levels of components whose IDS does not reveal their shape ------------------
 氵	-	-	-	-	-	3,1.5	-
@@ -83,7 +85,7 @@
 𠆢	-	-	-	-	-	1.5,2	-
 ⺈	-	-	-	-	-	1.5,1.5	-
 人	-	-	-	-	-	1.5,2	-
-灬	-	-	-	-	-	1,3	-
+灬	 -	-	<=4	-	-	1,3	-	at most 4px on bottom
 又	-	-	-	-	-	2,2	-
 囗	-	-	-	-	-	2,2	-
 冂	-	-	-	-	-	1.5,2	-
@@ -91,7 +93,7 @@
 匚	-	-	-	-	-	2,1.5	-
 辶	-	-	-	-	-	2,2.5	-
 廴	-	-	-	-	-	2,2	-
-⺝	-	-	-	-	-	3,2	-
+⺝	-	-	>=6	>=6	-	3,2	-
 九	-	-	-	-	-	2,2	-
 瓜	-	-	-	-	-	3,3	-
 𧘇	-	-	-	-	-	2,3	-

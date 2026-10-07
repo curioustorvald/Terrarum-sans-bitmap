@@ -212,6 +212,11 @@ Context as the command line:
     a line over the canvas: "You are overriding this size". Nothing is issued until the draft is
     first saved, so looking costs nothing and there are no confirmation popups. An issued override
     shows the same line. Drawn and issued sizes open their cells.
+    A draft's "Used in N characters" (and the characters in its preview) are those it will serve
+    once issued: its own size's, and those of the sizes it will then be the closest issued
+    drawing of (as `choose_drawings` gives sizes to drawings), not those of the drawing it is
+    derived from now (衤@5x11: 2 characters, not 297). Checked against re-planning with the size
+    issued: exact.
   - **Suggest (T):** a suggestion traced from Chiron Hei HK (3c), shown as orange dots over the
     canvas to draw over, with the character it was traced from. It is never ink by itself. The
     toggle is remembered, so with it on every cell opens with its suggestion (about 0.15 s each,
