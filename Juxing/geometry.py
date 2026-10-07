@@ -354,12 +354,16 @@ def _weighted_median(values: np.ndarray, weights: np.ndarray) -> float:
     return float(values[order][np.searchsorted(acc, acc[-1] / 2)])
 
 
-def _child_spaces(op: str, space, kids, overlap_min=lambda comp: OVERLAP_MIN) -> List[Tuple[float, float, float, float]]:
+def _child_spaces(op: str, space, kids, overlap_min=lambda comp: OVERLAP_MIN,
+                  bounds=None) -> List[Tuple[float, float, float, float]]:
     """
     The space Chiron Hei HK gives each part of a node (in face units), from the space of
-    the node and the parts' measured ink: a split divides it at the middle of the gaps
-    between the parts' ink (where a stacked part reaches up under the one above it by
-    OVERLAP_MIN or more, their spaces overlap instead, each running to its own ink); a frame has the node's space, and its inside runs to the middle
+    the node and the parts' measured ink: a split divides it where the reference measured
+    the parts to divide (`bounds`, the node's Box.bounds: between their bodies, where a
+    stroke of one reaches under the other, as 鳥's foot under 口 in 鳴), else at the middle of
+    the gaps between their ink boxes (where a stacked part reaches up under the one above it
+    by OVERLAP_MIN or more, their spaces overlap instead, each running to its own ink); a
+    frame has the node's space, and its inside runs to the middle
     of the gap to each wall (where the wall's ink comes closest to the inside), a pixel
     clear of the wall at least, and to the node's space on open sides.
     """
@@ -368,15 +372,16 @@ def _child_spaces(op: str, space, kids, overlap_min=lambda comp: OVERLAP_MIN) ->
         horizontal = op in IDS.SPLIT_H
         ends = [(b.x0, b.x1) if horizontal else (b.y0, b.y1) for b in kids]
         starts, stops = [x0 if horizontal else y0], []
-        for upper, a, b in zip(kids, ends, ends[1:]):
+        for i, (upper, a, b) in enumerate(zip(kids, ends, ends[1:])):
             if not horizontal and (a[1] - b[0]) * BODY_H >= overlap_min(upper.comp):
                 # the lower part reaches up under the upper one (宀 over 由): their spaces
                 # overlap, each to its own ink, as their boxes do (Layout._split_slot)
                 stops.append(a[1])
                 starts.append(b[0])
             else:
-                stops.append((a[1] + b[0]) / 2)
-                starts.append((a[1] + b[0]) / 2)
+                mid = bounds[i] if bounds and len(bounds) == len(kids) - 1 else (a[1] + b[0]) / 2
+                stops.append(mid)
+                starts.append(mid)
         stops.append(x1 if horizontal else y1)
         return [(a, y0, b, y1) if horizontal else (x0, a, x1, b) for a, b in zip(starts, stops)]
     if op in IDS.SURROUND and len(kids) == 2:
@@ -611,7 +616,8 @@ class Layout:
     def reference_split(self, comp: str, horizontal: bool, aspect: float, whole: bool = False) -> Optional[List[float]]:
         """
         Where Chiron Hei HK divides a component along an axis (reference.py), as shares of
-        its extent: the middle of the space between each pair of parts.
+        its extent: where each pair of parts divides (the measured bounds: between their
+        bodies, which is the middle of the gap where they are apart).
           - A whole character (`whole`) is divided as Chiron Hei HK divides that very
             character.
           - A component inside others is measured wherever it appears. A measurement counts
@@ -698,12 +704,15 @@ class Layout:
                     continue
                 lo, size = (box.x0, box.w) if horizontal else (box.y0, box.h)
                 ends = [(k.x0, k.x1) if horizontal else (k.y0, k.y1) for k in kids]
-                # the middle of the gap between the parts; where the lower part reaches up under
-                # the upper one (宀 over 由), the end of the upper part, which keeps its legs (the
-                # lower part's box reaches up past it: reference_overlaps)
+                # where the parts divide (measured bounds, else the middle of the gap between
+                # their boxes); where the lower part reaches up under the upper one (宀 over 由),
+                # the end of the upper part, which keeps its legs (the lower part's box reaches up
+                # past it: reference_overlaps)
                 # (the overlap is measured as a share of the node, as _split_slot applies it)
+                mids = box.bounds if box.bounds and len(box.bounds) == len(kids) - 1 else \
+                    [(a[1] + b[0]) / 2 for a, b in zip(ends, ends[1:])]
                 shares = [((a[1] if not horizontal and (a[1] - b[0]) / size * REF >= self.overlap_min(k.comp)
-                            else (a[1] + b[0]) / 2) - lo) / size for k, a, b in zip(kids, ends, ends[1:])]
+                            else m) - lo) / size for k, a, b, m in zip(kids, ends, ends[1:], mids)]
                 if any(not 0 < v < 1 for v in shares) or shares != sorted(shares):
                     continue
                 quality = (0.5 if kids[0].ambiguous else 1.0) * max(0.0, 1 - 2 * kids[0].cut)
@@ -753,7 +762,9 @@ class Layout:
             kids = [nodes.get(f"{path}.{i}" if path else str(i)) for i in range(len(s.parts))]
             if any(b is None for b in kids):
                 return    # the measurement failed here, so it did below too
-            for i, ((c, _, _), box, sp) in enumerate(zip(s.parts, kids, _child_spaces(s.op, space, kids, self.overlap_min))):
+            parent = nodes.get(path)
+            for i, ((c, _, _), box, sp) in enumerate(zip(s.parts, kids, _child_spaces(
+                    s.op, space, kids, self.overlap_min, parent.bounds if parent else None))):
                 sw, sh = sp[2] - sp[0], sp[3] - sp[1]
                 if not c.role and box.comp == c.comp and box.w > 0 and box.h > 0 and sw > 0 and sh > 0:
                     q = (0.5 if box.ambiguous else 1.0) * max(0.0, 1 - 2 * box.cut)

@@ -7486,7 +7486,7 @@
 六	U+516D	⿱亠八	G	4	4134	1		
 兮	U+516E	⿱八丂	G	4	3415	1		
 兯	U+516F	⿱丷𰆊	G	4	4352	3		
-兰	U+5170	⿱丷三	G	5	43111	1		
+兰	U+5170	⿱䒑二	*	5	43111	1	override	as Chiron Hei HK (and the G form) draws it: the dots sit on the first bar, a 䒑 as in 羊 前 养, over 二; upstream ⿱丷三 left the bars bunched at the bottom
 共	U+5171	⿱龷八	G	6	122134	1		
 兲	U+5172	⿱王八	G	6	112134	3		
 关	U+5173	⿱丷天	G	6	341134	1		

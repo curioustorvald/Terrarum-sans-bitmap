@@ -139,6 +139,7 @@ async function route() {
   app.leaving = null;
   app.unsaved = null;
   if (app.editorKeys) { document.removeEventListener('keydown', app.editorKeys); app.editorKeys = null; }
+  if (app.onResize) { window.removeEventListener('resize', app.onResize); app.onResize = null; }
   current = next;
   for (const a of document.querySelectorAll('.tabs a')) a.classList.toggle('active', a.dataset.tab === next.tab);
   const root = document.getElementById('view');
@@ -381,10 +382,26 @@ views.sheets = async (root, arg) => {
   const onSheet = data.entries.filter(e => e.sheet === n);
   const blank = onSheet.filter(e => !e.drawn).length;
   const canvas = h('canvas', { class: 'pixels' });
+  const wrap = h('div', { class: 'sheet-wrap' }, canvas);
   const img = new Image();
+  let card;
+  // the card grows past the page's width, centred, as far as the sheet needs and the window allows
+  const fit = () => {
+    if (!card) return;
+    const cs = getComputedStyle(card);
+    const chrome = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+    const need = canvas.width + chrome + (wrap.offsetWidth - wrap.clientWidth);   // and a vertical scrollbar
+    const main = document.getElementById('view');
+    const avail = document.documentElement.clientWidth - 2 * parseFloat(getComputedStyle(main).paddingLeft);
+    const base = root.clientWidth;
+    const w = Math.max(base, Math.min(need, avail));
+    card.style.width = w > base ? `${w}px` : '';
+    card.style.marginLeft = w > base ? `${(base - w) / 2}px` : '';
+  };
   const draw = () => {
     const S = CELL * data.cols;
     canvas.width = S * scale; canvas.height = Math.ceil(data.per_sheet / data.cols) * CELL * scale;
+    fit();
     const g = canvas.getContext('2d');
     g.imageSmoothingEnabled = false;
     g.fillStyle = token('--pix-bg');
@@ -427,7 +444,7 @@ views.sheets = async (root, arg) => {
     for (const b of zoomRow.querySelectorAll('button')) b.classList.toggle('on', b.textContent === `${z}×`);
   } }, `${z}×`);
   const zoomRow = h('span', { class: 'row' }, [1, 2, 3, 4].map(zoom));
-  root.append(h('section', { class: 'card' },
+  root.append(card = h('section', { class: 'card' },
     h('div', { class: 'card-head' },
       h('h2', {}, `Sheet ${String(n).padStart(2, '0')}`),
       h('span', { class: 'muted num' }, `${onSheet.length} glyphlettes, ${blank} blank`),
@@ -441,7 +458,10 @@ views.sheets = async (root, arg) => {
       h('span', {}, h('span', { class: 'sw', style: { background: 'var(--state-override)' } }), 'override'),
       h('span', {}, h('span', { class: 'sw', style: { background: 'var(--text-muted)' } }), 'orphan'),
       h('span', {}, 'click a cell to edit it')),
-    h('div', { class: 'sheet-wrap' }, canvas)));
+    wrap));
+  fit();
+  app.onResize = fit;
+  window.addEventListener('resize', fit);
 };
 
 function localStorageGet(k) { try { return localStorage.getItem('juxing.' + k); } catch (e) { return null; } }
@@ -485,6 +505,8 @@ class Editor {
     this.tool = 'pencil';
     this.guides = localStorageGet('guides') !== '0';
     this.gridOn = localStorageGet('grid') !== '0';
+    this.suggestOn = localStorageGet('suggest') === '1';
+    this.suggestion = undefined;   // traced from Chiron Hei HK: undefined until asked for, null while tracing
     this.hover = null;
     this.stroke = null;
     this.sel = null;       // selected rectangle {x, y, w, h}, cell coordinates (may reach outside the cell)
@@ -492,7 +514,7 @@ class Editor {
     this.drag = null;      // selecting or moving with the pointer
     this.previewSeq = 0;
     this.px = Math.max(14, Math.min(34, Math.floor((Math.min(window.innerWidth, 1480) - 80) / 16)));
-    if (window.innerWidth > 1150) this.px = Math.min(this.px, 32);
+    if (window.innerWidth > 1240) this.px = Math.min(this.px, 32);
     this.build();
   }
 
@@ -515,7 +537,11 @@ class Editor {
       h('button', { class: 'small', title: 'Clear all ink', onclick: () => { this.settle(); this.snapshot(); this.ink.fill(0); this.changed(); } }, 'Clear'),
       h('span', { class: 'sep' }),
       this.guideBtn = h('button', { class: 'small', title: 'Guides (G)', onclick: () => this.toggle('guides') }, 'Guides'),
-      this.gridBtn = h('button', { class: 'small', title: 'Grid (#)', onclick: () => this.toggle('gridOn') }, 'Grid'));
+      this.gridBtn = h('button', { class: 'small', title: 'Grid (#)', onclick: () => this.toggle('gridOn') }, 'Grid'),
+      h('span', { class: 'sep' }),
+      this.suggestBtn = h('button', { class: 'small', title: 'A suggestion traced from Chiron Hei HK, shown as dots (T)',
+        onclick: () => this.toggleSuggest() }, 'Suggest'));
+    this.suggestEl = h('div', { class: 'suggest-note muted', role: 'status' });
     const found = this.data.entries.findIndex(e => e.id === c.id);
     const i = this.idx = c.draft ? this.data.entries.length : found;
     const nextBlank = this.data.entries.slice(i + 1).concat(this.data.entries.slice(0, i)).find(e => !e.drawn);
@@ -544,7 +570,8 @@ class Editor {
         h('div', {}, h('kbd', {}, '←↑→↓'), ' move the ink · ', h('kbd', {}, 'Ctrl+Z'), ' undo · ', h('kbd', {}, 'Ctrl+S'), ' save'),
         h('div', {}, h('kbd', {}, 'M'), ' select, then drag or ', h('kbd', {}, '←↑→↓'), ' to move it (its blank pixels don\'t erase) · ',
           h('kbd', {}, 'Ctrl'), '/', h('kbd', {}, 'Alt'), '+drag copies · ', h('kbd', {}, 'Del'), ' clears · ', h('kbd', {}, 'Enter'), ' drops'),
-        h('div', {}, h('kbd', {}, '['), h('kbd', {}, ']'), ' prev/next · ', h('kbd', {}, 'N'), ' next blank · ', h('kbd', {}, 'G'), ' guides')));
+        h('div', {}, h('kbd', {}, '['), h('kbd', {}, ']'), ' prev/next · ', h('kbd', {}, 'N'), ' next blank · ', h('kbd', {}, 'G'), ' guides · ',
+          h('kbd', {}, 'T'), ' suggestion')));
     // guide colours are translucent over the dark pixel surface, so their swatches are too
     const sw = v => h('span', { class: 'sw', style: { background: `linear-gradient(var(${v}), var(${v})), var(--pix-bg)` } });
     const legend = h('div', { class: 'legend' },
@@ -559,7 +586,7 @@ class Editor {
       this.noticeEl,
       h('div', { class: 'row', style: { width: '100%' } }, this.saveBtn,
         h('button', { onclick: () => this.revert() }, 'Revert'), this.dirtyEl),
-      this.toolbar, this.canvas, legend);
+      this.toolbar, this.suggestEl, this.canvas, legend);
     this.sizesEl = h('div', { class: 'thumbs' });
     this.charsEl = h('div', { class: 'thumbs' });
     this.selfEl = h('div', { class: 'row', style: { alignItems: 'flex-end', gap: '14px' } });
@@ -626,7 +653,43 @@ class Editor {
     this.draw();
     this.bind();
     this.preview();
+    if (this.suggestOn) this.fetchSuggestion();
   }
+
+  // -- suggestion: a glyphlette traced from Chiron Hei HK, shown as dots over the canvas to draw
+  // over. It is never ink by itself.
+
+  toggleSuggest() {
+    this.suggestOn = !this.suggestOn;
+    localStorageSet('suggest', this.suggestOn ? '1' : '0');
+    if (this.suggestOn && this.suggestion === undefined) this.fetchSuggestion();
+    this.renderSuggestNote(); this.syncButtons(); this.draw();
+  }
+
+  async fetchSuggestion() {
+    this.suggestion = null;
+    this.renderSuggestNote(); this.syncButtons();
+    const c = this.cell;
+    try {
+      this.suggestion = await api(`/api/suggest?${c.draft ? `key=${encodeURIComponent(c.key)}` : `id=${c.id}`}`);
+    } catch (err) {
+      this.suggestion = { ink: null, error: err.message };
+    }
+    this.renderSuggestNote(); this.syncButtons(); this.draw();
+  }
+
+  renderSuggestNote() {
+    const sg = this.suggestion;
+    this.suggestEl.hidden = !this.suggestOn;
+    if (!this.suggestOn) return;
+    this.suggestEl.replaceChildren(
+      sg === null || sg === undefined ? 'Tracing a suggestion from Chiron Hei HK…'
+        : sg.error ? `No suggestion: ${sg.error}`
+          : !sg.ink ? 'No suggestion: Chiron Hei HK has no clean view of this part.'
+            : h('span', {}, h('span', { class: 'sw suggest' }), `Suggestion traced from ${sg.source} in Chiron Hei HK, to draw over.`));
+  }
+
+
 
   go(e) { if (e) location.hash = `#edit/${e.id}`; }
 
@@ -640,6 +703,7 @@ class Editor {
     for (const b of this.toolbar.querySelectorAll('[data-tool]')) b.classList.toggle('on', b.dataset.tool === this.tool);
     this.guideBtn.classList.toggle('on', this.guides);
     this.gridBtn.classList.toggle('on', this.gridOn);
+    this.suggestBtn.classList.toggle('on', this.suggestOn);
     const d = this.dirty;
     this.dirtyEl.textContent = d ? '● unsaved' : '';
     this.saveBtn.disabled = !d;
@@ -819,6 +883,13 @@ class Editor {
         }
       }
     }
+    const sg = this.suggestOn && this.suggestion && this.suggestion.ink;
+    if (sg) {
+      // dots, so that ink under them stays visible
+      const d = Math.max(3, Math.round(p * 0.36)), o = Math.floor((p - d) / 2);
+      g.fillStyle = token('--pix-suggest');
+      for (let y = 0; y < CELL; y++) for (let x = 0; x < CELL; x++) if (maskAt(sg, x, y)) g.fillRect(x * p + o, y * p + o, d, d);
+    }
     if (this.sel) {
       const r = this.sel;
       g.save();
@@ -935,6 +1006,7 @@ class Editor {
       else if (k === 'l') this.setTool('line');
       else if (k === 'g') this.toggle('guides');
       else if (k === '#') this.toggle('gridOn');
+      else if (k === 't') this.toggleSuggest();
       else if (k === '[') this.go(this.data.entries[this.idx - 1]);
       else if (k === ']') this.go(this.data.entries[this.idx + 1]);
       else if (k === 'n') this.go(this.nextBlank);
@@ -969,7 +1041,7 @@ class Editor {
     this.charsEl.replaceChildren(...(r.chars.length ? r.chars.map(ch => {
       const cv = bitmapCanvas(ch.cell, 3, { missing: ch.missing });
       return h('a', { class: 'thumb', href: `#text/${encodeURIComponent(ch.ch)}`, style: { textDecoration: 'none' },
-        title: ch.missing.length ? `${ch.ch}: grey parts are not drawn yet` : ch.ch }, cv, h('span', {}, ch.ch));
+        title: ch.missing.length ? `${ch.ch}: grey parts are not drawn yet` : ch.ch }, cv, h('span', { class: 'ch' }, ch.ch));
     }) : [h('span', { class: 'muted' }, 'no characters use it')]));
   }, 180);
 

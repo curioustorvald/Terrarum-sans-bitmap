@@ -42,6 +42,7 @@ import reference as RF
 import render as R
 import resize as RZ
 import sources as SRC
+import suggest as SG
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(HERE, 'out')
@@ -372,6 +373,24 @@ def draft(ctx, k, users=None):
     return ex, bx, by, ink
 
 
+def suggestion(ctx, tracer: 'SG.Tracer', k, exemplar: str, at, users=None):
+    """A glyphlette traced from Chiron Hei HK for the cell of `k` (its box at `at`), for the
+    artist to start from (suggest.py), or None: traced from the exemplar and the typical
+    characters using the drawing of `k`."""
+    users = users if users is not None else ctx.users()
+    d = k if k in ctx.plan.uses else ctx.plan.cover.get(k, k)
+    chars = [exemplar] + [chr(c) for c in ctx.examples(users.get(d, []), 3 * SG.TRIES)]
+    # then the other drawings of its family, nearest size first: a rare size (氵@7x15, beside
+    # narrow parts) has few examples, often cut badly
+    fam = GL.family(k)
+    for o in sorted((o for o in users if o != d and GL.family(o) == fam),
+                    key=lambda o: (abs(o.w - k.w) + abs(o.h - k.h), str(o))):
+        chars += [chr(c) for c in ctx.examples(users[o], SG.TRIES)]
+    if len(k.comp) == 1 and SRC.is_target(ord(k.comp)):
+        chars.append(k.comp)
+    return tracer.suggest(k, chars, at)
+
+
 def issue(ctx, keys, group=False, verbose=True) -> List[GL.Entry]:
     """Allocate cells to glyphlettes (skipping issued ones), prefill them and write the sheets."""
     reg = ctx.registry
@@ -469,6 +488,29 @@ def cmd_retire(args):
     kept = [e for e in spare.values() if e not in chosen]
     if kept:
         print(f"  orphans kept: {', '.join(f'#{e.id} {e.key}' for e in kept)} (drawn: name them with --drawn to retire)")
+
+
+def cmd_suggest(args):
+    """Print suggestions traced from Chiron Hei HK (the editor's Suggest), beside the drawing."""
+    ctx = Context()
+    users = ctx.users()
+    tracer = SG.Tracer(ctx.layout)
+    for name in args.cells:
+        e = (ctx.registry.by_id.get(int(name)) if name.isdigit()
+             else ctx.registry.by_key.get(GEO.SlotKey.parse(name)))
+        if e is None:
+            k = GEO.SlotKey.parse(name)
+            ex, bx, by, _ = draft(ctx, k, users)
+            e = GL.Entry(None, k, bx, by, ex)
+        sg = suggestion(ctx, tracer, e.key, e.exemplar, (e.bx, e.by), users)
+        print(f"{e.key}" + (f" #{e.id}" if e.id is not None else " (not issued)") +
+              (f": traced from {sg.source}" if sg else ": no suggestion"))
+        if sg is None:
+            continue
+        drawn = ctx.hand[e.key].mask if e.key in ctx.hand else None
+        for y in range(GEO.CELL_H):
+            row = ''.join('#' if v else '.' for v in sg.ink[y])
+            print(f"  {row}   {''.join('#' if v else '.' for v in drawn[y])}" if drawn is not None else f"  {row}")
 
 
 def cmd_refresh(args):
@@ -834,6 +876,10 @@ def main(argv=None):
     p.add_argument('--orphans', action='store_true', help='all blank orphans')
     p.add_argument('--drawn', action='store_true', help='allow retiring drawn cells named (erases the drawing)')
     p.set_defaults(func=cmd_retire)
+
+    p = sub.add_parser('suggest', help='glyphlettes traced from Chiron Hei HK, as the editor suggests them')
+    p.add_argument('cells', nargs='+', help='cells by number or glyphlette (e.g. 36 or 寸@7x15)')
+    p.set_defaults(func=cmd_suggest)
 
     p = sub.add_parser('status', help='drawing progress and sheet problems')
     p.set_defaults(func=cmd_status)

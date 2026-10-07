@@ -28,6 +28,7 @@ import geometry as GEO
 import glyphlettes as GL
 import model as M
 import planner as P
+import suggest as SG
 from geometry import SlotKey
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -96,6 +97,8 @@ class State:
         self.glyphs = {}
         self.status_cache = None
         self.drafts = {}
+        self.tracer = None
+        self.suggestions = {}
 
     def fresh(self):
         """The Context, reloaded if the registry or a sheet changed on disk."""
@@ -270,6 +273,27 @@ class State:
             raise ValueError(f"{k} does not fit the body box")
         e, ink = self.draft_entry(k)
         return self.cell_json(e, ink, draft=True)
+
+    def suggestion(self, eid: int = None, key: str = None):
+        """A glyphlette traced from Chiron Hei HK for a cell (or a size not issued yet), for the
+        artist to start from (suggest.py). Nothing reaches a sheet unless the editor saves it."""
+        ctx = self.planned()
+        if eid is not None:
+            e = ctx.registry.by_id[eid]
+        else:
+            k = SlotKey.parse(key)
+            e = ctx.registry.by_key[k] if k in ctx.registry.by_key else self.draft_entry(k)[0]
+        if e.key not in self.suggestions:
+            if self.tracer is None:
+                try:
+                    self.tracer = SG.Tracer(ctx.layout)
+                except FileNotFoundError as err:
+                    raise ValueError(f"{err}: suggestions are traced from it") from err
+            self.suggestions[e.key] = self.J.suggestion(ctx, self.tracer, e.key, e.exemplar, (e.bx, e.by))
+        sg = self.suggestions[e.key]
+        if sg is None:
+            return {'ink': None, 'source': None}
+        return {'ink': bits(sg.ink), 'source': sg.source, 'quality': round(sg.quality, 2)}
 
     def cell_json(self, e, ink, draft=False):
         ctx = self.ctx
@@ -523,6 +547,8 @@ class Handler(BaseHTTPRequestHandler):
                     return self.json(st.cell(int(path.rsplit('/', 1)[1])))
                 if path == '/api/draft':
                     return self.json(st.draft(q['key']))
+                if path == '/api/suggest':
+                    return self.json(st.suggestion(int(q['id']) if q.get('id') else None, q.get('key')))
                 if path.startswith('/sheet/') and path.endswith('.png'):
                     return self.send(200, st.sheet_png(int(path[7:-4])), 'image/png')
                 if path == '/api/worklist':

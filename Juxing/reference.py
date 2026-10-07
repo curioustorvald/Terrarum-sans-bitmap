@@ -9,26 +9,31 @@ target, so its glyphs are measured instead. It is derived from Source Han Sans a
 its metrics, with more uniform white space, which makes its parts easier to measure.
 
 Only measurements are taken: the ink box of every part of a character's decomposition,
-in units of the font's ideographic character face (BASE icfb/icft). No outline and no
-pixel of the font reaches a drawing sheet or the output; the boxes guide the layout and
-the evenness pass. The measurements carry the font's attribution in their header.
+in units of the font's ideographic character face (BASE icfb/icft). The boxes guide the
+layout and the evenness pass; no outline and no pixel of the font reaches a drawing sheet
+or the output, except as the editor's suggestions (suggest.py), which the artist takes on
+request. The measurements carry the font's attribution in their header.
 
 Method, per character (rendered at RENDER px per em, Regular weight):
-  - The ink is split into 8-connected components: strokes and groups of touching strokes.
+  - The ink comes in pieces: the glyph's contours, each with its counters cut out
+    (Renderer.piece_masks). Chiron Hei HK, being variable, keeps overlapping strokes as
+    separate contours, so a piece is a stroke or a few strokes drawn as one, and strokes
+    that touch in the ink stay apart (兰's right dot on its first bar). A part has as many
+    pieces in a character as on its own, mostly (expected_pieces).
   - The decomposition tree is followed from the root exactly as the geometry follows it
     (Layout.decomposition), so a measured node and a slot share their path: the child
     indices from the root, the frame of a surround being child 0 and its inside child 1.
   - A ⿰ ⿲ node is cut at the columns (⿱ ⿳ at the rows) that leave the least ink of any
-    component on the wrong side, or cut touching strokes where they are thinnest, near
-    where the geometry would cut (the prior picks the right one of several clean gaps).
-    Each component goes to the side holding most of it; one that really lies across a
-    cut (touching strokes, as 日 and 十 in 早) is cut with it, a stack's joining stroke
-    going to the lower part.
+    piece on the wrong side, or cut pieces where they are thinnest, near where the geometry
+    would cut (the prior picks the right one of several clean gaps), with each part getting
+    as many pieces as it should (a wrong gap gains or loses a stroke). Each piece goes to
+    the side holding most of it, unless cutting it costs less (the stem of 出, shared). The
+    node records where its parts divide (Box.bounds: between their bodies).
   - A surround's inside is a rectangle reaching the node's edges where the frame is open
     (冂: the bottom; 广: the bottom and the right); its edges on the frame's walls are
     searched as cuts are, starting from the layout's insets, with the inside's share of
     the ink pulled towards its share of the strokes (唇: 口 has 3 of 10, so the inside
-    lies below the strokes inside 辰). Touching strokes (石 右 同) are divided along it.
+    lies below the strokes inside 辰). Pieces of both (石 右 同) are divided along it.
   - Every node gets the box of its ink and 'cut', the share of its parent's ink that had
     to be cut to separate it: 0 for a clean split. A split that leaves a side without
     ink ends the measurement of that branch.
@@ -37,6 +42,7 @@ Output: model/reference.tsv (see Reference.save), which Layout and the evenness 
 read through Reference.load.
 """
 
+import math
 import os
 import shutil
 import subprocess
@@ -61,7 +67,6 @@ FONT_URL = 'https://fonts.google.com/specimen/Chiron+Hei+HK'
 WEIGHT = 400
 RENDER = 160            # px per em
 CUT_BAND = 0.08         # cuts are not tried this close to the ends of a node
-TOUCHING = 0.15         # a component with this much of its ink across a cut is cut with it
 CUT_CHARGE = 0.03       # cutting a connected component costs this share of the node's ink...
 TOUCH_COST = 2.0        # ...plus this many times its ink on the cut line
 WALL_SHARE = 0.7        # a frame's wall holding at most this share of the ink is separate from the inside...
@@ -71,8 +76,9 @@ PRIOR = 0.5             # pull of the expected cut (times the node's ink, per sq
 MIN_PART_INK = 0.04     # a cut leaving a part less of the node's ink than this is avoided
 AMBIGUOUS_INK = 0.05    # a split is ambiguous if a cut moving this share of the ink across...
 AMBIGUOUS_MARGIN = 0.02 # ...costs less than this share of the ink more (鬱: below 冖 or inside 鬯?)
-EXCESS_COST = 0.05      # a part with more separate pieces of ink than it has on its own (per piece, of the ink)
+COUNT_COST = 0.05       # a part with a piece more or fewer than it should have (per piece, of the ink)
 SPECK = 0.003           # pieces with less than this share of the ink are not counted as pieces
+SUPERSAMPLE = 4         # contours are filled at this many times the resolution
 
 
 @dataclass
@@ -87,6 +93,8 @@ class Box:
     # a surround's frame: where its ink comes closest to the inside on each walled side
     # (left, top, right, bottom; None where open), within the inside's rows or columns
     walls: Optional[Tuple[Optional[float], Optional[float], Optional[float], Optional[float]]] = None
+    # a split node: where its parts divide along the split, in face units (_bounds)
+    bounds: Optional[Tuple[float, ...]] = None
 
     @property
     def w(self) -> float:
@@ -117,12 +125,63 @@ def find_font() -> Optional[str]:
     return None
 
 
+class _Flatten:
+    """A pen that records a glyph's contours as polylines in font units, curves flattened to
+    segments of about `step` units."""
+
+    def __new__(cls, glyph_set, step):
+        from fontTools.pens.basePen import BasePen
+
+        class Pen(BasePen):
+            def __init__(self):
+                super().__init__(glyph_set)
+                self.contours, self.cur = [], None
+
+            def _moveTo(self, pt):
+                self.cur = [pt]
+
+            def _lineTo(self, pt):
+                self.cur.append(pt)
+
+            def _qCurveToOne(self, p1, p2):
+                p0 = self.cur[-1]
+                n = max(2, math.ceil((math.dist(p0, p1) + math.dist(p1, p2)) / step))
+                for i in range(1, n + 1):
+                    t = i / n
+                    u = 1 - t
+                    self.cur.append((u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0],
+                                     u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]))
+
+            def _curveToOne(self, p1, p2, p3):
+                p0 = self.cur[-1]
+                n = max(2, math.ceil((math.dist(p0, p1) + math.dist(p1, p2) + math.dist(p2, p3)) / step))
+                for i in range(1, n + 1):
+                    t = i / n
+                    u = 1 - t
+                    self.cur.append((u ** 3 * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t ** 3 * p3[0],
+                                     u ** 3 * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t ** 3 * p3[1]))
+
+            def _closePath(self):
+                if self.cur and len(self.cur) > 2:
+                    self.contours.append(self.cur)
+                self.cur = None
+
+            _endPath = _closePath
+
+        return Pen()
+
+
 class Renderer:
-    """Renders characters as ink masks and knows where the character face is in them."""
+    """
+    Renders characters as ink masks and knows where the character face is in them. A glyph
+    is rendered contour by contour: Chiron Hei HK, being variable, keeps overlapping strokes
+    as separate contours, so a contour is a stroke or a few strokes drawn as one (口's three),
+    and strokes that touch in the ink stay apart as pieces (兰's right dot on its first bar).
+    Rendered from the outlines themselves, unhinted, supersampled.
+    """
 
     def __init__(self, path: str):
         from fontTools.ttLib import TTFont
-        from PIL import ImageFont
         tt = TTFont(path, fontNumber=0, lazy=True)
         self.cmap = tt.getBestCmap()
         upem = tt['head'].unitsPerEm
@@ -139,14 +198,14 @@ class Renderer:
                 face = (v[0], h[0], v[1], h[1])      # x0, bottom, x1, top in font units
         if face is None:     # the usual 5% inset of the ideographic em box
             face = (0.05 * upem, -0.12 * upem + 0.05 * upem, 0.95 * upem, 0.88 * upem - 0.05 * upem)
-        self.font = ImageFont.truetype(path, RENDER)
+        location = None
         if 'fvar' in tt:
-            axes = [a.defaultValue for a in tt['fvar'].axes]
-            for i, a in enumerate(tt['fvar'].axes):
+            location = {a.axisTag: a.defaultValue for a in tt['fvar'].axes}
+            for a in tt['fvar'].axes:
                 if a.axisTag == 'wght':
-                    axes[i] = max(a.minValue, min(a.maxValue, WEIGHT))
-            self.font.set_variation_by_axes(axes)
-        s = RENDER / upem
+                    location['wght'] = max(a.minValue, min(a.maxValue, WEIGHT))
+        self.glyphs = tt.getGlyphSet(location=location)
+        self.scale = s = RENDER / upem
         self.size = int(RENDER * 1.3)
         self.origin = (int(RENDER * 0.15), int(RENDER * 1.0))          # pen position, baseline
         ox, oy = self.origin
@@ -155,6 +214,7 @@ class Renderer:
         self.name = tt['name'].getDebugName(4) or os.path.basename(path)
         self.version = tt['name'].getDebugName(5) or ''
         self.copyright = tt['name'].getDebugName(0) or ''
+        self._counts: Dict[str, Optional[int]] = {}
 
     @staticmethod
     def _face(axis) -> List[Tuple[int, int]]:
@@ -171,29 +231,56 @@ class Renderer:
                 out.append((vals[tags.index('icfb')], vals[tags.index('icft')]))
         return out
 
-    def render(self, ch: str) -> Optional[np.ndarray]:
-        if ord(ch) not in self.cmap:
+    def _contours(self, ch: str) -> Optional[List[Tuple[list, bool]]]:
+        """A character's contours: (points in font units, outer?). Outer contours run
+        clockwise, the counters inside them anticlockwise."""
+        if len(ch) != 1 or ord(ch) not in self.cmap:
             return None
+        pen = _Flatten(self.glyphs, 2 / self.scale)
+        self.glyphs[self.cmap[ord(ch)]].draw(pen)
+        return [(c, sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in zip(c, c[1:] + c[:1])) < 0)
+                for c in pen.contours]
+
+    def _fill(self, points) -> np.ndarray:
+        """A contour filled: the pixels at least half inside it."""
         from PIL import Image, ImageDraw
-        img = Image.new('L', (self.size, self.size), 0)
-        ImageDraw.Draw(img).text(self.origin, ch, font=self.font, fill=255, anchor='ls')
-        return np.asarray(img) >= 128
+        ss, n = SUPERSAMPLE, self.size
+        ox, oy = self.origin
+        img = Image.new('L', (n * ss, n * ss), 0)
+        ImageDraw.Draw(img).polygon([((ox + x * self.scale) * ss - 0.5, (oy - y * self.scale) * ss - 0.5)
+                                     for x, y in points], fill=1)
+        return np.asarray(img, dtype=np.uint8).reshape(n, ss, n, ss).sum(axis=(1, 3)) * 2 >= ss * ss
+
+    def piece_masks(self, ch: str) -> Optional[List[np.ndarray]]:
+        """A character's pieces of ink: each outer contour, with its counters cut out."""
+        contours = self._contours(ch)
+        if contours is None:
+            return None
+        outers = [self._fill(c) for c, outer in contours if outer]
+        for c, outer in contours:
+            if outer:
+                continue
+            hole = self._fill(c)
+            # a counter belongs to the smallest contour around it
+            around = [i for i, o in enumerate(outers) if (o & hole).sum() * 2 > hole.sum()]
+            if around:
+                i = min(around, key=lambda i: outers[i].sum())
+                outers[i] = outers[i] & ~hole
+        return [o for o in outers if o.any()]
+
+    def render(self, ch: str) -> Optional[np.ndarray]:
+        pieces = self.piece_masks(ch)
+        if pieces is None:
+            return None
+        return np.any(pieces, axis=0) if pieces else np.zeros((self.size, self.size), dtype=bool)
 
     def pieces(self, comp: str) -> Optional[int]:
-        """How many separate pieces of ink (8-connected, ignoring specks) a component has on
-        its own, if it is a character of the font (川 3, 讠 2); else None."""
-        if not hasattr(self, '_pieces'):
-            self._pieces = {}
-        if comp not in self._pieces:
-            n = None
-            if len(comp) == 1 and ord(comp) in self.cmap:
-                m = self.render(comp)
-                if m is not None and m.any():
-                    labels, k = label(m)
-                    sizes = np.bincount(labels.ravel())[1:]
-                    n = int((sizes >= SPECK * sizes.sum()).sum())
-            self._pieces[comp] = n
-        return self._pieces[comp]
+        """How many pieces (outer contours) a component has on its own, if it is a character
+        of the font (川 3, 讠 4); else None."""
+        if comp not in self._counts:
+            contours = self._contours(comp)
+            self._counts[comp] = None if contours is None else sum(outer for _, outer in contours)
+        return self._counts[comp]
 
     def to_face(self, x0, y0, x1, y1) -> Tuple[float, float, float, float]:
         fx0, fy0, fx1, fy1 = self.face
@@ -201,53 +288,23 @@ class Renderer:
         return (x0 - fx0) / w, (y0 - fy0) / h, (x1 - fx0) / w, (y1 - fy0) / h
 
 
-# ---------------------------------------------------------------------------
-# Connected components
-
-def label(mask: np.ndarray) -> Tuple[np.ndarray, int]:
-    """8-connected components of a mask: (labels, count), labels from 1."""
-    h = mask.shape[0]
-    runs = []           # (row, start, end) inclusive
-    row_runs = []
-    for y in range(h):
-        line = mask[y]
-        if not line.any():
-            row_runs.append((len(runs), len(runs)))
-            continue
-        d = np.diff(np.concatenate(([0], line.view(np.int8), [0])))
-        starts, ends = np.flatnonzero(d == 1), np.flatnonzero(d == -1) - 1
-        first = len(runs)
-        runs.extend((y, int(a), int(b)) for a, b in zip(starts, ends))
-        row_runs.append((first, len(runs)))
-    parent = list(range(len(runs)))
-
-    def find(a):
-        while parent[a] != a:
-            parent[a] = parent[parent[a]]
-            a = parent[a]
-        return a
-
-    for y in range(1, h):
-        a0, a1 = row_runs[y - 1]
-        b0, b1 = row_runs[y]
-        i = a0
-        for j in range(b0, b1):
-            _, s, e = runs[j]
-            while i < a1 and runs[i][2] < s - 1:
-                i += 1
-            k = i
-            while k < a1 and runs[k][1] <= e + 1:
-                ra, rb = find(k), find(j)
-                if ra != rb:
-                    parent[ra] = rb
-                k += 1
-    labels = np.zeros(mask.shape, dtype=np.int32)
-    ids = {}
-    for j, (y, s, e) in enumerate(runs):
-        r = find(j)
-        n = ids.setdefault(r, len(ids) + 1)
-        labels[y, s:e + 1] = n
-    return labels, len(ids)
+def expected_pieces(layout, renderer: Renderer, comp: str) -> Optional[int]:
+    """
+    How many pieces a part should have in a character: its own count if the font has it,
+    else the sum over its parts (contours stay apart where strokes overlap, so they add up:
+    训 7 = 讠 4 + 川 3, 笠 11 = 𥫗 6 + 立 5); None if not known.
+    """
+    memo = renderer.__dict__.setdefault('_expected', {})
+    if comp in memo:
+        return memo[comp]
+    memo[comp] = renderer.pieces(comp)        # guards against cyclic decompositions
+    if memo[comp] is None:
+        node = layout.decomposition(comp)
+        if not isinstance(node, str) and node[0] != '㇯':
+            kids = [expected_pieces(layout, renderer, IDS.to_string(c)) for c in node[1:]]
+            if all(k is not None for k in kids):
+                memo[comp] = sum(kids)
+    return memo[comp]
 
 
 # ---------------------------------------------------------------------------
@@ -260,33 +317,40 @@ def _bbox(mask: np.ndarray):
     return int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1
 
 
-def _profiles(labels: np.ndarray, mask: np.ndarray, axis: int):
-    """Per connected component, its ink on every line of the node along an axis:
-    (component ids, (components, lines) array, first line)."""
-    lab = labels * mask
-    ids = [int(i) for i in np.unique(lab) if i]
-    bb = _bbox(mask)
-    lo = bb[0] if axis == 1 else bb[1]
-    sub = lab[bb[1]:bb[3], bb[0]:bb[2]]
-    line = np.stack([(sub == i).sum(axis=0 if axis == 1 else 1) for i in ids]).astype(np.int64)
-    return ids, line, lo
+Frag = Tuple[int, np.ndarray]     # (piece number, the piece's ink in this node)
 
 
-def _split_cuts(line: np.ndarray, expected: List[float], alone: List[Optional[int]] = None):
+def _union(frags: List[Frag], shape) -> np.ndarray:
+    out = np.zeros(shape, dtype=bool)
+    for _, f in frags:
+        out |= f
+    return out
+
+
+def _profiles(frags: List[Frag], bb, axis: int):
+    """Per piece, its ink on every line of the node along an axis: ((pieces, lines) array,
+    first line)."""
+    lo, hi = (bb[0], bb[2]) if axis == 1 else (bb[1], bb[3])
+    line = np.stack([f.sum(axis=0 if axis == 1 else 1)[lo:hi] for _, f in frags]).astype(np.int64)
+    return line, lo
+
+
+def _split_cuts(line: np.ndarray, expected: List[float], counts: List[Optional[int]] = None):
     """
-    Cut a node's ink (per component, per line) at len(expected) places, given as shares of
-    the node's extent. A cut costs, for each component, the lesser of its ink left on the
-    wrong side and cutting it: CUT_CHARGE of the node's ink plus TOUCH_COST times its ink
-    on the cut line, so a clean gap wins where there is one and touching strokes are cut
-    where they are thinnest (早: through the vertical of 十). A prior pulls the cuts
-    towards the expected places, which picks the right one of several clean gaps (謝:
-    between 言 and 身). Returns (cuts as line indices within the node, ambiguous: a cut
-    moving AMBIGUOUS_INK of the ink across was within AMBIGUOUS_MARGIN of it as good), or None.
-    alone: how many separate pieces of ink each part has on its own (None: not known). A side
-    with more pieces than its part has on its own has taken a piece of its neighbour, and
-    each piece more costs EXCESS_COST. This finds the boundary where a neighbour's stroke
-    reaches under the part and no clean column is left (训 圳: 川's first stroke sweeps under
-    讠 and 土; the only clean gaps are inside 川). Two-part splits only.
+    Cut a node's ink (per piece, per line) at len(expected) places, given as shares of the
+    node's extent. A cut costs, for each piece, the lesser of its ink left on the wrong side
+    and cutting it: CUT_CHARGE of the node's ink plus TOUCH_COST times its ink on the cut
+    line, so a clean gap wins where there is one, and a piece is cut where it is thinnest
+    (早: through the vertical of 十). A prior pulls the cuts towards the expected places,
+    which picks the right one of several clean gaps (謝: between 言 and 身). Returns (cuts as
+    line indices within the node, ambiguous: a cut moving AMBIGUOUS_INK of the ink across was
+    within AMBIGUOUS_MARGIN of it as good), or None.
+    counts: how many pieces each part should have (expected_pieces; None: not known). Every
+    piece more or fewer than that costs COUNT_COST, a piece counting where most of it is:
+    pieces are contours, which keep their count whatever they touch, so a part that gains
+    or loses one has been cut wrongly (训: 川's first stroke sweeps under 讠, and the only
+    clean gaps are inside 川). Counts are not always exact (吕's upper 口 is one contour, a
+    口 on its own two), so this weighs against the other costs rather than deciding.
     """
     n = line.shape[1]
     parts = len(expected) + 1
@@ -301,6 +365,8 @@ def _split_cuts(line: np.ndarray, expected: List[float], alone: List[Optional[in
     on_line = line[:, np.minimum(cand, n - 1)]
     cutting = CUT_CHARGE * ink + TOUCH_COST * on_line
     per_cut = np.minimum(np.minimum(before, total - before), np.where(on_line > 0, cutting, np.inf)).sum(axis=0)
+    counted = total >= SPECK * ink
+    known = counts is not None and any(c is not None for c in counts)
 
     def prior(c, e):
         return PRIOR * ink * ((c / n - e) ** 2)
@@ -313,19 +379,14 @@ def _split_cuts(line: np.ndarray, expected: List[float], alone: List[Optional[in
     least = MIN_PART_INK * ink        # every part gets a real share of the ink (not a dot's tip)
     if parts == 2:
         cost = per_cut + prior(cand, expected[0]) + ink * ((at < least) | (ink - at < least))
-        if alone and any(a is not None for a in alone):
-            # pieces each side gets, whole components by majority: a side with more than the
-            # part has on its own has taken a piece of its neighbour (a side with fewer is
-            # no sign of anything: strokes that are apart on their own often touch in a
-            # character, 音's 日 touching 立)
-            counted = total >= SPECK * ink
-            left = ((2 * before > total) & counted).sum(axis=0)
-            right = int(counted.sum()) - left
-            excess = np.zeros(len(cand))
-            for got, want in ((left, alone[0]), (right, alone[1])):
+        if known:
+            # a piece counts where most of it is: cutting one can't make the counts right
+            first = (counted & (2 * before > total)).sum(axis=0)
+            off = np.zeros(len(cand))
+            for got, want in ((first, counts[0]), (int(counted.sum()) - first, counts[1])):
                 if want is not None:
-                    excess += np.maximum(0, got - want)
-            cost = cost + EXCESS_COST * ink * excess
+                    off += np.abs(got - want)
+            cost = cost + COUNT_COST * ink * off
         i = int(np.argmin(cost))
         others = cost[np.abs(at - at[i]) >= far]
         ambiguous = len(others) > 0 and others.min() - cost[i] < margin
@@ -334,6 +395,18 @@ def _split_cuts(line: np.ndarray, expected: List[float], alone: List[Optional[in
     cost = per_cut[:, None] + per_cut[None, :] + prior(c1, expected[0]) + prior(c2, expected[1])
     a1, a2 = at[:, None], at[None, :]
     cost = cost + ink * ((a1 < least) | (a2 - a1 < least) | (ink - a2 < least))
+    if known:
+        # each piece's ink in the three parts, for every pair of cuts
+        t = total[:, :, None]
+        b1, b2 = before[:, :, None], before[:, None, :]
+        shares = np.stack([np.broadcast_to(b1, (len(total), len(cand), len(cand))),
+                           np.maximum(0, b2 - b1), t - np.maximum(b1, b2)])
+        most = shares.argmax(axis=0)
+        off = np.zeros((len(cand), len(cand)))
+        for g, want in enumerate(counts):
+            if want is not None:
+                off += np.abs((counted[:, :, None] & (most == g)).sum(axis=0) - want)
+        cost = cost + COUNT_COST * ink * off
     cost = np.where(c2 - c1 >= max(3, n // 8), cost, np.inf)
     i, j = np.unravel_index(np.argmin(cost), cost.shape)
     if not np.isfinite(cost[i, j]):
@@ -373,43 +446,36 @@ def _expected_cuts(layout, children: List[str], horizontal: bool, line: np.ndarr
     return [(a + b) / 2 for a, b in zip(geo, by_ink)]
 
 
-def _assign_split(labels, mask, ids, line, lo, cuts, axis):
+def _assign_split(frags: List[Frag], cuts, axis: int, lo: int, ink: int) -> Tuple[List[List[Frag]], int]:
     """
-    Masks of the groups between the cuts. A component goes whole to the group holding most
-    of it, unless a good share of it lies across a cut (touching strokes): then it is cut,
-    and on a stack at the top of the thin run the cut passes through, since the stroke
-    that joins two stacked parts belongs to the lower one (the vertical of 十 in 早).
+    The pieces of each part between the cuts. A piece goes whole to the part holding most of
+    it, unless cutting it costs less than leaving its ink on the wrong side, as _split_cuts
+    reckons it: then it is cut along the cuts (the stem 出's two parts share; a contour of
+    strokes from both). A stroke reaching across with a little of its ink stays whole with its
+    part (全: the tail of 人's 丿 beside 王).
     """
-    groups = [np.zeros_like(mask) for _ in range(len(cuts) + 1)]
-    coord = np.arange(mask.shape[1] if axis == 1 else mask.shape[0]) - lo
+    groups: List[List[Frag]] = [[] for _ in range(len(cuts) + 1)]
+    lines = [lo + c for c in cuts]
     cut_ink = 0
-    for k, i in enumerate(ids):
-        comp = (labels == i) & mask
-        prof = line[k]
-        edges = [0] + list(cuts) + [len(prof)]
+    for pid, f in frags:
+        prof = f.sum(axis=0 if axis == 1 else 1)
+        edges = [0] + lines + [len(prof)]
         shares = [int(prof[a:b].sum()) for a, b in zip(edges, edges[1:])]
-        total = sum(shares)
-        g = int(np.argmax(shares))
-        if total - shares[g] <= TOUCHING * total:
-            groups[g] |= comp
+        wrong = sum(shares) - max(shares)
+        crossed = [c for c in lines if prof[min(c, len(prof) - 1)] > 0]
+        cutting = sum(CUT_CHARGE * ink + TOUCH_COST * prof[min(c, len(prof) - 1)] for c in crossed)
+        if not crossed or wrong <= cutting:
+            groups[int(np.argmax(shares))].append((pid, f))
             continue
-        cut_ink += total - shares[g]
-        mine = list(cuts)
-        if axis == 0:
-            for e, c in enumerate(mine):
-                floor = mine[e - 1] + 1 if e else 1
-                if prof[c] == 0:
-                    continue
-                while c - 1 > floor and 0 < prof[c - 1] <= 1.25 * prof[c]:
-                    c -= 1
-                mine[e] = c
-        edges = [-10 ** 6] + mine + [10 ** 6]
+        cut_ink += wrong
         for e, (a, b) in enumerate(zip(edges, edges[1:])):
-            sel = (coord >= a) & (coord < b)
+            part = np.zeros_like(f)
             if axis == 1:
-                groups[e][:, sel] |= comp[:, sel]
+                part[:, a:b] = f[:, a:b]
             else:
-                groups[e][sel, :] |= comp[sel, :]
+                part[a:b, :] = f[a:b, :]
+            if part.any():
+                groups[e].append((pid, part))
     return groups, cut_ink
 
 
@@ -418,53 +484,51 @@ FRAME_WALLS = {'⿴': 'lrtb', '⿵': 'lrt', '⿶': 'lrb', '⿷': 'ltb', '⿸': '
                '⿼': 'rtb', '⿽': 'rb'}
 
 
-def _assign_frame(labels, mask, op: str, insets: Tuple[float, float, float, float], inner_share: float,
+def _assign_frame(frags: List[Frag], op: str, insets: Tuple[float, float, float, float], inner_share: float,
                   guard: bool = True):
     """
-    (frame mask, inner mask, ink cut) of a surround. The inside is a rectangle whose four
-    edges are searched as cuts are: on the frame's walls from the layout's insets, on the
-    sides IDS calls open from the node's edge (勹 is open to the left, but its 丿 closes it:
-    a clean gap there wins over cutting the sweep). Each connected component costs the
-    lesser of its ink on the wrong side and cutting it along the rectangle (touching
-    strokes, as in 石 右 同); priors pull the inside's share of the ink towards the share
-    its strokes should have (唇: 口 against 辰) and the edges towards where they started.
-    Components cut by the rectangle are divided along it; the others go whole to the side
-    holding most of them. The frame's walls are not cut unless they must be: when guarding
-    them leaves the inside nearly empty, the inside touches them (唇), and the search is
-    done again without the guard.
+    (frame pieces, inner pieces, ink cut) of a surround. The inside is a rectangle whose
+    four edges are searched as cuts are: on the frame's walls from the layout's insets, on
+    the sides IDS calls open from the node's edge (勹 is open to the left, but its 丿 closes
+    it: a clean gap there wins over cutting the sweep). Each piece costs the lesser of its
+    ink on the wrong side and cutting it along the rectangle (a contour of strokes from both,
+    as in 石 右 同); priors pull the inside's share of the ink towards the share its strokes
+    should have (唇: 口 against 辰) and the edges towards where they started. Pieces cut by
+    the rectangle are divided along it; the others go whole to the side holding most of
+    them. The frame's walls are not cut unless they must be: when guarding them leaves the
+    inside nearly empty, the inside touches them (唇), and the search is done again without
+    the guard.
     """
     walls = FRAME_WALLS.get(op)
-    if not walls:
+    if not walls or not frags:
         return None
-    x0, y0, x1, y1 = _bbox(mask)
+    x0, y0, x1, y1 = _bbox(_union(frags, frags[0][1].shape))
     w, h = x1 - x0, y1 - y0
     if w < 8 or h < 8:
         return None
-    lab = (labels * mask)[y0:y1, x0:x1]
-    ids = [int(i) for i in np.unique(lab) if i]
-    comps = np.stack([(lab == i) for i in ids]).astype(np.int64)         # [k, h, w]
-    sat = np.zeros((len(ids), h + 1, w + 1), dtype=np.int64)
+    comps = np.stack([f[y0:y1, x0:x1] for _, f in frags]).astype(np.int64)     # [k, h, w]
+    k = len(frags)
+    sat = np.zeros((k, h + 1, w + 1), dtype=np.int64)
     sat[:, 1:, 1:] = comps.cumsum(1).cumsum(2)
-    rows = np.zeros((len(ids), h, w + 1), dtype=np.int64)                 # ink along each row
+    rows = np.zeros((k, h, w + 1), dtype=np.int64)                 # ink along each row
     rows[:, :, 1:] = comps.cumsum(2)
-    cols = np.zeros((len(ids), w, h + 1), dtype=np.int64)                 # ink along each column
+    cols = np.zeros((k, w, h + 1), dtype=np.int64)                 # ink along each column
     cols[:, :, 1:] = comps.transpose(0, 2, 1).cumsum(2)
     totals = sat[:, -1, -1]
     ink = int(totals.sum())
     el, et, er, eb = (v if side in walls else 0.0 for v, side in zip(insets, 'ltrb'))
-    # the frame's walls: components reaching the node's edge on a walled side. Unless one
-    # holds most of the ink (the inside touches it: 石 右 房), they are not to be cut
-    reach = {'l': sat[:, :, 1:3].max(axis=(1, 2)) > 0, 'r': comps[:, :, -2:].any(axis=(1, 2)),
+    # the frame's walls: pieces reaching the node's edge on a walled side. Unless one holds
+    # most of the ink (the inside touches it: 石 右 房), they are not to be cut
+    reach = {'l': comps[:, :, :2].any(axis=(1, 2)), 'r': comps[:, :, -2:].any(axis=(1, 2)),
              't': comps[:, :2, :].any(axis=(1, 2)), 'b': comps[:, -2:, :].any(axis=(1, 2))}
-    reach['l'] = comps[:, :, :2].any(axis=(1, 2))
-    anchor = np.zeros(len(ids), dtype=bool)
+    anchor = np.zeros(k, dtype=bool)
     for side in walls:
         anchor |= reach[side]
     protect = np.where(guard & anchor & (totals <= WALL_SHARE * ink), WALL_CUT, 1.0)
 
     def evaluate(L, T, R, B):
         inside = sat[:, B, R] - sat[:, T, R] - sat[:, B, L] + sat[:, T, L]
-        edge = np.zeros(len(ids), dtype=np.int64)
+        edge = np.zeros(k, dtype=np.int64)
         if T > 0:
             edge += rows[:, T, R] - rows[:, T, L]
         if B < h:
@@ -476,7 +540,7 @@ def _assign_frame(labels, mask, op: str, insets: Tuple[float, float, float, floa
         wrong = np.minimum(inside, totals - inside)
         cutting = np.where(edge > 0, (CUT_CHARGE * ink + TOUCH_COST * edge) * protect, np.inf)
         whole = wrong <= cutting
-        # the inside's ink once assigned: whole components by majority, cut ones as divided
+        # the inside's ink once assigned: whole pieces by majority, cut ones as divided
         inner_ink = np.where(whole, np.where(inside * 2 >= totals, totals, 0), inside).sum()
         c = float(np.minimum(wrong, cutting).sum())
         c += PRIOR * ink * (inner_ink / max(1, ink) - inner_share) ** 2
@@ -507,22 +571,33 @@ def _assign_frame(labels, mask, op: str, insets: Tuple[float, float, float, floa
                     best, (L, T, R, B), moved = c, o, True
         if not moved:
             break
-    frame, inner = np.zeros_like(mask), np.zeros_like(mask)
     ys, xs = np.mgrid[0:h, 0:w]
-    rect = (xs >= L) & (xs < R) & (ys >= T) & (ys < B)
+    rect = np.zeros(frags[0][1].shape, dtype=bool)
+    rect[y0:y1, x0:x1] = (xs >= L) & (xs < R) & (ys >= T) & (ys < B)
     inside = sat[:, B, R] - sat[:, T, R] - sat[:, B, L] + sat[:, T, L]
-    cut_ink = 0
-    for k in range(len(ids)):
-        c = comps[k].astype(bool)
-        wrong = min(inside[k], totals[k] - inside[k])
-        if wrong > TOUCHING * totals[k] and protect[k] == 1.0:      # touching strokes: divided
+    edge = np.zeros(k, dtype=np.int64)
+    if T > 0:
+        edge += rows[:, T, R] - rows[:, T, L]
+    if B < h:
+        edge += rows[:, B - 1, R] - rows[:, B - 1, L]
+    if L > 0:
+        edge += cols[:, L, B] - cols[:, L, T]
+    if R < w:
+        edge += cols[:, R - 1, B] - cols[:, R - 1, T]
+    frame, inner, cut_ink = [], [], 0
+    for i, (pid, f) in enumerate(frags):
+        wrong = min(inside[i], totals[i] - inside[i])
+        # divided where that costs less than leaving its ink on the wrong side, as evaluated
+        if edge[i] > 0 and wrong > (CUT_CHARGE * ink + TOUCH_COST * edge[i]) * protect[i]:
             cut_ink += int(wrong)
-            inner[y0:y1, x0:x1] |= c & rect
-            frame[y0:y1, x0:x1] |= c & ~rect
+            if (f & rect).any():
+                inner.append((pid, f & rect))
+            if (f & ~rect).any():
+                frame.append((pid, f & ~rect))
         else:
-            (inner if inside[k] * 2 >= totals[k] else frame)[y0:y1, x0:x1] |= c
-    if guard and inner.sum() < MIN_INNER_SHARE * ink:
-        return _assign_frame(labels, mask, op, insets, inner_share, guard=False)
+            (inner if inside[i] * 2 >= totals[i] else frame).append((pid, f))
+    if guard and sum(int(f.sum()) for _, f in inner) < MIN_INNER_SHARE * ink:
+        return _assign_frame(frags, op, insets, inner_share, guard=False)
     return frame, inner, cut_ink
 
 
@@ -560,19 +635,55 @@ def _walls(frame: np.ndarray, inner: np.ndarray, op: str, renderer: 'Renderer'):
     return tuple(out)
 
 
-def measure(layout, renderer: Renderer, ch: str) -> List[Tuple[str, Box]]:
-    """[(path, box)] of a character's decomposition tree; [] if the font lacks it."""
-    mask = renderer.render(ch)
-    if mask is None or not mask.any():
+def _bounds(groups: List[List[Frag]], axis: int, bb) -> List[float]:
+    """
+    Where consecutive parts of a split divide, in px along the split: the line leaving the
+    least of either part's ink on the other's side, and the middle of the run of lines that
+    leave as little. Between parts apart that is the middle of the gap between them; where
+    a part's stroke reaches under its neighbour (鳴: 鳥's foot under 口), it is between their
+    bodies, not between their boxes.
+    """
+    lo, hi = (bb[0], bb[2]) if axis == 1 else (bb[1], bb[3])
+    profs = [np.zeros(hi - lo, dtype=np.int64) for _ in groups]
+    for prof, g in zip(profs, groups):
+        for _, f in g:
+            prof += f.sum(axis=0 if axis == 1 else 1)[lo:hi]
+    out = []
+    for a, b in zip(profs, profs[1:]):
+        # at line x: a's ink from x on, plus b's ink before x
+        cost = (a.sum() - np.concatenate(([0], np.cumsum(a)))) + np.concatenate(([0], np.cumsum(b)))
+        best = int(np.argmin(cost))
+        i = j = best
+        while i > 0 and cost[i - 1] == cost[best]:
+            i -= 1
+        while j < len(cost) - 1 and cost[j + 1] == cost[best]:
+            j += 1
+        out.append(lo + (i + j) / 2)
+    return out
+
+
+def measure(layout, renderer: Renderer, ch: str, masks: Dict[str, np.ndarray] = None,
+            counts: Dict[str, int] = None) -> List[Tuple[str, Box]]:
+    """[(path, box)] of a character's decomposition tree; [] if the font lacks it. `masks`, if
+    given, receives every node's ink by path, and `counts` its number of pieces (suggest.py
+    traces them)."""
+    pieces = renderer.piece_masks(ch)
+    if not pieces:
         return []
-    labels, _ = label(mask)
+    shape = pieces[0].shape
     out = []
 
-    def visit(comp: str, m: np.ndarray, path: str, cut: float, ambiguous: bool = False, walls=None):
+    def visit(comp: str, frags: List[Frag], path: str, cut: float, ambiguous: bool = False, walls=None):
+        m = _union(frags, shape)
         bb = _bbox(m)
         if bb is None:
             return
-        out.append((path, Box(comp, *renderer.to_face(*bb), cut, ambiguous, walls)))
+        box = Box(comp, *renderer.to_face(*bb), cut, ambiguous, walls)
+        out.append((path, box))
+        if masks is not None:
+            masks[path] = m
+        if counts is not None:
+            counts[path] = len({pid for pid, _ in frags})
         if layout.never_split(comp) is not None:     # as the geometry: 广 is not 丶 over 厂
             return
         node = layout.decomposition(comp)
@@ -581,13 +692,13 @@ def measure(layout, renderer: Renderer, ch: str) -> List[Tuple[str, Box]]:
         ink = int(m.sum())
         if op in IDS.SPLIT_H or op in IDS.SPLIT_V:
             axis = 1 if op in IDS.SPLIT_H else 0
-            ids, line, lo = _profiles(labels, m, axis)
+            line, lo = _profiles(frags, bb, axis)
             found = _split_cuts(line, _expected_cuts(layout, children, axis == 1, line),
-                                [renderer.pieces(c) for c in children])
+                                [expected_pieces(layout, renderer, c) for c in children])
             if found is None:
                 return
             cuts, amb = found
-            groups, cut_ink = _assign_split(labels, m, ids, line, lo, cuts, axis)
+            groups, cut_ink = _assign_split(frags, cuts, axis, lo, ink)
         elif op in IDS.SURROUND:
             import geometry as GEO
             # the search starts from the operator's insets (or a hand setting), not from
@@ -598,7 +709,7 @@ def measure(layout, renderer: Renderer, ch: str) -> List[Tuple[str, Box]]:
             # frame's, in proportion to its size
             sf, si = (max(1, layout.strokes(c)) for c in children)
             size = ((GEO.REF - l - r) + (GEO.REF - t - b)) / (2 * GEO.REF)
-            got = _assign_frame(labels, m, op, (l / GEO.REF, t / GEO.REF, r / GEO.REF, b / GEO.REF),
+            got = _assign_frame(frags, op, (l / GEO.REF, t / GEO.REF, r / GEO.REF, b / GEO.REF),
                                 si * size / (si * size + sf))
             if got is None:
                 return
@@ -606,13 +717,16 @@ def measure(layout, renderer: Renderer, ch: str) -> List[Tuple[str, Box]]:
             groups, amb = [frame, inner], False
         else:
             return
-        if any(not g.any() for g in groups):
+        if any(not g for g in groups):
             return
-        walls = _walls(frame, inner, op, renderer) if op in IDS.SURROUND else None
+        if op in IDS.SPLIT_H or op in IDS.SPLIT_V:
+            box.bounds = tuple(renderer.to_face(v, v, v, v)[0 if axis == 1 else 1] for v in _bounds(groups, axis, bb))
+        walls = (_walls(_union(groups[0], shape), _union(groups[1], shape), op, renderer)
+                 if op in IDS.SURROUND else None)
         for k, (child, g) in enumerate(zip(children, groups)):
             visit(child, g, f"{path}.{k}" if path else str(k), cut_ink / ink, amb, walls if k == 0 else None)
 
-    visit(ch, mask, '', 0.0)
+    visit(ch, list(enumerate(pieces)), '', 0.0)
     return out
 
 
@@ -660,13 +774,15 @@ def save(data: Dict[str, List[Tuple[str, Box]]], renderer: Renderer, path: str =
         f.write("# amb: 1 if another cut of the parent was nearly as good (the split may be wrong).\n")
         f.write("# walls: of a surround's frame, where its ink comes closest to the inside on the left, top,\n")
         f.write("#   right and bottom (within the inside's rows or columns; '-' where open).\n")
-        f.write("#char\tpath\tcomponent\tx0\ty0\tx1\ty1\tcut\tamb\twalls\n")
+        f.write("# bounds: of a split, where its parts divide along it (between their bodies).\n")
+        f.write("#char\tpath\tcomponent\tx0\ty0\tx1\ty1\tcut\tamb\twalls\tbounds\n")
         for ch in sorted(data, key=ord):
             for p, b in data[ch]:
                 walls = ','.join('-' if v is None else str(round(v * 1000)) for v in b.walls) if b.walls else '-'
+                bounds = ','.join(str(round(v * 1000)) for v in b.bounds) if b.bounds else '-'
                 f.write(f"{ch}\t{p or '-'}\t{b.comp}\t{round(b.x0 * 1000)}\t{round(b.y0 * 1000)}\t"
                         f"{round(b.x1 * 1000)}\t{round(b.y1 * 1000)}\t{round(b.cut * 1000)}\t{int(b.ambiguous)}\t"
-                        f"{walls}\n")
+                        f"{walls}\t{bounds}\n")
     os.replace(path + '.part', path)
 
 
@@ -689,9 +805,11 @@ class Reference:
                     walls = cols[9] if len(cols) > 9 else '-'
                     walls = None if walls == '-' else tuple(None if v == '-' else int(v) / 1000
                                                             for v in walls.split(','))
+                    bounds = cols[10] if len(cols) > 10 else '-'
+                    bounds = None if bounds == '-' else tuple(int(v) / 1000 for v in bounds.split(','))
                     data.setdefault(ch, {})['' if p == '-' else p] = Box(
                         comp, int(x0) / 1000, int(y0) / 1000, int(x1) / 1000, int(y1) / 1000, int(cut) / 1000,
-                        amb == '1', walls)
+                        amb == '1', walls, bounds)
         return Reference(data)
 
     def get(self, ch: str, path: str = '') -> Optional[Box]:

@@ -21,10 +21,15 @@ a sprite sheet in the same format as the one it replaces. Both font engines load
     carries in its header. Only the stroke-sequence and Unicode mapping tables are used; the CNS
     fonts never are.
   - CHISE / cjkvi-ids IDS data is GPLv2 and is deliberately **not** used.
-  - Chiron Hei HK (The Chiron Hei HK Project Authors, SIL Open Font License 1.1; derived from
-    Source Han Sans) is measured, not copied: `reference.py` records the ink box of every part of
-    every character (`model/reference.tsv`, with the font's attribution in its header). No outline
-    or pixel of it reaches a drawing sheet or the output. Terrarum Sans Bitmap is OFL 1.1 too.
+  - Chiron Hei HK (The Chiron Hei HK Project Authors, SIL Open Font License 1.1, no Reserved Font
+    Name; derived from Source Han Sans) is measured: `reference.py` records the ink box of every
+    part of every character (`model/reference.tsv`, with the font's attribution in its header).
+    It is also traced, on request only, for the editor's *suggestions* (`suggest.py`, 3c): a
+    suggestion is shown over the canvas for the artist to draw over, and is never written to a
+    sheet by itself. A glyphlette drawn from a suggestion makes the font, in that
+    part, a Modified Version of Chiron Hei HK, which the OFL allows (Terrarum Sans Bitmap is OFL 1.1
+    too) provided its copyright notice goes with it: credit "Copyright 2025 The Chiron Hei HK
+    Project Authors" (see Switching over). Nothing else of it reaches a sheet or the output.
 - Label fonts (Noto Sans CJK, BabelStone Han) are used only to caption guide images and mock-ups.
   Nothing rendered with them ever reaches a drawing sheet or the output.
 - **The reference font is the visual target; the paper is the design.** How big a part is and
@@ -100,6 +105,7 @@ Juxing/
   planner.py       which glyphlettes to draw (cut optimisation, families) and in what order
   generators.py    procedural glyphlettes for simple components (口 日 田 ...)
   resize.py        stroke-preserving resizing: derives the other sizes of a family from its drawing
+  suggest.py       suggestions: a glyphlette traced from Chiron Hei HK, for the editor (on request)
   glyphlettes.py   registry, drawing sheets (guides, ink), families, and the Library of available glyphlettes
   assembler.py     composes characters, writes the Han sheet, procedural hexagrams
   evenness.py      evenness pass: refines each assembled character (after Lai, Yeung & Pong)
@@ -142,6 +148,7 @@ make refresh                       # redraw guides: drawn parts now appear as co
 make status                        # progress, coverage per tier, ink outside boxes, declined sizes
 python3 juxing.py derived          # out/derived.png: every derived size, worst family first
 python3 juxing.py derived --score  # the resizer against the overrides you drew by hand
+python3 juxing.py suggest 36 寸@7x15   # a glyphlette traced from Chiron Hei HK, beside the drawing
 python3 juxing.py issue --key 木@5x15   # override a derived size you don't like (prefilled with it)
 python3 juxing.py retire --orphans # free the blank cells the plan no longer uses
 make                               # assemble out/juxing.tga + out/preview.png + out/coverage.png
@@ -188,7 +195,8 @@ Context as the command line:
   tier, the plan's completion curve per tier, and a coverage map of U+3400–U+9FFF (click a code
   point to inspect it).
 - **Sheets:** the drawing sheets with their guides; blank cells and overrides outlined. Click a cell
-  to edit it.
+  to edit it. At 1×–4×; the sheet's card grows past the page's width, centred, as far as the sheet
+  needs and the window allows, so it scrolls sideways only when the window is too narrow.
 - **Editor:** a pixel editor for one cell, with the same guides as the sheets (box, keep-empty,
   undrawn and drawn context, the 15×15 body). Left button draws, right erases, shift-click draws a
   line; arrows move the ink, Ctrl+Z / Ctrl+Shift+Z undo and redo, Ctrl+S saves, `[` `]` `N` go to
@@ -204,6 +212,10 @@ Context as the command line:
     a line over the canvas: "You are overriding this size". Nothing is issued until the draft is
     first saved, so looking costs nothing and there are no confirmation popups. An issued override
     shows the same line. Drawn and issued sizes open their cells.
+  - **Suggest (T):** a suggestion traced from Chiron Hei HK (3c), shown as orange dots over the
+    canvas to draw over, with the character it was traced from. It is never ink by itself. The
+    toggle is remembered, so with it on every cell opens with its suggestion (about 0.15 s each,
+    cached per glyphlette).
 - **Families:** every derived size next to the drawing it comes from, worst family first, as
   `derived` draws it. Click a drawing to edit it, or a derived size to override it (a draft, as in
   the editor).
@@ -282,36 +294,41 @@ Juxing's visual target.
 - Coordinates are in units of the font's ideographic character face (BASE `icfb`/`icft`), which
   maps onto the 15×15 body. The face is square: where BASE records disagree (Chiron Hei HK's `hani`
   record is 918 units tall and sits 36 below its ink), the one as tall as the face is wide is used.
+- **Pieces of ink are contours.** Chiron Hei HK is a variable font, and variable fonts keep
+  overlapping strokes as separate contours, so a contour is a stroke, or a few strokes drawn as one
+  (口's three). Strokes that touch, which merge in rendered ink, stay apart as pieces (兰's right dot
+  on its first bar, 讠's rising stroke on 周's 丿 in 调, 𥫗's dots on 立 in 笠). And the counts add
+  up: a character has as many outer contours as its parts have on their own (训 7 = 讠 4 + 川 3,
+  笠 11 = 𥫗 6 + 立 5), with a few exceptions (吕's upper 口 is one contour, a 口 on its own two). Each
+  contour is rendered from the outline (unhinted, supersampled 4×, `Renderer.piece_masks`), with its
+  counters cut out; the glyph's ink is their union.
 - **Segmentation**, per character rendered at 160px, following the model's decomposition exactly
   as the geometry does (`Layout.decomposition`, `Layout.never_split`), so a measured node and a slot
-  share their path (child indices from the root; a surround's frame is 0, its inside 1):
-  - the ink is split into 8-connected components;
-  - ⿰⿲ are cut at columns, ⿱⿳ at rows. A cut costs, per component, the lesser of its ink left on
-    the wrong side and cutting it (`CUT_CHARGE` plus its ink on the cut line), so clean gaps win and
-    touching strokes are cut where thinnest (早: through 十's vertical, moved up to where 日 ends).
-    A prior pulls cuts halfway between where the geometry would cut and where the ink divides by
+  share their path (child indices from the root; a surround's frame is 0, its inside 1). A node
+  holds its pieces (or the parts of them cut off for it):
+  - ⿰⿲ are cut at columns, ⿱⿳ at rows. A cut costs, per piece, the lesser of its ink left on the
+    wrong side and cutting it (`CUT_CHARGE` plus its ink on the cut line), so clean gaps win. A
+    prior pulls cuts halfway between where the geometry would cut and where the ink divides by
     stroke counts, which picks the right gap of several (謝: between 言 and 身). The geometry here
     uses hand settings and the size model only, never sizes inferred from an earlier measurement,
-    which would lead a wrong cut into the same wrong place the next time. No part may get less
-    than `MIN_PART_INK` of the ink;
-  - a part can't have more separate pieces of ink in a character than on its own (rendered alone:
-    川 3, 讠 2). A cut that leaves a side with more has given it a piece of its neighbour, and each
-    piece more costs `EXCESS_COST` (two-part splits). This finds the boundary where a neighbour's
-    stroke reaches under a part and no clean column is left: in 训 圳 紃 川's first stroke sweeps
-    under the left part, and the only clean gaps were inside 川, which was measured 5px wide. A side
-    with *fewer* pieces is no sign of anything (strokes apart on their own often touch in a
-    character, as in 音), so where the stroke touches its neighbour (釧 馴) the cut can still fall
-    inside 川; `layout.tsv` keeps 川 at least 7px there. The rule misleads where a part's own
-    pieces stand apart in a character but touch on their own: 周 alone is 2 pieces (土's stem
-    runs into 口), in 调 3, so the right cut through 讠's rising stroke looked like a piece taken,
-    and the cut went through 周 instead, giving 周's 丿 to 讠 (6.7px wide; 谵 likewise). Charging
-    only a piece *moved* (one side over its count, the other under) fixes 调 but breaks 勒 凱,
-    where 力's and 几's 丿 sweep under the left part: where parts touch, piece counts can't tell
-    whose stroke a fragment is. Such cases are settled in `layout.tsv` (讠 below). Likewise where
-    stacked parts touch and the lower part has a clean gap inside it: a clean gap costs nothing,
-    cutting touching strokes `CUT_CHARGE`, so the cut falls in the gap and the top takes the lower
-    part's first element (笠: 𥫗 takes 立's 亠, 7.9px tall; 答 签 竺 艽 荟 羊 alike). Nothing marks
-    such a cut as doubtful (it is clean and unambiguous); `layout.tsv` caps these tops (below);
+    which would lead a wrong cut into the same wrong place the next time (so re-run `make
+    reference` after changing a size in `layout.tsv`). No part may get less than `MIN_PART_INK`;
+  - **counts:** each part should get as many pieces as it has on its own (`expected_pieces`: the
+    font's count if it has the part, else the sum over the part's own parts), a piece counting on
+    the side holding most of it, and every piece more or fewer costs `COUNT_COST`. A cut in the
+    wrong gap gains or loses a stroke, so this finds the boundary where a neighbour's stroke reaches
+    under a part (训 釧 馴: 川's first stroke under the left part; 勒 凱: 力's and 几's 丿). As counts
+    are not always exact, it weighs against the other costs rather than deciding;
+  - a piece goes whole to the part holding most of it, unless cutting it costs less than leaving
+    its ink on the wrong side, as the search reckons it: then it is cut along the cut (the stem
+    出's two parts share). A stroke reaching across with a little of its ink stays whole (全: the
+    tail of 人's 丿 beside 王);
+  - **bounds:** where the parts of a split divide, the line leaving the least of either part's ink
+    on the other's side, at the middle of the run of lines leaving as little: the middle of the
+    gap where they are apart, between their bodies where a stroke of one reaches under the other
+    (鳴: 鳥's foot under 口; the middle of their boxes would give 口 3px). Stored per split node and
+    used for splits and spaces (`Layout.reference_split`, `geometry._child_spaces`) instead of the
+    middle between boxes, except where a stacked part reaches up under the one above;
   - a surround's inside is a rectangle whose four edges are searched the same way, starting from
     the operator's default insets or a hand setting in `layout.tsv` (never from inferred ones, so
     a measurement doesn't depend on the one before), open sides from the node's edge (勹's 丿
@@ -323,7 +340,16 @@ Juxing's visual target.
   - `walls`, for a frame: where its ink comes closest to the inside on each walled side, within
     the inside's rows or columns. A frame's box says little where its walls slant: 广's 丿 reaches
     the left edge only at its tail, well below the inside's top.
-- **Coverage:** all 27,584 characters, 138,310 parts; 0.9% of splittable nodes fail.
+- **Coverage:** all 27,584 characters, 139,536 parts; 0.5% of splittable nodes fail, 88% of
+  the rest split cleanly (no ink cut) and 9% are ambiguous. Cutting rendered ink instead, as
+  before contours, failed 1.1% and split 61% cleanly, 32% ambiguous: wherever strokes touched,
+  the cut had to go through them, and often went through the wrong ones (调: 周's 丿 to 讠; 笠: 立's
+  亠 to 𥫗; 兰: the cut under the first bar). Families measure more consistently too: 忄 is 5px wide
+  in 89% of its characters (64% before), 阝 83% (60%), 扌 82% (71%), 釒 71% (61%).
+- **What the font's structure says:** the decomposition is the model's (IDS), not the font's;
+  the font has no table of its own (no composite glyphs, no `VARC`). Where the font draws a
+  different structure, the decomposition is corrected in `model/overrides.tsv`: 兰 = ⿱䒑二, its
+  dots on the first bar as in 羊 前 养 (Chiron Hei HK's and the G form).
   `reference --sheet` draws the measured boxes for review.
 - **Space:** a part's space in the reference (`geometry._child_spaces`) is the share of its
   parent's space that is its own: a split divides at the middle of the gaps between the parts'
@@ -343,13 +369,12 @@ Each value is a weighted median; a measurement counts less the more ink its cut 
 and half if ambiguous; values with less than 3 measurements' worth (`MIN_WEIGHT`) are left out.
 - **left/right/top/bottom:** a component's size as the first or last part of a split, in px of a
   15px box: its space's share of the parent's space. Twins are left out (they split evenly). E.g.
-  亻 4.3, 氵 3.9, 扌 4.7, 讠 5.0, 刂 right 4.9, 艹 top 3.4, 宀 top 4.5, 心 bottom 5.5, 貝 bottom 9.4.
+  亻 4.2, 氵 3.9, 扌 4.9, 讠 5.0, 刂 right 5.8, 艹 top 3.4, 宀 top 4.9, 心 bottom 5.6, 貝 bottom 10.7.
 - **frame:** a surround frame's insets at 15×15: its inside's space, rounded so that the inner
   box is odd-sized and walls get 2px at least. Only frames 11px or larger count (`MIN_FRAME`):
   insets shrink with smaller frames, their strokes don't (a nested 囗 5px wide spends half its
-  width on walls). E.g. 囗 ⿴3,3,3,3, 門 ⿵3,6,3,0, 冂 ⿵3,4,3,0, 广 ⿸4,4, 辶 ⿺6,0,0,2, and 鳥's frame
-  ⿹0,12,4,0 (its 灬 is a band under the body, not an 11×11 square in it); 64 frames in all, the
-  rest keep the operator's default.
+  width on walls). E.g. 囗 ⿴3,3,3,3, 門 ⿵3,6,3,0, 冂 ⿵4,2,4,0, 广 ⿸4,4, 辶 ⿺6,0,0,2; 78 frames in
+  all, the rest keep the operator's default.
 - **place:** where a component's ink sits in its space, per context, for the parts the evenness
   pass has no measurement of in their character.
 - **Not inferred: `levels`.** It says how many 1px strokes a component needs at 15px, which a font
@@ -385,20 +410,22 @@ and half if ambiguous; values with less than 3 measurements' worth (`MIN_WEIGHT`
     dots stacked, 灬 four in a row.
 - **⿰⿲ / ⿱⿳ split sizes:**
   - A size set by hand in `layout.tsv` (left/right/top/bottom, for a 15px box, scaled) comes first.
-    A least size (`>=7`) only rules out the partitions that go below it, and the rest decides above
-    it: 川 `>=7` on the right keeps 训 at 5|9 and makes 釧 and 馴 7|7, not 9|5. A most size (`<=5`)
-    likewise rules out those above it: 𥫗 艹 䒑 `<=5` on top, so that where the reference mis-cuts
-    (above) 笠 答 艽 羊 are 5|9, not 7|7 or 9|5 (29 characters under 𥫗, 15 under 艹, 1 under 䒑),
-    and the rest keep 3 or 5 as measured. 宀 `<=5` too: it is generated 4 rows tall at most (a 1px
-    dot, legs of 3), while Chiron Hei HK draws the radical 穴 with a long dot and legs (6.9px, so
-    7|7 left 3 empty rows over 八), and 宅 宝 牢 are mis-cut where the part below touches the legs.
-    A size set by hand
-    also makes a family one width where the reference sits on a rounding tie: 讠 measures about
-    4.5px on the left, between 3|11 and 5|9, so 21 ⿰讠 characters were 3px wide and the rest 5 (and
-    调 谵, mis-cut, 7); `讠 5` keeps all 151 at 5|9. (亻 4.3 and 忄 are on the same tie: 亻 is 3px
-    in 409 characters and 5px in 299, 忄 186 and 335.)
-  - Then the split falls where Chiron Hei HK puts it (`Layout.reference_split`: the middle of the
-    space between the parts' ink). A whole character follows its own measurement; a component
+    A least size (`>=7`) only rules out the partitions that go below it, and a most size (`<=4`)
+    those above it; the reference decides within. They are design settings, for what the pixel
+    form needs where the reference can't say:
+    - tops that never stand tall: 𥫗 艹 丷 `<=4` (3 rows), 䒑 `<=5` (兰: Chiron sets 二 well
+      below its 䒑, 6.5px), 宀 `<=5` (generated 4 rows tall at most, a 1px dot and legs of 3, while
+      Chiron draws the radical 穴 with a long dot and legs, 6.9px, which left 3 empty rows over 八);
+    - one width for a family where the reference sits on a rounding tie: 讠 measures about 4.5px
+      on the left, between 3|11 and 5|9, and `讠 5` keeps all 151 ⿰讠 characters at 5|9 (24 would
+      be 3px wide). 亻 (4.3) is on the same tie: 3px in 418 characters, 5px in 290;
+    - 川 `>=7` on the right (训 5|9, 釧 馴 7|7) was set while the reference cut inside 川 where its
+      first stroke sweeps under the left part; measured by contours, those characters come out so
+      by themselves, and it changes nothing now.
+    These settings were added while the reference was cut from rendered ink, and some answered
+    its mis-cuts (调 笠 答 兰 釧); measured by contours, only their design remains.
+  - Then the split falls where Chiron Hei HK puts it (`Layout.reference_split`: where the parts
+    divide, the measured bounds). A whole character follows its own measurement; a component
     inside others the weighted median of its measurements wherever it appears, weighted by how
     close their aspect is to the box's (`REF_ASPECT_WIDTH`), its standalone form triple.
   - Where the parent isn't measured, its first and last parts take their inferred sizes
@@ -409,8 +436,10 @@ and half if ambiguous; values with less than 3 measurements' worth (`MIN_WEIGHT`
     limit, the reference a target: the closest partition that leaves no part too crowded (see
     Crowding) wins, rather than the split being refused (䱂: 魚 7px beside 幼, not the 5 the
     reference's proportions round to, which is too narrow for its strokes).
-  - Root splits are 0.57px on average from where the reference divides each character, and 653 are
-    more than 1.5px off; with the paper's sizes in `layout.tsv` it was 0.80px and 3,087. Parity limits it: odd parts with a 1px gap put boundaries 2px apart.
+  - Root splits are 0.54px on average from where the reference divides each character (its
+    measured bounds), and 555 of 24,112 are more than 1.5px off; with the paper's sizes in
+    `layout.tsv` it was 0.80px and 3,087 (measured then between boxes). Parity limits it: odd parts
+    with a 1px gap put boundaries 2px apart.
   - Twins split evenly, including positional forms of one component (林, 絲 = 糹糸).
     Outer twins of ⿲/⿳ are symmetric (木缶木, 糹言糸). The forms are listed in `VARIANT_FORMS`.
 - **Under a roof:** a stacked part may reach up into the part above it, between its legs (宙: 由's
@@ -427,9 +456,11 @@ and half if ambiguous; values with less than 3 measurements' worth (`MIN_WEIGHT`
   - Parts whose top is too wide for the legs stay below, as in the reference (冠: 元, 0.3px).
   - A part reaching up under a roof may not start out touching it (the evenness pass steps it down
     within its taller box until it is clear), as its ink does not always fit between the legs.
-  - 578 stacked parts reach up this way, 169 under roofs (宀 96, 冖 23 in 军 冥 冢 冝 冤, 学 觉 …),
-    the rest where they reach a whole pixel: under 𥫗 54, 艹 29, 穴 25, 大 14 (奔), 非 10 (悲),
-    the roof of 榮 勞, 𠆢 (企 伞), and others.
+  - Counted over the distinct slots of every character's layout, 1,212 stacked parts reach up
+    this way, 399 under roofs (宀 213, 冖 89 in 军 冥 冢 冝 冤, 学 觉 …), the rest where they reach
+    a whole pixel: under 大 62 (奔), 𥫗 47, 𠂉 42, the roof of 榮 勞 40, 龹 30, ⺈ 29, 穴 28, 八 27,
+    艹 20, 𠆢 17 (企 伞), and others. (Measured from rendered ink, before contours, there were 929
+    and 292: cut strokes hid much of the nesting.)
   - Such a joint is not joined (the legs stand beside the part below), and part spaces
     (`_child_spaces`) overlap likewise, so a generated part fills its taller box.
 - **Frames:** the inner box comes from insets: set by hand, inferred (1c), or the operator default.
@@ -503,15 +534,15 @@ and half if ambiguous; values with less than 3 measurements' worth (`MIN_WEIGHT`
 
 Current numbers (G preference, default rules), as `plan` prints them:
 
-> 4409 base glyphlettes (6328 glyphlettes derived; min 0, 25% 0, 50% 0, 75% 2, max 14 per base
-> glyphlette; 49 glyphlettes overridden)
+> 4283 base glyphlettes (6169 glyphlettes derived; min 0, 25% 0, 50% 0, 75% 2, max 14 per base
+> glyphlette; 84 glyphlettes overridden)
 
 | | |
 |---|---|
-| Glyphlettes to draw for all 27,584 characters | 4,409 bases, plus the overrides the resizer asks for (effort 13% of drawing every character whole) |
-| Derived instead of drawn | 6,328 slot sizes |
+| Glyphlettes to draw for all 27,584 characters | 4,283 bases, plus the overrides the resizer asks for (effort 13% of drawing every character whole) |
+| Derived instead of drawn | 6,169 slot sizes |
 | Generated instead | 465 slot sizes of 26 components |
-| All everyday characters | complete by glyphlette 2,551 |
+| All everyday characters | complete by glyphlette 2,467 |
 
 (With the paper's sizes and insets in `layout.tsv` and the reference used for splits only: 4,414
 bases, 12%, everyday characters complete by glyphlette 2,703. With split sizes from demand alone,
@@ -581,6 +612,42 @@ Columns likewise, independently. Strokes stay 1px wide.
   complex components and big square shapes squeezed to 5–7px are usually declined, and need an
   override. Where a dot has no room to stay apart from its stroke (忄 3px wide), the drawing is
   resized as a whole.
+
+### 3c. Suggestions (`suggest.py`)
+A starting point for drawing, not a replacement for it: a glyphlette traced from Chiron Hei HK,
+on request (the editor's Suggest, `juxing.py suggest`). See the ground rules for what taking one
+means under the OFL.
+- **The part's ink:** characters using the slot (the exemplar first, then the typical users of
+  its drawing, then those of the other drawings of its family, nearest size first) are segmented
+  exactly as `reference.py` segments them (`reference.measure(..., masks)`), and the part's ink
+  taken at the slot's path (or its component's nearest size in the same role).
+- **Which one:** characters are traced until `TRIES` (8) are clean, from `LOOK` (16) at most, and
+  the one that agrees best with the others wins: the medoid of the traces (the share of either's
+  ink not within a pixel of the other's), each weighed by its cut's quality, halved for every
+  piece of ink more than the part has on its own (`EXTRA_PIECE`), plus `OWN_QUALITY` of its own
+  uncleanness. The reference's mis-cuts are why: a cut in the wrong clean gap looks clean (滫: 氵
+  with 脩's 亻), and a rare size (氵@7x15, 7 characters) may have few good examples, so its
+  family's are used too.
+- **Where:** the part's space (`geometry._child_spaces`) maps onto the slot's box, except along an
+  axis where its ink fills `FILL` (80%) of its space or more: there the ink fills the box, as
+  drawn glyphlettes do (月 釒 隹 7px wide in 7×15), while a floating part keeps its margins (口
+  left of 吃). A frame keeps its space, and its inside maps onto the frame's inner box.
+- **Strokes:** the ink is thinned to 1px centrelines (Zhang–Suen), spurs shorter than a stroke is
+  wide are pruned, and stroke ends carried on by the half stroke width thinning eats.
+- **Grid fitting**, as hinting does: straight runs of the centrelines along an axis (a structure
+  tensor over `WINDOW`, within `STRAIGHT` degrees, `COHERENT`) are stroke levels; levels within
+  `SAME_LEVEL` are one (a bar crossed by a stem). They get whole rows (columns) by dynamic
+  programming: each near its place, in order, with a blank between levels facing each other
+  (`CROWD_COST`, `MERGE_COST`), a frame's walls a gap clear of its inner box. Everything else is
+  warped with them, piecewise linearly. A stroke ending within `EDGE` outside the box ends on its
+  edge, and nothing goes outside the body.
+- **Drawn** 1px: a diagonal step that came out as an L loses its corner (not the corner of
+  straight strokes), and 2×2 clumps lose a pixel nothing else needs.
+- **How close:** against the 114 drawn glyphlettes (each traced as if blank), 99% of a
+  suggestion's ink is within a pixel of the drawing and 97% of the drawing's within a pixel of the
+  suggestion; 60% of the drawn pixels are exactly right. Most misses are a stroke a pixel off,
+  which the porous Select moves in one go, and matters of style: the shape of 氵's dots, the hook
+  of 扌, the foot of 木.
 
 ### 4. Assembler (`assembler.py`)
 - Glyphlettes come from a `Library`, in order of preference: a hand drawing of exactly the slot,
@@ -720,7 +787,9 @@ glyphs.
    - `OTFbuild/sheet_config.py`
    - `Autokem/sheet_stats.py`
 3. Delete `src/assets/wenquanyi.tga` and `work_files/wenquanyi_addendum.kra`.
-4. Update the WenQuanYi credit in `README.md`.
+4. Update the WenQuanYi credit in `README.md`. If any glyphlette was started from a suggestion (3c),
+   credit Chiron Hei HK there too, with its copyright notice ("Copyright 2025 The Chiron Hei HK
+   Project Authors", SIL Open Font License 1.1), as the OFL requires of a Modified Version.
 
 Characters that are not assembled yet are blank in the sheet.
 

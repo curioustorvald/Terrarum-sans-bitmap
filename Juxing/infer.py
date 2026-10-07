@@ -75,7 +75,7 @@ def collect(layout):
             kids = [nodes.get(f"{path}.{k}" if path else str(k)) for k in range(n)]
             if any(k is None for k in kids):
                 return
-            spaces = GEO._child_spaces(op, space, kids, layout.overlap_min)
+            spaces = GEO._child_spaces(op, space, kids, layout.overlap_min, box.bounds)
             sx0, sy0, sx1, sy1 = space
             if op in IDS.SPLIT_H or op in IDS.SPLIT_V:
                 horizontal = op in IDS.SPLIT_H

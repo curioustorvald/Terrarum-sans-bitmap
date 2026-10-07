@@ -31,6 +31,7 @@
   --pix-spacing: rgba(0, 0, 0, 0.35);
   --pix-missing: rgba(153, 153, 153, 0.35);
   --pix-float: #a8d4ff;      /* ink lifted with the marquee, not dropped yet */
+  --pix-suggest: #ff9a3c;    /* a suggestion traced from Chiron Hei HK (dots) */
   --pix-drawn-bg: #1e3250;   /* a size drawn by hand, among derived ones */
   --pix-declined-bg: #581e1e;
   --state-blank: #eda100;
@@ -203,8 +204,8 @@ details summary { cursor: pointer; color: var(--text-secondary); font-size: 12.5
 .sheet-wrap canvas { cursor: pointer; }
 
 /* ---- editor ---- */
-.editor { display: grid; grid-template-columns: 250px minmax(0, auto) minmax(260px, 1fr); gap: 16px; align-items: start; }
-@media (max-width: 1150px) { .editor { grid-template-columns: minmax(0, 1fr); } }
+.editor { display: grid; grid-template-columns: 340px minmax(0, auto) minmax(260px, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 1240px) { .editor { grid-template-columns: minmax(0, 1fr); } }
 .editor .info dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 10px 0; font-size: 13px; }
 .editor .info dt { color: var(--text-muted); }
 .editor .info dd { margin: 0; overflow-wrap: anywhere; }
@@ -214,7 +215,7 @@ details summary { cursor: pointer; color: var(--text-secondary); font-size: 12.5
 .toolbar { display: flex; gap: 6px; flex-wrap: wrap; }
 .toolbar .sep { width: 1px; background: var(--border); margin: 0 4px; }
 .dirty { color: var(--state-blank); font-weight: 600; }
-.users { font-size: 18px; line-height: 1.6; overflow-wrap: anywhere; }
+.users { font-size: 42px; line-height: 1.25; overflow-wrap: anywhere; }
 .users a { text-decoration: none; color: var(--text-primary); }
 .thumbs { display: flex; flex-wrap: wrap; gap: 10px; }
 .thumb { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; font-size: 11.5px; color: var(--text-secondary); }
@@ -222,6 +223,7 @@ details summary { cursor: pointer; color: var(--text-secondary); font-size: 12.5
 .thumb.current canvas { outline: 2px solid var(--accent); outline-offset: 1px; }
 .thumb.declined .cap { color: var(--state-declined); }
 .thumb.link { text-decoration: none; cursor: pointer; }
+.thumb .ch { font-size: 22px; line-height: 1.2; }
 .thumb.link:hover canvas, .thumb.link:focus-visible canvas { outline: 2px solid var(--accent); outline-offset: 1px; }
 .notice { width: 100%; font-size: 13px; padding: 6px 10px; border-left: 3px solid var(--state-override);
   background: var(--surface-2); border-radius: 4px; color: var(--text-secondary); }
@@ -292,3 +294,8 @@ textarea.sample { width: 100%; min-height: 90px; resize: vertical; font-size: 16
 .toasts { position: fixed; bottom: 16px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 60; }
 .toast { background: var(--surface-1); border: 1px solid var(--border); border-left: 4px solid var(--good); border-radius: 6px; padding: 8px 12px; box-shadow: 0 4px 14px rgba(0,0,0,.18); max-width: 420px; }
 .toast.error { border-left-color: var(--critical); }
+
+/* the editor's suggestion line, over the canvas */
+.suggest-note { font-size: 13px; margin: 2px 0 8px; display: flex; align-items: center; gap: 6px; }
+.suggest-note .sw.suggest { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px;
+  margin-right: 6px; background: radial-gradient(circle, var(--pix-suggest) 0 40%, var(--pix-bg) 42%); }
